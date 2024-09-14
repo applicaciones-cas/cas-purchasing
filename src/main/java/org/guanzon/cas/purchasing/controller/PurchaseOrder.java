@@ -70,14 +70,12 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject openTransaction(String fsValue) {
-
         poModelMaster.openRecord("sTransNox = " + SQLUtil.toSQL(fsValue));
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
         OpenModelDetail(poModelMaster.getTransactionNo());
-
         pnEditMode = EditMode.READY;
         return poJSON;
 

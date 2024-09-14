@@ -1,4 +1,8 @@
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Properties;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -29,19 +33,54 @@ public class testPurchaseOrderUpdate {
     static GRider instance;
     static PurchaseOrder record;
 
+//    @BeforeClass
+//    public static void setUpClass() {
+//        System.setProperty("sys.default.path.metadata", "D:/GGC_Maven_Systems/config/metadata/");
+//
+//        instance = MiscUtil.Connect();
+//        record = new PurchaseOrder(instance, false);
+//    }
+    
+     
+    
     @BeforeClass
     public static void setUpClass() {
-        System.setProperty("sys.default.path.metadata", "D:/GGC_Maven_Systems/config/metadata/");
+        String path;
+        if(System.getProperty("os.name").toLowerCase().contains("win")){
+            path = "D:/GGC_Maven_Systems";
+        }
+        else{
+            path = "/srv/GGC_Maven_Systems";
+        }
+        
+      
+        System.setProperty("sys.default.path.config", path);
 
+        GRider instance = new GRider("gRider");
+
+        if (!instance.logUser("gRider", "M001000001")){
+            System.err.println(instance.getErrMsg());
+            System.exit(1);
+        }
+        
+        System.setProperty("sys.default.path.config", path);
+        System.setProperty("sys.default.path.metadata", "D:/GGC_Maven_Systems/config/metadata/");
+      
+
+        System.out.println("Connected");
         instance = MiscUtil.Connect();
         record = new PurchaseOrder(instance, false);
     }
 
+    
+    
+
     @Test
     public void testProgramFlow() {
+
         JSONObject loJSON;
         
-        loJSON = record.openTransaction("M00124000001");
+        loJSON = record.openTransaction("M00124000007");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
