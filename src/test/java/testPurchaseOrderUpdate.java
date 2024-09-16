@@ -45,29 +45,8 @@ public class testPurchaseOrderUpdate {
     
     @BeforeClass
     public static void setUpClass() {
-        String path;
-        if(System.getProperty("os.name").toLowerCase().contains("win")){
-            path = "D:/GGC_Maven_Systems";
-        }
-        else{
-            path = "/srv/GGC_Maven_Systems";
-        }
-        
-      
-        System.setProperty("sys.default.path.config", path);
-
-        GRider instance = new GRider("gRider");
-
-        if (!instance.logUser("gRider", "M001000001")){
-            System.err.println(instance.getErrMsg());
-            System.exit(1);
-        }
-        
-        System.setProperty("sys.default.path.config", path);
         System.setProperty("sys.default.path.metadata", "D:/GGC_Maven_Systems/config/metadata/");
-      
 
-        System.out.println("Connected");
         instance = MiscUtil.Connect();
         record = new PurchaseOrder(instance, false);
     }
@@ -80,7 +59,7 @@ public class testPurchaseOrderUpdate {
 
         JSONObject loJSON;
         
-        loJSON = record.openTransaction("M00124000007");
+        loJSON = record.openTransaction("M00124000023");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -90,7 +69,9 @@ public class testPurchaseOrderUpdate {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         } 
-        //set master information
+//        
+//        
+//        //set master information
         loJSON = record.getMasterModel().setBranchCode("M001");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -240,10 +221,10 @@ public class testPurchaseOrderUpdate {
             Assert.fail((String) loJSON.get("message"));
         }
         
-        
-        //set detail information
-        
-        
+//        
+//        //set detail information
+//        
+//        
         loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setStockID("M00124000001");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -329,8 +310,9 @@ public class testPurchaseOrderUpdate {
         }
         
         
-        
         loJSON = record.saveTransaction();
+        System.out.println("number: "+loJSON);
+
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }

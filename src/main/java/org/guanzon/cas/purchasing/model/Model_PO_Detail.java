@@ -28,7 +28,11 @@ public class Model_PO_Detail implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
-
+    private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
+                +"xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
+                +"nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
+                +"nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript";
     /**
      * Entity constructor
      *
@@ -234,12 +238,12 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject openRecord(String lsFilter, String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, "xCategrNm»xInvTypNm");
+        String lsSQL = MiscUtil.makeSelect(this, fsExclude);
 
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
                 + "AND sStockIDx = " + SQLUtil.toSQL(fsCondition));
-
+        System.out.println(lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
         try {
@@ -299,7 +303,7 @@ public class Model_PO_Detail implements GEntity {
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record and additional primary column
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            +  "sStockIDx = " + SQLUtil.toSQL(this.getStockID()), "xCategrNm»xInvTypNm");
+                            +  "sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -608,11 +612,11 @@ public class Model_PO_Detail implements GEntity {
      * @return SQL Statement
      */
     public String makeSQL() {
-        return MiscUtil.makeSQL(this, "xCategrNm»xInvTypNm");
+        return MiscUtil.makeSQL(this, fsExclude);
     }
 
     public String makeSelectSQL() {
-        return MiscUtil.makeSelect(this, "xCategrNm»xInvTypNm");
+        return MiscUtil.makeSelect(this, fsExclude);
     }
 
     private void initialize() {

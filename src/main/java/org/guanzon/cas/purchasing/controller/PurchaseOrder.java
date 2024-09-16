@@ -70,16 +70,21 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject openTransaction(String fsValue) {
-        poModelMaster.openRecord("sTransNox = " + SQLUtil.toSQL(fsValue));
+        
+        poJSON=poModelMaster.openRecord("sTransNox = " + SQLUtil.toSQL(fsValue));
+        
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        OpenModelDetail(poModelMaster.getTransactionNo());
+       poJSON= OpenModelDetail(fsValue);
+       if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         pnEditMode = EditMode.READY;
         return poJSON;
 
     }
+    
 
     @Override
     public JSONObject updateTransaction() {
@@ -100,10 +105,13 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject saveTransaction() {
+          
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
-
+    
+        
+        
         if (getItemCount() >= 1) {
             for (int lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
                 poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
@@ -124,11 +132,13 @@ public class PurchaseOrder implements GTranDet {
             poJSON.put("message", "Unable to Save empty Transaction.");
             return poJSON;
         }
-
+ 
         poJSON = poModelMaster.saveRecord();
         if ("success".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
                 poGRider.commitTrans();
+                System.out.println("success2");
+
             }
         } else {
             if (!pbWthParent) {
@@ -353,15 +363,15 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject OpenModelDetail(String fsTransNo) {
 
         try {
-            String lsSQL = MiscUtil.addCondition(poModelDetail.get(0).makeSQL(), "sTransNox = " + SQLUtil.toSQL(fsTransNo));
+            String lsSQL = MiscUtil.addCondition(poModelDetail.get(0).makeSelectSQL(), "sTransNox = " + SQLUtil.toSQL(fsTransNo));
             ResultSet loRS = poGRider.executeQuery(lsSQL);
 
             while (loRS.next()) {
 
                 poModelDetail.add(new Model_PO_Detail(poGRider));
-                poModelDetail.get(poModelDetail.size() - 1).openRecord(loRS.getString("sTransNox"), loRS.getString("sStockIDx"));
-                if ("error".equals((String) poJSON.get("result"))) {
-                    return poJSON;
+                poJSON=poModelDetail.get(poModelDetail.size() - 1).openRecord(loRS.getString("sTransNox"), loRS.getString("sStockIDx"));
+                if (!"error".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
                 } else {
                     poJSON = new JSONObject();
                     poJSON.put("result", "error");

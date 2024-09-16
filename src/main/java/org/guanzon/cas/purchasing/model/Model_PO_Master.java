@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 import javax.sql.rowset.CachedRowSet;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -27,7 +28,12 @@ public class Model_PO_Master implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
-
+    private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
+                +"xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
+                +"nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
+                +"nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript"
+                +"nQtyOnHnd»nROQQtyxx»nOrderQty";
     /**
      * Entity constructor
      *
@@ -221,13 +227,11 @@ public class Model_PO_Master implements GEntity {
     public JSONObject openRecord(String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+        String lsSQL = MiscUtil.makeSelect(this, fsExclude);
 
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, fsCondition);
-
+        
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
         try {
@@ -249,7 +253,7 @@ public class Model_PO_Master implements GEntity {
             poJSON.put("message", e.getMessage());
         }
 
-        return poJSON;
+        return poJSON;    
     }
 
     /**
@@ -260,6 +264,11 @@ public class Model_PO_Master implements GEntity {
     @Override
     public JSONObject saveRecord() {
         poJSON = new JSONObject();
+        int abc= pnEditMode;
+        
+        int b2=EditMode.UPDATE;
+        System.out.println(abc);
+        System.out.println(b2);
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
@@ -289,9 +298,7 @@ public class Model_PO_Master implements GEntity {
 
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record
-                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo()), "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo()), fsExclude);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -311,9 +318,9 @@ public class Model_PO_Master implements GEntity {
                 }
             }
         } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Invalid update mode. Unable to save record.");
-            return poJSON;
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Invalid update mode. Unable to save record.");
+//            return poJSON;
         }
 
         return poJSON;
@@ -1192,16 +1199,13 @@ public class Model_PO_Master implements GEntity {
      * @return SQL Statement
      */
     public String makeSQL() {
-        return MiscUtil.makeSQL(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+        return MiscUtil.makeSQL(this, fsExclude);
     }
     
     public String makeSelectSQL() {
-        return MiscUtil.makeSelect(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+        return MiscUtil.makeSelect(this, fsExclude);
     }
+
 
     private void initialize() {
         try {
