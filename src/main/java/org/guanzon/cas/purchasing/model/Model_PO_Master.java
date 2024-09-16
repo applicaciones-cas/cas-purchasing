@@ -264,11 +264,8 @@ public class Model_PO_Master implements GEntity {
     @Override
     public JSONObject saveRecord() {
         poJSON = new JSONObject();
-        int abc= pnEditMode;
-        
-        int b2=EditMode.UPDATE;
-        System.out.println(abc);
-        System.out.println(b2);
+
+   
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;

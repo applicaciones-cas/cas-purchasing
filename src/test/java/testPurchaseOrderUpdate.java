@@ -311,7 +311,7 @@ public class testPurchaseOrderUpdate {
         
         
         loJSON = record.saveTransaction();
-        System.out.println("number: "+loJSON);
+                  System.out.println("number: "+loJSON);
 
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));

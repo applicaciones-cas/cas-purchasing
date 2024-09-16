@@ -275,6 +275,7 @@ public class Model_PO_Detail implements GEntity {
      */
     @Override
     public JSONObject saveRecord() {
+        
         poJSON = new JSONObject();
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
@@ -303,7 +304,7 @@ public class Model_PO_Detail implements GEntity {
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record and additional primary column
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            +  "sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+                            +  "AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {

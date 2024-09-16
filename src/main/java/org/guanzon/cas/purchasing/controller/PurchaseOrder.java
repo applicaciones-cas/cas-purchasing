@@ -113,7 +113,7 @@ public class PurchaseOrder implements GTranDet {
         
         
         if (getItemCount() >= 1) {
-            for (int lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
+            for (int lnCtr = 1; lnCtr <= getItemCount() - 1; lnCtr++) {
                 poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
                 poJSON = poModelDetail.get(lnCtr).saveRecord();
 
