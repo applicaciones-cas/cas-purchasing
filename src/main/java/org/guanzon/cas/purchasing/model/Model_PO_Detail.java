@@ -32,7 +32,7 @@ public class Model_PO_Detail implements GEntity {
             + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
             + "xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
             + "nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
-            + "nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript";
+            + "nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx";
 
     /**
      * Entity constructor

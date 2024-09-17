@@ -48,6 +48,9 @@ public class testPurchaseOrderNew {
             Assert.fail((String) loJSON.get("message"));
         }    
         
+        if ("error".equals((String) loJSON.get("result"))) {
+            Assert.fail((String) loJSON.get("message"));
+        }    
         
         //set master information
         loJSON = record.getMasterModel().setBranchCode("M001");
@@ -142,10 +145,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setEntryNo(1);
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+        
         loJSON = record.getMasterModel().setCategoryCode("0001");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));

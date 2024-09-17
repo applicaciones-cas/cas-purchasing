@@ -75,8 +75,8 @@ public class PurchaseOrder implements GTranDet {
             return poJSON;
         }
         poModelDetail = openTransactionDetail(poModelMaster.getTransactionNo());
-//        System.out.println(poModelMaster.getEntryNo());
-//        System.out.println(poModelDetail.size());
+        System.out.println(poModelMaster.getEntryNo());
+        System.out.println(poModelDetail.size());
         if ((Integer) poModelMaster.getEntryNo() == poModelDetail.size()) {
             poJSON.put("result", "success");
             poJSON.put("message", "Record loaded successfully.");
