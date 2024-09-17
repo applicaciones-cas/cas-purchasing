@@ -28,11 +28,12 @@ public class Model_PO_Detail implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
-    private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
-                +"nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
-                +"nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript";
+    private String fsExclude = "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+            + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
+            + "xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
+            + "nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
+            + "nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript";
+
     /**
      * Entity constructor
      *
@@ -208,7 +209,6 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject newRecord() {
         pnEditMode = EditMode.ADDNEW;
 
-        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -238,11 +238,11 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject openRecord(String lsFilter, String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, fsExclude);
+        String lsSQL = getSQL();
 
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
-                + "AND sStockIDx = " + SQLUtil.toSQL(fsCondition));
+                + " AND a.sStockIDx = " + SQLUtil.toSQL(fsCondition));
         System.out.println(lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -275,7 +275,7 @@ public class Model_PO_Detail implements GEntity {
      */
     @Override
     public JSONObject saveRecord() {
-        
+
         poJSON = new JSONObject();
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
@@ -305,8 +305,8 @@ public class Model_PO_Detail implements GEntity {
                 if ("success".equals((String) loJSON.get("result"))) {
                     setModifiedDate(poGRider.getServerDate());
                     //replace the condition based on the primary key column of the record and additional primary column
-                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            +  "AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
+                            + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -622,6 +622,30 @@ public class Model_PO_Detail implements GEntity {
         return MiscUtil.makeSelect(this, fsExclude);
     }
 
+    private String getSQL() {
+        String lsSQL = " SELECT "
+                + " a.sTransNox sTransNox "
+                + ", a.nEntryNox nEntryNox "
+                + ", a.sStockIDx sStockIDx "
+                + ", a.sDescript sDescript "
+                + ", a.nQtyOnHnd nQtyOnHnd "
+                + ", a.nROQQtyxx nROQQtyxx "
+                + ", a.nOrderQty nOrderQty "
+                + ", a.nQuantity nQuantity "
+                + ", a.nUnitPrce nUnitPrce "
+                + ", a.nReceived nReceived "
+                + ", a.nCancelld nCancelld "
+                + ", a.dModified dModified "
+                + ", c.sDescript xCategrNm "
+                + ", d.sDescript xInvTypNm "
+                + " FROM " + getTable() + " a "
+                + " LEFT JOIN Inventory b ON  a.sStockIDx =  b.sStockIDx "
+                + " LEFT JOIN Category_Level2 c ON b.sCategCd1 = c.sCategrCd "
+                + " LEFT JOIN Inv_Type d ON b.sInvTypCd = d.sInvTypCd ";
+
+        return lsSQL;
+    }
+
     private void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
@@ -635,8 +659,8 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
+            newRecord();
 
-            pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);

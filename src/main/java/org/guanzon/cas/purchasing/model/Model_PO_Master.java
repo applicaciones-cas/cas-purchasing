@@ -227,10 +227,10 @@ public class Model_PO_Master implements GEntity {
     public JSONObject openRecord(String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, fsExclude);
+        String lsSQL = getSQL();
 
         //replace the condition based on the primary key column of the record
-        lsSQL = MiscUtil.addCondition(lsSQL, fsCondition);
+        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
         
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -788,15 +788,15 @@ public class Model_PO_Master implements GEntity {
      * @param fsValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setEntryNo(int fsValue) {
+    public JSONObject setEntryNo(Number fsValue) {
         return setValue("nEntryNox", fsValue);
     }
 
     /**
      * @return The nEntryNox of this record.
      */
-    public int getEntryNo() {
-        return (Integer) getValue("nEntryNox");
+    public Number getEntryNo() {
+        return  (Number) getValue("nEntryNox");
     }
 
     /**
@@ -1217,6 +1217,7 @@ public class Model_PO_Master implements GEntity {
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
+//            poEntity.updateInt("nEntryNox", 0);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -1230,4 +1231,70 @@ public class Model_PO_Master implements GEntity {
         }
     }
 
+    
+    private String getSQL(){
+    String lsSQL = " SELECT "
+            + " a.sTransNox sTransNox "
+            + ", a.sBranchCd sBranchCd "
+            + ", a.dTransact dTransact "
+            + ", a.sCompnyID sCompnyID "
+            + ", a.sDestinat sDestinat "
+            + ", a.sSupplier sSupplier "
+            + ", a.sAddrssID sAddrssID "
+            + ", a.sContctID sContctID "
+            + ", a.sReferNox sReferNox "
+            + ", a.sTermCode sTermCode "
+            + ", a.nTranTotl nTranTotl "
+            + ", a.nVatRatex nVatRatex "
+            + ", a.nVatAmtxx nVatAmtxx "
+            + ", a.cVATAdded cVATAdded "
+            + ", a.nTWithHld nTWithHld "
+            + ", a.nDiscount nDiscount "
+            + ", a.nAddDiscx nAddDiscx "
+            + ", a.nAmtPaidx nAmtPaidx "
+            + ", a.nNetTotal nNetTotal "
+            + ", a.sRemarksx sRemarksx "
+            + ", a.sSourceCd sSourceCd "
+            + ", a.sSourceNo sSourceNo "
+            + ", a.cEmailSnt cEmailSnt "
+            + ", a.nEmailSnt nEmailSnt "
+            + ", a.nEntryNox nEntryNox "
+            + ", a.sCategrCd sCategrCd "
+            + ", a.cPOTypexx cPOTypexx "
+            + ", a.cTranStat cTranStat "
+            + ", a.sPrepared sPrepared "
+            + ", a.dPrepared dPrepared "
+            + ", a.sApproved sApproved "
+            + ", a.dApproved dApproved "
+            + ", a.sAprvCode sAprvCode "
+            + ", a.sPostedxx sPostedxx "
+            + ", a.dPostedxx dPostedxx "
+            + ", a.sModified sModified "
+            + ", a.dModified dModified "
+            + ", b.sBranchNm xBranchNm "
+            + ", c.sCompnyNm xCompnyNm "
+            + ", d.sBranchNm xDestinat "
+            + ", e.sCompnyNm xSupplier "
+            + ", f.sAddressx xAddressx "
+            + ", g.sCPerson1 xCPerson1 "
+            + ", h.sCPerson1 xCPerson2 "
+            + ", i.sMobileNo xCPMobil1 "
+            + ", j.sDescript xTermName "
+            + ", k.sDescript xInvTypNm "
+            + " FROM " + getTable() + " a "
+            + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
+            + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
+            + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
+            + " LEFT JOIN Client_Master e  ON a.sSupplier = e.sClientID "
+            + " LEFT JOIN Client_Address f  ON a.sAddrssID = f.sAddrssID "
+            + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
+            + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
+            + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
+            + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "
+            + " LEFT JOIN Category_Level2 k  ON a.sCategrCd = k.sCategrCd "
+            + " LEFT JOIN Inv_Type l  ON k.sInvTypCd = l.sInvTypCd ";
+    
+    
+    return lsSQL;
+    } 
 }

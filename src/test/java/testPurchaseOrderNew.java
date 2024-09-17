@@ -194,88 +194,86 @@ public class testPurchaseOrderNew {
         }
         
         //set detail information
-        
-        
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setStockID("M00124000001");
+        loJSON = record.getDetailModel(record.getItemCount() -1).setStockID("M00124000001");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setDescription("This is Detail 02");
+        loJSON = record.getDetailModel(record.getItemCount() -1).setDescription("This is Detail 02");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setQtyOnHand(0);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setQtyOnHand(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setROQQuantity(1);
+       loJSON = record.getDetailModel(record.getItemCount() -1).setROQQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setOrderQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setOrderQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setUnitPrice(BigDecimal.valueOf(1800.19));
+        loJSON = record.getDetailModel(record.getItemCount() -1).setUnitPrice(BigDecimal.valueOf(1800.19));
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setReceiveNo(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setReceiveNo(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setCancelledNo(0);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setCancelledNo(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setModifiedDate(instance.getServerDate());
+        loJSON = record.getDetailModel(record.getItemCount() -1).setModifiedDate(instance.getServerDate());
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
         
         //set detail 2 information
         record.AddModelDetail();
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setStockID("M00124000002");
+        loJSON = record.getDetailModel(record.getItemCount() -1).setStockID("M00124000002");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setDescription("This is Detail 03 entry no2");
+        loJSON = record.getDetailModel(record.getItemCount() -1).setDescription("This is Detail 03 entry no2");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setQtyOnHand(0);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setQtyOnHand(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setROQQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setROQQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setOrderQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setOrderQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setUnitPrice(BigDecimal.valueOf(1800.19));
+        loJSON = record.getDetailModel(record.getItemCount() -1).setUnitPrice(BigDecimal.valueOf(1800.19));
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setReceiveNo(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setReceiveNo(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setCancelledNo(0);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setCancelledNo(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setModifiedDate(instance.getServerDate());
+        loJSON = record.getDetailModel(record.getItemCount() -1).setModifiedDate(instance.getServerDate());
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -287,8 +285,12 @@ public class testPurchaseOrderNew {
             Assert.fail((String) loJSON.get("message"));
         }
         
-        
-        
+
+
+        loJSON = record.deleteTransaction(record.getMasterModel().getTransactionNo());
+        if ("error".equals((String) loJSON.get("result"))) {
+            Assert.fail((String) loJSON.get("message"));
+        }
         
  
         
