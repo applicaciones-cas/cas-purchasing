@@ -15,16 +15,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-//public class testPurchaseOrderPrinting {
-    //creare
-    //save
-    
-    //update
-    //save
-    
-    //closetransaction(printing)
-//}
-
 //
 //public class testPurchaseOrderNew {
 //    //1. Matched yung values na pinass natin
@@ -35,6 +25,7 @@ import org.junit.runners.MethodSorters;
 //    
 //    
 //}
+
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class testPurchaseOrderPrinting {
@@ -102,6 +93,7 @@ public class testPurchaseOrderPrinting {
             Assert.fail((String) loJSON.get("message"));
         }
         
+        
         //set detail 2 information
         record.AddModelDetail();
         loJSON = record.getDetailModel().get(record.getDetailModel().size()-1).setStockID("M00124000002");
@@ -144,8 +136,7 @@ public class testPurchaseOrderPrinting {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        
-        
+               
         
         loJSON = record.saveTransaction();
         if ("error".equals((String) loJSON.get("result"))) {

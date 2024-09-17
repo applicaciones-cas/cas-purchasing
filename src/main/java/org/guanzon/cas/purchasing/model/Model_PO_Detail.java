@@ -281,6 +281,7 @@ public class Model_PO_Detail implements GEntity {
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
             if (pnEditMode == EditMode.ADDNEW) {
+                setModifiedDate(poGRider.getServerDate());
                 lsSQL = makeSQL();
 
                 if (!lsSQL.isEmpty()) {
@@ -302,6 +303,7 @@ public class Model_PO_Detail implements GEntity {
                 JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), this.getStockID());
 
                 if ("success".equals((String) loJSON.get("result"))) {
+                    setModifiedDate(poGRider.getServerDate());
                     //replace the condition based on the primary key column of the record and additional primary column
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
                             +  "AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);

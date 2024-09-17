@@ -265,7 +265,7 @@ public class Model_PO_Master implements GEntity {
     public JSONObject saveRecord() {
         poJSON = new JSONObject();
 
-   
+//        poModelMaster.setModifiedDate(poGRider.getServerDate());
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;

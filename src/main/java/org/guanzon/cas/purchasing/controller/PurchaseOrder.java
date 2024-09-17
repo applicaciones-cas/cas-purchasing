@@ -53,7 +53,6 @@ public class PurchaseOrder implements GTranDet {
         }
 
         poJSON = new JSONObject();
-
         poModelDetail.get(getItemCount() - 1).newRecord();
         poJSON = poModelDetail.get(getItemCount() - 1).setTransactionNo(poModelMaster.getTransactionNo());
         if ("error".equals((String) poJSON.get("result"))) {
@@ -72,7 +71,6 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject openTransaction(String fsValue) {
         
         poJSON=poModelMaster.openRecord("sTransNox = " + SQLUtil.toSQL(fsValue));
-        
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -105,12 +103,10 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject saveTransaction() {
-          
+     
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
-    
-        
         
         if (getItemCount() >= 1) {
             for (int lnCtr = 1; lnCtr <= getItemCount() - 1; lnCtr++) {
@@ -137,7 +133,6 @@ public class PurchaseOrder implements GTranDet {
         if ("success".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
                 poGRider.commitTrans();
-                System.out.println("success2");
 
             }
         } else {
@@ -363,7 +358,7 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject OpenModelDetail(String fsTransNo) {
 
         try {
-            String lsSQL = MiscUtil.addCondition(poModelDetail.get(0).makeSelectSQL(), "sTransNox = " + SQLUtil.toSQL(fsTransNo));
+            String lsSQL = MiscUtil.addCondition(poModelDetail.get(0).makeSelectSQL(), "sTransNox = " + SQLUtil.toSQL(fsTransNo)+" ORDER BY sTransNox ASC");
             ResultSet loRS = poGRider.executeQuery(lsSQL);
 
             while (loRS.next()) {
