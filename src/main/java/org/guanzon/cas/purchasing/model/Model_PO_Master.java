@@ -30,9 +30,7 @@ public class Model_PO_Master implements GEntity {
     int pnEditMode;                 //edit mode
     private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
                 +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
-                +"nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
-                +"nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx»sDescript"
+                +"xCategrNm»xInvTypNm»sDescript»"
                 +"nQtyOnHnd»nROQQtyxx»nOrderQty";
     /**
      * Entity constructor

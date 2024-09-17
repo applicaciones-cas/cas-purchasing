@@ -213,9 +213,21 @@ public class PurchaseOrder implements GTranDet {
             }
             String lsSQL = "DELETE FROM " + poModelMaster.getTable()
                     + " WHERE sTransNox = " + SQLUtil.toSQL(fsTransNox);
+            
+            String lsSQL2 = "DELETE FROM " + poModelDetail.get(poModelDetail.size() - 1).getTable()
+                    + " WHERE sTransNox = " + SQLUtil.toSQL(fsTransNox);
+            System.out.println(lsSQL2);
 
             if (!lsSQL.isEmpty()) {
                 if (poGRider.executeQuery(lsSQL, poModelMaster.getTable(), poGRider.getBranchCode(), "") > 0) {
+                    poJSON.put("result", "success");
+                    poJSON.put("message", "Transaction saved successfully.");
+                } else {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", poGRider.getErrMsg());
+                }
+                
+                if (poGRider.executeQuery(lsSQL2, poModelDetail.get(poModelDetail.size() - 1).getTable(), poGRider.getBranchCode(), "") > 0) {
                     poJSON.put("result", "success");
                     poJSON.put("message", "Transaction saved successfully.");
                 } else {
@@ -240,6 +252,11 @@ public class PurchaseOrder implements GTranDet {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Unable to Delete Transaction.");
             }
+            
+
+            
+            
+            
         } else {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
