@@ -285,16 +285,6 @@ public class testPurchaseOrderNew {
             Assert.fail((String) loJSON.get("message"));
         }
         
-
-//
-//        loJSON = record.deleteTransaction(record.getMasterModel().getTransactionNo());
-//        if ("error".equals((String) loJSON.get("result"))) {
-//            Assert.fail((String) loJSON.get("message"));
-//        }        
-
-        
- 
-        
     }
 
     @AfterClass
