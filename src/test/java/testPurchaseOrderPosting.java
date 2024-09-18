@@ -70,6 +70,9 @@ public class testPurchaseOrderPosting {
             Assert.fail((String) loJSON.get("message"));
         }
         
+        
+        //for searching detail
+        // record.searchDetail(0, "sStockIdx", "mc", true);
 
     }
 
