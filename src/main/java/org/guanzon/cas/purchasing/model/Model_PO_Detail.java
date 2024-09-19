@@ -1,7 +1,5 @@
 package org.guanzon.cas.purchasing.model;
-
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -442,11 +440,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nQtyOnHnd of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setQtyOnHand(int fsValue) {
-        return setValue("nQtyOnHnd", fsValue);
+    public JSONObject setQtyOnHand(int fnValue) {
+        return setValue("nQtyOnHnd", fnValue);
     }
 
     /**
@@ -459,11 +457,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nROQQtyxx of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setROQQuantity(int fsValue) {
-        return setValue("nROQQtyxx", fsValue);
+    public JSONObject setROQQuantity(int fnValue) {
+        return setValue("nROQQtyxx", fnValue);
     }
 
     /**
@@ -476,11 +474,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nOrderQty of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setOrderQuantity(int fsValue) {
-        return setValue("nOrderQty", fsValue);
+    public JSONObject setOrderQuantity(int fnValue) {
+        return setValue("nOrderQty", fnValue);
     }
 
     /**
@@ -493,11 +491,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nQuantity of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setQuantity(int fsValue) {
-        return setValue("nQuantity", fsValue);
+    public JSONObject setQuantity(int fnValue) {
+        return setValue("nQuantity", fnValue);
     }
 
     /**
@@ -510,28 +508,28 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nUnitPrce of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setUnitPrice(BigDecimal fsValue) {
-        return setValue("nUnitPrce", fsValue);
+    public JSONObject setUnitPrice(Number fnValue) {
+        return setValue("nUnitPrce", fnValue);
     }
 
     /**
      * @return The nUnitPrce of this record.
      */
-    public BigDecimal getUnitPrice() {
-        return (BigDecimal) getValue("nUnitPrce");
+    public Number getUnitPrice() {
+        return (Number) getValue("nUnitPrce");
     }
 
     /**
      * Description: Sets the nReceived of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setReceiveNo(int fsValue) {
-        return setValue("nReceived", fsValue);
+    public JSONObject setReceiveNo(int fnValue) {
+        return setValue("nReceived", fnValue);
     }
 
     /**
@@ -544,11 +542,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nCancelld of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setCancelledNo(int fsValue) {
-        return setValue("nCancelld", fsValue);
+    public JSONObject setCancelledNo(int fnValue) {
+        return setValue("nCancelld", fnValue);
     }
 
     /**

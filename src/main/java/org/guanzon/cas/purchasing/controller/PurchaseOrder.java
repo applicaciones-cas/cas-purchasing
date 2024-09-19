@@ -1,9 +1,27 @@
 package org.guanzon.cas.purchasing.controller;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import org.guanzon.appdriver.iface.GTranDet;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.data.JsonDataSource;
+import net.sf.jasperreports.swing.JRViewer;
+import net.sf.jasperreports.view.JasperViewer;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.base.GRider;
@@ -19,10 +37,13 @@ import org.guanzon.cas.parameters.Category_Level2;
 import org.guanzon.cas.parameters.Color;
 import org.guanzon.cas.parameters.Inv_Type;
 import org.guanzon.cas.parameters.Measure;
+import org.guanzon.cas.clients.Client_Master;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import org.guanzon.cas.validators.ValidatorFactory;
 import org.guanzon.cas.validators.poquotation.Validator_PO_Quotation_Request_Detail;
 import org.guanzon.cas.validators.poquotation.Validator_PO_Quotation_Request_Master;
+import org.json.simple.JSONArray;
 
 import org.json.simple.JSONObject;
 
@@ -68,7 +89,7 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject openTransaction(String fsValue) {
 
         poModelMaster = new Model_PO_Master(poGRider);
-        
+
         //open the master table
         poJSON = poModelMaster.openRecord(fsValue);
         if ("error".equals((String) poJSON.get("result"))) {
@@ -126,7 +147,6 @@ public class PurchaseOrder implements GTranDet {
 //            return poJSON;
 //
 //        }
-
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
@@ -213,7 +233,7 @@ public class PurchaseOrder implements GTranDet {
             }
             String lsSQL = "DELETE FROM " + poModelMaster.getTable()
                     + " WHERE sTransNox = " + SQLUtil.toSQL(fsTransNox);
-            
+
             String lsSQL2 = "DELETE FROM " + poModelDetail.get(poModelDetail.size() - 1).getTable()
                     + " WHERE sTransNox = " + SQLUtil.toSQL(fsTransNox);
             System.out.println(lsSQL2);
@@ -226,7 +246,7 @@ public class PurchaseOrder implements GTranDet {
                     poJSON.put("result", "error");
                     poJSON.put("message", poGRider.getErrMsg());
                 }
-                
+
                 if (poGRider.executeQuery(lsSQL2, poModelDetail.get(poModelDetail.size() - 1).getTable(), poGRider.getBranchCode(), "") > 0) {
                     poJSON.put("result", "success");
                     poJSON.put("message", "Transaction saved successfully.");
@@ -252,11 +272,7 @@ public class PurchaseOrder implements GTranDet {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Unable to Delete Transaction.");
             }
-            
 
-            
-            
-            
         } else {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
@@ -268,7 +284,7 @@ public class PurchaseOrder implements GTranDet {
     @Override
     public JSONObject closeTransaction(String fsTransNox) {
         poJSON = new JSONObject();
-        openTransaction(fsTransNox);
+        poJSON = openTransaction(fsTransNox);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -310,7 +326,7 @@ public class PurchaseOrder implements GTranDet {
     @Override
     public JSONObject postTransaction(String fsTransNox) {
         poJSON = new JSONObject();
-        openTransaction(fsTransNox);
+        poJSON = openTransaction(fsTransNox);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -353,7 +369,7 @@ public class PurchaseOrder implements GTranDet {
     @Override
     public JSONObject voidTransaction(String fsTransNox) {
         poJSON = new JSONObject();
-        openTransaction(fsTransNox);
+        poJSON = openTransaction(fsTransNox);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -398,7 +414,7 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject cancelTransaction(String fsTransNox) {
         poJSON = new JSONObject();
 
-        openTransaction(fsTransNox);
+        poJSON = openTransaction(fsTransNox);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -474,6 +490,9 @@ public class PurchaseOrder implements GTranDet {
                 return poModelDetail.get(fnRow).setValue(fsCol, foData);
         }
 
+    }
+
+    public void jasper_report(String n) {
     }
 
     @Override
@@ -726,7 +745,7 @@ public class PurchaseOrder implements GTranDet {
 
     public Inventory GetInventory(String fsPrimaryKey, boolean fbByCode) {
         Inventory instance = new Inventory(poGRider, fbByCode);
-        instance.openRecord(fsPrimaryKey);
+        instance.openRecord(fsPrimaryKey); //
         return instance;
     }
 
@@ -741,5 +760,142 @@ public class PurchaseOrder implements GTranDet {
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
+     public Client_Master GetClient_Master(String fsPrimaryKey, boolean fbWtParent, String fsBranchCd) {
+        Client_Master instance = new Client_Master(poGRider, fbWtParent, fsBranchCd);
+        instance.setType(ValidatorFactory.ClientTypes.COMPANY);
+        instance.openRecord(fsPrimaryKey);
+        return instance;
+    }
+    
+   
 
+    public JSONObject printRecord() {
+        JSONObject loJSON = new JSONObject();
+        if (poModelMaster == null) {
+            ShowMessageFX.Warning("Unable to print transaction.", "Warning", "No record loaded.");
+            loJSON.put("result", "error");
+            loJSON.put("message", "Model Master is null");
+            return loJSON;
+        }
+
+        if (poModelDetail.isEmpty()) {
+            ShowMessageFX.Warning("Unable to print transaction.", "Warning", "No record loaded.");
+            loJSON.put("result", "error");
+            loJSON.put("message", "Model Detail is empty");
+            return loJSON;
+        }
+        Client_Master loClient_Master = GetClient_Master(poModelMaster.getPreparedBy(), true, poGRider.getBranchCode());
+        
+        //Create the parameter
+        Map<String, Object> params = new HashMap<>();
+        params.put("sBranchNm", poGRider.getBranchName());
+        params.put("sAddressx", poGRider.getAddress() + ", " + poGRider.getTownName() + " " + poGRider.getProvince());
+        params.put("xSupplier", poModelMaster.getSupplierName());
+
+        params.put("sReportNm", "samp");
+        params.put("sReportDt", "samp");
+        params.put("sPrintdBy", poModelMaster.getPreparedBy());
+        params.put("sCompnyNm", "Guanzon Group");
+
+        params.put("sTransNox", poModelMaster.getTransactionNo());
+        params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransDate(), SQLUtil.FORMAT_LONG_DATE));
+        params.put("dTransact", SQLUtil.dateFormat(poModelMaster.getTransDate(), SQLUtil.FORMAT_LONG_DATE));
+        params.put("sReferNox", poModelMaster.getReferNo());
+//        params.put("sPrintdBy", psClientNm);
+        params.put("xRemarksx", poModelMaster.getRemarks());
+
+        params.put("xBranchNm", poModelMaster.getBranchName());
+        params.put("xDestinat", poModelMaster.getDestination());
+        params.put("sApprval1", loClient_Master.getModel().getFullName());
+        params.put("sApprval2", poModelMaster.getApprovedBy());
+
+//        String lsSQL = "SELECT sClientNm FROM Client_Master WHERE sClientID IN ("
+//                + "SELECT sEmployNo FROM xxxSysUser WHERE sUserIDxx = " + SQLUtil.toSQL(poData.getApprovedBy().isEmpty() ? poData.getPreparedBy() : poData.getApprovedBy()) + ")";
+//        ResultSet loRS = poGRider.executeQuery(lsSQL);
+//
+//        try {
+//            if (loRS.next()) {
+//                params.put("sApprval1", loRS.getString("sClientNm"));
+//            } else {
+//                params.put("sApprval1", "");
+//            }
+//        } catch (SQLException ex) {
+//            Logger.getLogger(POReturn.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+        JSONArray loArray = new JSONArray();
+
+        JSONObject loJSON2 = new JSONObject();
+        JSONObject loJSON3 = new JSONObject();
+
+        for (int lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
+            String lsBarcode = "";
+            String lsDescript = "";
+            Inventory loInventory = GetInventory(poModelDetail.get(lnCtr).getStockID(), true);
+            if (loInventory != null) {
+                lsBarcode = loInventory.getModel().getBarcode();
+                lsDescript = loInventory.getModel().getDescription();
+            }
+            
+
+
+            
+            loJSON2 = new JSONObject();
+            loJSON2.put("sField01", lsBarcode);
+            loJSON2.put("sField02", lsDescript);
+            loJSON2.put("nField01", poModelDetail.get(lnCtr).getQuantity());
+            loJSON2.put("nField02", poModelDetail.get(lnCtr).getUnitPrice());
+            loJSON2.put("nField03", (poModelDetail.get(lnCtr).getQuantity() * (Double.parseDouble(poModelDetail.get(lnCtr).getUnitPrice().toString()))));
+
+            loArray.add(loJSON2);
+
+        }
+        System.out.println(loArray);
+        try {
+            InputStream stream = new ByteArrayInputStream(loArray.toJSONString().getBytes("UTF-8"));
+            JsonDataSource jrjson;
+
+            jrjson = new JsonDataSource(stream);
+            JasperPrint jrprint = JasperFillManager.fillReport(poGRider.getReportPath()
+                    + "PurchaseOrder.jasper", params, jrjson);
+
+            JasperViewer jv = new JasperViewer(jrprint, false);
+            jv.setVisible(true);
+            jv.setAlwaysOnTop(true);
+
+            
+            //Create a CountDownLatch
+            CountDownLatch latch = new CountDownLatch(1);
+
+            //Add a WindowListener to detect closure
+            jv.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    System.out.println("Jasper Report UI is closing");
+                    latch.countDown(); // Decrement the latch count
+                }
+            });
+         
+            jv.setVisible(true);
+
+            // Sleep until the latch is counted down
+            System.out.println("Waiting for Jasper Report to close...");
+            try {
+                latch.await(); // This will block until latch.countDown() is called
+            } catch (InterruptedException ex) {
+                Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            // For printing
+            JasperExportManager.exportReportToPdfFile(jrprint, "C:/Users/User/Downloads/report.pdf");
+
+
+        } catch (JRException | UnsupportedEncodingException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            loJSON.put("result", "error");
+            loJSON.put("message", "JRException");
+            return loJSON;
+        }
+        loJSON.put("result", "success");
+        loJSON.put("message", "Jasper print record succcess");
+        return loJSON;
+    }
 }

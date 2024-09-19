@@ -244,7 +244,12 @@ public class testPurchaseOrderNew {
         loJSON = record.getDetailModel(record.getItemCount() -1).setDescription("This is Detail 03 entry no2");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
-        }
+             }
+//        loJSON = record.searchDetail(0, "sStockIdx", "mc", true);    
+//        if ("error".equals((String) loJSON.get("result"))) {
+//            Assert.fail((String) loJSON.get("message"));
+//        }   
+       
         loJSON = record.getDetailModel(record.getItemCount() -1).setQtyOnHand(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -279,11 +284,15 @@ public class testPurchaseOrderNew {
         }
         
         
-        
         loJSON = record.saveTransaction();
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
+        
+//        loJSON = record.deleteTransaction(record.getMasterModel().getTransactionNo());
+//        if ("error".equals((String) loJSON.get("result"))) {
+//            Assert.fail((String) loJSON.get("message"));
+//        }     
         
     }
 

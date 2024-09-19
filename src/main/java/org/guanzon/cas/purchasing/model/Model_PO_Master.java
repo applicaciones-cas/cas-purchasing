@@ -1,7 +1,5 @@
 package org.guanzon.cas.purchasing.model;
-
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -531,52 +529,52 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the nTranTotl of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTransactionTotal(BigDecimal fsValue) {
-        return setValue("nTranTotl", fsValue);
+    public JSONObject setTransactionTotal(Number fnValue) {
+        return setValue("nTranTotl", fnValue);
     }
 
     /**
      * @return The nTranTotl of this record.
      */
-    public BigDecimal getTransactionTotal() {
-        return (BigDecimal) getValue("nTranTotl");
+    public Number getTransactionTotal() {
+        return (Number) getValue("nTranTotl");
     }
 
     /**
      * Description: Sets the nVatRatex of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setVatRate(BigDecimal fsValue) {
-        return setValue("nVatRatex", fsValue);
+    public JSONObject setVatRate(Number fnValue) {
+        return setValue("nVatRatex", fnValue);
     }
 
     /**
      * @return The nVatRatex of this record.
      */
-    public BigDecimal getVatRate() {
-        return (BigDecimal) getValue("nVatRatex");
+    public Number getVatRate() {
+        return (Number) getValue("nVatRatex");
     }
 
     /**
      * Description: Sets the nVatRatex of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setVatAmount(BigDecimal fsValue) {
-        return setValue("nVatAmtxx", fsValue);
+    public JSONObject setVatAmount(Number fnValue) {
+        return setValue("nVatAmtxx", fnValue);
     }
 
     /**
      * @return The nVatRatex of this record.
      */
-    public BigDecimal getVatAmount() {
-        return (BigDecimal) getValue("nVatAmtxx");
+    public Number getVatAmount() {
+        return (Number) getValue("nVatAmtxx");
     }
 
     /**
@@ -606,86 +604,86 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the nTWithHld of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTaxWithHolding(BigDecimal fsValue) {
-        return setValue("nTWithHld", fsValue);
+    public JSONObject setTaxWithHolding(Number fnValue) {
+        return setValue("nTWithHld", fnValue);
     }
 
     /**
      * @return The nTWithHld of this record.
      */
-    public BigDecimal getTaxWithHolding() {
-        return (BigDecimal) getValue("nTWithHld");
+    public Number getTaxWithHolding() {
+        return (Number) getValue("nTWithHld");
     }
 
     /**
      * Description: Sets the nDiscount of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setDiscount(BigDecimal fsValue) {
-        return setValue("nDiscount", fsValue);
+    public JSONObject setDiscount(Number fnValue) {
+        return setValue("nDiscount", fnValue);
     }
 
     /**
      * @return The nDiscount of this record.
      */
-    public BigDecimal getDiscount() {
-        return (BigDecimal) getValue("nDiscount");
+    public Number getDiscount() {
+        return (Number) getValue("nDiscount");
     }
 
     /**
      * Description: Sets the nAddDiscx of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setAddDiscount(BigDecimal fsValue) {
-        return setValue("nAddDiscx", fsValue);
+    public JSONObject setAddDiscount(Number fnValue) {
+        return setValue("nAddDiscx", fnValue);
     }
 
     /**
      * @return The nAddDiscx of this record.
      */
-    public BigDecimal getAddDiscount() {
-        return (BigDecimal) getValue("nAddDiscx");
+    public Number getAddDiscount() {
+        return (Number) getValue("nAddDiscx");
     }
 
     /**
      * Description: Sets the nAddDiscx of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setAmountPaid(BigDecimal fsValue) {
-        return setValue("nAmtPaidx", fsValue);
+    public JSONObject setAmountPaid(Number fnValue) {
+        return setValue("nAmtPaidx", fnValue);
     }
 
     /**
      * @return The nAddDiscx of this record.
      */
-    public BigDecimal getAmountPaid() {
-        return (BigDecimal) getValue("nAmtPaidx");
+    public Number getAmountPaid() {
+        return (Number) getValue("nAmtPaidx");
     }
 
     /**
      * Description: Sets the nNetTotal of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setNetTotal(BigDecimal fsValue) {
-        return setValue("nNetTotal", fsValue);
+    public JSONObject setNetTotal(Number fnValue) {
+        return setValue("nNetTotal", fnValue);
     }
 
     /**
      * @return The nNetTotal of this record.
      */
-    public BigDecimal getNetTotal() {
-        return (BigDecimal) getValue("nNetTotal");
+    public Number getNetTotal() {
+        return (Number) getValue("nNetTotal");
     }
 
     /**
@@ -783,11 +781,11 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the nEntryNox of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setEntryNo(Number fsValue) {
-        return setValue("nEntryNox", fsValue);
+    public JSONObject setEntryNo(Number fnValue) {
+        return setValue("nEntryNox", fnValue);
     }
 
     /**

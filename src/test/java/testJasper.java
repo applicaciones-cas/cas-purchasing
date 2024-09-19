@@ -1,12 +1,7 @@
 
-
-import java.math.BigDecimal;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
-import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.appdriver.constant.TransactionStatus;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
-import org.guanzon.cas.purchasing.testing.*;
 import org.json.simple.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -15,20 +10,18 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-//
-//public class testPurchaseOrderNew {
-//    //1. Matched yung values na pinass natin
-//    //2. Check kung yung nasave sa database after saving is matched sa mga pinass
-//    //3. Delete yung mga sinave
-//    
-//    
-//    
-//    
-//}
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 
+/**
+ *
+ * @author User
+ */
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class testPurchaseOrderPrinting {
+public class testJasper {
  
     static GRider instance;
     static PurchaseOrder record;
@@ -44,38 +37,24 @@ public class testPurchaseOrderPrinting {
     @Test
     public void testProgramFlow() {
         JSONObject loJSON;
-        String lsfsTransNox="M00124000037";
+        String lsfsTransNox="M00124000043";
+        
         loJSON = record.openTransaction(lsfsTransNox);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        //setting testing
-        loJSON = record.closeTransaction(lsfsTransNox);
-        if ("error".equals((String) loJSON.get("result"))) {
+       loJSON= record.printRecord();
+       if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
- 
-        
-        for(int lnCtr = 0; lnCtr <= record.getItemCount() -1 ; lnCtr++){
-            System.out.println(record.getDetailModel(lnCtr).getDescription());
-        }
-        
-               
-        
-        loJSON = record.saveTransaction();
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
-        
-        
-        
-        
-        
+
     }
 
     @AfterClass
     public static void tearDownClass() {
         record = null;
         instance = null;
-    }
+        
+            }
+
 }
