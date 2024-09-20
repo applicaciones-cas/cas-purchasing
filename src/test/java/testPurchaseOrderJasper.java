@@ -21,7 +21,7 @@ import org.junit.runners.MethodSorters;
  */
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class testJasper {
+public class testPurchaseOrderJasper {
  
     static GRider instance;
     static PurchaseOrder record;
