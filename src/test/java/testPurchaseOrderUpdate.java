@@ -26,7 +26,6 @@ import org.junit.runners.MethodSorters;
     
     //closetransaction(printing)
 //}
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class testPurchaseOrderUpdate {
  
@@ -41,10 +40,6 @@ public class testPurchaseOrderUpdate {
         instance = MiscUtil.Connect();
         record = new PurchaseOrder(instance, false);
     }
-
-    
-    
-
     @Test
     public void testProgramFlow() {
 
@@ -66,10 +61,7 @@ public class testPurchaseOrderUpdate {
 //       System.out.println("number: "+loJSON);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
-        }
-        
-  
-        
+        }       
     }
 
     @AfterClass

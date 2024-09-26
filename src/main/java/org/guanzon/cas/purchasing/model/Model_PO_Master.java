@@ -207,7 +207,7 @@ public class Model_PO_Master implements GEntity {
 
         //replace with the primary key column info
         setTransactionNo(MiscUtil.getNextCode(getTable(), "sTransNox", true, poGRider.getConnection(), poGRider.getBranchCode()));
-
+        setTransactionDate(poGRider.getServerDate());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -396,14 +396,14 @@ public class Model_PO_Master implements GEntity {
      * @param fdValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTransDate(Date fdValue) {
+    public JSONObject setTransactionDate(Date fdValue) {
         return setValue("dTransact", fdValue);
     }
 
     /**
      * @return The dTransact of this record.
      */
-    public Date getTransDate() {
+    public Date getTransactionDate() {
         return (Date) getValue("dTransact");
     }
 
@@ -498,14 +498,14 @@ public class Model_PO_Master implements GEntity {
      * @param fsValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setReferNo(String fsValue) {
+    public JSONObject setReferenceNo(String fsValue) {
         return setValue("sReferNox", fsValue);
     }
 
     /**
      * @return The sReferNox of this record.
      */
-    public String getReferNo() {
+    public String getReferenceNo() {
         return (String) getValue("sReferNox");
     }
 

@@ -507,10 +507,10 @@ public class PurchaseOrder implements GTranDet {
 
         switch (fsColumn) {
 
-            case "sDescript": // sDescript
+//            case "sDescript": // sDescript
             case "sStockIDx": // 3 // 8-xCategrNm // 9-xInvTypNm
                 Inventory loInventory = new Inventory(poGRider, true);
-                loInventory.setRecordStatus(psTranStatus);
+                loInventory.setRecordStatus("1");
                 loJSON = loInventory.searchRecord(fsValue, fbByCode);
 
                 if (loJSON != null) {
@@ -600,6 +600,79 @@ public class PurchaseOrder implements GTranDet {
         }
     }
 
+    public JSONObject searchDestination(String fsColNme, String fsValue, boolean fbByCode) {
+        String lsCondition = "";
+        String lsFilter = "";
+
+        if (psTranStatus.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
+                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
+            }
+
+            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
+        } else {
+            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
+        }
+
+        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
+
+        poJSON = new JSONObject();
+
+        poJSON = ShowDialogFX.Search(poGRider,
+                lsSQL,
+                fsValue,
+                "Destination»Date»Refer No",
+                "sDestinat»dTransact»sReferNox",
+                "sDestinat»dTransact»sReferNox",
+                fbByCode ? 0 : 2);
+
+        if (poJSON != null) {
+            return openTransaction((String) poJSON.get("sDestinat"));
+
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No Transaction loaded to update.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject searchSupplier(String fsColNme, String fsValue, boolean fbByCode) {
+        String lsCondition = "";
+        String lsFilter = "";
+
+        if (psTranStatus.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
+                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
+            }
+
+            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
+        } else {
+            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
+        }
+
+        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
+
+        poJSON = new JSONObject();
+
+        poJSON = ShowDialogFX.Search(poGRider,
+                lsSQL,
+                fsValue,
+                "Supplier»Date»Refer No",
+                "sSupplier»dTransact»sReferNox",
+                "sSupplier»dTransact»sReferNox",
+                fbByCode ? 0 : 2);
+
+        if (poJSON != null) {
+            return openTransaction((String) poJSON.get("sSupplier"));
+
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No Transaction loaded to update.");
+            return poJSON;
+        }
+    }
+        
+
     @Override
     public JSONObject searchMaster(String fsColNme, String fsValue, boolean fbByCode) {
 
@@ -614,7 +687,36 @@ public class PurchaseOrder implements GTranDet {
         switch (fsColNme) {
             case "sTransNox": // 1
                 return searchTransaction(fsColNme, fsValue, fbByCode);
+                
+            case "sSupplier": //4 //16-xDestinat
+                Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
+                loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
+                loJSON = loSupplier.searchRecord(fsValue, fbByCode);
 
+                
+              
+                if (loJSON != null) {
+                    setMaster("sSupplier", (String) loSupplier.getMaster("sClientID")); // SupplierID 
+                    setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyName
+                    
+                    setMaster("sSupplier", loSupplier.OpenContctPerson((String) loSupplier.getMaster("sClientID")));
+                    JSONArray loArray = new JSONArray();
+                    loArray.add(loArray);
+                    System.out.println(loArray);
+
+//                    setMaster("xCPerson1", loSupplier.OpenContctPerson((String) loSupplier.getMaster("sCPerson1")));
+//                    
+//                    setMaster("sSupplier", loSupplier.OpenMobile((String) loSupplier.getMaster("sClientID")));
+//                    setMaster("xCPMobil1", loSupplier.OpenMobile((String) loSupplier.getMaster("sCPerson1")));
+                    
+                    return loJSON;
+
+                } else {
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
             case "sDestinat": //4 //16-xDestinat
                 Branch loDestinat = new Branch(poGRider, true);
                 loDestinat.setRecordStatus(psTranStatus);
@@ -623,7 +725,7 @@ public class PurchaseOrder implements GTranDet {
                 if (loJSON != null) {
                     setMaster("sDestinat", (String) loDestinat.getMaster("sBranchCd"));
                     setMaster("xDestinat", (String) loDestinat.getMaster("sBranchNm"));
-
+                     
                     return loJSON;
 
                 } else {
@@ -798,9 +900,9 @@ public class PurchaseOrder implements GTranDet {
         params.put("sCompnyNm", "Guanzon Group");
 
         params.put("sTransNox", poModelMaster.getTransactionNo());
-        params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransDate(), SQLUtil.FORMAT_LONG_DATE));
-        params.put("dTransact", SQLUtil.dateFormat(poModelMaster.getTransDate(), SQLUtil.FORMAT_LONG_DATE));
-        params.put("sReferNox", poModelMaster.getReferNo());
+        params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
+        params.put("dTransact", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
+        params.put("sReferNox", poModelMaster.getReferenceNo());
 //        params.put("sPrintdBy", psClientNm);
         params.put("xRemarksx", poModelMaster.getRemarks());
 
@@ -823,9 +925,7 @@ public class PurchaseOrder implements GTranDet {
 //            Logger.getLogger(POReturn.class.getName()).log(Level.SEVERE, null, ex);
 //        }
         JSONArray loArray = new JSONArray();
-
         JSONObject loJSON2 = new JSONObject();
-        JSONObject loJSON3 = new JSONObject();
 
         for (int lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
             String lsBarcode = "";
@@ -836,8 +936,6 @@ public class PurchaseOrder implements GTranDet {
                 lsDescript = loInventory.getModel().getDescription();
             }
             
-
-
             
             loJSON2 = new JSONObject();
             loJSON2.put("sField01", lsBarcode);
@@ -845,7 +943,6 @@ public class PurchaseOrder implements GTranDet {
             loJSON2.put("nField01", poModelDetail.get(lnCtr).getQuantity());
             loJSON2.put("nField02", poModelDetail.get(lnCtr).getUnitPrice());
             loJSON2.put("nField03", (poModelDetail.get(lnCtr).getQuantity() * (Double.parseDouble(poModelDetail.get(lnCtr).getUnitPrice().toString()))));
-
             loArray.add(loJSON2);
 
         }
@@ -861,7 +958,6 @@ public class PurchaseOrder implements GTranDet {
             JasperViewer jv = new JasperViewer(jrprint, false);
             jv.setVisible(true);
             jv.setAlwaysOnTop(true);
-
             
             //Create a CountDownLatch
             CountDownLatch latch = new CountDownLatch(1);
@@ -877,6 +973,7 @@ public class PurchaseOrder implements GTranDet {
          
             jv.setVisible(true);
 
+            
             // Sleep until the latch is counted down
             System.out.println("Waiting for Jasper Report to close...");
             try {

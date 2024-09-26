@@ -57,7 +57,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setTransDate(SQLUtil.toDate("2024-04-25",SQLUtil.FORMAT_SHORT_DATE));
+        loJSON = record.getMasterModel().setTransactionDate(SQLUtil.toDate("2024-04-25",SQLUtil.FORMAT_SHORT_DATE));
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -81,7 +81,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setReferNo("M00124000001");
+        loJSON = record.getMasterModel().setReferenceNo("M00124000001");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }

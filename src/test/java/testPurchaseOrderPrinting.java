@@ -1,5 +1,3 @@
-
-
 import java.math.BigDecimal;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -14,7 +12,6 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
 //
 //public class testPurchaseOrderNew {
 //    //1. Matched yung values na pinass natin
@@ -25,8 +22,6 @@ import org.junit.runners.MethodSorters;
 //    
 //    
 //}
-
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class testPurchaseOrderPrinting {
  
@@ -59,18 +54,11 @@ public class testPurchaseOrderPrinting {
         for(int lnCtr = 0; lnCtr <= record.getItemCount() -1 ; lnCtr++){
             System.out.println(record.getDetailModel(lnCtr).getDescription());
         }
-        
-               
-        
+           
         loJSON = record.saveTransaction();
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
-        }
-        
-        
-        
-        
-        
+        }              
     }
 
     @AfterClass
