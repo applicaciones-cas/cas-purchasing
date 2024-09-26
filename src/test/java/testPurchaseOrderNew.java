@@ -101,10 +101,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setVATAdded("1");
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         loJSON = record.getMasterModel().setTaxWithHolding(BigDecimal.valueOf(0.00));
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -145,12 +142,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        
         loJSON = record.getMasterModel().setCategoryCode("0001");
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
-        loJSON = record.getMasterModel().setPOrderType("0");
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -158,10 +150,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setPreparedBy("M00120001698");
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         loJSON = record.getMasterModel().setPreparedDate(instance.getServerDate());
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -210,10 +199,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel(record.getItemCount() -1).setOrderQuantity(1);
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         loJSON = record.getDetailModel(record.getItemCount() -1).setQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -230,10 +216,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel(record.getItemCount() -1).setModifiedDate(instance.getServerDate());
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         
         //set detail 2 information
         record.AddModelDetail();
@@ -258,10 +241,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel(record.getItemCount() -1).setOrderQuantity(1);
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         loJSON = record.getDetailModel(record.getItemCount() -1).setQuantity(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
@@ -278,10 +258,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel(record.getItemCount() -1).setModifiedDate(instance.getServerDate());
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
+
         
         
         loJSON = record.saveTransaction();

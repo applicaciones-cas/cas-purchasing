@@ -279,7 +279,6 @@ public class Model_PO_Detail implements GEntity {
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
             if (pnEditMode == EditMode.ADDNEW) {
-                setModifiedDate(poGRider.getServerDate());
                 lsSQL = makeSQL();
 
                 if (!lsSQL.isEmpty()) {
@@ -301,7 +300,6 @@ public class Model_PO_Detail implements GEntity {
                 JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), this.getStockID());
 
                 if ("success".equals((String) loJSON.get("result"))) {
-                    setModifiedDate(poGRider.getServerDate());
                     //replace the condition based on the primary key column of the record and additional primary column
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
                             + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
@@ -455,38 +453,23 @@ public class Model_PO_Detail implements GEntity {
     }
 
     /**
-     * Description: Sets the nROQQtyxx of this record.
+     * Description: Sets the nRecrOrder  of this record.
      *
      * @param fnValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setROQQuantity(int fnValue) {
-        return setValue("nROQQtyxx", fnValue);
+        return setValue("nRecrOrder", fnValue);
     }
 
     /**
-     * @return The nROQQtyxx of this record.
+     * @return The nRecrOrder  of this record.
      */
     public int getROQQuantity() {
-        return (Integer) getValue("nROQQtyxx");
+        return (Integer) getValue("nRecrOrder");
     }
 
-    /**
-     * Description: Sets the nOrderQty of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setOrderQuantity(int fnValue) {
-        return setValue("nOrderQty", fnValue);
-    }
 
-    /**
-     * @return The nOrderQty of this record.
-     */
-    public int getOrderQuantity() {
-        return (Integer) getValue("nOrderQty");
-    }
 
     /**
      * Description: Sets the nQuantity of this record.
@@ -556,22 +539,7 @@ public class Model_PO_Detail implements GEntity {
         return (Integer) getValue("nCancelld");
     }
 
-    /**
-     * Description: Sets the dModified of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setModifiedDate(Date fdValue) {
-        return setValue("dModified", fdValue);
-    }
 
-    /**
-     * @return The dModified of this record.
-     */
-    public Date getModifiedDate() {
-        return (Date) getValue("dModified");
-    }
 
     /**
      * Description: Sets the xCategrNm of this record.
@@ -628,18 +596,16 @@ public class Model_PO_Detail implements GEntity {
                 + ", a.sDescript sDescript "
                 + ", a.nQtyOnHnd nQtyOnHnd "
                 + ", a.nROQQtyxx nROQQtyxx "
-                + ", a.nOrderQty nOrderQty "
                 + ", a.nQuantity nQuantity "
                 + ", a.nUnitPrce nUnitPrce "
                 + ", a.nReceived nReceived "
                 + ", a.nCancelld nCancelld "
-                + ", a.dModified dModified "
                 + ", c.sDescript xCategrNm "
                 + ", d.sDescript xInvTypNm "
                 + " FROM " + getTable() + " a "
                 + " LEFT JOIN Inventory b ON  a.sStockIDx =  b.sStockIDx "
                 + " LEFT JOIN Category_Level2 c ON b.sCategCd1 = c.sCategrCd "
-                + " LEFT JOIN Inv_Type d ON b.sInvTypCd = d.sInvTypCd ";
+                + " LEFT JOIN Category d ON b.sCategrCd = d.sCategCd1 ";
 
         return lsSQL;
     }
@@ -664,5 +630,8 @@ public class Model_PO_Detail implements GEntity {
             System.exit(1);
         }
     }
+
+
+
 
 }

@@ -28,7 +28,7 @@ public class Model_PO_Master implements GEntity {
     int pnEditMode;                 //edit mode
     private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
                 +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm»sDescript»"
+                +"xCategrNm»sDescript»"
                 +"nQtyOnHnd»nROQQtyxx»nOrderQty";
     /**
      * Entity constructor
@@ -577,29 +577,7 @@ public class Model_PO_Master implements GEntity {
         return (Number) getValue("nVatAmtxx");
     }
 
-    /**
-     * Sets the cVATAdded of this record.
-     *
-     * @param fsValue
-     * @return result as success/failed
-     */
-    public JSONObject setVATAdded(String fsValue) {
-        return setValue("cVATAdded", fsValue);
-    }
 
-    /**
-     * @return The cVATAdded of this record.
-     */
-    public String setVATAdded() {
-        return (String) getValue("cVATAdded");
-    }
-
-    /**
-     * @return If VAT Added is selected.
-     */
-    public boolean isVATAdded() {
-        return ((String) getValue("cVATAdded")).equals("1");
-    }
 
     /**
      * Description: Sets the nTWithHld of this record.
@@ -813,23 +791,6 @@ public class Model_PO_Master implements GEntity {
     }
 
     /**
-     * Description: Sets the cPOTypexx of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setPOrderType(String fsValue) {
-        return setValue("cPOTypexx", fsValue);
-    }
-
-    /**
-     * @return The cPOTypexx of this record.
-     */
-    public String getPOrderType() {
-        return (String) getValue("cPOTypexx");
-    }
-
-    /**
      * Description: Sets the cTranStat of this record.
      *
      * @param fsValue
@@ -846,22 +807,7 @@ public class Model_PO_Master implements GEntity {
         return (String) getValue("cTranStat");
     }
 
-    /**
-     * Description: Sets the sPrepared of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setPreparedBy(String fsValue) {
-        return setValue("sPrepared", fsValue);
-    }
 
-    /**
-     * @return The sPrepared of this record.
-     */
-    public String getPreparedBy() {
-        return (String) getValue("sPrepared");
-    }
 
     /**
      * Description: Sets the dPrepared of this record.
@@ -1169,22 +1115,7 @@ public class Model_PO_Master implements GEntity {
         return (String) getValue("xCategrNm");
     }
     
-        /**
-     * Description: Sets the xInvTypNm of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setInvTypeName(String fsValue) {
-        return setValue("xInvTypNm", fsValue);
-    }
 
-    /**
-     * @return The xInvTypNm of this record.
-     */
-    public String getInvTypeName() {
-        return (String) getValue("xInvTypNm");
-    }
 
     /**
      * Gets the SQL statement for this entity.
@@ -1242,8 +1173,6 @@ public class Model_PO_Master implements GEntity {
             + ", a.sTermCode sTermCode "
             + ", a.nTranTotl nTranTotl "
             + ", a.nVatRatex nVatRatex "
-            + ", a.nVatAmtxx nVatAmtxx "
-            + ", a.cVATAdded cVATAdded "
             + ", a.nTWithHld nTWithHld "
             + ", a.nDiscount nDiscount "
             + ", a.nAddDiscx nAddDiscx "
@@ -1256,9 +1185,7 @@ public class Model_PO_Master implements GEntity {
             + ", a.nEmailSnt nEmailSnt "
             + ", a.nEntryNox nEntryNox "
             + ", a.sCategrCd sCategrCd "
-            + ", a.cPOTypexx cPOTypexx "
             + ", a.cTranStat cTranStat "
-            + ", a.sPrepared sPrepared "
             + ", a.dPrepared dPrepared "
             + ", a.sApproved sApproved "
             + ", a.dApproved dApproved "
@@ -1276,7 +1203,6 @@ public class Model_PO_Master implements GEntity {
             + ", h.sCPerson1 xCPerson2 "
             + ", i.sMobileNo xCPMobil1 "
             + ", j.sDescript xTermName "
-            + ", k.sDescript xInvTypNm "
             + " FROM " + getTable() + " a "
             + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
             + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
@@ -1286,9 +1212,7 @@ public class Model_PO_Master implements GEntity {
             + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
             + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
             + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
-            + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "
-            + " LEFT JOIN Category_Level2 k  ON a.sCategrCd = k.sCategrCd "
-            + " LEFT JOIN Inv_Type l  ON k.sInvTypCd = l.sInvTypCd ";
+            + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
     
     
     return lsSQL;

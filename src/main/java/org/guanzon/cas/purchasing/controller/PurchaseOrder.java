@@ -38,6 +38,9 @@ import org.guanzon.cas.parameters.Color;
 import org.guanzon.cas.parameters.Inv_Type;
 import org.guanzon.cas.parameters.Measure;
 import org.guanzon.cas.clients.Client_Master;
+import org.guanzon.cas.model.clients.Model_Client_Institution_Contact;
+import org.guanzon.cas.model.clients.Model_Client_Mobile;
+import org.guanzon.cas.parameters.Term;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.validators.ValidatorFactory;
@@ -199,7 +202,7 @@ public class PurchaseOrder implements GTranDet {
         }
         poModelMaster.setEntryNo(poModelDetail.size());
         poModelMaster.setPreparedDate(poGRider.getServerDate());
-        poModelMaster.setPreparedBy(poGRider.getUserID());
+//        poModelMaster.setPreparedBy(poGRider.getUserID());
         poModelMaster.setModifiedBy(poGRider.getUserID());
         poModelMaster.setModifiedDate(poGRider.getServerDate());
 
@@ -692,23 +695,21 @@ public class PurchaseOrder implements GTranDet {
                 Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
                 loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
                 loJSON = loSupplier.searchRecord(fsValue, fbByCode);
-
                 
+               
               
                 if (loJSON != null) {
-                    setMaster("sSupplier", (String) loSupplier.getMaster("sClientID")); // SupplierID 
+                    String lsClientID=(String)loSupplier.getMaster("sClientID");
+                    setMaster("sSupplier", lsClientID); // SupplierID 
                     setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyName
                     
-                    setMaster("sSupplier", loSupplier.OpenContctPerson((String) loSupplier.getMaster("sClientID")));
-                    JSONArray loArray = new JSONArray();
-                    loArray.add(loArray);
-                    System.out.println(loArray);
+                    setMaster("sSupplier",lsClientID);
+                    Model_Client_Institution_Contact loContctP= GetModel_Client_Institution_Contact(lsClientID);
+                    setMaster("xCPerson1", (String)loContctP.getContactPerson());
 
-//                    setMaster("xCPerson1", loSupplier.OpenContctPerson((String) loSupplier.getMaster("sCPerson1")));
-//                    
-//                    setMaster("sSupplier", loSupplier.OpenMobile((String) loSupplier.getMaster("sClientID")));
-//                    setMaster("xCPMobil1", loSupplier.OpenMobile((String) loSupplier.getMaster("sCPerson1")));
-                    
+                    setMaster("sSupplier", lsClientID);
+                    Model_Client_Mobile loContctNo= GetModel_Client_Mobile(lsClientID);
+                    setMaster("xCPMobil1", loContctNo.getContactNo());
                     return loJSON;
 
                 } else {
@@ -734,7 +735,22 @@ public class PurchaseOrder implements GTranDet {
                     loJSON.put("message", "No Transaction found.");
                     return loJSON;
                 }
+            case "sTermCode": //4 //16-xDestinat
+                Term loTerm = new Term(poGRider, true);
+                loTerm.setRecordStatus(psTranStatus);
+                loJSON = loTerm.searchRecord(fsValue, fbByCode);
 
+                if (loJSON != null) {
+                    setMaster("sTermCode", (String) loTerm.getMaster("sTermCode"));
+                    setMaster("xTermName", (String) loTerm.getMaster("sDescript"));
+                    return loJSON;
+
+                } else {
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
             case "sCategrCd": //9 //17-xCategrNm
 
                 Category_Level2 loCategory2 = new Category_Level2(poGRider, true);
@@ -868,8 +884,18 @@ public class PurchaseOrder implements GTranDet {
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
-    
-   
+    public Model_Client_Institution_Contact GetModel_Client_Institution_Contact(String fsPrimaryKey) {
+        Model_Client_Institution_Contact instance = new Model_Client_Institution_Contact(poGRider);
+        instance.openRecord(fsPrimaryKey);
+        return instance;
+    }
+    public Model_Client_Mobile GetModel_Client_Mobile(String fsPrimaryKey) {
+        Model_Client_Mobile instance = new Model_Client_Mobile(poGRider);
+        instance.openRecord(fsPrimaryKey);
+        return instance;
+    }
+
+
 
     public JSONObject printRecord() {
         JSONObject loJSON = new JSONObject();
@@ -886,7 +912,7 @@ public class PurchaseOrder implements GTranDet {
             loJSON.put("message", "Model Detail is empty");
             return loJSON;
         }
-        Client_Master loClient_Master = GetClient_Master(poModelMaster.getPreparedBy(), true, poGRider.getBranchCode());
+        Client_Master loClient_Master = GetClient_Master("", true, poGRider.getBranchCode()); //poModelMaster.getPreparedBy()
         
         //Create the parameter
         Map<String, Object> params = new HashMap<>();
@@ -896,7 +922,7 @@ public class PurchaseOrder implements GTranDet {
 
         params.put("sReportNm", "samp");
         params.put("sReportDt", "samp");
-        params.put("sPrintdBy", poModelMaster.getPreparedBy());
+        params.put("sPrintdBy", "samp"); //poModelMaster.getPreparedBy()
         params.put("sCompnyNm", "Guanzon Group");
 
         params.put("sTransNox", poModelMaster.getTransactionNo());
