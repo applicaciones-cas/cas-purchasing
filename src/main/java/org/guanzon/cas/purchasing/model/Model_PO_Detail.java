@@ -451,6 +451,7 @@ public class Model_PO_Detail implements GEntity {
     public int getQtyOnHand() {
         return (Integer) getValue("nQtyOnHnd");
     }
+    
 
     /**
      * Description: Sets the nRecrOrder  of this record.
@@ -458,15 +459,15 @@ public class Model_PO_Detail implements GEntity {
      * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setROQQuantity(int fnValue) {
-        return setValue("nRecrOrder", fnValue);
+    public JSONObject setRecOrder(int fnValue) {
+        return setValue("nRecOrder", fnValue);
     }
 
     /**
      * @return The nRecrOrder  of this record.
      */
-    public int getROQQuantity() {
-        return (Integer) getValue("nRecrOrder");
+    public int getRecOrder() {
+        return (Integer) getValue("nRecOrder");
     }
 
 
@@ -595,7 +596,7 @@ public class Model_PO_Detail implements GEntity {
                 + ", a.sStockIDx sStockIDx "
                 + ", a.sDescript sDescript "
                 + ", a.nQtyOnHnd nQtyOnHnd "
-                + ", a.nROQQtyxx nROQQtyxx "
+                + ", a.nRecOrder nRecOrder "
                 + ", a.nQuantity nQuantity "
                 + ", a.nUnitPrce nUnitPrce "
                 + ", a.nReceived nReceived "

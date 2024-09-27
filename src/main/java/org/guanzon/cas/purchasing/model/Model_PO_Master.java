@@ -29,7 +29,7 @@ public class Model_PO_Master implements GEntity {
     private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
                 +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
                 +"xCategrNm»sDescript»"
-                +"nQtyOnHnd»nROQQtyxx»nOrderQty";
+                +"nQtyOnHnd»nOrderQty";
     /**
      * Entity constructor
      *
@@ -249,7 +249,7 @@ public class Model_PO_Master implements GEntity {
             poJSON.put("message", e.getMessage());
         }
 
-        return poJSON;    
+        return poJSON;
     }
 
     /**
@@ -560,24 +560,6 @@ public class Model_PO_Master implements GEntity {
         return (Number) getValue("nVatRatex");
     }
 
-    /**
-     * Description: Sets the nVatRatex of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setVatAmount(Number fnValue) {
-        return setValue("nVatAmtxx", fnValue);
-    }
-
-    /**
-     * @return The nVatRatex of this record.
-     */
-    public Number getVatAmount() {
-        return (Number) getValue("nVatAmtxx");
-    }
-
-
 
     /**
      * Description: Sets the nTWithHld of this record.
@@ -772,6 +754,7 @@ public class Model_PO_Master implements GEntity {
     public Number getEntryNo() {
         return  (Number) getValue("nEntryNox");
     }
+    
 
     /**
      * Description: Sets the sCategrCd of this record.
@@ -805,6 +788,23 @@ public class Model_PO_Master implements GEntity {
      */
     public String getTransactionStatus() {
         return (String) getValue("cTranStat");
+    }
+    
+        /**
+     * Description: Sets the cTranStat of this record.
+     *
+     * @param fsValue
+     * @return True if the record assignment is successful.
+     */
+    public JSONObject setVATaxable(String fsValue) {
+        return setValue("cVATaxabl", fsValue);
+    }
+
+    /**
+     * @return The cTranStat of this record.
+     */
+    public String getVATaxable() {
+        return (String) getValue("cVATaxabl");
     }
 
 

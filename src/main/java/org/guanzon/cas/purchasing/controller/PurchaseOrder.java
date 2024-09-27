@@ -153,7 +153,6 @@ public class PurchaseOrder implements GTranDet {
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
-
         poJSON = new JSONObject();
         //delete empty detail
         if (poModelDetail.get(getItemCount() - 1).getStockID().equals("") && poModelDetail.get(getItemCount() - 1).getStockID().equals("")) {
@@ -161,10 +160,13 @@ public class PurchaseOrder implements GTranDet {
         }
 
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
-
+            poModelDetail.get(lnCtr).setQtyOnHand(lnCtr);
             poModelDetail.get(lnCtr).setTransactionNo(poModelMaster.getTransactionNo());
             poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
-
+            poModelDetail.get(lnCtr).setUnitPrice(1);
+            poModelDetail.get(lnCtr).setRecOrder(1);
+            poModelDetail.get(lnCtr).setReceiveNo(1);
+            poModelDetail.get(lnCtr).setCancelledNo(1);
             poJSON = poModelDetail.get(lnCtr).saveRecord();
 
             if ("error".equals((String) poJSON.get("result"))) {
@@ -200,11 +202,46 @@ public class PurchaseOrder implements GTranDet {
                 }
             }
         }
-        poModelMaster.setEntryNo(poModelDetail.size());
+        poModelMaster.setTransactionTotal(1);
+        poModelMaster.setAmountPaid(1);
+        poModelMaster.setNetTotal(1);
+        poModelMaster.setSourceCode("samp");
+        poModelMaster.setSourceNo("samp");
+        poModelMaster.setEmailSentStatus("1");
+        poModelMaster.setEmailSentNo(1);
+        poModelMaster.setEntryNo(1);
+        poModelMaster.setCategoryCode("samp");
         poModelMaster.setPreparedDate(poGRider.getServerDate());
-//        poModelMaster.setPreparedBy(poGRider.getUserID());
-        poModelMaster.setModifiedBy(poGRider.getUserID());
-        poModelMaster.setModifiedDate(poGRider.getServerDate());
+//        poModelMaster.setApprovedBy("samp");
+//        poModelMaster.setPostedBy("samp");
+
+        
+        
+         poModelMaster.setCompanyID("samp");
+         poModelMaster.setAddressID("samp");
+         poModelMaster.setContactID("samp");
+         poModelMaster.setReferenceNo("samp");
+         poModelMaster.setTermCode("samp");
+         poModelMaster.setVATaxable("1");
+         poModelMaster.setVatRate(1);
+         poModelMaster.setTaxWithHolding(1);
+         poModelMaster.setDiscount(1);
+         poModelMaster.setAddDiscount(1);
+         poModelMaster.setRemarks("a");
+         poModelMaster.setSourceCode("srccode1");
+         poModelMaster.setCategoryCode("categcode1");
+         poModelMaster.setApprovedBy("Juan Dela Cruz");
+         poModelMaster.setApprovedate(poGRider.getServerDate());
+         poModelMaster.setPostedBy("name");
+         poModelMaster.setPostedDate(poGRider.getServerDate());
+         poModelMaster.setModifiedBy("name");
+         poModelMaster.setModifiedDate(poGRider.getServerDate());
+        
+//        poModelMaster.setEntryNo(poModelDetail.size());
+//        poModelMaster.setPreparedDate(poGRider.getServerDate());
+////        poModelMaster.setPreparedBy(poGRider.getUserID());
+//        poModelMaster.setModifiedBy(poGRider.getUserID());
+//        poModelMaster.setModifiedDate(poGRider.getServerDate());
 
         poJSON = poModelMaster.saveRecord();
         if ("success".equals((String) poJSON.get("result"))) {
@@ -489,6 +526,7 @@ public class PurchaseOrder implements GTranDet {
                         && !poModelDetail.get(fnRow).getStockID().isEmpty()) {
                     AddModelDetail();
                 }
+
             default:
                 return poModelDetail.get(fnRow).setValue(fsCol, foData);
         }
@@ -594,13 +632,14 @@ public class PurchaseOrder implements GTranDet {
                 fbByCode ? 0 : 2);
 
         if (poJSON != null) {
-            return openTransaction((String) poJSON.get("sTransNox"));
+            poJSON= openTransaction((String) poJSON.get("sTransNox"));
 
         } else {
             poJSON.put("result", "error");
             poJSON.put("message", "No Transaction loaded to update.");
             return poJSON;
         }
+        return poJSON;
     }
 
     public JSONObject searchDestination(String fsColNme, String fsValue, boolean fbByCode) {
@@ -638,7 +677,7 @@ public class PurchaseOrder implements GTranDet {
             return poJSON;
         }
     }
-    
+
     public JSONObject searchSupplier(String fsColNme, String fsValue, boolean fbByCode) {
         String lsCondition = "";
         String lsFilter = "";
@@ -674,7 +713,6 @@ public class PurchaseOrder implements GTranDet {
             return poJSON;
         }
     }
-        
 
     @Override
     public JSONObject searchMaster(String fsColNme, String fsValue, boolean fbByCode) {
@@ -690,25 +728,23 @@ public class PurchaseOrder implements GTranDet {
         switch (fsColNme) {
             case "sTransNox": // 1
                 return searchTransaction(fsColNme, fsValue, fbByCode);
-                
+
             case "sSupplier": //4 //16-xDestinat
                 Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
                 loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
                 loJSON = loSupplier.searchRecord(fsValue, fbByCode);
-                
-               
-              
+
                 if (loJSON != null) {
-                    String lsClientID=(String)loSupplier.getMaster("sClientID");
+                    String lsClientID = (String) loSupplier.getMaster("sClientID");
                     setMaster("sSupplier", lsClientID); // SupplierID 
                     setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyName
-                    
-                    setMaster("sSupplier",lsClientID);
-                    Model_Client_Institution_Contact loContctP= GetModel_Client_Institution_Contact(lsClientID);
-                    setMaster("xCPerson1", (String)loContctP.getContactPerson());
 
                     setMaster("sSupplier", lsClientID);
-                    Model_Client_Mobile loContctNo= GetModel_Client_Mobile(lsClientID);
+                    Model_Client_Institution_Contact loContctP = GetModel_Client_Institution_Contact(lsClientID);
+                    setMaster("xCPerson1", (String) loContctP.getContactPerson());
+
+                    setMaster("sSupplier", lsClientID);
+                    Model_Client_Mobile loContctNo = GetModel_Client_Mobile(lsClientID);
                     setMaster("xCPMobil1", loContctNo.getContactNo());
                     return loJSON;
 
@@ -726,7 +762,7 @@ public class PurchaseOrder implements GTranDet {
                 if (loJSON != null) {
                     setMaster("sDestinat", (String) loDestinat.getMaster("sBranchCd"));
                     setMaster("xDestinat", (String) loDestinat.getMaster("sBranchNm"));
-                     
+
                     return loJSON;
 
                 } else {
@@ -878,24 +914,25 @@ public class PurchaseOrder implements GTranDet {
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
-     public Client_Master GetClient_Master(String fsPrimaryKey, boolean fbWtParent, String fsBranchCd) {
+
+    public Client_Master GetClient_Master(String fsPrimaryKey, boolean fbWtParent, String fsBranchCd) {
         Client_Master instance = new Client_Master(poGRider, fbWtParent, fsBranchCd);
         instance.setType(ValidatorFactory.ClientTypes.COMPANY);
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
+
     public Model_Client_Institution_Contact GetModel_Client_Institution_Contact(String fsPrimaryKey) {
         Model_Client_Institution_Contact instance = new Model_Client_Institution_Contact(poGRider);
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
+
     public Model_Client_Mobile GetModel_Client_Mobile(String fsPrimaryKey) {
         Model_Client_Mobile instance = new Model_Client_Mobile(poGRider);
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
-
-
 
     public JSONObject printRecord() {
         JSONObject loJSON = new JSONObject();
@@ -913,7 +950,7 @@ public class PurchaseOrder implements GTranDet {
             return loJSON;
         }
         Client_Master loClient_Master = GetClient_Master("", true, poGRider.getBranchCode()); //poModelMaster.getPreparedBy()
-        
+
         //Create the parameter
         Map<String, Object> params = new HashMap<>();
         params.put("sBranchNm", poGRider.getBranchName());
@@ -961,8 +998,7 @@ public class PurchaseOrder implements GTranDet {
                 lsBarcode = loInventory.getModel().getBarcode();
                 lsDescript = loInventory.getModel().getDescription();
             }
-            
-            
+
             loJSON2 = new JSONObject();
             loJSON2.put("sField01", lsBarcode);
             loJSON2.put("sField02", lsDescript);
@@ -984,7 +1020,7 @@ public class PurchaseOrder implements GTranDet {
             JasperViewer jv = new JasperViewer(jrprint, false);
             jv.setVisible(true);
             jv.setAlwaysOnTop(true);
-            
+
             //Create a CountDownLatch
             CountDownLatch latch = new CountDownLatch(1);
 
@@ -996,10 +1032,9 @@ public class PurchaseOrder implements GTranDet {
                     latch.countDown(); // Decrement the latch count
                 }
             });
-         
+
             jv.setVisible(true);
 
-            
             // Sleep until the latch is counted down
             System.out.println("Waiting for Jasper Report to close...");
             try {
@@ -1009,7 +1044,6 @@ public class PurchaseOrder implements GTranDet {
             }
             // For printing
             JasperExportManager.exportReportToPdfFile(jrprint, "C:/Users/User/Downloads/report.pdf");
-
 
         } catch (JRException | UnsupportedEncodingException ex) {
             Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);

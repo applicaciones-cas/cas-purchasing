@@ -97,10 +97,6 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getMasterModel().setVatAmount(BigDecimal.valueOf(199.80));
-        if ("error".equals((String) loJSON.get("result"))) {
-            Assert.fail((String) loJSON.get("message"));
-        }
 
         loJSON = record.getMasterModel().setTaxWithHolding(BigDecimal.valueOf(0.00));
         if ("error".equals((String) loJSON.get("result"))) {
@@ -195,7 +191,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-       loJSON = record.getDetailModel(record.getItemCount() -1).setROQQuantity(1);
+       loJSON = record.getDetailModel(record.getItemCount() -1).setRecOrder(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -237,7 +233,7 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-        loJSON = record.getDetailModel(record.getItemCount() -1).setROQQuantity(1);
+        loJSON = record.getDetailModel(record.getItemCount() -1).setRecOrder(1);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
