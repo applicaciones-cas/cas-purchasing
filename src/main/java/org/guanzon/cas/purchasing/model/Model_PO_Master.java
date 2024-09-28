@@ -155,11 +155,13 @@ public class Model_PO_Master implements GEntity {
     @Override
     public JSONObject setValue(int fnColumn, Object foValue) {
         try {
+            System.out.println(MiscUtil.getColumnLabel(poEntity, fnColumn) +" "+ foValue);
+            
             poJSON = MiscUtil.validateColumnValue(System.getProperty("sys.default.path.metadata") + XML, MiscUtil.getColumnLabel(poEntity, fnColumn), foValue);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
-
+            
             poEntity.updateObject(fnColumn, foValue);
             poEntity.updateRow();
 
@@ -224,14 +226,14 @@ public class Model_PO_Master implements GEntity {
         poJSON = new JSONObject();
 
         String lsSQL = getSQL();
-
+        // open po_master
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
         
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-
         try {
             if (loRS.next()) {
+                
                 for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
                     setValue(lnCtr, loRS.getObject(lnCtr));
                 }
@@ -1144,7 +1146,7 @@ public class Model_PO_Master implements GEntity {
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
-//            poEntity.updateInt("nEntryNox", 0);
+            poEntity.updateInt("nEntryNox", 0);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -1172,6 +1174,7 @@ public class Model_PO_Master implements GEntity {
             + ", a.sReferNox sReferNox "
             + ", a.sTermCode sTermCode "
             + ", a.nTranTotl nTranTotl "
+            + ", a.cVATaxabl cVATaxabl "
             + ", a.nVatRatex nVatRatex "
             + ", a.nTWithHld nTWithHld "
             + ", a.nDiscount nDiscount "

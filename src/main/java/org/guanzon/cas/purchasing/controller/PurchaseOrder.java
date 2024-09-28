@@ -95,12 +95,21 @@ public class PurchaseOrder implements GTranDet {
 
         //open the master table
         poJSON = poModelMaster.openRecord(fsValue);
+        System.out.println(poJSON.toJSONString());
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+       
+        //checkTest
         poModelDetail = openTransactionDetail(poModelMaster.getTransactionNo());
+//        System.out.println(poModelMaster.getEntryNo());
+//        System.out.println(poModelDetail.size());
+
+        System.out.println(poModelMaster.getEmailSentNo());
+        System.out.println(poModelMaster.getSourceNo());
+        System.out.println(poModelMaster.getCategoryCode());
         System.out.println(poModelMaster.getEntryNo());
-        System.out.println(poModelDetail.size());
+        
         if ((Integer) poModelMaster.getEntryNo() == poModelDetail.size()) {
             poJSON.put("result", "success");
             poJSON.put("message", "Record loaded successfully.");
@@ -219,15 +228,11 @@ public class PurchaseOrder implements GTranDet {
         
          poModelMaster.setCompanyID("samp");
          poModelMaster.setAddressID("samp");
-         poModelMaster.setContactID("samp");
-         poModelMaster.setReferenceNo("samp");
-         poModelMaster.setTermCode("samp");
+         poModelMaster.setContactID(poModelMaster.getContactID());
+         poModelMaster.setTermCode(poModelMaster.getTermCode());
          poModelMaster.setVATaxable("1");
          poModelMaster.setVatRate(1);
          poModelMaster.setTaxWithHolding(1);
-         poModelMaster.setDiscount(1);
-         poModelMaster.setAddDiscount(1);
-         poModelMaster.setRemarks("a");
          poModelMaster.setSourceCode("srccode1");
          poModelMaster.setCategoryCode("categcode1");
          poModelMaster.setApprovedBy("Juan Dela Cruz");
@@ -626,10 +631,10 @@ public class PurchaseOrder implements GTranDet {
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
                 fsValue,
-                "Transaction No»Date»Refer No",
-                "sTransNox»dTransact»sReferNox",
-                "sTransNox»dTransact»sReferNox",
-                fbByCode ? 0 : 2);
+                "Transaction No»Destination»Supplier",
+                "sTransNox»sDestinat»sSupplier",
+                "sTransNox»sDestinat»sSupplier",
+                fbByCode ? 0 : 1);
 
         if (poJSON != null) {
             poJSON= openTransaction((String) poJSON.get("sTransNox"));
@@ -663,13 +668,13 @@ public class PurchaseOrder implements GTranDet {
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
                 fsValue,
-                "Destination»Date»Refer No",
-                "sDestinat»dTransact»sReferNox",
-                "sDestinat»dTransact»sReferNox",
-                fbByCode ? 0 : 2);
+                "Destination»Transaction No»Supplier",
+                "sDestinat»sTransNox»sSupplier",
+                "sDestinat»sTransNox»sSupplier",
+                fbByCode ? 0 : 0);
 
         if (poJSON != null) {
-            return openTransaction((String) poJSON.get("sDestinat"));
+            return openTransaction((String) poJSON.get("sTransNox"));
 
         } else {
             poJSON.put("result", "error");
@@ -699,13 +704,13 @@ public class PurchaseOrder implements GTranDet {
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
                 fsValue,
-                "Supplier»Date»Refer No",
-                "sSupplier»dTransact»sReferNox",
-                "sSupplier»dTransact»sReferNox",
-                fbByCode ? 0 : 2);
+                "Supplier»Transaction No»Destination",
+                "sSupplier»sTransNox»sDestinat",
+                "sSupplier»sTransNox»sDestinat",
+                fbByCode ? 0 : 0);
 
         if (poJSON != null) {
-            return openTransaction((String) poJSON.get("sSupplier"));
+            return openTransaction((String) poJSON.get("sTransNox"));
 
         } else {
             poJSON.put("result", "error");
@@ -949,7 +954,7 @@ public class PurchaseOrder implements GTranDet {
             loJSON.put("message", "Model Detail is empty");
             return loJSON;
         }
-        Client_Master loClient_Master = GetClient_Master("", true, poGRider.getBranchCode()); //poModelMaster.getPreparedBy()
+        Client_Master loClient_Master = GetClient_Master("M00124000005", true, poGRider.getBranchCode()); //poModelMaster.getPreparedBy()
 
         //Create the parameter
         Map<String, Object> params = new HashMap<>();

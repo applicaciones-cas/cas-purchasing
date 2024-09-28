@@ -237,7 +237,7 @@ public class Model_PO_Detail implements GEntity {
         poJSON = new JSONObject();
 
         String lsSQL = getSQL();
-
+        //go detail
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
                 + " AND a.sStockIDx = " + SQLUtil.toSQL(fsCondition));
@@ -606,7 +606,7 @@ public class Model_PO_Detail implements GEntity {
                 + " FROM " + getTable() + " a "
                 + " LEFT JOIN Inventory b ON  a.sStockIDx =  b.sStockIDx "
                 + " LEFT JOIN Category_Level2 c ON b.sCategCd1 = c.sCategrCd "
-                + " LEFT JOIN Category d ON b.sCategrCd = d.sCategCd1 ";
+                + " LEFT JOIN Category d ON b.sCategCd1 = d.sCategrCd ";
 
         return lsSQL;
     }
