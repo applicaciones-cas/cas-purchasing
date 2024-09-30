@@ -303,6 +303,7 @@ public class Model_PO_Detail implements GEntity {
                     //replace the condition based on the primary key column of the record and additional primary column
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
                             + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+                    System.out.println(lsSQL);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -334,6 +335,7 @@ public class Model_PO_Detail implements GEntity {
      * Prints all the public methods used<br>
      * and prints the column names of this entity.
      */
+ 
     @Override
     public void list() {
         Method[] methods = this.getClass().getMethods();

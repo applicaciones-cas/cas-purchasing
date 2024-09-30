@@ -60,6 +60,7 @@ public class PurchaseOrder implements GTranDet {
     private boolean pbWthParent;
     private int pnEditMode;
     private String psTranStatus;
+    public boolean psSavingStatus;
 
     Model_PO_Master poModelMaster;
     ArrayList<Model_PO_Detail> poModelDetail;
@@ -74,7 +75,7 @@ public class PurchaseOrder implements GTranDet {
         poModelDetail = new ArrayList<Model_PO_Detail>();
         pnEditMode = EditMode.UNKNOWN;
     }
-
+ 
     @Override
     public JSONObject newTransaction() {
         poModelMaster = new Model_PO_Master(poGRider);
@@ -137,6 +138,8 @@ public class PurchaseOrder implements GTranDet {
         return loJSON;
     }
 
+
+    
     @Override
     public JSONObject saveTransaction() {
         int lnCtr;
@@ -148,17 +151,14 @@ public class PurchaseOrder implements GTranDet {
 //            poJSON.put("message", ValidateDetails.getMessage());
 //
 //            return poJSON;
-//
 //        }
-//
 //        Validator_PO_Quotation_Request_Master ValidateMasters = new Validator_PO_Quotation_Request_Master(poModelMaster);
 //        if (!ValidateMasters.isEntryOkay()) {
 //            poJSON.put("result", "error");
 //            poJSON.put("message", ValidateMasters.getMessage());
-//
 //            return poJSON;
-//
 //        }
+
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
@@ -169,14 +169,16 @@ public class PurchaseOrder implements GTranDet {
         }
 
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
-            poModelDetail.get(lnCtr).setQtyOnHand(lnCtr);
-            poModelDetail.get(lnCtr).setTransactionNo(poModelMaster.getTransactionNo());
-            poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
-            poModelDetail.get(lnCtr).setUnitPrice(1);
-            poModelDetail.get(lnCtr).setRecOrder(1);
-            poModelDetail.get(lnCtr).setReceiveNo(1);
-            poModelDetail.get(lnCtr).setCancelledNo(1);
-            poJSON = poModelDetail.get(lnCtr).saveRecord();
+            if(getSavingStatus()){
+                poModelDetail.get(lnCtr).setQtyOnHand(lnCtr);
+                poModelDetail.get(lnCtr).setTransactionNo(poModelMaster.getTransactionNo());
+                poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
+                poModelDetail.get(lnCtr).setUnitPrice(1);
+                poModelDetail.get(lnCtr).setRecOrder(1);
+                poModelDetail.get(lnCtr).setReceiveNo(1);
+                poModelDetail.get(lnCtr).setCancelledNo(1);
+                poJSON = poModelDetail.get(lnCtr).saveRecord();
+            }
 
             if ("error".equals((String) poJSON.get("result"))) {
                 if (!pbWthParent) {
@@ -184,8 +186,8 @@ public class PurchaseOrder implements GTranDet {
                 }
                 return poJSON;
             }
-
         }
+        
         if (poModelMaster.getEditMode() == EditMode.UPDATE) {
             ArrayList<Model_PO_Detail> laOldTransaction = openTransactionDetail(poModelMaster.getTransactionNo());
 
@@ -218,7 +220,9 @@ public class PurchaseOrder implements GTranDet {
         poModelMaster.setSourceNo("samp");
         poModelMaster.setEmailSentStatus("1");
         poModelMaster.setEmailSentNo(1);
-        poModelMaster.setEntryNo(1);
+        for (lnCtr = 0; lnCtr <= poModelDetail.size() - 1; lnCtr++) {
+               poModelMaster.setEntryNo(lnCtr+1);
+        }
         poModelMaster.setCategoryCode("samp");
         poModelMaster.setPreparedDate(poGRider.getServerDate());
 //        poModelMaster.setApprovedBy("samp");
@@ -508,7 +512,6 @@ public class PurchaseOrder implements GTranDet {
     @Override
     public Model_PO_Detail getDetailModel(int fnRow) {
         return poModelDetail.get(fnRow);
-
     }
 
     @Override
@@ -848,6 +851,14 @@ public class PurchaseOrder implements GTranDet {
     public void setTransactionStatus(String fsValue) {
         psTranStatus = fsValue;
     }
+    
+    public void setSavingStatus(boolean fsValue) {
+        psSavingStatus = fsValue;
+    }
+    
+    public boolean getSavingStatus() {
+        return psSavingStatus;
+    }
 
     public ArrayList<Model_PO_Detail> openTransactionDetail(String fsTransNo) {
         ArrayList<Model_PO_Detail> loDetail = new ArrayList<>();
@@ -875,6 +886,7 @@ public class PurchaseOrder implements GTranDet {
             return new ArrayList<>();
         }
     }
+    
 
     public JSONObject AddModelDetail() {
         if (poModelDetail.isEmpty()) {
@@ -938,6 +950,11 @@ public class PurchaseOrder implements GTranDet {
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
+
+    public int getDetailModel() {
+        return poModelDetail.size();
+    }
+ 
 
     public JSONObject printRecord() {
         JSONObject loJSON = new JSONObject();
