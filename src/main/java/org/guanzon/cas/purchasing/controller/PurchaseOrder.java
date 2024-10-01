@@ -40,6 +40,7 @@ import org.guanzon.cas.parameters.Measure;
 import org.guanzon.cas.clients.Client_Master;
 import org.guanzon.cas.model.clients.Model_Client_Institution_Contact;
 import org.guanzon.cas.model.clients.Model_Client_Mobile;
+import org.guanzon.cas.parameters.Model;
 import org.guanzon.cas.parameters.Term;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
@@ -75,7 +76,7 @@ public class PurchaseOrder implements GTranDet {
         poModelDetail = new ArrayList<Model_PO_Detail>();
         pnEditMode = EditMode.UNKNOWN;
     }
- 
+
     @Override
     public JSONObject newTransaction() {
         poModelMaster = new Model_PO_Master(poGRider);
@@ -100,7 +101,7 @@ public class PurchaseOrder implements GTranDet {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-       
+
         //checkTest
         poModelDetail = openTransactionDetail(poModelMaster.getTransactionNo());
 //        System.out.println(poModelMaster.getEntryNo());
@@ -110,7 +111,7 @@ public class PurchaseOrder implements GTranDet {
         System.out.println(poModelMaster.getSourceNo());
         System.out.println(poModelMaster.getCategoryCode());
         System.out.println(poModelMaster.getEntryNo());
-        
+
         if ((Integer) poModelMaster.getEntryNo() == poModelDetail.size()) {
             poJSON.put("result", "success");
             poJSON.put("message", "Record loaded successfully.");
@@ -138,8 +139,6 @@ public class PurchaseOrder implements GTranDet {
         return loJSON;
     }
 
-
-    
     @Override
     public JSONObject saveTransaction() {
         int lnCtr;
@@ -158,28 +157,29 @@ public class PurchaseOrder implements GTranDet {
 //            poJSON.put("message", ValidateMasters.getMessage());
 //            return poJSON;
 //        }
-
         if (!pbWthParent) {
             poGRider.beginTrans();
         }
         poJSON = new JSONObject();
         //delete empty detail
+        Number lnTotalTransaction=0;
         if (poModelDetail.get(getItemCount() - 1).getStockID().equals("") && poModelDetail.get(getItemCount() - 1).getStockID().equals("")) {
             RemoveModelDetail(getItemCount() - 1);
         }
-
+        System.out.println("this is saving status " +getSavingStatus());
+        
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
-            if(getSavingStatus()){
+            if (getSavingStatus()) {
                 poModelDetail.get(lnCtr).setQtyOnHand(lnCtr);
                 poModelDetail.get(lnCtr).setTransactionNo(poModelMaster.getTransactionNo());
                 poModelDetail.get(lnCtr).setEntryNo(lnCtr + 1);
-                poModelDetail.get(lnCtr).setUnitPrice(1);
-                poModelDetail.get(lnCtr).setRecOrder(1);
+//                poModelDetail.get(lnCtr).setUnitPrice(1);
+//                poModelDetail.get(lnCtr).setRecOrder(1);
+                lnTotalTransaction=poModelDetail.get(lnCtr).getUnitPrice().doubleValue()+lnTotalTransaction.doubleValue();
                 poModelDetail.get(lnCtr).setReceiveNo(1);
                 poModelDetail.get(lnCtr).setCancelledNo(1);
                 poJSON = poModelDetail.get(lnCtr).saveRecord();
             }
-
             if ("error".equals((String) poJSON.get("result"))) {
                 if (!pbWthParent) {
                     poGRider.rollbackTrans();
@@ -187,7 +187,7 @@ public class PurchaseOrder implements GTranDet {
                 return poJSON;
             }
         }
-        
+
         if (poModelMaster.getEditMode() == EditMode.UPDATE) {
             ArrayList<Model_PO_Detail> laOldTransaction = openTransactionDetail(poModelMaster.getTransactionNo());
 
@@ -213,45 +213,42 @@ public class PurchaseOrder implements GTranDet {
                 }
             }
         }
-        poModelMaster.setTransactionTotal(1);
+        poModelMaster.setTransactionTotal(lnTotalTransaction);
         poModelMaster.setAmountPaid(1);
         poModelMaster.setNetTotal(1);
         poModelMaster.setSourceCode("samp");
         poModelMaster.setSourceNo("samp");
         poModelMaster.setEmailSentStatus("1");
         poModelMaster.setEmailSentNo(1);
+
         for (lnCtr = 0; lnCtr <= poModelDetail.size() - 1; lnCtr++) {
-               poModelMaster.setEntryNo(lnCtr+1);
+            poModelMaster.setEntryNo(lnCtr + 1);
         }
-        poModelMaster.setCategoryCode("samp");
+        poModelMaster.setCategoryCode("0001");
         poModelMaster.setPreparedDate(poGRider.getServerDate());
 //        poModelMaster.setApprovedBy("samp");
 //        poModelMaster.setPostedBy("samp");
 
-        
-        
-         poModelMaster.setCompanyID("samp");
-         poModelMaster.setAddressID("samp");
-         poModelMaster.setContactID(poModelMaster.getContactID());
-         poModelMaster.setTermCode(poModelMaster.getTermCode());
-         poModelMaster.setVATaxable("1");
-         poModelMaster.setVatRate(1);
-         poModelMaster.setTaxWithHolding(1);
-         poModelMaster.setSourceCode("srccode1");
-         poModelMaster.setCategoryCode("categcode1");
-         poModelMaster.setApprovedBy("Juan Dela Cruz");
-         poModelMaster.setApprovedate(poGRider.getServerDate());
-         poModelMaster.setPostedBy("name");
-         poModelMaster.setPostedDate(poGRider.getServerDate());
-         poModelMaster.setModifiedBy("name");
-         poModelMaster.setModifiedDate(poGRider.getServerDate());
-        
+        poModelMaster.setCompanyID("samp");
+        poModelMaster.setAddressID("samp");
+        poModelMaster.setContactID(poModelMaster.getContactID());
+        poModelMaster.setTermCode(poModelMaster.getTermCode());
+        poModelMaster.setVATaxable("1");
+        poModelMaster.setVatRate(1);
+        poModelMaster.setTaxWithHolding(1);
+        poModelMaster.setSourceCode("srccode1");
+        poModelMaster.setApprovedBy("Juan Dela Cruz");
+        poModelMaster.setApprovedate(poGRider.getServerDate());
+        poModelMaster.setPostedBy("name");
+        poModelMaster.setPostedDate(poGRider.getServerDate());
+        poModelMaster.setModifiedBy("name");
+        poModelMaster.setModifiedDate(poGRider.getServerDate());
+
 //        poModelMaster.setEntryNo(poModelDetail.size());
 //        poModelMaster.setPreparedDate(poGRider.getServerDate());
 ////        poModelMaster.setPreparedBy(poGRider.getUserID());
 //        poModelMaster.setModifiedBy(poGRider.getUserID());
 //        poModelMaster.setModifiedDate(poGRider.getServerDate());
-
         poJSON = poModelMaster.saveRecord();
         if ("success".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
@@ -541,8 +538,7 @@ public class PurchaseOrder implements GTranDet {
 
     }
 
-    public void jasper_report(String n) {
-    }
+
 
     @Override
     public JSONObject searchDetail(int fnRow, String fsColumn, String fsValue, boolean fbByCode) {
@@ -564,7 +560,7 @@ public class PurchaseOrder implements GTranDet {
 
                 if (loJSON != null) {
                     String newStockID = (String) loInventory.getMaster("sStockIDx");
-
+                    System.out.println(fsValue);
                     boolean isDuplicate = false;
 
                     for (int i = 0; i < poModelDetail.size(); i++) {
@@ -580,10 +576,16 @@ public class PurchaseOrder implements GTranDet {
 
                     if (!isDuplicate) {
                         // No duplicate found, add new details
-                        setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
-                        setDetail(fnRow, "xCategrNm", (String) loInventory.getMaster("xCategNm2"));
+
                         setDetail(fnRow, "sDescript", (String) loInventory.getMaster("sDescript"));
-                        loJSON = setDetail(fnRow, "xInvTypNm", (String) loInventory.getMaster("xInvTypNm"));
+                        setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
+//                        setDetail(fnRow, "xCategrNm", (String) loInventory.getMaster("xCategNm2"));
+//                        setDetail(fnRow, "xInvTypNm", (String) loInventory.getMaster("xInvTypNm"));
+                        
+//                        Brand loCategrNm = new Brand(poGRider, true);
+//                        loCategrNm.openRecord( (String) loInventory.getMaster("sBrandIDx"));
+//                        setMaster( "xCategrNm", (String) loCategrNm.getMaster("sDescript"));
+                        
                     }
 
                     return loJSON;
@@ -640,7 +642,7 @@ public class PurchaseOrder implements GTranDet {
                 fbByCode ? 0 : 1);
 
         if (poJSON != null) {
-            poJSON= openTransaction((String) poJSON.get("sTransNox"));
+            poJSON = openTransaction((String) poJSON.get("sTransNox"));
 
         } else {
             poJSON.put("result", "error");
@@ -851,11 +853,11 @@ public class PurchaseOrder implements GTranDet {
     public void setTransactionStatus(String fsValue) {
         psTranStatus = fsValue;
     }
-    
+
     public void setSavingStatus(boolean fsValue) {
         psSavingStatus = fsValue;
     }
-    
+
     public boolean getSavingStatus() {
         return psSavingStatus;
     }
@@ -886,7 +888,6 @@ public class PurchaseOrder implements GTranDet {
             return new ArrayList<>();
         }
     }
-    
 
     public JSONObject AddModelDetail() {
         if (poModelDetail.isEmpty()) {
@@ -951,10 +952,10 @@ public class PurchaseOrder implements GTranDet {
         return instance;
     }
 
+
     public int getDetailModel() {
         return poModelDetail.size();
     }
- 
 
     public JSONObject printRecord() {
         JSONObject loJSON = new JSONObject();
