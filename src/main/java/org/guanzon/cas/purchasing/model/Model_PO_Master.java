@@ -1,4 +1,5 @@
 package org.guanzon.cas.purchasing.model;
+
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,10 +27,11 @@ public class Model_PO_Master implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
-    private String fsExclude="xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»sDescript»"
-                +"nQtyOnHnd»nOrderQty";
+    private String fsExclude = "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+            + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
+            + "xCategrNm»sDescript»"
+            + "nQtyOnHnd»nOrderQty";
+
     /**
      * Entity constructor
      *
@@ -155,13 +157,13 @@ public class Model_PO_Master implements GEntity {
     @Override
     public JSONObject setValue(int fnColumn, Object foValue) {
         try {
-            System.out.println(MiscUtil.getColumnLabel(poEntity, fnColumn) +" "+ foValue);
-            
+            System.out.println(MiscUtil.getColumnLabel(poEntity, fnColumn) + " " + foValue);
+
             poJSON = MiscUtil.validateColumnValue(System.getProperty("sys.default.path.metadata") + XML, MiscUtil.getColumnLabel(poEntity, fnColumn), foValue);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
-            
+
             poEntity.updateObject(fnColumn, foValue);
             poEntity.updateRow();
 
@@ -229,11 +231,11 @@ public class Model_PO_Master implements GEntity {
         // open po_master
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
-        
+
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (loRS.next()) {
-                
+
                 for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
                     setValue(lnCtr, loRS.getObject(lnCtr));
                 }
@@ -264,7 +266,6 @@ public class Model_PO_Master implements GEntity {
         poJSON = new JSONObject();
 
 //        poModelMaster.setModifiedDate(poGRider.getServerDate());
-
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
             if (pnEditMode == EditMode.ADDNEW) {
@@ -562,7 +563,6 @@ public class Model_PO_Master implements GEntity {
         return (Number) getValue("nVatRatex");
     }
 
-
     /**
      * Description: Sets the nTWithHld of this record.
      *
@@ -754,9 +754,8 @@ public class Model_PO_Master implements GEntity {
      * @return The nEntryNox of this record.
      */
     public Number getEntryNo() {
-        return  (Number) getValue("nEntryNox");
+        return (Number) getValue("nEntryNox");
     }
-    
 
     /**
      * Description: Sets the sCategrCd of this record.
@@ -791,8 +790,8 @@ public class Model_PO_Master implements GEntity {
     public String getTransactionStatus() {
         return (String) getValue("cTranStat");
     }
-    
-        /**
+
+    /**
      * Description: Sets the cTranStat of this record.
      *
      * @param fsValue
@@ -808,8 +807,6 @@ public class Model_PO_Master implements GEntity {
     public String getVATaxable() {
         return (String) getValue("cVATaxabl");
     }
-
-
 
     /**
      * Description: Sets the dPrepared of this record.
@@ -1116,8 +1113,6 @@ public class Model_PO_Master implements GEntity {
     public String getCategoryName() {
         return (String) getValue("xCategrNm");
     }
-    
-
 
     /**
      * Gets the SQL statement for this entity.
@@ -1127,11 +1122,10 @@ public class Model_PO_Master implements GEntity {
     public String makeSQL() {
         return MiscUtil.makeSQL(this, fsExclude);
     }
-    
+
     public String makeSelectSQL() {
         return MiscUtil.makeSelect(this, fsExclude);
     }
-
 
     private void initialize() {
         try {
@@ -1142,17 +1136,31 @@ public class Model_PO_Master implements GEntity {
 
             MiscUtil.initRowSet(poEntity);
             poEntity.updateString("cTranStat", TransactionStatus.STATE_OPEN);
-            
+
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
             poEntity.updateInt("nEntryNox", 0);
 
+            setEmailSentStatus("");
+            setEmailSentNo(1);
+            setSourceNo("");
+            setSourceCode("");
+            setNetTotal(0);
+            setAmountPaid(0);
+            setApprovedate(null);
+            setApprovedBy("");
+            setPostedBy("");
+            setPostedDate(null);
+            setModifiedDate(null);
+            setVATaxable("1");
+            setVatRate(0);
+            setTaxWithHolding(0);
+            setSourceCode("");
+
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
             poEntity.absolute(1);
-
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1160,64 +1168,62 @@ public class Model_PO_Master implements GEntity {
         }
     }
 
-    
-    private String getSQL(){
-    String lsSQL = " SELECT "
-            + " a.sTransNox sTransNox "
-            + ", a.sBranchCd sBranchCd "
-            + ", a.dTransact dTransact "
-            + ", a.sCompnyID sCompnyID "
-            + ", a.sDestinat sDestinat "
-            + ", a.sSupplier sSupplier "
-            + ", a.sAddrssID sAddrssID "
-            + ", a.sContctID sContctID "
-            + ", a.sReferNox sReferNox "
-            + ", a.sTermCode sTermCode "
-            + ", a.nTranTotl nTranTotl "
-            + ", a.cVATaxabl cVATaxabl "
-            + ", a.nVatRatex nVatRatex "
-            + ", a.nTWithHld nTWithHld "
-            + ", a.nDiscount nDiscount "
-            + ", a.nAddDiscx nAddDiscx "
-            + ", a.nAmtPaidx nAmtPaidx "
-            + ", a.nNetTotal nNetTotal "
-            + ", a.sRemarksx sRemarksx "
-            + ", a.sSourceCd sSourceCd "
-            + ", a.sSourceNo sSourceNo "
-            + ", a.cEmailSnt cEmailSnt "
-            + ", a.nEmailSnt nEmailSnt "
-            + ", a.nEntryNox nEntryNox "
-            + ", a.sCategrCd sCategrCd "
-            + ", a.cTranStat cTranStat "
-            + ", a.dPrepared dPrepared "
-            + ", a.sApproved sApproved "
-            + ", a.dApproved dApproved "
-            + ", a.sAprvCode sAprvCode "
-            + ", a.sPostedxx sPostedxx "
-            + ", a.dPostedxx dPostedxx "
-            + ", a.sModified sModified "
-            + ", a.dModified dModified "
-            + ", b.sBranchNm xBranchNm "
-            + ", c.sCompnyNm xCompnyNm "
-            + ", d.sBranchNm xDestinat "
-            + ", e.sCompnyNm xSupplier "
-            + ", f.sAddressx xAddressx "
-            + ", g.sCPerson1 xCPerson1 "
-            + ", h.sCPerson1 xCPerson2 "
-            + ", i.sMobileNo xCPMobil1 "
-            + ", j.sDescript xTermName "
-            + " FROM " + getTable() + " a "
-            + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
-            + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
-            + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
-            + " LEFT JOIN Client_Master e  ON a.sSupplier = e.sClientID "
-            + " LEFT JOIN Client_Address f  ON a.sAddrssID = f.sAddrssID "
-            + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
-            + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
-            + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
-            + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
-    
-    
-    return lsSQL;
-    } 
+    private String getSQL() {
+        String lsSQL = " SELECT "
+                + " a.sTransNox sTransNox "
+                + ", a.sBranchCd sBranchCd "
+                + ", a.dTransact dTransact "
+                + ", a.sCompnyID sCompnyID "
+                + ", a.sDestinat sDestinat "
+                + ", a.sSupplier sSupplier "
+                + ", a.sAddrssID sAddrssID "
+                + ", a.sContctID sContctID "
+                + ", a.sReferNox sReferNox "
+                + ", a.sTermCode sTermCode "
+                + ", a.nTranTotl nTranTotl "
+                + ", a.cVATaxabl cVATaxabl "
+                + ", a.nVatRatex nVatRatex "
+                + ", a.nTWithHld nTWithHld "
+                + ", a.nDiscount nDiscount "
+                + ", a.nAddDiscx nAddDiscx "
+                + ", a.nAmtPaidx nAmtPaidx "
+                + ", a.nNetTotal nNetTotal "
+                + ", a.sRemarksx sRemarksx "
+                + ", a.sSourceCd sSourceCd "
+                + ", a.sSourceNo sSourceNo "
+                + ", a.cEmailSnt cEmailSnt "
+                + ", a.nEmailSnt nEmailSnt "
+                + ", a.nEntryNox nEntryNox "
+                + ", a.sCategrCd sCategrCd "
+                + ", a.cTranStat cTranStat "
+                + ", a.dPrepared dPrepared "
+                + ", a.sApproved sApproved "
+                + ", a.dApproved dApproved "
+                + ", a.sAprvCode sAprvCode "
+                + ", a.sPostedxx sPostedxx "
+                + ", a.dPostedxx dPostedxx "
+                + ", a.sModified sModified "
+                + ", a.dModified dModified "
+                + ", b.sBranchNm xBranchNm "
+                + ", c.sCompnyNm xCompnyNm "
+                + ", d.sBranchNm xDestinat "
+                + ", e.sCompnyNm xSupplier "
+                + ", f.sAddressx xAddressx "
+                + ", g.sCPerson1 xCPerson1 "
+                + ", h.sCPerson1 xCPerson2 "
+                + ", i.sMobileNo xCPMobil1 "
+                + ", j.sDescript xTermName "
+                + " FROM " + getTable() + " a "
+                + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
+                + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
+                + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
+                + " LEFT JOIN Client_Master e  ON a.sSupplier = e.sClientID "
+                + " LEFT JOIN Client_Address f  ON a.sAddrssID = f.sAddrssID "
+                + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
+                + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
+                + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
+
+        return lsSQL;
+    }
 }

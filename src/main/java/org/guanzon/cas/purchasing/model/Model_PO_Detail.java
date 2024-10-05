@@ -626,6 +626,15 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
+           
+            setQuantity(0);
+            setQtyOnHand(0);
+            setCancelledNo(0);
+            setReceiveNo(0);
+
+
+
+            
             newRecord();
 
         } catch (SQLException e) {
