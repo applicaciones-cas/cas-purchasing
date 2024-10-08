@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -55,6 +56,7 @@ import org.json.simple.JSONArray;
 
 import org.json.simple.JSONObject;
 
+
 /**
  *
  * @author Maynard
@@ -69,6 +71,7 @@ public class PurchaseOrder implements GTranDet {
 
     Model_PO_Master poModelMaster;
     ArrayList<Model_PO_Detail> poModelDetail;
+    
 
     JSONObject poJSON;
 
@@ -98,7 +101,8 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject openTransaction(String fsValue) {
-
+        
+        poModelDetail = new ArrayList<Model_PO_Detail>();
         poModelMaster = new Model_PO_Master(poGRider);
 
         //open the master table
@@ -533,74 +537,6 @@ public class PurchaseOrder implements GTranDet {
 
     }
 
-    
-    //Sample for Testing
-//    public JSONObject searchDetail2(int fnRow, String fsColumn, String fsValue, boolean fbByCode) {
-//
-//        String lsHeader = "";
-//        String lsColName = "";
-//        String lsColCrit = "";
-//        String lsSQL = "";
-//        String lsCondition = "";
-//        JSONObject loJSON;
-//
-//        switch (fsColumn) {
-//
-////            case "sDescript": // sDescript
-//      
-//            case "sStockIDx": // 3 // 8-xCategrNm // 9-xInvTypNm
-//                PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
-//                loJSON = loPO_Quotation.searchRecord(fsValue, fbByCode);
-//                double lnTotalTransaction = 0;
-//
-//                Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
-//
-//                if (loJSON != null) {
-//                    String newStockID = (String) loPO_Quotation.getMaster("sStockIDx");
-//                    System.out.println(fsValue);
-//                    boolean isDuplicate = false;
-//
-//                    for (int i = 0; i < poModelDetail.size() - 1; i++) {
-//                        String existingStockID = (String) poModelDetail.get(i).getValue("sStockIDx");
-//
-//                        if (newStockID.equals(existingStockID)) {
-//                            // Duplicate found, increment quantity by 1
-//                            int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
-//                            poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
-//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
-//                            isDuplicate = true;
-//                            break;
-//                        } else {
-//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
-//                            System.out.println(lnTotalTransaction);
-//                        }
-//                    }
-//
-////                    setMaster("nTranTotl", lnTotalTransaction); // make an additition of unitprce
-//                    if (!isDuplicate) {
-//                        // No duplicate found, add new details
-//                        lo_inv_stock_request_detail = this.GetModel_Inv_Stock_Request_Detail(newStockID);
-//
-//                        setDetail(fnRow, "sDescript", (String) loPO_Quotation.getMaster("sDescript"));
-//                        setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getMaster("sStockIDx"));
-//                        setDetail(fnRow, "nUnitPrce", loPO_Quotation.getMaster("nUnitPrce"));
-//                        
-//                        setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
-//                        setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
-//
-//                    }
-//                    return loJSON;
-//                } else {
-//                    loJSON = new JSONObject();
-//                    loJSON.put("result", "error");
-//                    loJSON.put("message", "No Transaction found.");
-//                    return loJSON;
-//                }
-//            default:
-//                return null;
-//
-//        }
-//    }
     @Override
     public JSONObject searchDetail(int fnRow, String fsColumn, String fsValue, boolean fbByCode) {
 
@@ -642,7 +578,6 @@ public class PurchaseOrder implements GTranDet {
                             System.out.println(lnTotalTransaction);
                         }
                     }
-
 //                    setMaster("nTranTotl", lnTotalTransaction); // make an additition of unitprce
                     if (!isDuplicate) {
                         // No duplicate found, add new details
@@ -653,12 +588,6 @@ public class PurchaseOrder implements GTranDet {
                         setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
                         setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
                         setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
-
-//                        setDetail(fnRow, "xCategrNm", (String) loInventory.getMaster("xCategNm2"));
-//                        setDetail(fnRow, "xInvTypNm", (String) loInventory.getMaster("xInvTypNm"));
-//                        Brand loCategrNm = new Brand(poGRider, true);
-//                        loCategrNm.openRecord( (String) loInventory.getMaster("sBrandIDx"));
-//                        setMaster( "xCategrNm", (String) loCategrNm.getMaster("sDescript"));
                     }
                     return loJSON;
                 } else {
@@ -667,6 +596,94 @@ public class PurchaseOrder implements GTranDet {
                     loJSON.put("message", "No Transaction found.");
                     return loJSON;
                 }
+            case "sTransNox":
+
+                PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
+                loPO_Quotation.setTransactionStatus("1");
+                loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
+                pnEditMode = EditMode.READY;
+
+                double lnTotalTransaction2 = 0;
+                int lndetailsize = poModelDetail.size() - 1;
+                int lndetailsize2 = poModelDetail.size() - 2;
+                
+//                for (int i = 0; i < lndetailsize; i++) {
+//                    RemoveModelDetail(i);
+//                }
+                
+//                openTransaction(poModelMaster.getTransactionNo());    
+
+                
+                if (loJSON != null) {
+                    HashMap<Integer, String> map = new HashMap<>();
+                    for (int i = 0; i < lndetailsize; i++) {
+                        map.put(i, String.valueOf(poModelDetail.get(i).getStockID()));
+                        
+                    }
+
+                    for (int i = 0; i < loPO_Quotation.getItemCount(); i++) {
+                        String newStockID = String.valueOf(loPO_Quotation.getDetailModel(i).getStockID());
+                        System.out.println(fsValue);
+                        boolean isDuplicate = false;
+
+//                        for (int i2 = 0; i2 < lndetailsize; i2++) {
+//                            String existingStockID = (String) poModelDetail.get(i2).getValue("sStockIDx");            
+
+                            if (false) {
+//                                int[] lnrow = {0};
+//                                map.forEach((lnrow2, value) -> {
+//                                    if (value.equals(existingStockID)) {
+//                                        lnrow[0] = lnrow2;
+//                                    }
+//                                });
+//                                setDetail(lnrow[0], "sTransNox", this.getMasterModel().getTransactionNo());
+//                                setDetail(lnrow[0], "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+//                                setDetail(lnrow[0], "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+//                                setDetail(lnrow[0], "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+//                                setDetail(lnrow[0], "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+//                                setDetail(lnrow[0], "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+//                                isDuplicate = true;
+                                continue;
+                            } 
+                            else {
+                                
+                                loJSON = AddModelDetail();
+                                if ("Information".equals((String) poJSON.get("result"))) {
+                                    fnRow = poModelDetail.size() - 1;
+                                    setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
+                                    AddModelDetail();
+                                    fnRow = poModelDetail.size() - 1;
+                                    setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
+                                    setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+                                    setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+                                    setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+                                    setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+                                    setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+                                    continue;
+                                } else {
+                                    fnRow = poModelDetail.size() - 1;
+                                    setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
+                                    setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+                                    setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+                                    setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+                                    setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+                                    setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+                                    continue;
+                                }
+                            }
+//                        }
+                    }
+                    
+                    setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber()); // CompanyName
+
+                    return loJSON;
+                } else {
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
+
             default:
                 return null;
 
@@ -676,7 +693,6 @@ public class PurchaseOrder implements GTranDet {
     @Override
     public JSONObject searchDetail(int fnRow, int fnColumn, String fsValue, boolean fbByCode) {
         return searchDetail(fnRow, poModelDetail.get(fnRow).getColumn(fnColumn), fsValue, fbByCode);
-
     }
 
     @Override
@@ -1078,6 +1094,7 @@ public class PurchaseOrder implements GTranDet {
             loJSON.put("message", "Model Detail is empty");
             return loJSON;
         }
+
         Client_Master loClient_Master = GetClient_Master(poModelMaster.getSupplier(), true, poGRider.getBranchCode()); //poModelMaster.getPreparedBy()
 
         //Create the parameter
@@ -1089,7 +1106,10 @@ public class PurchaseOrder implements GTranDet {
         params.put("sReportNm", "samp");
         params.put("sReportDt", "samp");
         params.put("sPrintdBy", "samp"); //poModelMaster.getPreparedBy()
-        params.put("sCompnyNm", "Guanzon Group");
+
+        Branch loCompnyNm = GetBranch(poGRider.getBranchCode());
+        Company loCompnyName = GetCompany(loCompnyNm.getModel().getCompanyID(), true);
+        params.put("sCompnyNm", loCompnyName.getModel().getCompanyName());
 
         params.put("sTransNox", poModelMaster.getTransactionNo());
         params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));

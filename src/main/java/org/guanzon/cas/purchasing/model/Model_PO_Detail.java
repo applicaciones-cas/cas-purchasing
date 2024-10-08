@@ -631,6 +631,7 @@ public class Model_PO_Detail implements GEntity {
             setQtyOnHand(0);
             setCancelledNo(0);
             setReceiveNo(0);
+            setRecOrder(0);
 
 
 
