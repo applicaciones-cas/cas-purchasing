@@ -8,7 +8,6 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.TransactionStatus;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
-import org.guanzon.cas.purchasing.testing.*;
 import org.json.simple.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
