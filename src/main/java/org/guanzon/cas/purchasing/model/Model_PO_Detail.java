@@ -490,6 +490,25 @@ public class Model_PO_Detail implements GEntity {
     public int getQuantity() {
         return (Integer) getValue("nQuantity");
     }
+    
+    
+        /**
+     * Description: Sets the nQuantity of this record.
+     *
+     * @param fnValue
+     * @return True if the record assignment is successful.
+     */
+    public JSONObject setOriginalCost(Number fnValue) {
+        return setValue("nOrigCost", fnValue);
+    }
+
+    /**
+     * @return The nQuantity of this record.
+     */
+    public Number getOriginalCost() {
+        return (Number) getValue("nOrigCost");
+    }
+    
 
     /**
      * Description: Sets the nUnitPrce of this record.
@@ -597,6 +616,7 @@ public class Model_PO_Detail implements GEntity {
                 + ", a.nEntryNox nEntryNox "
                 + ", a.sStockIDx sStockIDx "
                 + ", a.sDescript sDescript "
+                + ", a.nOrigCost nOrigCost "
                 + ", a.nQtyOnHnd nQtyOnHnd "
                 + ", a.nRecOrder nRecOrder "
                 + ", a.nQuantity nQuantity "
@@ -632,9 +652,7 @@ public class Model_PO_Detail implements GEntity {
             setCancelledNo(0);
             setReceiveNo(0);
             setRecOrder(0);
-
-
-
+            setOriginalCost(0);
             
             newRecord();
 

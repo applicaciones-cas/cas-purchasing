@@ -228,8 +228,6 @@ public class Model_PO_Master implements GEntity {
         poJSON = new JSONObject();
 
         String lsSQL = getSQL();
-        // open po_master
-        //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -265,7 +263,6 @@ public class Model_PO_Master implements GEntity {
     public JSONObject saveRecord() {
         poJSON = new JSONObject();
 
-//        poModelMaster.setModifiedDate(poGRider.getServerDate());
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
             if (pnEditMode == EditMode.ADDNEW) {
@@ -314,9 +311,9 @@ public class Model_PO_Master implements GEntity {
                 }
             }
         } else {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "Invalid update mode. Unable to save record.");
-//            return poJSON;
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid update mode. Unable to save record.");
+            return poJSON;
         }
 
         return poJSON;
@@ -845,7 +842,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dApproved of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setApprovedate(Date fdValue) {
@@ -896,7 +893,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dPostedxx of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setPostedDate(Date fdValue) {
@@ -930,7 +927,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dModified of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setModifiedDate(Date fdValue) {
