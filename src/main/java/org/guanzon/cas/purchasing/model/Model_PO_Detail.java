@@ -1,7 +1,5 @@
 package org.guanzon.cas.purchasing.model;
-
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -28,6 +26,11 @@ public class Model_PO_Detail implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
+    private String fsExclude = "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+            + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
+            + "xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
+            + "nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
+            + "nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx";
 
     /**
      * Entity constructor
@@ -204,7 +207,6 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject newRecord() {
         pnEditMode = EditMode.ADDNEW;
 
-        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -234,12 +236,12 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject openRecord(String lsFilter, String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, "xCategrNm»xInvTypNm");
-
+        String lsSQL = getSQL();
+        //go detail
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
-                + "AND sStockIDx = " + SQLUtil.toSQL(fsCondition));
-
+                + " AND a.sStockIDx = " + SQLUtil.toSQL(fsCondition));
+        System.out.println(lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
         try {
@@ -271,6 +273,7 @@ public class Model_PO_Detail implements GEntity {
      */
     @Override
     public JSONObject saveRecord() {
+
         poJSON = new JSONObject();
 
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
@@ -298,8 +301,9 @@ public class Model_PO_Detail implements GEntity {
 
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record and additional primary column
-                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            +  "sStockIDx = " + SQLUtil.toSQL(this.getStockID()), "xCategrNm»xInvTypNm");
+                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
+                            + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+                    System.out.println(lsSQL);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -331,6 +335,7 @@ public class Model_PO_Detail implements GEntity {
      * Prints all the public methods used<br>
      * and prints the column names of this entity.
      */
+ 
     @Override
     public void list() {
         Method[] methods = this.getClass().getMethods();
@@ -435,11 +440,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nQtyOnHnd of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setQtyOnHand(int fsValue) {
-        return setValue("nQtyOnHnd", fsValue);
+    public JSONObject setQtyOnHand(int fnValue) {
+        return setValue("nQtyOnHnd", fnValue);
     }
 
     /**
@@ -448,49 +453,35 @@ public class Model_PO_Detail implements GEntity {
     public int getQtyOnHand() {
         return (Integer) getValue("nQtyOnHnd");
     }
+    
 
     /**
-     * Description: Sets the nROQQtyxx of this record.
+     * Description: Sets the nRecrOrder  of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setROQQuantity(int fsValue) {
-        return setValue("nROQQtyxx", fsValue);
+    public JSONObject setRecOrder(int fnValue) {
+        return setValue("nRecOrder", fnValue);
     }
 
     /**
-     * @return The nROQQtyxx of this record.
+     * @return The nRecrOrder  of this record.
      */
-    public int getROQQuantity() {
-        return (Integer) getValue("nROQQtyxx");
+    public int getRecOrder() {
+        return (Integer) getValue("nRecOrder");
     }
 
-    /**
-     * Description: Sets the nOrderQty of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setOrderQuantity(int fsValue) {
-        return setValue("nOrderQty", fsValue);
-    }
 
-    /**
-     * @return The nOrderQty of this record.
-     */
-    public int getOrderQuantity() {
-        return (Integer) getValue("nOrderQty");
-    }
 
     /**
      * Description: Sets the nQuantity of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setQuantity(int fsValue) {
-        return setValue("nQuantity", fsValue);
+    public JSONObject setQuantity(int fnValue) {
+        return setValue("nQuantity", fnValue);
     }
 
     /**
@@ -499,32 +490,51 @@ public class Model_PO_Detail implements GEntity {
     public int getQuantity() {
         return (Integer) getValue("nQuantity");
     }
+    
+    
+        /**
+     * Description: Sets the nQuantity of this record.
+     *
+     * @param fnValue
+     * @return True if the record assignment is successful.
+     */
+    public JSONObject setOriginalCost(Number fnValue) {
+        return setValue("nOrigCost", fnValue);
+    }
+
+    /**
+     * @return The nQuantity of this record.
+     */
+    public Number getOriginalCost() {
+        return (Number) getValue("nOrigCost");
+    }
+    
 
     /**
      * Description: Sets the nUnitPrce of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setUnitPrice(BigDecimal fsValue) {
-        return setValue("nUnitPrce", fsValue);
+    public JSONObject setUnitPrice(Number fnValue) {
+        return setValue("nUnitPrce", fnValue);
     }
 
     /**
      * @return The nUnitPrce of this record.
      */
-    public BigDecimal getUnitPrice() {
-        return (BigDecimal) getValue("nUnitPrce");
+    public Number getUnitPrice() {
+        return (Number) getValue("nUnitPrce");
     }
 
     /**
      * Description: Sets the nReceived of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setReceiveNo(int fsValue) {
-        return setValue("nReceived", fsValue);
+    public JSONObject setReceiveNo(int fnValue) {
+        return setValue("nReceived", fnValue);
     }
 
     /**
@@ -537,11 +547,11 @@ public class Model_PO_Detail implements GEntity {
     /**
      * Description: Sets the nCancelld of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setCancelledNo(int fsValue) {
-        return setValue("nCancelld", fsValue);
+    public JSONObject setCancelledNo(int fnValue) {
+        return setValue("nCancelld", fnValue);
     }
 
     /**
@@ -551,22 +561,7 @@ public class Model_PO_Detail implements GEntity {
         return (Integer) getValue("nCancelld");
     }
 
-    /**
-     * Description: Sets the dModified of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setModifiedDate(Date fdValue) {
-        return setValue("dModified", fdValue);
-    }
 
-    /**
-     * @return The dModified of this record.
-     */
-    public Date getModifiedDate() {
-        return (Date) getValue("dModified");
-    }
 
     /**
      * Description: Sets the xCategrNm of this record.
@@ -608,11 +603,34 @@ public class Model_PO_Detail implements GEntity {
      * @return SQL Statement
      */
     public String makeSQL() {
-        return MiscUtil.makeSQL(this, "xCategrNm»xInvTypNm");
+        return MiscUtil.makeSQL(this, fsExclude);
     }
 
     public String makeSelectSQL() {
-        return MiscUtil.makeSelect(this, "xCategrNm»xInvTypNm");
+        return MiscUtil.makeSelect(this, fsExclude);
+    }
+
+    private String getSQL() {
+        String lsSQL = " SELECT "
+                + " a.sTransNox sTransNox "
+                + ", a.nEntryNox nEntryNox "
+                + ", a.sStockIDx sStockIDx "
+                + ", a.sDescript sDescript "
+                + ", a.nOrigCost nOrigCost "
+                + ", a.nQtyOnHnd nQtyOnHnd "
+                + ", a.nRecOrder nRecOrder "
+                + ", a.nQuantity nQuantity "
+                + ", a.nUnitPrce nUnitPrce "
+                + ", a.nReceived nReceived "
+                + ", a.nCancelld nCancelld "
+                + ", c.sDescript xCategrNm "
+                + ", d.sDescript xInvTypNm "
+                + " FROM " + getTable() + " a "
+                + " LEFT JOIN Inventory b ON  a.sStockIDx =  b.sStockIDx "
+                + " LEFT JOIN Category_Level2 c ON b.sCategCd1 = c.sCategrCd "
+                + " LEFT JOIN Category d ON b.sCategCd1 = d.sCategrCd ";
+
+        return lsSQL;
     }
 
     private void initialize() {
@@ -628,12 +646,23 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
+           
+            setQuantity(0);
+            setQtyOnHand(0);
+            setCancelledNo(0);
+            setReceiveNo(0);
+            setRecOrder(0);
+            setOriginalCost(0);
+            
+            newRecord();
 
-            pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
     }
+
+
+
 
 }

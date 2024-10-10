@@ -1,12 +1,12 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 import javax.sql.rowset.CachedRowSet;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -27,6 +27,10 @@ public class Model_PO_Master implements GEntity {
     CachedRowSet poEntity;          //rowset
     JSONObject poJSON;              //json container
     int pnEditMode;                 //edit mode
+    private String fsExclude = "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
+            + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
+            + "xCategrNm»sDescript»"
+            + "nQtyOnHnd»nOrderQty";
 
     /**
      * Entity constructor
@@ -153,6 +157,8 @@ public class Model_PO_Master implements GEntity {
     @Override
     public JSONObject setValue(int fnColumn, Object foValue) {
         try {
+            System.out.println(MiscUtil.getColumnLabel(poEntity, fnColumn) + " " + foValue);
+
             poJSON = MiscUtil.validateColumnValue(System.getProperty("sys.default.path.metadata") + XML, MiscUtil.getColumnLabel(poEntity, fnColumn), foValue);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -205,7 +211,7 @@ public class Model_PO_Master implements GEntity {
 
         //replace with the primary key column info
         setTransactionNo(MiscUtil.getNextCode(getTable(), "sTransNox", true, poGRider.getConnection(), poGRider.getBranchCode()));
-
+        setTransactionDate(poGRider.getServerDate());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -221,17 +227,13 @@ public class Model_PO_Master implements GEntity {
     public JSONObject openRecord(String fsCondition) {
         poJSON = new JSONObject();
 
-        String lsSQL = MiscUtil.makeSelect(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
-
-        //replace the condition based on the primary key column of the record
-        lsSQL = MiscUtil.addCondition(lsSQL, fsCondition);
+        String lsSQL = getSQL();
+        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-
         try {
             if (loRS.next()) {
+
                 for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
                     setValue(lnCtr, loRS.getObject(lnCtr));
                 }
@@ -289,9 +291,7 @@ public class Model_PO_Master implements GEntity {
 
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record
-                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo()), "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, "sTransNox = " + SQLUtil.toSQL(this.getTransactionNo()), fsExclude);
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
@@ -396,14 +396,14 @@ public class Model_PO_Master implements GEntity {
      * @param fdValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTransDate(Date fdValue) {
+    public JSONObject setTransactionDate(Date fdValue) {
         return setValue("dTransact", fdValue);
     }
 
     /**
      * @return The dTransact of this record.
      */
-    public Date getTransDate() {
+    public Date getTransactionDate() {
         return (Date) getValue("dTransact");
     }
 
@@ -498,14 +498,14 @@ public class Model_PO_Master implements GEntity {
      * @param fsValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setReferNo(String fsValue) {
+    public JSONObject setReferenceNo(String fsValue) {
         return setValue("sReferNox", fsValue);
     }
 
     /**
      * @return The sReferNox of this record.
      */
-    public String getReferNo() {
+    public String getReferenceNo() {
         return (String) getValue("sReferNox");
     }
 
@@ -529,161 +529,120 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the nTranTotl of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTransactionTotal(BigDecimal fsValue) {
-        return setValue("nTranTotl", fsValue);
+    public JSONObject setTransactionTotal(Number fnValue) {
+        return setValue("nTranTotl", fnValue);
     }
 
     /**
      * @return The nTranTotl of this record.
      */
-    public BigDecimal getTransactionTotal() {
-        return (BigDecimal) getValue("nTranTotl");
+    public Number getTransactionTotal() {
+        return (Number) getValue("nTranTotl");
     }
 
     /**
      * Description: Sets the nVatRatex of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setVatRate(BigDecimal fsValue) {
-        return setValue("nVatRatex", fsValue);
+    public JSONObject setVatRate(Number fnValue) {
+        return setValue("nVatRatex", fnValue);
     }
 
     /**
      * @return The nVatRatex of this record.
      */
-    public BigDecimal getVatRate() {
-        return (BigDecimal) getValue("nVatRatex");
-    }
-
-    /**
-     * Description: Sets the nVatRatex of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setVatAmount(BigDecimal fsValue) {
-        return setValue("nVatAmtxx", fsValue);
-    }
-
-    /**
-     * @return The nVatRatex of this record.
-     */
-    public BigDecimal getVatAmount() {
-        return (BigDecimal) getValue("nVatAmtxx");
-    }
-
-    /**
-     * Sets the cVATAdded of this record.
-     *
-     * @param fsValue
-     * @return result as success/failed
-     */
-    public JSONObject setVATAdded(String fsValue) {
-        return setValue("cVATAdded", fsValue);
-    }
-
-    /**
-     * @return The cVATAdded of this record.
-     */
-    public String setVATAdded() {
-        return (String) getValue("cVATAdded");
-    }
-
-    /**
-     * @return If VAT Added is selected.
-     */
-    public boolean isVATAdded() {
-        return ((String) getValue("cVATAdded")).equals("1");
+    public Number getVatRate() {
+        return (Number) getValue("nVatRatex");
     }
 
     /**
      * Description: Sets the nTWithHld of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setTaxWithHolding(BigDecimal fsValue) {
-        return setValue("nTWithHld", fsValue);
+    public JSONObject setTaxWithHolding(Number fnValue) {
+        return setValue("nTWithHld", fnValue);
     }
 
     /**
      * @return The nTWithHld of this record.
      */
-    public BigDecimal getTaxWithHolding() {
-        return (BigDecimal) getValue("nTWithHld");
+    public Number getTaxWithHolding() {
+        return (Number) getValue("nTWithHld");
     }
 
     /**
      * Description: Sets the nDiscount of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setDiscount(BigDecimal fsValue) {
-        return setValue("nDiscount", fsValue);
+    public JSONObject setDiscount(Number fnValue) {
+        return setValue("nDiscount", fnValue);
     }
 
     /**
      * @return The nDiscount of this record.
      */
-    public BigDecimal getDiscount() {
-        return (BigDecimal) getValue("nDiscount");
+    public Number getDiscount() {
+        return (Number) getValue("nDiscount");
     }
 
     /**
      * Description: Sets the nAddDiscx of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setAddDiscount(BigDecimal fsValue) {
-        return setValue("nAddDiscx", fsValue);
+    public JSONObject setAddDiscount(Number fnValue) {
+        return setValue("nAddDiscx", fnValue);
     }
 
     /**
      * @return The nAddDiscx of this record.
      */
-    public BigDecimal getAddDiscount() {
-        return (BigDecimal) getValue("nAddDiscx");
+    public Number getAddDiscount() {
+        return (Number) getValue("nAddDiscx");
     }
 
     /**
      * Description: Sets the nAddDiscx of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setAmountPaid(BigDecimal fsValue) {
-        return setValue("nAmtPaidx", fsValue);
+    public JSONObject setAmountPaid(Number fnValue) {
+        return setValue("nAmtPaidx", fnValue);
     }
 
     /**
      * @return The nAddDiscx of this record.
      */
-    public BigDecimal getAmountPaid() {
-        return (BigDecimal) getValue("nAmtPaidx");
+    public Number getAmountPaid() {
+        return (Number) getValue("nAmtPaidx");
     }
 
     /**
      * Description: Sets the nNetTotal of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setNetTotal(BigDecimal fsValue) {
-        return setValue("nNetTotal", fsValue);
+    public JSONObject setNetTotal(Number fnValue) {
+        return setValue("nNetTotal", fnValue);
     }
 
     /**
      * @return The nNetTotal of this record.
      */
-    public BigDecimal getNetTotal() {
-        return (BigDecimal) getValue("nNetTotal");
+    public Number getNetTotal() {
+        return (Number) getValue("nNetTotal");
     }
 
     /**
@@ -781,18 +740,18 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the nEntryNox of this record.
      *
-     * @param fsValue
+     * @param fnValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setEntryNo(int fsValue) {
-        return setValue("nEntryNox", fsValue);
+    public JSONObject setEntryNo(Number fnValue) {
+        return setValue("nEntryNox", fnValue);
     }
 
     /**
      * @return The nEntryNox of this record.
      */
-    public int getEntryNo() {
-        return (Integer) getValue("nEntryNox");
+    public Number getEntryNo() {
+        return (Number) getValue("nEntryNox");
     }
 
     /**
@@ -813,23 +772,6 @@ public class Model_PO_Master implements GEntity {
     }
 
     /**
-     * Description: Sets the cPOTypexx of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setPOrderType(String fsValue) {
-        return setValue("cPOTypexx", fsValue);
-    }
-
-    /**
-     * @return The cPOTypexx of this record.
-     */
-    public String getPOrderType() {
-        return (String) getValue("cPOTypexx");
-    }
-
-    /**
      * Description: Sets the cTranStat of this record.
      *
      * @param fsValue
@@ -847,20 +789,20 @@ public class Model_PO_Master implements GEntity {
     }
 
     /**
-     * Description: Sets the sPrepared of this record.
+     * Description: Sets the cTranStat of this record.
      *
      * @param fsValue
      * @return True if the record assignment is successful.
      */
-    public JSONObject setPreparedBy(String fsValue) {
-        return setValue("sPrepared", fsValue);
+    public JSONObject setVATaxable(String fsValue) {
+        return setValue("cVATaxabl", fsValue);
     }
 
     /**
-     * @return The sPrepared of this record.
+     * @return The cTranStat of this record.
      */
-    public String getPreparedBy() {
-        return (String) getValue("sPrepared");
+    public String getVATaxable() {
+        return (String) getValue("cVATaxabl");
     }
 
     /**
@@ -900,7 +842,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dApproved of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setApprovedate(Date fdValue) {
@@ -951,7 +893,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dPostedxx of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setPostedDate(Date fdValue) {
@@ -985,7 +927,7 @@ public class Model_PO_Master implements GEntity {
     /**
      * Description: Sets the dModified of this record.
      *
-     * @param fsValue
+     * @param fdValue
      * @return True if the record assignment is successful.
      */
     public JSONObject setModifiedDate(Date fdValue) {
@@ -1168,23 +1110,6 @@ public class Model_PO_Master implements GEntity {
     public String getCategoryName() {
         return (String) getValue("xCategrNm");
     }
-    
-        /**
-     * Description: Sets the xInvTypNm of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setInvTypeName(String fsValue) {
-        return setValue("xInvTypNm", fsValue);
-    }
-
-    /**
-     * @return The xInvTypNm of this record.
-     */
-    public String getInvTypeName() {
-        return (String) getValue("xInvTypNm");
-    }
 
     /**
      * Gets the SQL statement for this entity.
@@ -1192,15 +1117,11 @@ public class Model_PO_Master implements GEntity {
      * @return SQL Statement
      */
     public String makeSQL() {
-        return MiscUtil.makeSQL(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+        return MiscUtil.makeSQL(this, fsExclude);
     }
-    
+
     public String makeSelectSQL() {
-        return MiscUtil.makeSelect(this, "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-                +"xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»" 
-                +"xCategrNm»xInvTypNm");
+        return MiscUtil.makeSelect(this, fsExclude);
     }
 
     private void initialize() {
@@ -1212,16 +1133,31 @@ public class Model_PO_Master implements GEntity {
 
             MiscUtil.initRowSet(poEntity);
             poEntity.updateString("cTranStat", TransactionStatus.STATE_OPEN);
-            
+
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
+            poEntity.updateInt("nEntryNox", 0);
+
+            setEmailSentStatus("");
+            setEmailSentNo(1);
+            setSourceNo("");
+            setSourceCode("");
+            setNetTotal(0);
+            setAmountPaid(0);
+            setApprovedate(null);
+            setApprovedBy("");
+            setPostedBy("");
+            setPostedDate(null);
+            setModifiedDate(null);
+            setVATaxable("1");
+            setVatRate(0);
+            setTaxWithHolding(0);
+            setSourceCode("");
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
             poEntity.absolute(1);
-
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1229,4 +1165,62 @@ public class Model_PO_Master implements GEntity {
         }
     }
 
+    private String getSQL() {
+        String lsSQL = " SELECT "
+                + " a.sTransNox sTransNox "
+                + ", a.sBranchCd sBranchCd "
+                + ", a.dTransact dTransact "
+                + ", a.sCompnyID sCompnyID "
+                + ", a.sDestinat sDestinat "
+                + ", a.sSupplier sSupplier "
+                + ", a.sAddrssID sAddrssID "
+                + ", a.sContctID sContctID "
+                + ", a.sReferNox sReferNox "
+                + ", a.sTermCode sTermCode "
+                + ", a.nTranTotl nTranTotl "
+                + ", a.cVATaxabl cVATaxabl "
+                + ", a.nVatRatex nVatRatex "
+                + ", a.nTWithHld nTWithHld "
+                + ", a.nDiscount nDiscount "
+                + ", a.nAddDiscx nAddDiscx "
+                + ", a.nAmtPaidx nAmtPaidx "
+                + ", a.nNetTotal nNetTotal "
+                + ", a.sRemarksx sRemarksx "
+                + ", a.sSourceCd sSourceCd "
+                + ", a.sSourceNo sSourceNo "
+                + ", a.cEmailSnt cEmailSnt "
+                + ", a.nEmailSnt nEmailSnt "
+                + ", a.nEntryNox nEntryNox "
+                + ", a.sCategrCd sCategrCd "
+                + ", a.cTranStat cTranStat "
+                + ", a.dPrepared dPrepared "
+                + ", a.sApproved sApproved "
+                + ", a.dApproved dApproved "
+                + ", a.sAprvCode sAprvCode "
+                + ", a.sPostedxx sPostedxx "
+                + ", a.dPostedxx dPostedxx "
+                + ", a.sModified sModified "
+                + ", a.dModified dModified "
+                + ", b.sBranchNm xBranchNm "
+                + ", c.sCompnyNm xCompnyNm "
+                + ", d.sBranchNm xDestinat "
+                + ", e.sCompnyNm xSupplier "
+                + ", f.sAddressx xAddressx "
+                + ", g.sCPerson1 xCPerson1 "
+                + ", h.sCPerson1 xCPerson2 "
+                + ", i.sMobileNo xCPMobil1 "
+                + ", j.sDescript xTermName "
+                + " FROM " + getTable() + " a "
+                + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
+                + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
+                + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
+                + " LEFT JOIN Client_Master e  ON a.sSupplier = e.sClientID "
+                + " LEFT JOIN Client_Address f  ON a.sAddrssID = f.sAddrssID "
+                + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
+                + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
+                + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
+
+        return lsSQL;
+    }
 }
