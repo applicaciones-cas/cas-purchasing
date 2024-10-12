@@ -1,4 +1,5 @@
 package org.guanzon.cas.purchasing.model;
+
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -335,7 +336,6 @@ public class Model_PO_Detail implements GEntity {
      * Prints all the public methods used<br>
      * and prints the column names of this entity.
      */
- 
     @Override
     public void list() {
         Method[] methods = this.getClass().getMethods();
@@ -453,10 +453,9 @@ public class Model_PO_Detail implements GEntity {
     public int getQtyOnHand() {
         return (Integer) getValue("nQtyOnHnd");
     }
-    
 
     /**
-     * Description: Sets the nRecrOrder  of this record.
+     * Description: Sets the nRecrOrder of this record.
      *
      * @param fnValue
      * @return True if the record assignment is successful.
@@ -466,13 +465,11 @@ public class Model_PO_Detail implements GEntity {
     }
 
     /**
-     * @return The nRecrOrder  of this record.
+     * @return The nRecrOrder of this record.
      */
     public int getRecOrder() {
         return (Integer) getValue("nRecOrder");
     }
-
-
 
     /**
      * Description: Sets the nQuantity of this record.
@@ -490,9 +487,8 @@ public class Model_PO_Detail implements GEntity {
     public int getQuantity() {
         return (Integer) getValue("nQuantity");
     }
-    
-    
-        /**
+
+    /**
      * Description: Sets the nQuantity of this record.
      *
      * @param fnValue
@@ -508,7 +504,6 @@ public class Model_PO_Detail implements GEntity {
     public Number getOriginalCost() {
         return (Number) getValue("nOrigCost");
     }
-    
 
     /**
      * Description: Sets the nUnitPrce of this record.
@@ -560,8 +555,6 @@ public class Model_PO_Detail implements GEntity {
     public int getCancelledNo() {
         return (Integer) getValue("nCancelld");
     }
-
-
 
     /**
      * Description: Sets the xCategrNm of this record.
@@ -646,14 +639,14 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
-           
+            setUnitPrice(0.0);
             setQuantity(0);
             setQtyOnHand(0);
             setCancelledNo(0);
             setReceiveNo(0);
             setRecOrder(0);
-            setOriginalCost(0);
-            
+            setOriginalCost(0.0);
+
             newRecord();
 
         } catch (SQLException e) {
@@ -661,8 +654,5 @@ public class Model_PO_Detail implements GEntity {
             System.exit(1);
         }
     }
-
-
-
 
 }

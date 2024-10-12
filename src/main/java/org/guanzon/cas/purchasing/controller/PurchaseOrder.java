@@ -46,6 +46,8 @@ import org.guanzon.cas.parameters.Term;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.validators.ValidatorFactory;
+import org.guanzon.cas.validators.purchaseorder.Validator_PurchaseOrder_Detail;
+import org.guanzon.cas.validators.purchaseorder.Validator_PurchaseOrder_Master;
 import org.json.simple.JSONArray;
 
 import org.json.simple.JSONObject;
@@ -143,6 +145,25 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject saveTransaction() {
         int lnCtr;
         String lsSQL;
+        
+        Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
+        boolean a=!ValidateDetails.isEntryOkay();
+        if (!ValidateDetails.isEntryOkay()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", ValidateDetails.getMessage());
+
+            return poJSON;
+
+        }
+
+        Validator_PurchaseOrder_Master ValidateMasters = new Validator_PurchaseOrder_Master(poModelMaster);
+        if (!ValidateMasters.isEntryOkay()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", ValidateMasters.getMessage());
+
+            return poJSON;
+
+        }
 
         if (!pbWthParent) {
             poGRider.beginTrans();
@@ -931,9 +952,8 @@ public class PurchaseOrder implements GTranDet {
             return loDetail;
 
         } catch (SQLException ex) {
-            // Handle exceptions by returning an empty list or logging the error
-            ex.printStackTrace();
-            return new ArrayList<>();
+// Handle exceptions by returning an empty list or logging the error
+                        return new ArrayList<>();
         }
     }
 
@@ -1034,10 +1054,6 @@ public class PurchaseOrder implements GTranDet {
         return instance;
     }
 
-    public int getDetailModel() {
-        return poModelDetail.size();
-    }
-
     public JSONObject printRecord() {
         JSONObject loJSON = new JSONObject();
         if (poModelMaster == null) {
@@ -1081,9 +1097,8 @@ public class PurchaseOrder implements GTranDet {
         params.put("sApprval1", loClient_Master.getModel().getFullName());
         params.put("sApprval2", poModelMaster.getApprovedBy());
         
-
         JSONArray loArray = new JSONArray();
-        JSONObject loJSON2 = new JSONObject();
+        JSONObject loJSON2;
 
         for (int lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
             String lsBarcode = "";
