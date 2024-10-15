@@ -145,9 +145,14 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject saveTransaction() {
         int lnCtr;
         String lsSQL;
-
+        
+        if(poModelDetail.size()<=0){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Insert at least 1 row in detail");
+            return poJSON;
+        }
+            
         Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
-        boolean a = !ValidateDetails.isEntryOkay();
         if (!ValidateDetails.isEntryOkay()) {
             poJSON.put("result", "error");
             poJSON.put("message", ValidateDetails.getMessage());
@@ -172,6 +177,8 @@ public class PurchaseOrder implements GTranDet {
         }
         int lnEntryNo = 0;
         Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
+        
+        poModelMaster.getDiscount();
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
             if (poModelMaster.getEditMode() != EditMode.DELETE) {
                 // transNox already exists and entryNox then update
@@ -579,7 +586,7 @@ public class PurchaseOrder implements GTranDet {
                     loJSON.put("message", "No Transaction found.");
                     return loJSON;
                 }
-            case "sTransNox":
+            case "sTransNox": // For Find Source
                 PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
                 loPO_Quotation.setTransactionStatus("1");
                 loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
