@@ -167,8 +167,6 @@ public class PurchaseOrder implements GTranDet {
         }
         poJSON = new JSONObject();
 
-        Inventory loInventory;
-        Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
         if (poModelDetail.get(getItemCount() - 1).getStockID().equals("") && poModelDetail.get(getItemCount() - 1).getStockID().equals("")) {
             RemoveModelDetail(getItemCount() - 1);
         }
@@ -176,9 +174,6 @@ public class PurchaseOrder implements GTranDet {
         Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
             if (poModelMaster.getEditMode() != EditMode.DELETE) {
-                lo_inv_stock_request_detail = this.GetModel_Inv_Stock_Request_Detail(poModelDetail.get(lnCtr).getStockID());
-                loInventory = this.GetInventory(poModelDetail.get(lnCtr).getStockID(), true);
-                poModelDetail.get(lnCtr).setRecOrder((int) lo_inv_stock_request_detail.getRecordOrder());
                 // transNox already exists and entryNox then update
                 poJSON = updateTransaction();
 
@@ -220,7 +215,6 @@ public class PurchaseOrder implements GTranDet {
                 }
             }
         }
-        poModelMaster.setTransactionTotal(poModelMaster.getTransactionTotal());
 
         for (lnCtr = 0; lnCtr <= poModelDetail.size() - 1; lnCtr++) {
             poModelMaster.setEntryNo(lnCtr + 1);
