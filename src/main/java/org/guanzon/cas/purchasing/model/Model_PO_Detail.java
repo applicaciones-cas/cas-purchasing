@@ -1,4 +1,5 @@
 package org.guanzon.cas.purchasing.model;
+
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -240,7 +241,39 @@ public class Model_PO_Detail implements GEntity {
         //go detail
         //replace the condition based on the primary key column of the record
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
-                + " AND a.sStockIDx = " + SQLUtil.toSQL(fsCondition));
+                + " AND a.nEntryNox = " + SQLUtil.toSQL(fsCondition));
+        System.out.println(lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        try {
+            if (loRS.next()) {
+                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
+                    setValue(lnCtr, loRS.getObject(lnCtr));
+                }
+
+                pnEditMode = EditMode.UPDATE;
+
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record to load.");
+            }
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    }
+    public JSONObject openRecord2(String lsFilter, String fsCondition) {
+        poJSON = new JSONObject();
+
+        String lsSQL = getSQL();
+        //go detail
+        //replace the condition based on the primary key column of the record
+        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
+                + " AND a.nEntryNox = " + SQLUtil.toSQL(fsCondition));
         System.out.println(lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -297,12 +330,15 @@ public class Model_PO_Detail implements GEntity {
                 Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
 
                 //replace with the primary key column info  and additional primary column
-                JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), this.getStockID());
+                //for loop
+                JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
 
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record and additional primary column
+//                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
+//                            + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+                            + " AND nEntryNox = " + SQLUtil.toSQL(this.getEntryNo()), fsExclude);
                     System.out.println(lsSQL);
 
                     if (!lsSQL.isEmpty()) {
@@ -335,7 +371,6 @@ public class Model_PO_Detail implements GEntity {
      * Prints all the public methods used<br>
      * and prints the column names of this entity.
      */
- 
     @Override
     public void list() {
         Method[] methods = this.getClass().getMethods();
@@ -453,10 +488,9 @@ public class Model_PO_Detail implements GEntity {
     public int getQtyOnHand() {
         return (Integer) getValue("nQtyOnHnd");
     }
-    
 
     /**
-     * Description: Sets the nRecrOrder  of this record.
+     * Description: Sets the nRecrOrder of this record.
      *
      * @param fnValue
      * @return True if the record assignment is successful.
@@ -466,13 +500,11 @@ public class Model_PO_Detail implements GEntity {
     }
 
     /**
-     * @return The nRecrOrder  of this record.
+     * @return The nRecrOrder of this record.
      */
     public int getRecOrder() {
         return (Integer) getValue("nRecOrder");
     }
-
-
 
     /**
      * Description: Sets the nQuantity of this record.
@@ -490,9 +522,8 @@ public class Model_PO_Detail implements GEntity {
     public int getQuantity() {
         return (Integer) getValue("nQuantity");
     }
-    
-    
-        /**
+
+    /**
      * Description: Sets the nQuantity of this record.
      *
      * @param fnValue
@@ -508,7 +539,6 @@ public class Model_PO_Detail implements GEntity {
     public Number getOriginalCost() {
         return (Number) getValue("nOrigCost");
     }
-    
 
     /**
      * Description: Sets the nUnitPrce of this record.
@@ -560,8 +590,6 @@ public class Model_PO_Detail implements GEntity {
     public int getCancelledNo() {
         return (Integer) getValue("nCancelld");
     }
-
-
 
     /**
      * Description: Sets the xCategrNm of this record.
@@ -646,14 +674,14 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
-           
+            setUnitPrice(0.0);
             setQuantity(0);
             setQtyOnHand(0);
             setCancelledNo(0);
             setReceiveNo(0);
             setRecOrder(0);
-            setOriginalCost(0);
-            
+            setOriginalCost(0.0);
+
             newRecord();
 
         } catch (SQLException e) {
@@ -661,8 +689,5 @@ public class Model_PO_Detail implements GEntity {
             System.exit(1);
         }
     }
-
-
-
 
 }

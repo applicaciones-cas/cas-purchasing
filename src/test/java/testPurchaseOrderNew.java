@@ -224,12 +224,14 @@ public class testPurchaseOrderNew {
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
              }
-//        loJSON = record.searchDetail(0, "sStockIdx", "mc", true);    
-//        if ("error".equals((String) loJSON.get("result"))) {
-//            Assert.fail((String) loJSON.get("message"));
-//        }   
+
        
         loJSON = record.getDetailModel(record.getItemCount() -1).setQtyOnHand(0);
+        if ("error".equals((String) loJSON.get("result"))) {
+            Assert.fail((String) loJSON.get("message"));
+        }
+        
+        loJSON = record.getDetailModel(record.getItemCount() - 1).setOriginalCost(0);
         if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
@@ -262,6 +264,7 @@ public class testPurchaseOrderNew {
             Assert.fail((String) loJSON.get("message"));
         }
         
+        //FOR DELETING TRANSACTION
 //        loJSON = record.deleteTransaction(record.getMasterModel().getTransactionNo());
 //        if ("error".equals((String) loJSON.get("result"))) {
 //            Assert.fail((String) loJSON.get("message"));
