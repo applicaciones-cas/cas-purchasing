@@ -150,16 +150,16 @@ public class PurchaseOrder implements GTranDet {
             poJSON.put("result", "error");
             poJSON.put("message", "Insert at least 1 row in detail");
             return poJSON;
-        }
+        }else{
+            Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
+            if (!ValidateDetails.isEntryOkay()) {
+                poJSON.put("result", "error");
+                poJSON.put("message", ValidateDetails.getMessage());
+                return poJSON;
+
+            }
             
-        Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
-        if (!ValidateDetails.isEntryOkay()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", ValidateDetails.getMessage());
-            return poJSON;
-
         }
-
         Validator_PurchaseOrder_Master ValidateMasters = new Validator_PurchaseOrder_Master(poModelMaster);
         if (!ValidateMasters.isEntryOkay()) {
             poJSON.put("result", "error");
