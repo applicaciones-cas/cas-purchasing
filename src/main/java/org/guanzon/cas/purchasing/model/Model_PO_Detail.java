@@ -266,38 +266,7 @@ public class Model_PO_Detail implements GEntity {
 
         return poJSON;
     }
-    public JSONObject openRecord2(String lsFilter, String fsCondition) {
-        poJSON = new JSONObject();
 
-        String lsSQL = getSQL();
-        //go detail
-        //replace the condition based on the primary key column of the record
-        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
-                + " AND a.nEntryNox = " + SQLUtil.toSQL(fsCondition));
-        System.out.println(lsSQL);
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-
-        try {
-            if (loRS.next()) {
-                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
-                    setValue(lnCtr, loRS.getObject(lnCtr));
-                }
-
-                pnEditMode = EditMode.UPDATE;
-
-                poJSON.put("result", "success");
-                poJSON.put("message", "Record loaded successfully.");
-            } else {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record to load.");
-            }
-        } catch (SQLException e) {
-            poJSON.put("result", "error");
-            poJSON.put("message", e.getMessage());
-        }
-
-        return poJSON;
-    }
 
     /**
      * Save the entity.
@@ -308,9 +277,14 @@ public class Model_PO_Detail implements GEntity {
     public JSONObject saveRecord() {
 
         poJSON = new JSONObject();
-
         if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             String lsSQL;
+            Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
+            JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
+
+            if ("success".equals((String) loJSON.get("result"))) {
+                pnEditMode= EditMode.UPDATE;
+            }
             if (pnEditMode == EditMode.ADDNEW) {
                 lsSQL = makeSQL();
 
@@ -327,11 +301,12 @@ public class Model_PO_Detail implements GEntity {
                     poJSON.put("message", "No record to save.");
                 }
             } else {
-                Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
-
+                loOldEntity = new Model_PO_Detail(poGRider);
+                loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
+//                Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
                 //replace with the primary key column info  and additional primary column
                 //for loop
-                JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
+//                JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
 
                 if ("success".equals((String) loJSON.get("result"))) {
                     //replace the condition based on the primary key column of the record and additional primary column

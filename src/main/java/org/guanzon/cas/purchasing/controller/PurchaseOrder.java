@@ -145,12 +145,12 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject saveTransaction() {
         int lnCtr;
         String lsSQL;
-        
-        if(poModelDetail.size()<=0){
+
+        if (poModelDetail.size() <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "Insert at least 1 row in detail");
             return poJSON;
-        }else{
+        } else {
             Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
             if (!ValidateDetails.isEntryOkay()) {
                 poJSON.put("result", "error");
@@ -158,7 +158,7 @@ public class PurchaseOrder implements GTranDet {
                 return poJSON;
 
             }
-            
+
         }
         Validator_PurchaseOrder_Master ValidateMasters = new Validator_PurchaseOrder_Master(poModelMaster);
         if (!ValidateMasters.isEntryOkay()) {
@@ -177,20 +177,19 @@ public class PurchaseOrder implements GTranDet {
         }
         int lnEntryNo = 0;
         Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
-        
+
         poModelMaster.getDiscount();
         for (lnCtr = 0; lnCtr <= getItemCount() - 1; lnCtr++) {
             if (poModelMaster.getEditMode() != EditMode.DELETE) {
                 // transNox already exists and entryNox then update
                 poJSON = updateTransaction();
-
                 lnEntryNo = (lnCtr + 1);
                 poModelDetail.get(lnCtr).setTransactionNo(poModelMaster.getTransactionNo());
                 poModelDetail.get(lnCtr).setEntryNo(lnEntryNo);
-
                 poJSON = poModelDetail.get(lnCtr).saveRecord();
             }
         }
+        
         if ("error".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
                 poGRider.rollbackTrans();
@@ -205,8 +204,11 @@ public class PurchaseOrder implements GTranDet {
                 for (int lnCtr2 = lnCtr; lnCtr2 <= laOldTransaction.size() - 1; lnCtr2++) {
                     Model_PO_Detail detail = laOldTransaction.get(lnCtr2);
 
+//                    lsSQL = "DELETE FROM " + detail.getTable()
+//                            + " WHERE nEntryNox = " + SQLUtil.toSQL(detail.getEntryNo());
                     lsSQL = "DELETE FROM " + detail.getTable()
-                            + " WHERE nEntryNox = " + SQLUtil.toSQL(detail.getEntryNo());
+                            + " WHERE sTransNox = " + SQLUtil.toSQL(poModelMaster.getTransactionNo())
+                            + " AND nEntryNox = " + SQLUtil.toSQL(detail.getEntryNo());
 
                     if (!lsSQL.isEmpty()) {
                         if (poGRider.executeQuery(lsSQL, detail.getTable(), "", "") == 0) {
@@ -230,7 +232,7 @@ public class PurchaseOrder implements GTranDet {
         poModelMaster.setPreparedDate(poGRider.getServerDate());
         poModelMaster.setModifiedBy(poGRider.getUserID());
         poModelMaster.setModifiedDate(poGRider.getServerDate());
-
+        poModelMaster.getDiscount();
         poJSON = poModelMaster.saveRecord();
         if ("success".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
@@ -410,7 +412,7 @@ public class PurchaseOrder implements GTranDet {
 
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
-            }
+            }            
 
             if (!pbWthParent) {
                 poGRider.beginTrans();
@@ -559,7 +561,6 @@ public class PurchaseOrder implements GTranDet {
                             int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
                             poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
                             lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
-                            isDuplicate = true;
                             break;
                         } else {
                             lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
@@ -608,7 +609,8 @@ public class PurchaseOrder implements GTranDet {
                         if (poModelDetail.size() - 1 < lnpo_detailsize) {
                             loJSON = AddModelDetail();
                             if ("Information".equals((String) poJSON.get("result"))) {
-                                fnRow = poModelDetail.size() - 1;
+                                fnRow =i;
+                               
                                 setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
                                 AddModelDetail();
                                 fnRow = poModelDetail.size() - 1;
@@ -621,7 +623,7 @@ public class PurchaseOrder implements GTranDet {
                                 setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
                                 continue;
                             } else {
-                                fnRow = poModelDetail.size() - 1;
+                                fnRow =i;
                                 setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                                 setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                                 setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
@@ -629,9 +631,11 @@ public class PurchaseOrder implements GTranDet {
                                 setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
                                 setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
                                 setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
+                                continue;
                             }
 
                         } else {
+                            fnRow =i;
                             setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                             setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                             setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
@@ -639,12 +643,13 @@ public class PurchaseOrder implements GTranDet {
                             setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
                             setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
                             setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
+                            continue;
                         }
                     }
 
                     if (poModelDetail.size() - 1 > lnpo_detailsize) {
                         fnRow = poModelDetail.size() - 1;
-                        for (int i = lnpo_detailsize; i <= poModelDetail.size() - 1; i++) {
+                        for (int i = fnRow; i >= loPO_Quotation.getItemCount(); i--) {
                             RemoveModelDetail(i);
                         }
                     }
