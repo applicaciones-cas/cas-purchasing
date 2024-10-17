@@ -189,7 +189,7 @@ public class PurchaseOrder implements GTranDet {
                 poJSON = poModelDetail.get(lnCtr).saveRecord();
             }
         }
-        
+
         if ("error".equals((String) poJSON.get("result"))) {
             if (!pbWthParent) {
                 poGRider.rollbackTrans();
@@ -412,7 +412,7 @@ public class PurchaseOrder implements GTranDet {
 
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
-            }            
+            }
 
             if (!pbWthParent) {
                 poGRider.beginTrans();
@@ -575,8 +575,12 @@ public class PurchaseOrder implements GTranDet {
                         setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
                         setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
                         setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
+                        setDetail(fnRow, "nQuantity", "0");
                     } else {
-                        RemoveModelDetail(poModelDetail.size() - 1);
+                        //if the pndetailrow is not in poModelDetail.size() -1 && barcoode is blank
+                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty() ) {
+                            RemoveModelDetail(poModelDetail.size() - 1);
+                        }
                     }
                     return loJSON;
                 } else {
@@ -606,8 +610,8 @@ public class PurchaseOrder implements GTranDet {
                         if (poModelDetail.size() - 1 < lnpo_detailsize) {
                             loJSON = AddModelDetail();
                             if ("Information".equals((String) poJSON.get("result"))) {
-                                fnRow =i;
-                               
+                                fnRow = i;
+
                                 setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
                                 AddModelDetail();
                                 fnRow = poModelDetail.size() - 1;
@@ -620,7 +624,7 @@ public class PurchaseOrder implements GTranDet {
                                 setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
                                 continue;
                             } else {
-                                fnRow =i;
+                                fnRow = i;
                                 setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                                 setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                                 setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
@@ -632,7 +636,7 @@ public class PurchaseOrder implements GTranDet {
                             }
 
                         } else {
-                            fnRow =i;
+                            fnRow = i;
                             setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                             setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                             setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
