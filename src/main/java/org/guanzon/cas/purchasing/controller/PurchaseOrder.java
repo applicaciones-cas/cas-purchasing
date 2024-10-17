@@ -583,9 +583,8 @@ public class PurchaseOrder implements GTranDet {
                 }
             case "sTransNox": // For Find Source
                 PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
-                loPO_Quotation.setTransactionStatus("1");
+                loPO_Quotation.setTransactionStatus("12");
                 loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
-                pnEditMode = EditMode.READY;
 
                 double lnTotalTransaction2 = 0;
                 int lndetailsize = poModelDetail.size() - 1;
@@ -629,7 +628,6 @@ public class PurchaseOrder implements GTranDet {
 
                         } else {
                             fnRow = i;
-                            setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                             setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                             setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
                             setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
@@ -647,12 +645,12 @@ public class PurchaseOrder implements GTranDet {
                         }
                     }
                     setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
-                    setMaster("sTransNox", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
                     setMaster("sReferNox", (String) loPO_Quotation.getMasterModel().getReferenceNumber());
                     setMaster("sSupplier", (String) loPO_Quotation.getMasterModel().getSupplier());
                     setMaster("sAddrssID", (String) loPO_Quotation.getMasterModel().getAddressID());
                     setMaster("sContctID", (String) loPO_Quotation.getMasterModel().getContactID());
                     setMaster("sTermCode", (String) loPO_Quotation.getMasterModel().getTermCode());
+                    setMaster("xTermName", (String) loPO_Quotation.getMasterModel().getTermName());
                     setMaster("nDiscount", loPO_Quotation.getMasterModel().getDiscount());
                     setMaster("nAddDiscx", loPO_Quotation.getMasterModel().getAddDiscx());
                     setMaster("nVatRatex", loPO_Quotation.getMasterModel().getVatRatex());
@@ -661,7 +659,6 @@ public class PurchaseOrder implements GTranDet {
                     setMaster("sRemarksx", (String) loPO_Quotation.getMasterModel().getRemarks());
                     setMaster("nEntryNox", loPO_Quotation.getMasterModel().getEntryNumber());
                     setMaster("sCategrCd", (String) loPO_Quotation.getMasterModel().getCategoryCode());
-                    setMaster("cTranStat", (String) loPO_Quotation.getMasterModel().getTransactionStatus());
 
                     return loJSON;
                 } else {
