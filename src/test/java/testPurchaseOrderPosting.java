@@ -52,7 +52,7 @@ public class testPurchaseOrderPosting {
     @Test
     public void testProgramFlow() {
         JSONObject loJSON;
-        String lsfsTransNox="M00124000037";
+        String lsfsTransNox="M00124000052";
 
         loJSON = record.openTransaction(lsfsTransNox);
         if ("error".equals((String) loJSON.get("result"))) {

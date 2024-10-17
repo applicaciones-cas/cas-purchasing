@@ -37,7 +37,7 @@ public class testPurchaseOrderVoid {
     @Test
     public void testProgramFlow() {
         JSONObject loJSON;
-        String lsfsTransNox="M00124000043";
+        String lsfsTransNox="M00124000052";
 
         loJSON = record.voidTransaction(lsfsTransNox);
         if ("error".equals((String) loJSON.get("result"))) {
