@@ -145,21 +145,13 @@ public class PurchaseOrder implements GTranDet {
     public JSONObject saveTransaction() {
         int lnCtr;
         String lsSQL;
-
-        if (poModelDetail.size() <= 0) {
+        Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
+        if (!ValidateDetails.isEntryOkay()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Insert at least 1 row in detail");
+            poJSON.put("message", ValidateDetails.getMessage());
             return poJSON;
-        } else {
-            Validator_PurchaseOrder_Detail ValidateDetails = new Validator_PurchaseOrder_Detail(poModelDetail);
-            if (!ValidateDetails.isEntryOkay()) {
-                poJSON.put("result", "error");
-                poJSON.put("message", ValidateDetails.getMessage());
-                return poJSON;
-
-            }
-
         }
+  
         Validator_PurchaseOrder_Master ValidateMasters = new Validator_PurchaseOrder_Master(poModelMaster);
         if (!ValidateMasters.isEntryOkay()) {
             poJSON.put("result", "error");
@@ -614,7 +606,7 @@ public class PurchaseOrder implements GTranDet {
 
                                 setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
                                 AddModelDetail();
-                                fnRow = poModelDetail.size() - 1;
+//                                fnRow = poModelDetail.size() - 1;
                                 setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                                 setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                                 setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
