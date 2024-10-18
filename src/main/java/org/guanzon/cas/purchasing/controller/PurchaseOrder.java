@@ -151,7 +151,7 @@ public class PurchaseOrder implements GTranDet {
             poJSON.put("message", ValidateDetails.getMessage());
             return poJSON;
         }
-  
+
         Validator_PurchaseOrder_Master ValidateMasters = new Validator_PurchaseOrder_Master(poModelMaster);
         if (!ValidateMasters.isEntryOkay()) {
             poJSON.put("result", "error");
@@ -570,7 +570,7 @@ public class PurchaseOrder implements GTranDet {
                         setDetail(fnRow, "nQuantity", "0");
                     } else {
                         //if the pndetailrow is not in poModelDetail.size() -1 && barcoode is blank
-                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty() ) {
+                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
                             RemoveModelDetail(poModelDetail.size() - 1);
                         }
                     }
@@ -585,11 +585,10 @@ public class PurchaseOrder implements GTranDet {
                 PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
                 loPO_Quotation.setTransactionStatus("12");
                 loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
-
                 double lnTotalTransaction2 = 0;
                 int lndetailsize = poModelDetail.size() - 1;
                 int lnpo_detailsize = loPO_Quotation.getItemCount() - 1;
-
+                
                 if (loJSON != null) {
                     for (int i = 0; i < loPO_Quotation.getItemCount(); i++) {
                         fnRow = i;
@@ -605,7 +604,7 @@ public class PurchaseOrder implements GTranDet {
 
                                 setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
                                 AddModelDetail();
-//                                fnRow = poModelDetail.size() - 1;
+                                
                                 setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
                                 setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
                                 setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
@@ -644,21 +643,45 @@ public class PurchaseOrder implements GTranDet {
                             RemoveModelDetail(i);
                         }
                     }
+                    String[] lacolumn = {
+                        "sReferNox", "sSupplier", "sAddrssID", "sContctID",
+                        "sTermCode", "xTermName", "nDiscount", "nAddDiscx",
+                        "nVatRatex", "nTWithHld", "nTranTotl", "sRemarksx",
+                        "nEntryNox", "sCategrCd"
+                    };
+
                     setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
-                    setMaster("sReferNox", (String) loPO_Quotation.getMasterModel().getReferenceNumber());
-                    setMaster("sSupplier", (String) loPO_Quotation.getMasterModel().getSupplier());
-                    setMaster("sAddrssID", (String) loPO_Quotation.getMasterModel().getAddressID());
-                    setMaster("sContctID", (String) loPO_Quotation.getMasterModel().getContactID());
-                    setMaster("sTermCode", (String) loPO_Quotation.getMasterModel().getTermCode());
-                    setMaster("xTermName", (String) loPO_Quotation.getMasterModel().getTermName());
-                    setMaster("nDiscount", loPO_Quotation.getMasterModel().getDiscount());
-                    setMaster("nAddDiscx", loPO_Quotation.getMasterModel().getAddDiscx());
-                    setMaster("nVatRatex", loPO_Quotation.getMasterModel().getVatRatex());
-                    setMaster("nTWithHld", loPO_Quotation.getMasterModel().getTWithHld());
-                    setMaster("nTranTotl", loPO_Quotation.getMasterModel().getTransactionTotal());
-                    setMaster("sRemarksx", (String) loPO_Quotation.getMasterModel().getRemarks());
-                    setMaster("nEntryNox", loPO_Quotation.getMasterModel().getEntryNumber());
-                    setMaster("sCategrCd", (String) loPO_Quotation.getMasterModel().getCategoryCode());
+                    String lsClientID= (String) loPO_Quotation.getMasterModel().getValue("sSupplier");
+                    try {
+                        Client_Master loSupplier = GetClient_Master(lsClientID, true, poGRider.getBranchCode());
+                        setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyNam
+                        
+                        Model_Client_Institution_Contact loContctP = GetModel_Client_Institution_Contact(lsClientID);
+                        setMaster("xCPerson1", (String) loContctP.getContactPerson());
+
+                        Model_Client_Mobile loContctNo = GetModel_Client_Mobile(lsClientID);
+                        setMaster("xCPMobil1", loContctNo.getContactNo());
+
+                        Model_Client_Address loAddressID = GetModel_Client_Address(lsClientID);
+                        setMaster("sAddrssID", loAddressID.getAddressID());
+                        
+                    } catch (Exception e) {
+                        setMaster("xSupplier", ""); 
+                        setMaster("xCPerson1", "");  
+                        setMaster("xCPMobil1", "");  
+                        setMaster("sAddrssID", ""); 
+                    }
+
+                    Term loTerm = new Term(poGRider, true);
+                    loTerm.setRecordStatus(psTranStatus);
+                    loTerm.searchRecord((String) loPO_Quotation.getMasterModel().getValue("sTermCode"), true);
+                    setMaster("xTermName", (String) loTerm.getMaster("sDescript"));
+
+                    
+                    for (int i = 0; i < lacolumn.length; i++) {
+                        Object loval = loPO_Quotation.getMasterModel().getValue(lacolumn[i]);
+                        setMaster(lacolumn[i], loval instanceof String ? (String) loval : loval); // instanceof: a shortcut to try-catch and used shorthand if else
+                    }
 
                     return loJSON;
                 } else {
