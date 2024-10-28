@@ -659,75 +659,8 @@ public class PurchaseOrder implements GTranDet {
         return poJSON;
     }
 
-//    public JSONObject searchDestination(String fsColNme, String fsValue, boolean fbByCode) {
-//        String lsCondition = "";
-//        String lsFilter = "";
-//
-//        if (psTranStatus.length() > 1) {
-//            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
-//                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
-//            }
-//
-//            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
-//        } else {
-//            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
-//        }
-//
-//        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
-//
-//        poJSON = new JSONObject();
-//
-//        poJSON = ShowDialogFX.Search(poGRider,
-//                lsSQL,
-//                fsValue,
-//                "Destination»Transaction No»Supplier",
-//                "sDestinat»sTransNox»sSupplier",
-//                "sDestinat»sTransNox»sSupplier",
-//                fbByCode ? 0 : 0);
-//
-//        if (poJSON != null) {
-//            return openTransaction((String) poJSON.get("sTransNox"));
-//
-//        } else {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "No Transaction loaded to update.");
-//            return poJSON;
-//        }
-//    }
-//    public JSONObject searchSupplier(String fsColNme, String fsValue, boolean fbByCode) {
-//        String lsCondition = "";
-//        String lsFilter = "";
-//
-//        if (psTranStatus.length() > 1) {
-//            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
-//                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
-//            }
-//            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
-//        } else {
-//            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
-//        }
-//
-//        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
-//
-//        poJSON = new JSONObject();
-//
-//        poJSON = ShowDialogFX.Search(poGRider,
-//                lsSQL,
-//                fsValue,
-//                "Supplier»Transaction No»Destination",
-//                "sSupplier»sTransNox»sDestinat",
-//                "sSupplier»sTransNox»sDestinat",
-//                fbByCode ? 0 : 0);
-//
-//        if (poJSON != null) {
-//            return openTransaction((String) poJSON.get("sTransNox"));
-//
-//        } else {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "No Transaction loaded to update.");
-//            return poJSON;
-//        }
-//    }
+    
+    
     @Override
     public JSONObject searchMaster(String fsColNme, String fsValue, boolean fbByCode) {
 
