@@ -284,6 +284,8 @@ public class Model_PO_Detail implements GEntity {
 
             if ("success".equals((String) loJSON.get("result"))) {
                 pnEditMode= EditMode.UPDATE;
+            }else{
+                pnEditMode= EditMode.ADDNEW;
             }
             if (pnEditMode == EditMode.ADDNEW) {
                 lsSQL = makeSQL();
@@ -303,15 +305,10 @@ public class Model_PO_Detail implements GEntity {
             } else {
                 loOldEntity = new Model_PO_Detail(poGRider);
                 loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
-//                Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
-                //replace with the primary key column info  and additional primary column
-                //for loop
-//                JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
+
 
                 if ("success".equals((String) loJSON.get("result"))) {
-                    //replace the condition based on the primary key column of the record and additional primary column
-//                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-//                            + " AND sStockIDx = " + SQLUtil.toSQL(this.getStockID()), fsExclude);
+
                     lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
                             + " AND nEntryNox = " + SQLUtil.toSQL(this.getEntryNo()), fsExclude);
                     System.out.println(lsSQL);
