@@ -64,11 +64,10 @@ public class testPurchaseOrderJasper {
         }
         
         
-       loJSON= record.printRecord();
+       loJSON = record.printRecord();
        if ("error".equals((String) loJSON.get("result"))) {
             Assert.fail((String) loJSON.get("message"));
         }
-
     }
     
         private static boolean loadProperties() {

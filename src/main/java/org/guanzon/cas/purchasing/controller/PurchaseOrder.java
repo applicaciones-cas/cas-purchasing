@@ -530,8 +530,7 @@ public class PurchaseOrder implements GTranDet {
 
         switch (fsColumn) {
 
-//            case "sDescript": // sDescript
-            case "sStockIDx": // 3 // 8-xCategrNm // 9-xInvTypNm
+            case "sStockIDx":
                 Inventory loInventory = new Inventory(poGRider, true);
                 loInventory.setRecordStatus("1");
                 loInventory.setWithUI(true);
@@ -569,120 +568,11 @@ public class PurchaseOrder implements GTranDet {
                         setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
                         setDetail(fnRow, "nQuantity", "0");
                     } else {
-                        //if the pndetailrow is not in poModelDetail.size() -1 && barcoode is blank
+
                         if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
                             RemoveModelDetail(poModelDetail.size() - 1);
                         }
                     }
-                    return loJSON;
-                } else {
-                    loJSON = new JSONObject();
-                    loJSON.put("result", "error");
-                    loJSON.put("message", "No Transaction found.");
-                    return loJSON;
-                }
-            case "sTransNox": // For Find Source
-                PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
-                loPO_Quotation.setTransactionStatus("12");
-                loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
-                double lnTotalTransaction2 = 0;
-                int lndetailsize = poModelDetail.size() - 1;
-                int lnpo_detailsize = loPO_Quotation.getItemCount() - 1;
-                
-                if (loJSON != null) {
-                    for (int i = 0; i < loPO_Quotation.getItemCount(); i++) {
-                        fnRow = i;
-                        String newStockID = String.valueOf(loPO_Quotation.getDetailModel(i).getStockID());
-                        loInventory = GetInventory(newStockID, true);
-                        System.out.println(fsValue);
-                        boolean isDuplicate = false;
-
-                        if (poModelDetail.size() - 1 < lnpo_detailsize) {
-                            loJSON = AddModelDetail();
-                            if ("Information".equals((String) poJSON.get("result"))) {
-                                fnRow = i;
-
-                                setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
-                                AddModelDetail();
-                                
-                                setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
-                                setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
-                                setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
-                                setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
-                                setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
-                                setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
-                                setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
-                                continue;
-                            } else {
-                                fnRow = i;
-                                setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
-                                setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
-                                setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
-                                setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
-                                setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
-                                setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
-                                setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
-                                continue;
-                            }
-
-                        } else {
-                            fnRow = i;
-                            setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
-                            setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
-                            setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
-                            setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
-                            setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
-                            setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
-                            continue;
-                        }
-                    }
-
-                    if (poModelDetail.size() - 1 > lnpo_detailsize) {
-                        fnRow = poModelDetail.size() - 1;
-                        for (int i = fnRow; i >= loPO_Quotation.getItemCount(); i--) {
-                            RemoveModelDetail(i);
-                        }
-                    }
-                    String[] lacolumn = {
-                        "sReferNox", "sSupplier", "sAddrssID", "sContctID",
-                        "sTermCode", "xTermName", "nDiscount", "nAddDiscx",
-                        "nVatRatex", "nTWithHld", "nTranTotl", "sRemarksx",
-                        "nEntryNox", "sCategrCd"
-                    };
-
-                    setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
-                    String lsClientID= (String) loPO_Quotation.getMasterModel().getValue("sSupplier");
-                    try {
-                        Client_Master loSupplier = GetClient_Master(lsClientID, true, poGRider.getBranchCode());
-                        setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyNam
-                        
-                        Model_Client_Institution_Contact loContctP = GetModel_Client_Institution_Contact(lsClientID);
-                        setMaster("xCPerson1", (String) loContctP.getContactPerson());
-
-                        Model_Client_Mobile loContctNo = GetModel_Client_Mobile(lsClientID);
-                        setMaster("xCPMobil1", loContctNo.getContactNo());
-
-                        Model_Client_Address loAddressID = GetModel_Client_Address(lsClientID);
-                        setMaster("sAddrssID", loAddressID.getAddressID());
-                        
-                    } catch (Exception e) {
-                        setMaster("xSupplier", ""); 
-                        setMaster("xCPerson1", "");  
-                        setMaster("xCPMobil1", "");  
-                        setMaster("sAddrssID", ""); 
-                    }
-
-                    Term loTerm = new Term(poGRider, true);
-                    loTerm.setRecordStatus(psTranStatus);
-                    loTerm.searchRecord((String) loPO_Quotation.getMasterModel().getValue("sTermCode"), true);
-                    setMaster("xTermName", (String) loTerm.getMaster("sDescript"));
-
-                    
-                    for (int i = 0; i < lacolumn.length; i++) {
-                        Object loval = loPO_Quotation.getMasterModel().getValue(lacolumn[i]);
-                        setMaster(lacolumn[i], loval instanceof String ? (String) loval : loval); // instanceof: a shortcut to try-catch and used shorthand if else
-                    }
-
                     return loJSON;
                 } else {
                     loJSON = new JSONObject();
@@ -726,13 +616,37 @@ public class PurchaseOrder implements GTranDet {
 
         poJSON = new JSONObject();
 
-        poJSON = ShowDialogFX.Search(poGRider,
-                lsSQL,
-                fsValue,
-                "Transaction No»Destination»Supplier",
-                "sTransNox»sDestinat»sSupplier",
-                "sTransNox»sDestinat»sSupplier",
-                fbByCode ? 0 : 1);
+        switch (fsColNme) {
+            case "sTransNox": // 1
+                poJSON = ShowDialogFX.Search(poGRider,
+                        lsSQL,
+                        fsValue,
+                        "Transaction No»Destination»Supplier",
+                        "sTransNox»sDestinat»sSupplier",
+                        "sTransNox»sDestinat»sSupplier",
+                        fbByCode ? 0 : 1);
+                break;
+            case "sSupplier":
+                poJSON = ShowDialogFX.Search(poGRider,
+                        lsSQL,
+                        fsValue,
+                        "Supplier»Transaction No»Destination",
+                        "sSupplier»sTransNox»sDestinat",
+                        "sSupplier»sTransNox»sDestinat",
+                        fbByCode ? 0 : 0);
+                break;
+            case "sDestinat":
+                poJSON = ShowDialogFX.Search(poGRider,
+                        lsSQL,
+                        fsValue,
+                        "Destination»Transaction No»Supplier",
+                        "sDestinat»sTransNox»sSupplier",
+                        "sDestinat»sTransNox»sSupplier",
+                        fbByCode ? 0 : 0);
+                break;
+            default:
+                break;
+        }
 
         if (poJSON != null) {
             poJSON = openTransaction((String) poJSON.get("sTransNox"));
@@ -745,78 +659,8 @@ public class PurchaseOrder implements GTranDet {
         return poJSON;
     }
 
-    public JSONObject searchDestination(String fsColNme, String fsValue, boolean fbByCode) {
-        String lsCondition = "";
-        String lsFilter = "";
-
-        if (psTranStatus.length() > 1) {
-            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
-                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
-            }
-
-            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
-        } else {
-            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
-        }
-
-        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
-
-        poJSON = new JSONObject();
-
-        poJSON = ShowDialogFX.Search(poGRider,
-                lsSQL,
-                fsValue,
-                "Destination»Transaction No»Supplier",
-                "sDestinat»sTransNox»sSupplier",
-                "sDestinat»sTransNox»sSupplier",
-                fbByCode ? 0 : 0);
-
-        if (poJSON != null) {
-            return openTransaction((String) poJSON.get("sTransNox"));
-
-        } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No Transaction loaded to update.");
-            return poJSON;
-        }
-    }
-
-    public JSONObject searchSupplier(String fsColNme, String fsValue, boolean fbByCode) {
-        String lsCondition = "";
-        String lsFilter = "";
-
-        if (psTranStatus.length() > 1) {
-            for (int lnCtr = 0; lnCtr <= psTranStatus.length() - 1; lnCtr++) {
-                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
-            }
-
-            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
-        } else {
-            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
-        }
-
-        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
-
-        poJSON = new JSONObject();
-
-        poJSON = ShowDialogFX.Search(poGRider,
-                lsSQL,
-                fsValue,
-                "Supplier»Transaction No»Destination",
-                "sSupplier»sTransNox»sDestinat",
-                "sSupplier»sTransNox»sDestinat",
-                fbByCode ? 0 : 0);
-
-        if (poJSON != null) {
-            return openTransaction((String) poJSON.get("sTransNox"));
-
-        } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No Transaction loaded to update.");
-            return poJSON;
-        }
-    }
-
+    
+    
     @Override
     public JSONObject searchMaster(String fsColNme, String fsValue, boolean fbByCode) {
 
@@ -828,9 +672,6 @@ public class PurchaseOrder implements GTranDet {
         JSONObject loJSON;
 
         switch (fsColNme) {
-            case "sTransNox": // 1
-                return searchTransaction(fsColNme, fsValue, fbByCode);
-
             case "sSupplier": //4 //16-xDestinat
                 Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
                 loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
@@ -908,6 +749,117 @@ public class PurchaseOrder implements GTranDet {
 
                 } else {
 
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
+            case "sTransNox": // For the FIND SOURCE FUNCTION
+                int fnRow = 1;
+                Inventory loInventory = new Inventory(poGRider, true);
+                loInventory.setRecordStatus("1");
+                loInventory.setWithUI(true);
+                PO_Quotation loPO_Quotation = new PO_Quotation(poGRider, true);
+                loPO_Quotation.setTransactionStatus("12");
+                loJSON = loPO_Quotation.searchTransaction("sTransNox", "", false);
+                double lnTotalTransaction2 = 0;
+                int lndetailsize = poModelDetail.size() - 1;
+                int lnpo_detailsize = loPO_Quotation.getItemCount() - 1;
+
+                if (loJSON != null) {
+                    for (int i = 0; i < loPO_Quotation.getItemCount(); i++) {
+                        fnRow = i;
+                        String newStockID = String.valueOf(loPO_Quotation.getDetailModel(i).getStockID());
+                        loInventory = GetInventory(newStockID, true);
+                        System.out.println(fsValue);
+                        boolean isDuplicate = false;
+
+                        if (poModelDetail.size() - 1 < lnpo_detailsize) {
+                            loJSON = AddModelDetail();
+                            if ("Information".equals((String) poJSON.get("result"))) {
+                                fnRow = i;
+
+                                setDetail(fnRow, "nQuantity", (int) getDetailModel(fnRow).getQuantity() + 1);
+                                AddModelDetail();
+                                setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
+                                setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+                                setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+                                setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+                                setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+                                setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+                                setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
+                                continue;
+                            } else {
+                                fnRow = i;
+                                setDetail(fnRow, "sTransNox", this.getMasterModel().getTransactionNo());
+                                setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+                                setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+                                setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+                                setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+                                setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+                                setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
+                                continue;
+                            }
+
+                        } else {
+                            fnRow = i;
+                            setDetail(fnRow, "nEntryNox", loPO_Quotation.getDetailModel(i).getEntryNumber());
+                            setDetail(fnRow, "sStockIDx", (String) loPO_Quotation.getDetailModel(i).getStockID());
+                            setDetail(fnRow, "sDescript", (String) loPO_Quotation.getDetailModel(i).getDescription());
+                            setDetail(fnRow, "nQuantity", (int) loPO_Quotation.getDetailModel(i).getQuantity());
+                            setDetail(fnRow, "nUnitPrce", loPO_Quotation.getDetailModel(i).getUnitPrice());
+                            setDetail(fnRow, "nOrigCost", loInventory.getModel().getUnitPrice());
+                            continue;
+                        }
+                    }
+
+                    if (poModelDetail.size() - 1 > lnpo_detailsize) {
+                        fnRow = poModelDetail.size() - 1;
+                        for (int i = fnRow; i >= loPO_Quotation.getItemCount(); i--) {
+                            RemoveModelDetail(i);
+                        }
+                    }
+                    String[] lacolumn = {
+                        "sReferNox", "sSupplier", "sAddrssID", "sContctID",
+                        "sTermCode", "xTermName", "nDiscount", "nAddDiscx",
+                        "nVatRatex", "nTWithHld", "nTranTotl", "sRemarksx",
+                        "nEntryNox", "sCategrCd"
+                    };
+
+                    setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
+                    String lsClientID = (String) loPO_Quotation.getMasterModel().getValue("sSupplier");
+                    try {
+                        loSupplier = GetClient_Master(lsClientID, true, poGRider.getBranchCode());
+                        setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyNam
+
+                        Model_Client_Institution_Contact loContctP = GetModel_Client_Institution_Contact(lsClientID);
+                        setMaster("xCPerson1", (String) loContctP.getContactPerson());
+
+                        Model_Client_Mobile loContctNo = GetModel_Client_Mobile(lsClientID);
+                        setMaster("xCPMobil1", loContctNo.getContactNo());
+
+                        Model_Client_Address loAddressID = GetModel_Client_Address(lsClientID);
+                        setMaster("sAddrssID", loAddressID.getAddressID());
+
+                    } catch (Exception e) {
+                        setMaster("xSupplier", "");
+                        setMaster("xCPerson1", "");
+                        setMaster("xCPMobil1", "");
+                        setMaster("sAddrssID", "");
+                    }
+
+                    loTerm = new Term(poGRider, true);
+                    loTerm.setRecordStatus(psTranStatus);
+                    loTerm.searchRecord((String) loPO_Quotation.getMasterModel().getValue("sTermCode"), true);
+                    setMaster("xTermName", (String) loTerm.getMaster("sDescript"));
+
+                    for (int i = 0; i < lacolumn.length; i++) {
+                        Object loval = loPO_Quotation.getMasterModel().getValue(lacolumn[i]);
+                        setMaster(lacolumn[i], loval instanceof String ? (String) loval : loval); // instanceof: a shortcut to try-catch and used shorthand if else
+                    }
+
+                    return loJSON;
+                } else {
                     loJSON = new JSONObject();
                     loJSON.put("result", "error");
                     loJSON.put("message", "No Transaction found.");
@@ -1107,7 +1059,7 @@ public class PurchaseOrder implements GTranDet {
         params.put("sTransNox", poModelMaster.getTransactionNo());
         params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
         params.put("dTransact", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
-        params.put("sReferNox", poModelMaster.getReferenceNo());
+        params.put("sReferN4ox", poModelMaster.getReferenceNo());
         params.put("xRemarksx", poModelMaster.getRemarks());
 
         params.put("xBranchNm", poModelMaster.getBranchName());
