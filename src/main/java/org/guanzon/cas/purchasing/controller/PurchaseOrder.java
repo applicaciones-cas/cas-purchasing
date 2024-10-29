@@ -754,7 +754,7 @@ public class PurchaseOrder implements GTranDet {
                     loJSON.put("message", "No Transaction found.");
                     return loJSON;
                 }
-            case "sTransNox": // For the FIND SOURCE FUNCTION
+            case "sSourceNo": // For the FIND SOURCE FUNCTION
                 int fnRow = 1;
                 Inventory loInventory = new Inventory(poGRider, true);
                 loInventory.setRecordStatus("1");
