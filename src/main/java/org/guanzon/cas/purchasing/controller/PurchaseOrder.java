@@ -672,9 +672,6 @@ public class PurchaseOrder implements GTranDet {
         JSONObject loJSON;
 
         switch (fsColNme) {
-            case "sTransNox": // 1
-                return searchTransaction(fsColNme, fsValue, fbByCode);
-
             case "sSupplier": //4 //16-xDestinat
                 Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
                 loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
@@ -757,7 +754,7 @@ public class PurchaseOrder implements GTranDet {
                     loJSON.put("message", "No Transaction found.");
                     return loJSON;
                 }
-            case "sReferNox": // For the FIND SOURCE FUNCTION
+            case "sTransNox": // For the FIND SOURCE FUNCTION
                 int fnRow = 1;
                 Inventory loInventory = new Inventory(poGRider, true);
                 loInventory.setRecordStatus("1");
