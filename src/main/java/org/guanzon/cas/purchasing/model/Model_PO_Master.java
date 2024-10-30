@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 import javax.sql.rowset.CachedRowSet;
+import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -31,6 +32,7 @@ public class Model_PO_Master implements GEntity {
             + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
             + "xCategrNm»sDescript»"
             + "nQtyOnHnd»nOrderQty";
+    public String po_MasterTransType;
 
     /**
      * Entity constructor
@@ -1124,6 +1126,14 @@ public class Model_PO_Master implements GEntity {
         return MiscUtil.makeSelect(this, fsExclude);
     }
 
+    public void setTransType(String value) {
+        po_MasterTransType = value;
+    }
+
+    public String getTransType() {
+        return po_MasterTransType;
+    }
+
     private void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
@@ -1166,6 +1176,16 @@ public class Model_PO_Master implements GEntity {
     }
 
     private String getSQL() {
+//        String lscondition = "";
+//        String result = getTransType();
+//        System.out.println("This is result "+result);
+//        switch (result) {
+//            case "SP":
+//                lscondition = "a.sCategrCd IN('0001', '0002', '0003','0004','0007')";
+//            case "MC":
+//                lscondition = "a.sCategrCd IN('0001', '0002', '0003')";
+//        }
+
         String lsSQL = " SELECT "
                 + " a.sTransNox sTransNox "
                 + ", a.sBranchCd sBranchCd "
@@ -1220,6 +1240,7 @@ public class Model_PO_Master implements GEntity {
                 + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
                 + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
                 + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
+//                + " WHERE " + lscondition;
 
         return lsSQL;
     }

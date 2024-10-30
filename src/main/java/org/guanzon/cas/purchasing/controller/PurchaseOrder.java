@@ -68,6 +68,16 @@ public class PurchaseOrder implements GTranDet {
     ArrayList<Model_PO_Detail> poModelDetail;
 
     JSONObject poJSON;
+    public String transType;
+
+    public void setTransType(String value) {
+        poModelMaster.setTransType(value);
+        transType = value;
+    }
+
+    public String getTransType() {
+        return transType;
+    }
 
     public PurchaseOrder(GRider foGRider, boolean fbWthParent) {
         poGRider = foGRider;
@@ -531,10 +541,20 @@ public class PurchaseOrder implements GTranDet {
         switch (fsColumn) {
 
             case "sStockIDx":
+                String lstranstype = getTransType();
+                String lscondition = "";
+                switch (lstranstype) {
+                    case "SP":
+                        lscondition = "a.sCategCd1 IN('0001', '0002', '0003') AND a.sCategCd2 LIKE '%0007%'";
+                    case "MC":
+                        lscondition = "a.sCategCd1 IN('0001', '0002', '0003') AND a.sCategCd2 != '0007'";
+                }
+
                 Inventory loInventory = new Inventory(poGRider, true);
                 loInventory.setRecordStatus("1");
                 loInventory.setWithUI(true);
-                loJSON = loInventory.searchRecord(fsValue, fbByCode);
+//                loJSON = loInventory.searchRecord(fsValue, fbByCode);
+                loJSON = loInventory.searchRecordWithContition(fsValue, lscondition, fbByCode);
                 double lnTotalTransaction = 0;
 
                 Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
@@ -612,8 +632,16 @@ public class PurchaseOrder implements GTranDet {
             lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
         }
 
-        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
-
+        String lstranstype = getTransType();
+        String lsCondition2="";
+        switch (lstranstype) {
+            case "SP":
+                lsCondition2 = " AND sCategrCd IN('0001', '0002', '0003','0007')";
+            case "MC":
+                lsCondition2 = " AND sCategrCd IN('0001', '0002', '0003')";
+        }
+        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition + lsCondition2);
+        System.out.println("This is resulta "+lsSQL);
         poJSON = new JSONObject();
 
         switch (fsColNme) {
@@ -659,8 +687,6 @@ public class PurchaseOrder implements GTranDet {
         return poJSON;
     }
 
-    
-    
     @Override
     public JSONObject searchMaster(String fsColNme, String fsValue, boolean fbByCode) {
 
