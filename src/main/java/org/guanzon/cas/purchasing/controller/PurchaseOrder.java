@@ -46,8 +46,8 @@ import org.guanzon.cas.parameters.Term;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.validators.ValidatorFactory;
-import org.guanzon.cas.validators.purchaseorder.Validator_PurchaseOrder_Detail;
-import org.guanzon.cas.validators.purchaseorder.Validator_PurchaseOrder_Master;
+import org.guanzon.cas.purchasing.validator.Validator_PurchaseOrder_Detail;
+import org.guanzon.cas.purchasing.validator.Validator_PurchaseOrder_Master;
 import org.json.simple.JSONArray;
 
 import org.json.simple.JSONObject;
