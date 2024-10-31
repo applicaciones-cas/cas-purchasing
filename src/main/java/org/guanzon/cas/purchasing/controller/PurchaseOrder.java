@@ -3,6 +3,9 @@ package org.guanzon.cas.purchasing.controller;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import org.guanzon.appdriver.iface.GTranDet;
@@ -11,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,11 +38,13 @@ import org.guanzon.cas.parameters.Color;
 import org.guanzon.cas.parameters.Inv_Type;
 import org.guanzon.cas.parameters.Measure;
 import org.guanzon.cas.clients.Client_Master;
+import org.guanzon.cas.inventory.base.InvMaster;
 import org.guanzon.cas.inventory.base.PO_Quotation;
 import org.guanzon.cas.inventory.models.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.model.clients.Model_Client_Address;
 import org.guanzon.cas.model.clients.Model_Client_Institution_Contact;
 import org.guanzon.cas.model.clients.Model_Client_Mobile;
+import org.guanzon.cas.parameters.Category;
 import org.guanzon.cas.parameters.Company;
 import org.guanzon.cas.parameters.Model;
 import org.guanzon.cas.parameters.Model_Variant;
@@ -62,7 +68,6 @@ public class PurchaseOrder implements GTranDet {
     private boolean pbWthParent;
     private int pnEditMode;
     private String psTranStatus;
-    public boolean psSavingStatus;
 
     Model_PO_Master poModelMaster;
     ArrayList<Model_PO_Detail> poModelDetail;
@@ -71,7 +76,6 @@ public class PurchaseOrder implements GTranDet {
     public String transType;
 
     public void setTransType(String value) {
-        poModelMaster.setTransType(value);
         transType = value;
     }
 
@@ -98,6 +102,39 @@ public class PurchaseOrder implements GTranDet {
         pnEditMode = poModelMaster.getEditMode();
 
         poModelMaster.setBranchCode(poGRider.getBranchCode());
+        
+        
+        Category loCateg = new Category(poGRider, true);
+        switch (poGRider.getDivisionCode()) {
+            case "0"://mobilephone
+                loCateg.openRecord("0002");
+                break;
+
+            case "1"://motorycycle
+                loCateg.openRecord("0001");
+                break;
+
+            case "2"://Auto Group - Honda Cars
+            case "5"://Auto Group - Nissan
+            case "6"://Auto Group - Any
+                loCateg.openRecord("0003");
+                break;
+
+            case "3"://Hospitality
+            case "4"://Pedritos Group
+                loCateg.openRecord("0004");
+                break;
+
+            case "7"://Guanzon Services Office
+                 break;
+
+            case "8"://Main Office
+                break;
+        }
+        poModelMaster.setCategoryCode((String) loCateg.getMaster("sCategrCd"));
+        poModelMaster.setCategoryName((String) loCateg.getMaster("sDescript"));
+        
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -230,7 +267,8 @@ public class PurchaseOrder implements GTranDet {
         for (lnCtr = 0; lnCtr <= poModelDetail.size() - 1; lnCtr++) {
             poModelMaster.setEntryNo(lnCtr + 1);
         }
-        poModelMaster.setCategoryCode("0001");
+
+//        poModelMaster.setCategoryCode("0001");
         poModelMaster.setPreparedDate(poGRider.getServerDate());
         poModelMaster.setModifiedBy(poGRider.getUserID());
         poModelMaster.setModifiedDate(poGRider.getServerDate());
@@ -541,29 +579,27 @@ public class PurchaseOrder implements GTranDet {
         switch (fsColumn) {
 
             case "sStockIDx":
+//                System.out.println("searchDetail p_bWithUI = " + p_bWithUI);
+                Inventory loInventory = new Inventory(poGRider, true);
+                loInventory.setRecordStatus(psTranStatus);
+                loInventory.setWithUI(true);
+                double lnTotalTransaction = 0;
+
                 String lstranstype = getTransType();
                 String lscondition = "";
                 switch (lstranstype) {
                     case "SP":
-                        lscondition = "a.sCategCd1 IN('0001', '0002', '0003') AND a.sCategCd2 LIKE '%0007%'";
+                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007");
                     case "MC":
-                        lscondition = "a.sCategCd1 IN('0001', '0002', '0003') AND a.sCategCd2 != '0007'";
+                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0001");
                 }
 
-                Inventory loInventory = new Inventory(poGRider, true);
-                loInventory.setRecordStatus("1");
-                loInventory.setWithUI(true);
-//                loJSON = loInventory.searchRecord(fsValue, fbByCode);
                 loJSON = loInventory.searchRecordWithContition(fsValue, lscondition, fbByCode);
-                double lnTotalTransaction = 0;
-
-                Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
+                System.out.println("poJSON = " + poJSON);
 
                 if (loJSON != null) {
                     String newStockID = (String) loInventory.getMaster("sStockIDx");
-                    System.out.println(fsValue);
                     boolean isDuplicate = false;
-
                     for (int i = 0; i < poModelDetail.size() - 1; i++) {
                         String existingStockID = (String) poModelDetail.get(i).getValue("sStockIDx");
 
@@ -578,17 +614,25 @@ public class PurchaseOrder implements GTranDet {
                             System.out.println(lnTotalTransaction);
                         }
                     }
+
                     if (!isDuplicate) {
-                        lo_inv_stock_request_detail = this.GetModel_Inv_Stock_Request_Detail(newStockID);
                         setDetail(fnRow, "sDescript", (String) loInventory.getMaster("sDescript"));
                         setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
                         setDetail(fnRow, "nOrigCost", loInventory.getMaster("nUnitPrce"));
                         setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
-                        setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
-                        setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
                         setDetail(fnRow, "nQuantity", "0");
-                    } else {
+                        InvMaster loInvMaster = new InvMaster(poGRider, true);
+                        loInvMaster.setRecordStatus(psTranStatus);
+                        loInvMaster.setWithUI(true);
+                        loInvMaster.openRecord(loInventory.getModel().getStockID());
 
+                        if ("success".equals((String) poJSON.get("result"))) {
+//                            setDetail(fnRow, "nRecOrder", loInvMaster.getModel().ge);
+                            setDetail(fnRow, "nQtyOnHnd", loInvMaster.getModel().getQtyOnHnd());
+                        } else {
+                            setDetail(fnRow, "nQtyOnHnd", 0.00);
+                        }
+                    } else {
                         if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
                             RemoveModelDetail(poModelDetail.size() - 1);
                         }
@@ -601,6 +645,55 @@ public class PurchaseOrder implements GTranDet {
                     return loJSON;
                 }
 
+//                Inventory loInventory = new Inventory(poGRider, true);
+//                loInventory.setRecordStatus("1");
+//                loInventory.setWithUI(true);
+//                loJSON = loInventory.searchRecord(fsValue, fbByCode);
+//                double lnTotalTransaction = 0;
+//
+//                Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
+//
+//                if (loJSON != null) {
+//                    String newStockID = (String) loInventory.getMaster("sStockIDx");
+//                    System.out.println(fsValue);
+//                    boolean isDuplicate = false;
+//
+//                    for (int i = 0; i < poModelDetail.size() - 1; i++) {
+//                        String existingStockID = (String) poModelDetail.get(i).getValue("sStockIDx");
+//
+//                        if (newStockID.equals(existingStockID)) {
+//                            isDuplicate = true;
+//                            int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
+//                            poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
+//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
+//                            break;
+//                        } else {
+//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
+//                            System.out.println(lnTotalTransaction);
+//                        }
+//                    }
+//                    if (!isDuplicate) {
+//                        lo_inv_stock_request_detail = this.GetModel_Inv_Stock_Request_Detail(newStockID);
+//                        setDetail(fnRow, "sDescript", (String) loInventory.getMaster("sDescript"));
+//                        setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
+//                        setDetail(fnRow, "nOrigCost", loInventory.getMaster("nUnitPrce"));
+//                        setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
+//                        setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
+//                        setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
+//                        setDetail(fnRow, "nQuantity", "0");
+//                    } else {
+//
+//                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
+//                            RemoveModelDetail(poModelDetail.size() - 1);
+//                        }
+//                    }
+//                    return loJSON;
+//                } else {
+//                    loJSON = new JSONObject();
+//                    loJSON.put("result", "error");
+//                    loJSON.put("message", "No Transaction found.");
+//                    return loJSON;
+//                }
             default:
                 return null;
 
@@ -619,6 +712,14 @@ public class PurchaseOrder implements GTranDet {
 
     @Override
     public JSONObject searchTransaction(String fsColNme, String fsValue, boolean fbByCode) {
+        Properties po_props = new Properties();
+        try {
+            po_props.load(new FileInputStream("D:\\GGC_Maven_Systems\\config\\cas.properties"));
+        } catch (IOException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        String a = po_props.getProperty("store.inventory.category");
+
         String lsCondition = "";
         String lsFilter = "";
 
@@ -627,21 +728,24 @@ public class PurchaseOrder implements GTranDet {
                 lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStatus.charAt(lnCtr)));
             }
 
-            lsCondition = "cTranStat" + " IN (" + lsCondition.substring(2) + ")";
+            lsCondition = "a.cTranStat" + " IN (" + lsCondition.substring(2) + ")";
         } else {
-            lsCondition = "cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
+            lsCondition = "a.cTranStat" + " = " + SQLUtil.toSQL(psTranStatus);
         }
 
+//        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition);
+        String lsSQL = MiscUtil.addCondition(getSQL(), lsCondition);
+
         String lstranstype = getTransType();
-        String lsCondition2="";
         switch (lstranstype) {
             case "SP":
-                lsCondition2 = " AND sCategrCd IN('0001', '0002', '0003','0007')";
+                lsSQL += "AND n.sCategCd1 = '0001' AND n.sCategCd2 = '0007'";
             case "MC":
-                lsCondition2 = " AND sCategrCd IN('0001', '0002', '0003')";
+                lsSQL += "AND n.sCategCd1 = '0001' AND n.sCategCd2 != '0007'";
         }
-        String lsSQL = MiscUtil.addCondition(poModelMaster.makeSelectSQL(), lsCondition + lsCondition2);
-        System.out.println("This is resulta "+lsSQL);
+
+        lsSQL += " GROUP BY a.sTransNox";
+        System.out.println("This is resulta " + lsSQL);
         poJSON = new JSONObject();
 
         switch (fsColNme) {
@@ -651,7 +755,7 @@ public class PurchaseOrder implements GTranDet {
                         fsValue,
                         "Transaction No»Destination»Supplier",
                         "sTransNox»sDestinat»sSupplier",
-                        "sTransNox»sDestinat»sSupplier",
+                        "a.sTransNox»a.sDestinat»a.sSupplier",
                         fbByCode ? 0 : 1);
                 break;
             case "sSupplier":
@@ -1159,5 +1263,70 @@ public class PurchaseOrder implements GTranDet {
         loJSON.put("result", "success");
         loJSON.put("message", "Jasper print record succcess");
         return loJSON;
+    }
+
+    private String getSQL() {
+        String lsSQL = "SELECT "
+                + " a.sTransNox sTransNox "
+                + ", a.sBranchCd sBranchCd "
+                + ", a.dTransact dTransact "
+                + ", a.sCompnyID sCompnyID "
+                + ", a.sDestinat sDestinat "
+                + ", a.sSupplier sSupplier "
+                + ", a.sAddrssID sAddrssID "
+                + ", a.sContctID sContctID "
+                + ", a.sReferNox sReferNox "
+                + ", a.sTermCode sTermCode "
+                + ", a.nTranTotl nTranTotl "
+                + ", a.cVATaxabl cVATaxabl "
+                + ", a.nVatRatex nVatRatex "
+                + ", a.nTWithHld nTWithHld "
+                + ", a.nDiscount nDiscount "
+                + ", a.nAddDiscx nAddDiscx "
+                + ", a.nAmtPaidx nAmtPaidx "
+                + ", a.nNetTotal nNetTotal "
+                + ", a.sRemarksx sRemarksx "
+                + ", a.sSourceCd sSourceCd "
+                + ", a.sSourceNo sSourceNo "
+                + ", a.cEmailSnt cEmailSnt "
+                + ", a.nEmailSnt nEmailSnt "
+                + ", a.nEntryNox nEntryNox "
+                + ", a.sCategrCd sCategrCd "
+                + ", a.cTranStat cTranStat "
+                + ", a.dPrepared dPrepared "
+                + ", a.sApproved sApproved "
+                + ", a.dApproved dApproved "
+                + ", a.sAprvCode sAprvCode "
+                + ", a.sPostedxx sPostedxx "
+                + ", a.dPostedxx dPostedxx "
+                + ", a.sModified sModified "
+                + ", a.dModified dModified "
+                + ", b.sBranchNm xBranchNm "
+                + ", c.sCompnyNm xCompnyNm "
+                + ", d.sBranchNm xDestinat "
+                + ", e.sCompnyNm xSupplier "
+                + ", f.sAddressx xAddressx "
+                + ", g.sCPerson1 xCPerson1 "
+                + ", h.sCPerson1 xCPerson2 "
+                + ", i.sMobileNo xCPMobil1 "
+                + ", j.sDescript xTermName "
+                + ",  k.sDescript xCategrNm "
+                + " FROM " + "PO_Master" + " a "
+                + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
+                + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
+                + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
+                + " LEFT JOIN Client_Master e  ON a.sSupplier = e.sClientID "
+                + " LEFT JOIN Client_Address f  ON a.sAddrssID = f.sAddrssID "
+                + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
+                + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
+                + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "
+                + "  LEFT JOIN Category k "
+                + "    ON a.sCategrCd = k.sCategrCd "
+                + "  LEFT JOIN PO_Detail m "
+                + "	on  m.sTransNox = a.sTransNox "
+                + "  LEFT JOIN Inventory n "
+                + "	on n.sStockIDx = m.sStockIDx";
+        return lsSQL;
     }
 }

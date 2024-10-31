@@ -230,8 +230,8 @@ public class Model_PO_Master implements GEntity {
         poJSON = new JSONObject();
 
         String lsSQL = getSQL();
-        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
-
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(fsCondition));
+        System.out.println("sql = " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (loRS.next()) {
@@ -1144,10 +1144,13 @@ public class Model_PO_Master implements GEntity {
             MiscUtil.initRowSet(poEntity);
             poEntity.updateString("cTranStat", TransactionStatus.STATE_OPEN);
 
+            
+            
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
             poEntity.updateInt("nEntryNox", 0);
+            
 
             setEmailSentStatus("");
             setEmailSentNo(1);
@@ -1173,20 +1176,9 @@ public class Model_PO_Master implements GEntity {
             e.printStackTrace();
             System.exit(1);
         }
-    }
-
-    private String getSQL() {
-//        String lscondition = "";
-//        String result = getTransType();
-//        System.out.println("This is result "+result);
-//        switch (result) {
-//            case "SP":
-//                lscondition = "a.sCategrCd IN('0001', '0002', '0003','0004','0007')";
-//            case "MC":
-//                lscondition = "a.sCategrCd IN('0001', '0002', '0003')";
-//        }
-
-        String lsSQL = " SELECT "
+    } 
+        private String getSQL(){
+          String lsSQL =  "SELECT " 
                 + " a.sTransNox sTransNox "
                 + ", a.sBranchCd sBranchCd "
                 + ", a.dTransact dTransact "
@@ -1229,8 +1221,9 @@ public class Model_PO_Master implements GEntity {
                 + ", g.sCPerson1 xCPerson1 "
                 + ", h.sCPerson1 xCPerson2 "
                 + ", i.sMobileNo xCPMobil1 "
-                + ", j.sDescript xTermName "
-                + " FROM " + getTable() + " a "
+                + ", j.sDescript xTermName " 
+                + ",  k.sDescript xCategrNm " +
+                " FROM " + getTable() + " a "
                 + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
                 + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
                 + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
@@ -1239,9 +1232,13 @@ public class Model_PO_Master implements GEntity {
                 + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
                 + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
                 + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
-                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
-//                + " WHERE " + lscondition;
-
-        return lsSQL;
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "+
+                "  LEFT JOIN Category k " +
+                "    ON a.sCategrCd = k.sCategrCd " +
+                "  LEFT JOIN PO_Detail m " +
+                "	on  m.sTransNox = a.sTransNox " +
+                "  LEFT JOIN Inventory n " +
+                "	on n.sStockIDx = m.sStockIDx";
+          return lsSQL;
     }
 }
