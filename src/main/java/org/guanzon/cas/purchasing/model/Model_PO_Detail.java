@@ -646,6 +646,15 @@ public class Model_PO_Detail implements GEntity {
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
+            
+            poEntity.updateDouble("nUnitPrce", 0.0);
+            poEntity.updateInt("nQuantity", 0);
+            poEntity.updateInt("nQtyOnHnd", 0);
+            poEntity.updateInt("nCancelld", 0);
+            poEntity.updateInt("nReceived", 0);
+            poEntity.updateInt("nRecOrder", 0);
+            poEntity.updateDouble("nOrigCost", 0.0);
+            
             setUnitPrice(0.0);
             setQuantity(0);
             setQtyOnHand(0);

@@ -1144,29 +1144,53 @@ public class Model_PO_Master implements GEntity {
             MiscUtil.initRowSet(poEntity);
             poEntity.updateString("cTranStat", TransactionStatus.STATE_OPEN);
 
-            
-            
             poEntity.updateString("dApproved", null);
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
             poEntity.updateInt("nEntryNox", 0);
+            poEntity.updateString("cEmailSnt", null);
+            poEntity.updateInt("nEmailSnt", 0);
+            poEntity.updateString("sSourceNo", "");
+            poEntity.updateInt("nNetTotal", 0);
+            poEntity.updateInt("nAmtPaidx", 0);
+            poEntity.updateString("dApproved", null);
+            poEntity.updateString("sApproved", null);
+            poEntity.updateString("sPostedxx", null);
+            poEntity.updateString("dPostedxx", null);
+            poEntity.updateString("dModified", null);
+            poEntity.updateString("cVATaxabl", "1");
+            poEntity.updateInt("nVatRatex", 0);
+            poEntity.updateInt("nTWithHld", 0);
+            poEntity.updateString("sSourceCd", "");
             
-
-            setEmailSentStatus("");
-            setEmailSentNo(1);
-            setSourceNo("");
-            setSourceCode("");
-            setNetTotal(0);
-            setAmountPaid(0);
-            setApprovedate(null);
-            setApprovedBy("");
-            setPostedBy("");
-            setPostedDate(null);
-            setModifiedDate(null);
-            setVATaxable("1");
-            setVatRate(0);
-            setTaxWithHolding(0);
-            setSourceCode("");
+            
+//            setSourceCode(""); sSourceCd 
+//            setNetTotal(0);    nNetTotal
+//            setAmountPaid(0);  nAmtPaidx
+//            setApprovedate(null);  dApproved
+//            setApprovedBy(""); sApproved
+//            setPostedBy(""); sPostedxx
+//            setPostedDate(null);  dPostedxx
+//            setModifiedDate(null); dModified
+//            setVATaxable("1");  cVATaxabl
+//            setVatRate(0); nVatRatex
+//            setTaxWithHolding(0); nTWithHld
+//            setSourceCode("");  sSourceCd
+//            setEmailSentStatus("");
+//            setEmailSentNo(1);
+//            setSourceNo("");
+//            setSourceCode("");
+//            setNetTotal(0);
+//            setAmountPaid(0);
+//            setApprovedate(null);
+//            setApprovedBy("");
+//            setPostedBy("");
+//            setPostedDate(null);
+//            setModifiedDate(null);
+//            setVATaxable("1");
+//            setVatRate(0);
+//            setTaxWithHolding(0);
+//            setSourceCode("");
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -1176,9 +1200,10 @@ public class Model_PO_Master implements GEntity {
             e.printStackTrace();
             System.exit(1);
         }
-    } 
-        private String getSQL(){
-          String lsSQL =  "SELECT " 
+    }
+
+    private String getSQL() {
+        String lsSQL = "SELECT "
                 + " a.sTransNox sTransNox "
                 + ", a.sBranchCd sBranchCd "
                 + ", a.dTransact dTransact "
@@ -1221,9 +1246,9 @@ public class Model_PO_Master implements GEntity {
                 + ", g.sCPerson1 xCPerson1 "
                 + ", h.sCPerson1 xCPerson2 "
                 + ", i.sMobileNo xCPMobil1 "
-                + ", j.sDescript xTermName " 
-                + ",  k.sDescript xCategrNm " +
-                " FROM " + getTable() + " a "
+                + ", j.sDescript xTermName "
+                + ",  k.sDescript xCategrNm "
+                + " FROM " + getTable() + " a "
                 + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
                 + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
                 + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
@@ -1232,13 +1257,13 @@ public class Model_PO_Master implements GEntity {
                 + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
                 + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
                 + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
-                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "+
-                "  LEFT JOIN Category k " +
-                "    ON a.sCategrCd = k.sCategrCd " +
-                "  LEFT JOIN PO_Detail m " +
-                "	on  m.sTransNox = a.sTransNox " +
-                "  LEFT JOIN Inventory n " +
-                "	on n.sStockIDx = m.sStockIDx";
-          return lsSQL;
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "
+                + "  LEFT JOIN Category k "
+                + "    ON a.sCategrCd = k.sCategrCd "
+                + "  LEFT JOIN PO_Detail m "
+                + "	on  m.sTransNox = a.sTransNox "
+                + "  LEFT JOIN Inventory n "
+                + "	on n.sStockIDx = m.sStockIDx";
+        return lsSQL;
     }
 }

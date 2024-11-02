@@ -74,6 +74,7 @@ public class PurchaseOrder implements GTranDet {
 
     JSONObject poJSON;
     public String transType;
+    public int rowselect;
 
     public void setTransType(String value) {
         transType = value;
@@ -81,6 +82,14 @@ public class PurchaseOrder implements GTranDet {
 
     public String getTransType() {
         return transType;
+    }
+
+    public void setRowSelect(int value) {
+        rowselect = value;
+    }
+
+    public int getRowSelect() {
+        return rowselect;
     }
 
     public PurchaseOrder(GRider foGRider, boolean fbWthParent) {
@@ -102,8 +111,7 @@ public class PurchaseOrder implements GTranDet {
         pnEditMode = poModelMaster.getEditMode();
 
         poModelMaster.setBranchCode(poGRider.getBranchCode());
-        
-        
+
         Category loCateg = new Category(poGRider, true);
         switch (poGRider.getDivisionCode()) {
             case "0"://mobilephone
@@ -126,15 +134,14 @@ public class PurchaseOrder implements GTranDet {
                 break;
 
             case "7"://Guanzon Services Office
-                 break;
+                break;
 
             case "8"://Main Office
                 break;
         }
         poModelMaster.setCategoryCode((String) loCateg.getMaster("sCategrCd"));
         poModelMaster.setCategoryName((String) loCateg.getMaster("sDescript"));
-        
-        
+
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
@@ -605,6 +612,7 @@ public class PurchaseOrder implements GTranDet {
 
                         if (newStockID.equals(existingStockID)) {
                             isDuplicate = true;
+                            setRowSelect(i);
                             int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
                             poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
                             lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
@@ -633,9 +641,9 @@ public class PurchaseOrder implements GTranDet {
                             setDetail(fnRow, "nQtyOnHnd", 0.00);
                         }
                     } else {
-                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
-                            RemoveModelDetail(poModelDetail.size() - 1);
-                        }
+//                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
+//                            RemoveModelDetail(poModelDetail.size() - 1);
+//                        }
                     }
                     return loJSON;
                 } else {
