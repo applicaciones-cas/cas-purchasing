@@ -598,7 +598,7 @@ public class PurchaseOrder implements GTranDet {
                     case "SP":
                         lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0001");
                     case "MC":
-                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007");
+                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0001");
                 }
 
                 loJSON = loInventory.searchRecordWithContition(fsValue, lscondition, fbByCode);
