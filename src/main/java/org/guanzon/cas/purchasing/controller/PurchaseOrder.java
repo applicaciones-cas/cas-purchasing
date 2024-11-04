@@ -596,7 +596,7 @@ public class PurchaseOrder implements GTranDet {
                 String lscondition = "";
                 switch (lstranstype) {
                     case "SP":
-                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0001");
+                        lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 = " + SQLUtil.toSQL("0007");
                         break;
                     case "MC":
                         lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007");
