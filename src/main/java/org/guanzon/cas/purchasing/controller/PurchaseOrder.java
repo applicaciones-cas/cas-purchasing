@@ -749,9 +749,10 @@ public class PurchaseOrder implements GTranDet {
         String lstranstype = getTransType();
         switch (lstranstype) {
             case "SP":
-                lsSQL += "AND n.sCategCd1 = '0001' AND n.sCategCd2 = '0007'";
+                
+                lsSQL += "AND " + "n.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND n.sCategCd2 = '0007'";
             case "MC":
-                lsSQL += "AND n.sCategCd1 = '0001' AND n.sCategCd2 != '0007'";
+                lsSQL += "AND "+ "n.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND n.sCategCd2 != '0007'";
         }
 
         lsSQL += " GROUP BY a.sTransNox";
