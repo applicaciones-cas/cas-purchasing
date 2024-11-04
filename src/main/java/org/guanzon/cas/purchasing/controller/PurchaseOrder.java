@@ -963,7 +963,7 @@ public class PurchaseOrder implements GTranDet {
                         "sReferNox", "sSupplier", "sAddrssID", "sContctID",
                         "sTermCode", "xTermName", "nDiscount", "nAddDiscx",
                         "nVatRatex", "nTWithHld", "nTranTotl", "sRemarksx",
-                        "nEntryNox", "sCategrCd"
+                        "nEntryNox"
                     };
 
                     setMaster("sSourceNo", (String) loPO_Quotation.getMasterModel().getTransactionNumber());
