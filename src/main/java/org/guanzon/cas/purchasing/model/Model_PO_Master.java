@@ -1163,34 +1163,7 @@ public class Model_PO_Master implements GEntity {
             poEntity.updateInt("nTWithHld", 0);
             poEntity.updateString("sSourceCd", "");
             
-            
-//            setSourceCode(""); sSourceCd 
-//            setNetTotal(0);    nNetTotal
-//            setAmountPaid(0);  nAmtPaidx
-//            setApprovedate(null);  dApproved
-//            setApprovedBy(""); sApproved
-//            setPostedBy(""); sPostedxx
-//            setPostedDate(null);  dPostedxx
-//            setModifiedDate(null); dModified
-//            setVATaxable("1");  cVATaxabl
-//            setVatRate(0); nVatRatex
-//            setTaxWithHolding(0); nTWithHld
-//            setSourceCode("");  sSourceCd
-//            setEmailSentStatus("");
-//            setEmailSentNo(1);
-//            setSourceNo("");
-//            setSourceCode("");
-//            setNetTotal(0);
-//            setAmountPaid(0);
-//            setApprovedate(null);
-//            setApprovedBy("");
-//            setPostedBy("");
-//            setPostedDate(null);
-//            setModifiedDate(null);
-//            setVATaxable("1");
-//            setVatRate(0);
-//            setTaxWithHolding(0);
-//            setSourceCode("");
+           
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
