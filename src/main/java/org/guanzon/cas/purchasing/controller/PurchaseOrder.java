@@ -1199,7 +1199,7 @@ public class PurchaseOrder implements GTranDet {
         params.put("sTransNox", poModelMaster.getTransactionNo());
         params.put("dReferDte", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
         params.put("dTransact", SQLUtil.dateFormat(poModelMaster.getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
-        params.put("sReferN4ox", poModelMaster.getReferenceNo());
+        params.put("sReferNox", poModelMaster.getReferenceNo());
         params.put("xRemarksx", poModelMaster.getRemarks());
 
         params.put("xBranchNm", poModelMaster.getBranchName());
