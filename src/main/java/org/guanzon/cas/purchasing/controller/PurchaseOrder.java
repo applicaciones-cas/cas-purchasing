@@ -655,55 +655,6 @@ public class PurchaseOrder implements GTranDet {
                     return loJSON;
                 }
 
-//                Inventory loInventory = new Inventory(poGRider, true);
-//                loInventory.setRecordStatus("1");
-//                loInventory.setWithUI(true);
-//                loJSON = loInventory.searchRecord(fsValue, fbByCode);
-//                double lnTotalTransaction = 0;
-//
-//                Model_Inv_Stock_Request_Detail lo_inv_stock_request_detail;
-//
-//                if (loJSON != null) {
-//                    String newStockID = (String) loInventory.getMaster("sStockIDx");
-//                    System.out.println(fsValue);
-//                    boolean isDuplicate = false;
-//
-//                    for (int i = 0; i < poModelDetail.size() - 1; i++) {
-//                        String existingStockID = (String) poModelDetail.get(i).getValue("sStockIDx");
-//
-//                        if (newStockID.equals(existingStockID)) {
-//                            isDuplicate = true;
-//                            int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
-//                            poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
-//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
-//                            break;
-//                        } else {
-//                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
-//                            System.out.println(lnTotalTransaction);
-//                        }
-//                    }
-//                    if (!isDuplicate) {
-//                        lo_inv_stock_request_detail = this.GetModel_Inv_Stock_Request_Detail(newStockID);
-//                        setDetail(fnRow, "sDescript", (String) loInventory.getMaster("sDescript"));
-//                        setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
-//                        setDetail(fnRow, "nOrigCost", loInventory.getMaster("nUnitPrce"));
-//                        setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
-//                        setDetail(fnRow, "nRecOrder", lo_inv_stock_request_detail.getRecordOrder());
-//                        setDetail(fnRow, "nQtyOnHnd", lo_inv_stock_request_detail.getQuantity());
-//                        setDetail(fnRow, "nQuantity", "0");
-//                    } else {
-//
-//                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
-//                            RemoveModelDetail(poModelDetail.size() - 1);
-//                        }
-//                    }
-//                    return loJSON;
-//                } else {
-//                    loJSON = new JSONObject();
-//                    loJSON.put("result", "error");
-//                    loJSON.put("message", "No Transaction found.");
-//                    return loJSON;
-//                }
             default:
                 return null;
 
@@ -997,7 +948,8 @@ public class PurchaseOrder implements GTranDet {
                         Object loval = loPO_Quotation.getMasterModel().getValue(lacolumn[i]);
                         setMaster(lacolumn[i], loval instanceof String ? (String) loval : loval); // instanceof: a shortcut to try-catch and used shorthand if else
                     }
-
+                    loJSON.put("result", "success");
+                    loJSON.put("message", "''");
                     return loJSON;
                 } else {
                     loJSON = new JSONObject();
@@ -1320,7 +1272,7 @@ public class PurchaseOrder implements GTranDet {
                 + ", h.sCPerson1 xCPerson2 "
                 + ", i.sMobileNo xCPMobil1 "
                 + ", j.sDescript xTermName "
-                + ",  k.sDescript xCategrNm "
+                + ", k.sDescript xCategrNm "
                 + " FROM " + "PO_Master" + " a "
                 + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
                 + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "

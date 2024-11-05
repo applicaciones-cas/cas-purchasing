@@ -315,7 +315,7 @@ public class Model_PO_Master implements GEntity {
         } else {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid update mode. Unable to save record.");
-            return poJSON;
+                return poJSON;
         }
 
         return poJSON;
