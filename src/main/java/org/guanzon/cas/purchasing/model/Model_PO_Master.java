@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Date;
 import javax.sql.rowset.CachedRowSet;
+import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -31,6 +32,7 @@ public class Model_PO_Master implements GEntity {
             + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
             + "xCategrNm»sDescript»"
             + "nQtyOnHnd»nOrderQty";
+    public String po_MasterTransType;
 
     /**
      * Entity constructor
@@ -228,8 +230,8 @@ public class Model_PO_Master implements GEntity {
         poJSON = new JSONObject();
 
         String lsSQL = getSQL();
-        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(fsCondition));
-
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(fsCondition));
+        System.out.println("sql = " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (loRS.next()) {
@@ -313,7 +315,7 @@ public class Model_PO_Master implements GEntity {
         } else {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid update mode. Unable to save record.");
-            return poJSON;
+                return poJSON;
         }
 
         return poJSON;
@@ -1124,6 +1126,14 @@ public class Model_PO_Master implements GEntity {
         return MiscUtil.makeSelect(this, fsExclude);
     }
 
+    public void setTransType(String value) {
+        po_MasterTransType = value;
+    }
+
+    public String getTransType() {
+        return po_MasterTransType;
+    }
+
     private void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
@@ -1138,22 +1148,22 @@ public class Model_PO_Master implements GEntity {
             poEntity.updateString("dPostedxx", null);
             poEntity.updateString("sAprvCode", null);
             poEntity.updateInt("nEntryNox", 0);
-
-            setEmailSentStatus("");
-            setEmailSentNo(1);
-            setSourceNo("");
-            setSourceCode("");
-            setNetTotal(0);
-            setAmountPaid(0);
-            setApprovedate(null);
-            setApprovedBy("");
-            setPostedBy("");
-            setPostedDate(null);
-            setModifiedDate(null);
-            setVATaxable("1");
-            setVatRate(0);
-            setTaxWithHolding(0);
-            setSourceCode("");
+            poEntity.updateString("cEmailSnt", null);
+            poEntity.updateInt("nEmailSnt", 0);
+            poEntity.updateString("sSourceNo", "");
+            poEntity.updateInt("nNetTotal", 0);
+            poEntity.updateInt("nAmtPaidx", 0);
+            poEntity.updateString("dApproved", null);
+            poEntity.updateString("sApproved", null);
+            poEntity.updateString("sPostedxx", null);
+            poEntity.updateString("dPostedxx", null);
+            poEntity.updateString("dModified", null);
+            poEntity.updateString("cVATaxabl", "1");
+            poEntity.updateInt("nVatRatex", 0);
+            poEntity.updateInt("nTWithHld", 0);
+            poEntity.updateString("sSourceCd", "");
+            
+           
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -1166,7 +1176,7 @@ public class Model_PO_Master implements GEntity {
     }
 
     private String getSQL() {
-        String lsSQL = " SELECT "
+        String lsSQL = "SELECT "
                 + " a.sTransNox sTransNox "
                 + ", a.sBranchCd sBranchCd "
                 + ", a.dTransact dTransact "
@@ -1210,6 +1220,7 @@ public class Model_PO_Master implements GEntity {
                 + ", h.sCPerson1 xCPerson2 "
                 + ", i.sMobileNo xCPMobil1 "
                 + ", j.sDescript xTermName "
+                + ",  k.sDescript xCategrNm "
                 + " FROM " + getTable() + " a "
                 + " LEFT JOIN Branch b  ON a.sBranchCd = b.sBranchCd "
                 + " LEFT JOIN Company c  ON a.sCompnyID = c.sCompnyID "
@@ -1219,8 +1230,13 @@ public class Model_PO_Master implements GEntity {
                 + " LEFT JOIN Client_Institution_Contact_Person g  ON a.sContctID = g.sContctID AND  g.cPrimaryx = '1'"
                 + " LEFT JOIN Client_Institution_Contact_Person h  ON a.sContctID = g.sContctID AND  h.cPrimaryx = '0'"
                 + " LEFT JOIN Client_Mobile i  ON a.sContctID = i.sClientID "
-                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode ";
-
+                + " LEFT JOIN Term j  ON a.sTermCode = j.sTermCode "
+                + "  LEFT JOIN Category k "
+                + "    ON a.sCategrCd = k.sCategrCd "
+                + "  LEFT JOIN PO_Detail m "
+                + "	on  m.sTransNox = a.sTransNox "
+                + "  LEFT JOIN Inventory n "
+                + "	on n.sStockIDx = m.sStockIDx";
         return lsSQL;
     }
 }
