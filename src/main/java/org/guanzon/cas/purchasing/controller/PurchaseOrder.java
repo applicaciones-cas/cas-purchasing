@@ -44,6 +44,7 @@ import org.guanzon.cas.inventory.models.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.model.clients.Model_Client_Address;
 import org.guanzon.cas.model.clients.Model_Client_Institution_Contact;
 import org.guanzon.cas.model.clients.Model_Client_Mobile;
+import org.guanzon.cas.parameters.Brand;
 import org.guanzon.cas.parameters.Category;
 import org.guanzon.cas.parameters.Company;
 import org.guanzon.cas.parameters.Model;
@@ -75,6 +76,15 @@ public class PurchaseOrder implements GTranDet {
     JSONObject poJSON;
     public String transType;
     public int rowselect;
+    public String sBrandIDx="";
+    
+    public void setBrandID(String value) {
+        sBrandIDx = value;
+    }
+
+    public String getBrandID() {
+        return sBrandIDx;
+    }
 
     public void setTransType(String value) {
         transType = value;
@@ -370,6 +380,7 @@ public class PurchaseOrder implements GTranDet {
             poModelMaster.setModifiedBy(poGRider.getUserID());
             poModelMaster.setModifiedDate(poGRider.getServerDate());
             poJSON = poModelMaster.setTransactionStatus(TransactionStatus.STATE_CLOSED);
+
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
@@ -384,6 +395,7 @@ public class PurchaseOrder implements GTranDet {
                     poGRider.commitTrans();
                     poJSON.put("result", "success");
                     poJSON.put("message", "Transaction saved successfully.");
+
                 }
             } else {
                 if (!pbWthParent) {
@@ -528,6 +540,7 @@ public class PurchaseOrder implements GTranDet {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", "No Transaction loaded to update.");
+
         }
         return poJSON;
     }
@@ -570,7 +583,6 @@ public class PurchaseOrder implements GTranDet {
             default:
                 return poModelDetail.get(fnRow).setValue(fsCol, foData);
         }
-
     }
 
     @Override
@@ -581,19 +593,140 @@ public class PurchaseOrder implements GTranDet {
         String lsColCrit = "";
         String lsSQL = "";
         String lsCondition = "";
+        String lsBrandID = "";
         JSONObject loJSON;
 
         switch (fsColumn) {
+            case "sBrandIDx":
+                Brand loBrand = GetBrand(fsValue, fbByCode);
+                loJSON = loBrand.searchRecord(fsValue, fbByCode);
+                try{
+                    lsBrandID = (String) loBrand.getMaster("sBrandIDx"); // will be used in searching in Inventory
+                    setBrandID(lsBrandID);
+                    setDetail(fnRow, "nUnitPrce", "");
+                }catch(Exception e){
+                }
+                return loJSON;
 
-            case "sStockIDx":
-//                System.out.println("searchDetail p_bWithUI = " + p_bWithUI);
+            case "sModelIDx":
+                //get the brandIDx and compare to ModelID
                 Inventory loInventory = new Inventory(poGRider, true);
                 loInventory.setRecordStatus(psTranStatus);
                 loInventory.setWithUI(true);
-                double lnTotalTransaction = 0;
+                int lnTotalTransaction = 0;
 
                 String lstranstype = getTransType();
                 String lscondition = "";
+                String lsBrandIDSQL = "";
+                
+                switch (lstranstype) {
+                    case "SP":
+                        try{
+                            if (getBrandID().equals("") ) {
+                                lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 = " + SQLUtil.toSQL("0007");
+                            } else {
+                                lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 = " + SQLUtil.toSQL("0007") + " AND a.sBrandIDx = " + SQLUtil.toSQL(getBrandID());
+                            } 
+                        }catch(Exception e){
+                             lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 = " + SQLUtil.toSQL("0007");
+                        }
+
+                        break;
+                    case "MC":
+                        try{
+                            if (getBrandID().equals("") ) {
+                                lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007");
+                            } else {
+                                lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007") + " AND a.sBrandIDx = " + SQLUtil.toSQL(getBrandID());
+                            }
+                        }catch(Exception e){
+                                lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 != " + SQLUtil.toSQL("0007");
+                        }
+
+                        break;
+                }
+
+                loJSON = loInventory.searchRecordWithContition(fsValue, lscondition, fbByCode);
+                try{
+                    if (getBrandID().length() == 0 || getBrandID() == null) {
+                        setBrandID((String) loInventory.getMaster("sBrandIDx"));
+                    }
+                }catch(Exception e){
+                    
+                }
+    
+                System.out.println("poJSON = " + poJSON);
+
+                if (loJSON != null) {
+                    String newStockID = (String) loInventory.getMaster("sStockIDx");
+                    boolean isDuplicate = false;
+                    for (int i = 0; i < poModelDetail.size() - 1; i++) {
+                        String existingStockID = (String) poModelDetail.get(i).getValue("sStockIDx");
+                        if (newStockID.equals(existingStockID)) {
+                            isDuplicate = true;
+                            setRowSelect(i);
+                            int currentQuantity = (Integer) poModelDetail.get(i).getValue("nQuantity");
+                            poModelDetail.get(i).setValue("nQuantity", currentQuantity + 1);
+                           
+                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
+                            break;
+                        } else {
+                            lnTotalTransaction += Double.parseDouble((poModelDetail.get(i).getValue("nUnitPrce")).toString()) * Double.parseDouble(poModelDetail.get(i).getValue("nQuantity").toString());
+                            System.out.println(lnTotalTransaction);
+                        }
+                    }
+                    
+                    
+                    if (!isDuplicate) {
+                        setDetail(fnRow, "sDescript", (String) loInventory.getMaster("sDescript"));
+                        setDetail(fnRow, "sStockIDx", (String) loInventory.getMaster("sStockIDx"));
+                        setDetail(fnRow, "nOrigCost", loInventory.getMaster("nUnitPrce"));
+                        setDetail(fnRow, "nUnitPrce", loInventory.getMaster("nUnitPrce"));
+                        setDetail(fnRow, "nQuantity", "0");
+                        
+                        InvMaster loInvMaster = new InvMaster(poGRider, true);
+                        loInvMaster.setRecordStatus(psTranStatus);
+                        loInvMaster.setWithUI(true);
+                        loInvMaster.openRecord(loInventory.getModel().getStockID());
+
+                        if ("success".equals((String) poJSON.get("result"))) {
+//                            setDetail(fnRow, "nRecOrder", loInvMaster.getModel().ge);
+                            setDetail(fnRow, "nQtyOnHnd", loInvMaster.getModel().getQtyOnHnd());
+                        } else {
+                            setDetail(fnRow, "nQtyOnHnd", 0.00);
+                        }
+                        
+                    } else {
+//                        setTotal(String.valueOf(lnTotalTransaction));
+//                        if (fnRow == poModelDetail.size() - 1 || poModelDetail.get(poModelDetail.size() - 1).getStockID().isEmpty()) {
+//                            RemoveModelDetail(poModelDetail.size() - 1);
+//                        }
+                    }
+//                    System.out.println("this is total 2 " + getTotal());
+
+                    return loJSON;
+                } else {
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
+
+            case "sColorxxx":
+                Color loColor = GetColor(fsValue, fbByCode);
+                loJSON = loColor.searchRecord(fsValue, fbByCode);
+                setDetail(fnRow, "sColorNme", (String) loColor.getMaster("sColorNme"));
+                return loJSON;
+
+            case "sStockIDx":
+//                System.out.println("searchDetail p_bWithUI = " + p_bWithUI);
+                loInventory = new Inventory(poGRider, true);
+                loInventory.setRecordStatus(psTranStatus);
+                loInventory.setWithUI(true);
+                lnTotalTransaction = 0;
+
+                lstranstype = getTransType();
+                lscondition = "";
                 switch (lstranstype) {
                     case "SP":
                         lscondition = "a.sCategCd1 = " + SQLUtil.toSQL(poModelMaster.getCategoryCode()) + " AND a.sCategCd2 = " + SQLUtil.toSQL("0007");
@@ -657,7 +790,6 @@ public class PurchaseOrder implements GTranDet {
 
             default:
                 return null;
-
         }
     }
 
@@ -714,27 +846,36 @@ public class PurchaseOrder implements GTranDet {
                 poJSON = ShowDialogFX.Search(poGRider,
                         lsSQL,
                         fsValue,
-                        "Transaction No»Destination»Supplier",
-                        "sTransNox»sDestinat»sSupplier",
-                        "a.sTransNox»a.sDestinat»a.sSupplier",
+                        "Transaction No»Supplier»Destination»Company",
+                        "sTransNox»sSupplier»sDestinat»sCompnyID",
+                        "a.sTransNox»a.sSupplier»a.sDestinat»a.sCompnyID",
                         fbByCode ? 0 : 1);
                 break;
             case "sSupplier":
                 poJSON = ShowDialogFX.Search(poGRider,
                         lsSQL,
                         fsValue,
-                        "Supplier»Transaction No»Destination",
-                        "sSupplier»sTransNox»sDestinat",
-                        "sSupplier»sTransNox»sDestinat",
+                        "Supplier»Transaction No»Destination»Company",
+                        "sSupplier»sTransNox»sDestinat»sCompnyID",
+                        "sSupplier»sTransNox»sDestinat»sCompnyID",
                         fbByCode ? 0 : 0);
                 break;
             case "sDestinat":
                 poJSON = ShowDialogFX.Search(poGRider,
                         lsSQL,
                         fsValue,
-                        "Destination»Transaction No»Supplier",
-                        "sDestinat»sTransNox»sSupplier",
-                        "sDestinat»sTransNox»sSupplier",
+                        "Destination»Transaction No»Supplier»Company",
+                        "sDestinat»sTransNox»sSupplier»sCompnyID",
+                        "sDestinat»sTransNox»sSupplier»sCompnyID",
+                        fbByCode ? 0 : 0);
+                break;
+            case "sCompnyID":
+                poJSON = ShowDialogFX.Search(poGRider,
+                        lsSQL,
+                        fsValue,
+                        "Company»Transaction No»Supplier»Destination",
+                        "sCompnyID»sTransNox»sSupplier»sDestinat",
+                        "a.sCompnyID»a.sTransNox»a.sSupplier»a.sDestinat",
                         fbByCode ? 0 : 0);
                 break;
             default:
@@ -761,8 +902,24 @@ public class PurchaseOrder implements GTranDet {
         String lsSQL = "";
         String lsCondition = "";
         JSONObject loJSON;
+        System.out.println("sample");
 
         switch (fsColNme) {
+            case "sCompnyID":
+                Company loCompany = GetCompany(fsValue, fbByCode);
+                loJSON = loCompany.searchRecord(fsValue, fbByCode);
+
+                if (loJSON != null) {
+                    setMaster("sCompnyID", (String) loCompany.getMaster("sCompnyID"));
+                    setMaster("xCompnyNm", (String) loCompany.getMaster("sCompnyNm"));
+                    return loJSON;
+
+                } else {
+                    loJSON = new JSONObject();
+                    loJSON.put("result", "error");
+                    loJSON.put("message", "No Transaction found.");
+                    return loJSON;
+                }
             case "sSupplier": //4 //16-xDestinat
                 Client_Master loSupplier = new Client_Master(poGRider, true, poGRider.getBranchCode());
                 loSupplier.setType(ValidatorFactory.ClientTypes.COMPANY);
@@ -773,6 +930,7 @@ public class PurchaseOrder implements GTranDet {
                     setMaster("sSupplier", lsClientID); // SupplierID 
                     setMaster("xSupplier", (String) loSupplier.getMaster("sCompnyNm")); // CompanyName
 
+//                    setMaster("xCompnyNm", (String) loSupplier.getMaster("sCompnyNm")); // CompanyName
                     Model_Client_Institution_Contact loContctP = GetModel_Client_Institution_Contact(lsClientID);
                     setMaster("xCPerson1", (String) loContctP.getContactPerson());
 
@@ -961,6 +1119,7 @@ public class PurchaseOrder implements GTranDet {
             default:
                 return null;
         }
+
     }
 
     @Override
@@ -1051,6 +1210,7 @@ public class PurchaseOrder implements GTranDet {
 
     public Model GetModel(String fsPrimaryKey, boolean fbByCode) {
         Model instance = new Model(poGRider, fbByCode);
+        instance.setRecordStatus(psTranStatus);
         instance.openRecord(fsPrimaryKey); //
         return instance;
     }
@@ -1063,6 +1223,7 @@ public class PurchaseOrder implements GTranDet {
 
     public Color GetColor(String fsPrimaryKey, boolean fbByCode) {
         Color instance = new Color(poGRider, fbByCode);
+        instance.setRecordStatus(psTranStatus);
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
@@ -1100,6 +1261,21 @@ public class PurchaseOrder implements GTranDet {
 
     public Company GetCompany(String fsPrimaryKey, boolean fbByCode) {
         Company instance = new Company(poGRider, fbByCode);
+        instance.openRecord(fsPrimaryKey);
+        instance.setRecordStatus(psTranStatus);
+        return instance;
+    }
+
+    public Brand GetBrand(String fsPrimaryKey, boolean fbByCode) {
+        Brand instance = new Brand(poGRider, fbByCode);
+        instance.setRecordStatus(psTranStatus);
+        instance.openRecord(fsPrimaryKey);
+        return instance;
+    }
+
+    public InvMaster GetInvMaster(String fsPrimaryKey, boolean fbByCode) {
+        InvMaster instance = new InvMaster(poGRider, fbByCode);
+        instance.setRecordStatus(psTranStatus);
         instance.openRecord(fsPrimaryKey);
         return instance;
     }
