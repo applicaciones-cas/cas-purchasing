@@ -16,7 +16,7 @@
         <dependency>
             <groupId>org.guanzon</groupId>
             <artifactId>appdriver-agent</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -83,6 +83,12 @@
         <dependency>
             <groupId>org.guanzon</groupId>
             <artifactId>cas-parameters</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-inv-warehouse</artifactId>
             <version>0.1-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
