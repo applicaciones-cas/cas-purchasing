@@ -11,7 +11,7 @@ public class PurchaseOrderControllers {
     
     public PurchaseOrder PurchaseOrder(){
         if (poGRider == null){
-            poLogWrapper.severe("InvWarehouseControllers.StockRequest: Application driver is not set.");
+            poLogWrapper.severe("PurchaseOrderControllers.PurchaseOrder: Application driver is not set.");
             return null;
         }
         
