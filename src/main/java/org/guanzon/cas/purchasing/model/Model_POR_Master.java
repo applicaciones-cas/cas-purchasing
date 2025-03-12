@@ -1,3 +1,8 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
@@ -10,28 +15,30 @@ import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModel;
-
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.json.simple.JSONObject;
 
-public class Model_PO_Master extends Model{      
+/**
+ *
+ * @author Arsiela 03-12-2025
+ */
+public class Model_POR_Master extends Model {
+        
     //reference objects
     Model_Branch poBranch;
     Model_Industry poIndustry;
     Model_Category poCategory;
     Model_Company poCompany;    
     Model_Term poTerm;
-    
     Model_Client_Master poSupplier;    
     Model_Client_Address poSupplierAdress;
-    Model_Client_Institution_Contact poSupplierContactPerson;
-    
+    Model_Client_Institution_Contact poSupplierContactPerson;    
     
     @Override
     public void initialize() {
@@ -45,36 +52,39 @@ public class Model_PO_Master extends Model{
             
             //assign default values
             poEntity.updateObject("dTransact", "0000-00-00");
-            poEntity.updateObject("dApproved", "0000-00-00");
-            poEntity.updateObject("nCurrInvx", 0);
-            poEntity.updateObject("nEstInvxx", 0);
+            poEntity.updateObject("dRefernce", "0000-00-00");
+            poEntity.updateObject("dTermDuex", "0000-00-00");
+            poEntity.updateObject("dDueDatex", "0000-00-00");
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateString("cConfirmd", Logical.NO);
-            poEntity.updateString("cTranStat", StockRequestStatus.OPEN);
+            poEntity.updateDouble("nDiscount", 0.00);
+            poEntity.updateDouble("nAddDiscx", 0.00);
+            poEntity.updateDouble("nTranTotl", 0.00);
+            poEntity.updateDouble("nVATRatex", 0.00);
+            poEntity.updateDouble("nTWithHld", 0.00);
+            poEntity.updateDouble("nAmtPaidx", 0.00);
+            poEntity.updateDouble("nFreightx", 0.00);
+            poEntity.updateString("cPrintxxx", Logical.NO);
+            poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
             //end - assign default values
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
             poEntity.absolute(1);
 
             ID = "sTransNox";
             
             //initialize reference objects
             ParamModels model = new ParamModels(poGRider);
-            poBranch = model.Branch();
-            poIndustry = model.Industry();
-            poCategory = model.Category();
-            poCompany = model.Company();
-            poTerm = model.Term();
+//            poBranch = model.Branch();
+//            poIndustry = model.Industry();
+//            poCategory = model.Category();
+//            poCompany = model.Company();
+//            poTerm = model.Term();
             
             ClientModel clientModel = new ClientModel(poGRider); 
-            poSupplier = clientModel.ClientMaster();
-            poSupplierAdress = clientModel.ClientAddress();
-            poSupplierContactPerson = clientModel.ClientInstitutionContact();
-            
-            
-           
+//            poSupplier = clientModel.ClientMaster();
+//            poSupplierAdress = clientModel.ClientAddress();
+//            poSupplierContactPerson = clientModel.ClientInstitutionContact();
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -108,6 +118,14 @@ public class Model_PO_Master extends Model{
         return (String) getValue("sIndstCdx");
     }
     
+    public JSONObject setDepartmentID(String departmentID){
+        return setValue("sDeptIDxx", departmentID);
+    }
+    
+    public String getDepartmentID(){
+        return (String) getValue("sDeptIDxx");
+    }
+    
     public JSONObject setTransactionDate(Date transactionDate){
         return setValue("dTransact", transactionDate);
     }
@@ -122,14 +140,6 @@ public class Model_PO_Master extends Model{
     
     public String getCompanyID(){
         return (String) getValue("sCompnyID");
-    }
-    
-    public JSONObject setDestinationID(String destinationID){
-        return setValue("sDestinat", destinationID);
-    }
-    
-    public String getDestinationID(){
-        return (String) getValue("sDestinat");
     }
     
     public JSONObject setSupplierID(String supplierID){
@@ -148,14 +158,6 @@ public class Model_PO_Master extends Model{
         return (String) getValue("sAddrssID");
     }
     
-    public JSONObject setCategoryID(String CategoryID){
-        return setValue("sCategrCd", CategoryID);
-    }
-    
-    public String getCategoryID(){
-        return (String) getValue("sCategrCd");
-    }
-    
     public JSONObject setContactID(String contactID){
         return setValue("sContctID", contactID);
     }
@@ -164,12 +166,28 @@ public class Model_PO_Master extends Model{
         return (String) getValue("sContctID");
     }
     
-    public JSONObject setReference(String reference){
-        return setValue("sReferNox", reference);
+    public JSONObject setTruckingID(String truckingID){
+        return setValue("sTrucking", truckingID);
     }
     
-    public String getReference(){
+    public String getTruckingID(){
+        return (String) getValue("sTrucking");
+    }
+    
+    public JSONObject setReferenceNo(String referenceNo){
+        return setValue("sReferNox", referenceNo);
+    }
+    
+    public String getReferenceNo(){
         return (String) getValue("sReferNox");
+    }
+    
+    public JSONObject setRefernceDate(Date refernceDate){
+        return setValue("dRefernce", refernceDate);
+    }
+    
+    public Date getRefernceDate(){
+        return (Date) getValue("dRefernce");
     }
     
     public JSONObject setTermCode(String termCode){
@@ -180,108 +198,108 @@ public class Model_PO_Master extends Model{
         return (String) getValue("sTermCode");
     }
     
-    public JSONObject setTranTotal(Number tranTotal){
-        return setValue("nTranTotl", tranTotal);
+    public JSONObject setTermDueDate(Date termDueDate){
+        return setValue("dTermDuex", termDueDate);
     }
     
-    public Number getTranTotal(){
-        return (Number) getValue("nTranTotl");
+    public Date getTermDueDate(){
+        return (Date) getValue("dTermDuex");
     }
     
-    public JSONObject setVatable(String vatable){
-        return setValue("cVATaxabl", vatable);
+    public JSONObject setDueDate(Date dueDate){
+        return setValue("dDueDatex", dueDate);
     }
     
-    public String getVatable(){
+    public Date getDueDate(){
+        return (Date) getValue("dDueDatex");
+    }
+    
+    public JSONObject setDiscountRate(Number discountRate){
+        return setValue("nDiscount", discountRate);
+    }
+    
+    public Double getDiscountRate(){
+        return (Double) getValue("nDiscount");
+    }
+    
+    public JSONObject setDiscount(Double discount){
+        return setValue("nAddDiscx", discount);
+    }
+    
+    public Double getDiscount(){
+        return (Double) getValue("nAddDiscx");
+    }
+    
+    public JSONObject setTransactionTotal(Double transactionTotal){
+        return setValue("nTranTotl", transactionTotal);
+    }
+    
+    public Double getTransactionTotal(){
+        return (Double) getValue("nTranTotl");
+    }
+    
+    public JSONObject setSalesInvoice(String salesInvoice){
+        return setValue("sSalesInv", salesInvoice);
+    }
+    
+    public String getSalesInvoice(){
+        return (String) getValue("sSalesInv");
+    }
+    
+    public JSONObject setVatableTax(String vatableTax){
+        return setValue("cVATaxabl", vatableTax);
+    }
+    
+    public String getVatableTax(){
         return (String) getValue("cVATaxabl");
     }
     
-    public JSONObject setVatRate(Number vatRate){
-        return setValue("nVatRatex", vatRate);
+    public JSONObject setVatRate(Double vatRate){
+        return setValue("nVATRatex", vatRate);
     }
     
-    public Number getVatRate(){
-        return (Number) getValue("nVatRatex");
+    public Double getVatRate(){
+        return (Double) getValue("nVATRatex");
     }
     
-    public JSONObject setWithHoldingTax(Number withHoldingTax){
+    public JSONObject setWithHoldingTax(Double withHoldingTax){
         return setValue("nTWithHld", withHoldingTax);
     }
     
-    public Number getWithHoldingTax(){
-        return (Number) getValue("nTWithHld");
+    public Double getWithHoldingTax(){
+        return (Double) getValue("nTWithHld");
     }
     
-    public JSONObject setDiscount(Number discount){
-        return setValue("nDiscount", discount);
-    }
-    
-    public Number getDiscount(){
-        return (Number) getValue("nDiscount");
-    }
-    
-    public JSONObject setAdditionalDiscount(Number additionalDiscount){
-        return setValue("nAddDiscx", additionalDiscount);
-    }
-    
-    public Number getAdditionalDiscount(){
-        return (Number) getValue("nAddDiscx");
-    }
-    
-    public JSONObject setAmountPaid(Number amountPaid){
+    public JSONObject setAmountPaid(Double amountPaid){
         return setValue("nAmtPaidx", amountPaid);
     }
     
-    public Number getAmountPaid(){
-        return (Number) getValue("nAmtPaidx");
+    public Double getAmountPaid(){
+        return (Double) getValue("nAmtPaidx");
     }
     
-    public JSONObject setNetTotal(Number netTotal){
-        return setValue("nNetTotal", netTotal);
+    public JSONObject setFreight(Double freight){
+        return setValue("nFreightx", freight);
     }
     
-    public Number getNetTotal(){
-        return (Number) getValue("nNetTotal");
+    public Double getFreight(){
+        return (Double) getValue("nFreightx");
     }
     
-    public JSONObject setRemarks(String industryId){
-        return setValue("sRemarksx", industryId);
+    public JSONObject setRemarks(String remarks){
+        return setValue("sRemarksx", remarks);
     }
     
     public String getRemarks(){
         return (String) getValue("sRemarksx");
     }
     
-    public JSONObject setSourceCode(String sourceCode){
-        return setValue("sSourceCd", sourceCode);
+    public JSONObject setPurpose(String purpose){
+        return setValue("cPurposex", purpose);
     }
     
-    public String getSourceCode(){
-        return (String) getValue("sSourceCd");
-    }
-    
-    public JSONObject setSourceNo(String sourceNo){
-        return setValue("sSourceNo", sourceNo);
-    }
-    
-    public String getSourceNo(){
-        return (String) getValue("sSourceNo");
-    }
-        
-    public JSONObject setEmailSent(String emailSent){
-        return setValue("cEmailSnt", emailSent);
-    }
-    
-    public String getEmailSent(){
-        return (String) getValue("cEmailSnt");
-    }
-    
-    public JSONObject setNoEmailSent(int noEmailSent){
-        return setValue("nEmailSnt", noEmailSent);
-    }
-    
-    public int getNoEmailSent(){
-        return (int) getValue("nEmailSnt");
+    public String getPurpose(){
+        return (String) getValue("cPurposex");
     }
     
     public JSONObject setPrint(String print){
@@ -308,84 +326,12 @@ public class Model_PO_Master extends Model{
         return (String) getValue("sInvTypCd");
     }
     
-    public JSONObject setExpectedDate(Date expectedDate){
-        return setValue("dExpected", expectedDate);
-    }
-    
-    public Date getExpectedDate(){
-        return (Date) getValue("dExpected");
-    }
-    
-    public JSONObject setWithAdditional(Number withAdditional){
-        return setValue("cWithAddx", withAdditional);
-    }
-    
-    public Number getWithAdditional(){
-        return (Number) getValue("cWithAddx");
-    }
-    
     public JSONObject setTransactionStatus(String transactionStatus){
         return setValue("cTranStat", transactionStatus);
     }
     
     public String getTransactionStatus(){
         return (String) getValue("cTranStat");
-    }
-    
-    public JSONObject setPreparedID(String preparedID){
-        return setValue("sPrepared", preparedID);
-    }
-    
-    public String getPreparedID(){
-        return (String) getValue("sPrepared");
-    }
-    
-    public JSONObject setDatePrepared(Date datePrepared){
-        return setValue("dPrepared", datePrepared);
-    }
-    
-    public Date getDatePrepared(){
-        return (Date) getValue("dPrepared");
-    }
-    
-    public JSONObject setApprovedID(String approvedID){
-        return setValue("sApproved", approvedID);
-    }
-    
-    public String getApprovedID(){
-        return (String) getValue("sApproved");
-    }
-    
-    public JSONObject setDateApproved(Date dateApproved){
-        return setValue("dApproved", dateApproved);
-    }
-    
-    public Date getDateApproved(){
-        return (Date) getValue("dApproved");
-    }
-    
-    public JSONObject setApprovalCode(String approvalCode){
-        return setValue("sAprvCode", approvalCode);
-    }
-    
-    public String getApprovalCode(){
-        return (String) getValue("sAprvCode");
-    }
-    
-    public JSONObject setPostedeID(String postedID){
-        return setValue("sPostedxx", postedID);
-    }
-    
-    public String getPostedeID(){
-        return (String) getValue("sPostedxx");
-    }
-    
-    public JSONObject setDatePost(Date datePost){
-        return setValue("dPostedxx", datePost);
-    }
-    
-    public Date getDatePost(){
-        return (Date) getValue("dPostedxx");
     }
     
     public JSONObject setModifyingId(String modifyingId){
@@ -403,7 +349,6 @@ public class Model_PO_Master extends Model{
     public Date getModifiedDate(){
         return (Date) getValue("dModified");
     }
-    
     
     @Override
     public String getNextCode() {
@@ -579,5 +524,27 @@ public class Model_PO_Master extends Model{
             return poSupplierContactPerson;
         }
     }
+    
+    public Model_Client_Master Trucking() {
+        if (!"".equals((String) getValue("sClientID"))) {
+            if (poSupplier.getEditMode() == EditMode.READY
+                    && poSupplier.getClientId().equals((String) getValue("sClientID"))) {
+                return poSupplier;
+            } else {
+                poJSON = poSupplier.openRecord((String) getValue("sClientID"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poSupplier;
+                } else {
+                    poSupplier.initialize();
+                    return poSupplier;
+                }
+            }
+        } else {
+            poSupplier.initialize();
+            return poSupplier;
+        }
+    }
     //end - reference object models
+    
 }
