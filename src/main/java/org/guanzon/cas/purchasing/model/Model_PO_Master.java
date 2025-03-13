@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.cas.client.model.Model_Client_Address;
@@ -46,7 +47,7 @@ public class Model_PO_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             //assign default values
-            poEntity.updateObject("dTransact", "1900-00-00");
+            poEntity.updateObject("dExpected", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("sDestinat", poGRider.getBranchCode());
 
@@ -59,7 +60,7 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("nAdvAmtxx", 0.00);
             poEntity.updateObject("nNetTotal", 0.00);
 
-            poEntity.updateObject("dExpected", "1900-00-00");
+            poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.updateObject("cEmailSnt", Logical.NO);
             poEntity.updateObject("nEmailSnt", 0);
@@ -126,7 +127,7 @@ public class Model_PO_Master extends Model {
     public Date getTransactionDate() {
         return (Date) getValue("dTransact");
     }
-
+    
     public JSONObject setCompanyID(String companyID) {
         return setValue("sCompnyID", companyID);
     }

@@ -9,6 +9,7 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
@@ -17,7 +18,6 @@ import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.warehouse.StockRequest;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
-import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
@@ -367,7 +367,6 @@ public class PurchaseOrder extends Transaction {
 //    }
 
     /*End - Search Master References*/
-
     @Override
     public String getSourceCode() {
         return SOURCE_CODE;
@@ -482,108 +481,90 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsSQL = 
-                 "SELECT" 
-                + "  sTransNox,"
-                + "  sBranchCd,"
-                + "  sIndstCdx,"
-                + "  sCategrCd,"
-                + "  dTransact,"
-                + "  sReferNox,"
-                + "  sRemarksx,"
-                + "  sIssNotes,"
-                + "  nCurrInvx,"
-                + "  nEstInvxx,"
-                + "  nEntryNox,"
-                + "  sSourceCd,"
-                + "  sSourceNo,"
-                + "  cTranStat,"
-                + "  sModified,"
-                + "  dModified,"
-                + "  dTimeStmp"
-                + " FROM inv_stock_request_master";
+        String lsCondition = "";
+        if (Master().getIndustryID().isEmpty() || Master().getIndustryID().equals(null)){
+            lsCondition = "WHERE d.sIndstCdx LIKE "" AND d.sIndstCdx = c.sIndstCdx)";
+        } else {
+            lsCondition = "WHERE d.sIndstCdx = " +SQLUtil.toSQL(Master().getIndustryID())+ " AND d.sIndstCdx = c.sIndstCdx)";
+        }
+            
+        
+        String lsSQL = "SELECT"
+                + "  a.sTransNox,"
+                + "  a.sBranchCd,"
+                + "  a.dTransact,"
+                + "  a.sReferNox,"
+                + "  a.cTranStat,"
+                + "  e.sBranchNm,"
+                + "  COUNT(DISTINCT b.sStockIDx) AS total_details"
+                + " FROM inv_stock_request_master a"
+                + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
+                + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
+                + " WHERE EXISTS ("
+                + "    SELECT 1 FROM industry d"
+                + "    WHERE d.sIndstCdx = '02' AND d.sIndstCdx = c.sIndstCdx"
+                + " )"
+                + " AND EXISTS ("
+                + "    SELECT 1 FROM company f"
+                + "    WHERE f.sCompnyID = '0002' AND f.sCompnyID = e.sCompnyID"
+                + " )"
+                + " GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm"
+                + " ORDER BY a.dTransact DESC;";
+        
+        
+        String condition = " EXISTS (SELECT 1 FROM industry d"
+                + "    WHERE d.sIndstCdx = " +SQLUtil.toSQL(Master().getIndustryID())+ " AND d.sIndstCdx = c.sIndstCdx)"
+                + " AND EXISTS (SELECT 1 FROM company f"
+                + "    WHERE f.sCompnyID = " +SQLUtil.toSQL(Master().getCompanyID())+ " AND f.sCompnyID = e.sCompnyID)";
+        
+        lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
+//        lsSQL.append(" ORDER BY a.nLedgerNo ASC");
+        System.out.println("Executing SQL: " + lsSQL);
 
-        lsSQL = lsSQL + " ORDER BY sTransNox ASC";
-
-        System.out.println("Executing SQL: " + lsSQL.toString());
-
-        ResultSet loRS = poGRider.executeQuery(lsSQL.toString());
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONObject poJSON = new JSONObject();
         JSONArray dataArray = new JSONArray();
+
+        if (loRS == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Query execution failed.");
+            return poJSON;
+        }
+
         try {
             int lnctr = 0;
 
-            if (MiscUtil.RecordCount(loRS) >= 0) {
-                poInvStockRequestMaster = new ArrayList<>();
-                while (loRS.next()) {
-                    // Print the result set
-                    JSONObject request = new JSONObject();
-                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
-                    System.out.println("sBranchCd: " + loRS.getString("sBranchCd"));
-                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
-                    System.out.println("nEntryNox: " + loRS.getInt("nEntryNox"));
-                    System.out.println("sReferNox: " + loRS.getString("sReferNox"));
-                    System.out.println("------------------------------------------------------------------------------");
+            while (loRS.next()) {
+                JSONObject request = new JSONObject();
+                request.put("sTransNox", loRS.getString("sTransNox"));
+                request.put("sBranchCd", loRS.getString("sBranchCd"));
+                request.put("dTransact", loRS.getDate("dTransact"));
+                request.put("sReferNox", loRS.getString("sReferNox"));
+                request.put("cTranStat", loRS.getString("cTranStat"));
+                request.put("sBranchNm", loRS.getString("sBranchNm"));
+                request.put("total_details", loRS.getInt("total_details"));
 
-                    poInvStockRequestMaster.add(invStockRequestMaster(loRS.getString("sTransNox")));
-                    poInvStockRequestMaster.get(poInvStockRequestMaster.size() - 1)
-                            .openRecord(loRS.getString("sTransNox"));
-                    dataArray.add(request);
-                    lnctr++;
-                }
 
-                System.out.println("Records found: " + lnctr);
+                dataArray.add(request);
+                lnctr++;
+            }
+
+            if (lnctr > 0) {
                 poJSON.put("result", "success");
                 poJSON.put("message", "Record loaded successfully.");
                 poJSON.put("data", dataArray);
-
             } else {
-                poInvStockRequestMaster = new ArrayList<>();
-                addInventoryStockRequestMaster();
                 poJSON.put("result", "error");
                 poJSON.put("continue", true);
-                poJSON.put("message", "No record found .");
+                poJSON.put("message", "No records found.");
             }
-            MiscUtil.close(loRS);
         } catch (SQLException e) {
             poJSON.put("result", "error");
             poJSON.put("message", e.getMessage());
+        } finally {
+            MiscUtil.close(loRS);
         }
-        return poJSON;
-    }
-
-    private Model_Inv_Stock_Request_Master invStockRequestMaster(String transactionNo) throws SQLException, GuanzonException {
-        Model_Inv_Stock_Request_Master object = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-
-        JSONObject loJSON = object.openRecord(transactionNo);
-
-        if ("success".equals((String) loJSON.get("result"))) {
-            return object;
-        } else {
-            return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-        }
-    }
-
-    private Model_Inv_Stock_Request_Master invStockRequestMaster() {
-        return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-    }
-
-    public JSONObject addInventoryStockRequestMaster() {
-        poJSON = new JSONObject();
-
-        if (poInvStockRequestMaster.isEmpty()) {
-            poInvStockRequestMaster.add(invStockRequestMaster());
-        } else {
-            if (!poInvStockRequestMaster.get(poInvStockRequestMaster.size() - 1).getTransactionNo().isEmpty()) {
-                poInvStockRequestMaster.add(invStockRequestMaster());
-            } else {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Unable to add serialLedger.");
-                return poJSON;
-            }
-        }
-
-        poJSON.put("result", "success");
         return poJSON;
     }
 
