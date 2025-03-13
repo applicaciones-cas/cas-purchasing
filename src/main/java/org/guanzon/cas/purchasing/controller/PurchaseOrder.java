@@ -481,12 +481,12 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsCondition = "";
-        if (Master().getIndustryID().isEmpty() || Master().getIndustryID().equals(null)){
-            lsCondition = "WHERE d.sIndstCdx LIKE "" AND d.sIndstCdx = c.sIndstCdx)";
-        } else {
-            lsCondition = "WHERE d.sIndstCdx = " +SQLUtil.toSQL(Master().getIndustryID())+ " AND d.sIndstCdx = c.sIndstCdx)";
-        }
+        String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null  
+                            ? "WHERE d.sIndstCdx LIKE '%' AND d.sIndstCdx = c.sIndstCdx)"  
+                            : "WHERE d.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND d.sIndstCdx = c.sIndstCdx)";
+        String lsCompanyCondition = Master().getCompanyID().isEmpty() || Master().getCompanyID() == null  
+                            ? "WHERE f.sCompnyID LIKE '%' AND f.sCompnyID = e.sCompnyID)"  
+                            : "WHERE f.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND f.sCompnyID = e.sCompnyID)";
             
         
         String lsSQL = "SELECT"
@@ -500,26 +500,17 @@ public class PurchaseOrder extends Transaction {
                 + " FROM inv_stock_request_master a"
                 + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
                 + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
-                + " WHERE EXISTS ("
-                + "    SELECT 1 FROM industry d"
-                + "    WHERE d.sIndstCdx = '02' AND d.sIndstCdx = c.sIndstCdx"
-                + " )"
-                + " AND EXISTS ("
-                + "    SELECT 1 FROM company f"
-                + "    WHERE f.sCompnyID = '0002' AND f.sCompnyID = e.sCompnyID"
-                + " )"
-                + " GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm"
-                + " ORDER BY a.dTransact DESC;";
+                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd";
         
         
-        String condition = " EXISTS (SELECT 1 FROM industry d"
-                + "    WHERE d.sIndstCdx = " +SQLUtil.toSQL(Master().getIndustryID())+ " AND d.sIndstCdx = c.sIndstCdx)"
-                + " AND EXISTS (SELECT 1 FROM company f"
-                + "    WHERE f.sCompnyID = " +SQLUtil.toSQL(Master().getCompanyID())+ " AND f.sCompnyID = e.sCompnyID)";
+        String condition = " EXISTS (SELECT 1 FROM industry d "
+                + lsIndustryCondition
+                + " AND EXISTS (SELECT 1 FROM company f "
+                + lsCompanyCondition;
         
         lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
-//        lsSQL.append(" ORDER BY a.nLedgerNo ASC");
+        lsSQL = lsSQL + (" GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm");
+        lsSQL = lsSQL + (" ORDER BY a.dTransact DESC");
         System.out.println("Executing SQL: " + lsSQL);
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
