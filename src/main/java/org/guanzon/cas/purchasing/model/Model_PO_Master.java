@@ -46,7 +46,7 @@ public class Model_PO_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             //assign default values
-            poEntity.updateObject("dTransact", "0000-00-00");
+            poEntity.updateObject("dTransact", "1900-00-00");
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("sDestinat", poGRider.getBranchCode());
 
@@ -59,7 +59,7 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("nAdvAmtxx", 0.00);
             poEntity.updateObject("nNetTotal", 0.00);
 
-            poEntity.updateObject("dExpected", "0000-00-00");
+            poEntity.updateObject("dExpected", "1900-00-00");
 
             poEntity.updateObject("cEmailSnt", Logical.NO);
             poEntity.updateObject("nEmailSnt", 0);

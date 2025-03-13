@@ -1,6 +1,7 @@
 
 import java.sql.SQLException;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
@@ -202,7 +203,7 @@ public class testPurchaseOrder {
 //    }   
 //    
 //    @Test
-    public void testUpdateTransaction() {
+    public void testUpdateTransaction() throws GuanzonException {
         JSONObject loJSON;
 
         try {
