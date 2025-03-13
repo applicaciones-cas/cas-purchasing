@@ -1,7 +1,6 @@
 
 import java.sql.SQLException;
-import java.util.List;
-import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
@@ -17,7 +16,7 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class testPurchaseOrder {
 
-    static GRider instance;
+    static GRiderCAS instance;
     static PurchaseOrder trans;
 
     @BeforeClass
@@ -32,7 +31,7 @@ public class testPurchaseOrder {
     @Test
     public void testGetApprovedStockRequests() {
         try {
-            JSONObject response = trans.getApprovedStockRequests();  // Direct JSONObject response
+            JSONObject response = (JSONObject) trans.getApprovedStockRequests();  // Direct JSONObject response
 
             // Ensure the response is not null
             Assert.assertNotNull("Response should not be null", response);
@@ -207,19 +206,19 @@ public class testPurchaseOrder {
         JSONObject loJSON;
 
         try {
-            loJSON = trans.InitTransaction();
+            loJSON = (JSONObject) trans.InitTransaction();
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
             }
 
-            loJSON = trans.OpenTransaction("A00125000001");
+            loJSON = (JSONObject) trans.OpenTransaction("A00125000001");
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
             }
 
-            loJSON = trans.UpdateTransaction();
+            loJSON = (JSONObject) trans.UpdateTransaction();
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
