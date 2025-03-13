@@ -5,7 +5,7 @@
  */
 package org.guanzon.cas.purchasing.services;
 
-import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.LogWrapper;
 import org.guanzon.cas.purchasing.controller.PurchaseOrderReceiving;
 
@@ -15,11 +15,11 @@ import org.guanzon.cas.purchasing.controller.PurchaseOrderReceiving;
  */
 public class PurchaseOrderReceivingControllers {
     
-    private GRider poGRider;
+    private GRiderCAS poGRider;
     private LogWrapper poLogWrapper;
     private PurchaseOrderReceiving poPurchaseOrderReceiving;
     
-    public PurchaseOrderReceivingControllers(GRider applicationDriver, LogWrapper logWrapper){
+    public PurchaseOrderReceivingControllers(GRiderCAS applicationDriver, LogWrapper logWrapper){
         poGRider = applicationDriver;
         poLogWrapper = logWrapper;
     }

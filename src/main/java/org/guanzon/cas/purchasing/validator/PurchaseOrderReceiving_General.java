@@ -6,7 +6,7 @@
 package org.guanzon.cas.purchasing.validator;
 
 import java.util.ArrayList;
-import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
@@ -18,7 +18,7 @@ import org.json.simple.JSONObject;
  * @author Arsiela 03-12-2025
  */
 public class PurchaseOrderReceiving_General implements GValidator{
-    GRider poGrider;
+    GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
     
@@ -27,7 +27,7 @@ public class PurchaseOrderReceiving_General implements GValidator{
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
-        poGrider = (GRider) applicationDriver;
+        poGrider = (GRiderCAS) applicationDriver;
     }
 
     @Override

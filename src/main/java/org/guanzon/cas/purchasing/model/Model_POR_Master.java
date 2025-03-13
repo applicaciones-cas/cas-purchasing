@@ -8,6 +8,7 @@ package org.guanzon.cas.purchasing.model;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.Logical;
@@ -51,10 +52,10 @@ public class Model_POR_Master extends Model {
             MiscUtil.initRowSet(poEntity);
             
             //assign default values
-            poEntity.updateObject("dTransact", "0000-00-00");
-            poEntity.updateObject("dRefernce", "0000-00-00");
-            poEntity.updateObject("dTermDuex", "0000-00-00");
-            poEntity.updateObject("dDueDatex", "0000-00-00");
+            poEntity.updateObject("dTransact", "1900-01-01");
+            poEntity.updateObject("dRefernce", "1900-01-01");
+            poEntity.updateObject("dTermDuex", "1900-01-01");
+            poEntity.updateObject("dDueDatex", "1900-01-01");
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateDouble("nDiscount", 0.00);
             poEntity.updateDouble("nAddDiscx", 0.00);
@@ -75,17 +76,17 @@ public class Model_POR_Master extends Model {
             
             //initialize reference objects
             ParamModels model = new ParamModels(poGRider);
-//            poBranch = model.Branch();
-//            poIndustry = model.Industry();
-//            poCategory = model.Category();
-//            poCompany = model.Company();
-//            poTerm = model.Term();
+            poBranch = model.Branch();
+            poIndustry = model.Industry();
+            poCategory = model.Category();
+            poCompany = model.Company();
+            poTerm = model.Term();
             
             ClientModel clientModel = new ClientModel(poGRider); 
-//            poSupplier = clientModel.ClientMaster();
-//            poSupplierAdress = clientModel.ClientAddress();
-//            poSupplierContactPerson = clientModel.ClientInstitutionContact();
-            //end - initialize reference objects
+            poSupplier = clientModel.ClientMaster();
+            poSupplierAdress = clientModel.ClientAddress();
+            poSupplierContactPerson = clientModel.ClientInstitutionContact();
+//            end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -110,19 +111,19 @@ public class Model_POR_Master extends Model {
         return (String) getValue("sBranchCd");
     }
     
-    public JSONObject setIndustryID(String industryID){
+    public JSONObject setIndustryId(String industryID){
         return setValue("sIndstCdx", industryID);
     }
     
-    public String getIndustryID(){
+    public String getIndustryId(){
         return (String) getValue("sIndstCdx");
     }
     
-    public JSONObject setDepartmentID(String departmentID){
+    public JSONObject setDepartmentId(String departmentID){
         return setValue("sDeptIDxx", departmentID);
     }
     
-    public String getDepartmentID(){
+    public String getDepartmentId(){
         return (String) getValue("sDeptIDxx");
     }
     
@@ -134,43 +135,43 @@ public class Model_POR_Master extends Model {
         return (Date) getValue("dTransact");
     }
     
-    public JSONObject setCompanyID(String companyID){
+    public JSONObject setCompanyId(String companyID){
         return setValue("sCompnyID", companyID);
     }
     
-    public String getCompanyID(){
+    public String getCompanyId(){
         return (String) getValue("sCompnyID");
     }
     
-    public JSONObject setSupplierID(String supplierID){
+    public JSONObject setSupplierId(String supplierID){
         return setValue("sSupplier", supplierID);
     }
     
-    public String getSupplierID(){
+    public String getSupplierId(){
         return (String) getValue("sSupplier");
     }
     
-    public JSONObject setAddressID(String addressID){
+    public JSONObject setAddressId(String addressID){
         return setValue("sAddrssID", addressID);
     }
     
-    public String getAddressID(){
+    public String getAddressId(){
         return (String) getValue("sAddrssID");
     }
     
-    public JSONObject setContactID(String contactID){
+    public JSONObject setContactId(String contactID){
         return setValue("sContctID", contactID);
     }
     
-    public String getContactID(){
+    public String getContactId(){
         return (String) getValue("sContctID");
     }
     
-    public JSONObject setTruckingID(String truckingID){
+    public JSONObject setTruckingId(String truckingID){
         return setValue("sTrucking", truckingID);
     }
     
-    public String getTruckingID(){
+    public String getTruckingId(){
         return (String) getValue("sTrucking");
     }
     
@@ -352,11 +353,11 @@ public class Model_POR_Master extends Model {
     
     @Override
     public String getNextCode() {
-        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getConnection(), poGRider.getBranchCode());
+        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
     
     //reference object models
-    public Model_Branch Branch() {
+    public Model_Branch Branch() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sBranchCd"))) {
             if (poBranch.getEditMode() == EditMode.READY
                     && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
@@ -377,7 +378,7 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Industry Industry() {
+    public Model_Industry Industry() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sIndstCdx"))) {
             if (poIndustry.getEditMode() == EditMode.READY
                     && poIndustry.getIndustryId().equals((String) getValue("sIndstCdx"))) {
@@ -398,7 +399,7 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Category Category() {
+    public Model_Category Category() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sCategrCd"))) {
             if (poCategory.getEditMode() == EditMode.READY
                     && poCategory.getCategoryId().equals((String) getValue("sCategrCd"))) {
@@ -419,13 +420,13 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Company Company() {
-        if (!"".equals((String) getValue("sCompanyID"))) {
+    public Model_Company Company() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sCompnyID"))) {
             if (poCompany.getEditMode() == EditMode.READY
-                    && poCompany.getCompanyId().equals((String) getValue("sCompanyID"))) {
+                    && poCompany.getCompanyId().equals((String) getValue("sCompnyID"))) {
                 return poCompany;
             } else {
-                poJSON = poCompany.openRecord((String) getValue("sCategrCd"));
+                poJSON = poCompany.openRecord((String) getValue("sCompnyID"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poCompany;
@@ -440,7 +441,7 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Term Term() {
+    public Model_Term Term() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
                     && poTerm.getTermCode().equals((String) getValue("sTermCode"))) {
@@ -462,13 +463,13 @@ public class Model_POR_Master extends Model {
     }
     
     
-    public Model_Client_Master Supplier() {
-        if (!"".equals((String) getValue("sClientID"))) {
+    public Model_Client_Master Supplier() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sSupplier"))) {
             if (poSupplier.getEditMode() == EditMode.READY
-                    && poSupplier.getClientId().equals((String) getValue("sClientID"))) {
+                    && poSupplier.getClientId().equals((String) getValue("sSupplier"))) {
                 return poSupplier;
             } else {
-                poJSON = poSupplier.openRecord((String) getValue("sClientID"));
+                poJSON = poSupplier.openRecord((String) getValue("sSupplier"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplier;
@@ -483,13 +484,13 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Client_Address SupplierAddress() {
-        if (!"".equals((String) getValue("sClientID"))) {
+    public Model_Client_Address SupplierAddress() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sAddressID"))) {
             if (poSupplierAdress.getEditMode() == EditMode.READY
                     && poSupplierAdress.getClientId().equals((String) getValue("sAddressID"))) {
                 return poSupplierAdress;
             } else {
-                poJSON = poSupplierAdress.openRecord((String) getValue("sClientID"));
+                poJSON = poSupplierAdress.openRecord((String) getValue("sAddressID"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplierAdress;
@@ -504,8 +505,8 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Client_Institution_Contact SupplierContactPerson() {
-        if (!"".equals((String) getValue("sClientID"))) {
+    public Model_Client_Institution_Contact SupplierContactPerson() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sContctID"))) {
             if (poSupplierContactPerson.getEditMode() == EditMode.READY
                     && poSupplierContactPerson.getClientId().equals((String) getValue("sContctID"))) {
                 return poSupplierContactPerson;
@@ -525,13 +526,13 @@ public class Model_POR_Master extends Model {
         }
     }
     
-    public Model_Client_Master Trucking() {
-        if (!"".equals((String) getValue("sClientID"))) {
+    public Model_Client_Master Trucking() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sTrucking"))) {
             if (poSupplier.getEditMode() == EditMode.READY
-                    && poSupplier.getClientId().equals((String) getValue("sClientID"))) {
+                    && poSupplier.getClientId().equals((String) getValue("sTrucking"))) {
                 return poSupplier;
             } else {
-                poJSON = poSupplier.openRecord((String) getValue("sClientID"));
+                poJSON = poSupplier.openRecord((String) getValue("sTrucking"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplier;

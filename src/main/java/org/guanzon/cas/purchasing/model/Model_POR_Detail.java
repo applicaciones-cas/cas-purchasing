@@ -8,6 +8,7 @@ package org.guanzon.cas.purchasing.model;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.inv.model.Model_Inventory;
@@ -34,7 +35,7 @@ public class Model_POR_Detail extends Model{
             MiscUtil.initRowSet(poEntity);
             
             //assign default values
-            poEntity.updateObject("dExpiryDt", "0000-00-00");
+            poEntity.updateObject("dExpiryDt", "1900-01-01");
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nWHCountx", 0);
@@ -52,7 +53,7 @@ public class Model_POR_Detail extends Model{
             
             //initialize reference objects
             InvModels invModel = new InvModels(poGRider); 
-//            poInventory = invModel.Inventory();
+            poInventory = invModel.Inventory();
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -86,19 +87,19 @@ public class Model_POR_Detail extends Model{
         return (String) getValue("sOrderNox");
     }
     
-    public JSONObject setStockID(String stockID){
+    public JSONObject setStockId(String stockID){
         return setValue("sStockIDx", stockID);
     }
     
-    public String getStockID(){
+    public String getStockId(){
         return (String) getValue("sStockIDx");
     }
     
-    public JSONObject setReplaceID(String replaceID){
+    public JSONObject setReplaceId(String replaceID){
         return setValue("sReplacID", replaceID);
     }
     
-    public String getReplaceID(){
+    public String getReplaceId(){
         return (String) getValue("sReplacID");
     }
     
@@ -175,7 +176,7 @@ public class Model_POR_Detail extends Model{
     }
     
     //reference object models
-    public Model_Inventory Inventory() {
+    public Model_Inventory Inventory() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sStockID"))) {
             if (poInventory.getEditMode() == EditMode.READY
                     && poInventory.getStockId().equals((String) getValue("sStockID"))) {
@@ -196,25 +197,25 @@ public class Model_POR_Detail extends Model{
         }
     }
     
-    public Model_Inventory Supersede() {
-        if (!"".equals((String) getValue("sReplacID"))) {
-            if (poInventory.getEditMode() == EditMode.READY
-                    && poInventory.getStockId().equals((String) getValue("sReplacID"))) {
-                return poInventory;
-            } else {
-                poJSON = poInventory.openRecord((String) getValue("sReplacID"));
-
-                if ("success".equals((String) poJSON.get("result"))) {
+    public Model_Inventory Supersede() throws SQLException, GuanzonException {
+            if (!"".equals((String) getValue("sReplacID"))) {
+                if (poInventory.getEditMode() == EditMode.READY
+                        && poInventory.getStockId().equals((String) getValue("sReplacID"))) {
                     return poInventory;
                 } else {
-                    poInventory.initialize();
-                    return poInventory;
+                    poJSON = poInventory.openRecord((String) getValue("sReplacID"));
+
+                    if ("success".equals((String) poJSON.get("result"))) {
+                        return poInventory;
+                    } else {
+                        poInventory.initialize();
+                        return poInventory;
+                    }
                 }
+            } else {
+                poInventory.initialize();
+                return poInventory;
             }
-        } else {
-            poInventory.initialize();
-            return poInventory;
-        }
     }
     //end reference object models
 }

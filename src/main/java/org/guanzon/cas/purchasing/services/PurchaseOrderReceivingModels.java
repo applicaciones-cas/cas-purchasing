@@ -6,6 +6,7 @@
 package org.guanzon.cas.purchasing.services;
 
 import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 
@@ -15,11 +16,11 @@ import org.guanzon.cas.purchasing.model.Model_POR_Master;
  */
 public class PurchaseOrderReceivingModels {
     
-    private final GRider poGRider;
+    private final GRiderCAS poGRider;
     private Model_POR_Master POMaster;
     private Model_POR_Detail PODetail;
     
-    public PurchaseOrderReceivingModels(GRider applicationDriver){
+    public PurchaseOrderReceivingModels(GRiderCAS applicationDriver){
         poGRider = applicationDriver;
     }
     
