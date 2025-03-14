@@ -138,12 +138,12 @@ public class Model_PO_Detail extends Model {
         return (int) getValue("nRecOrder");
     }
 
-    public JSONObject setQuantity(int quantity) {
+    public JSONObject setQuantity(Number quantity) {
         return setValue("nQuantity", quantity);
     }
 
-    public int getQuantity() {
-        return (int) getValue("nQuantity");
+    public Number getQuantity() {
+        return (Number) getValue("nQuantity");
     }
 
     public JSONObject setReceivedQunatity(int receivedQuantity) {
@@ -171,11 +171,11 @@ public class Model_PO_Detail extends Model {
     }
 
     public JSONObject setSouceNo(String sourceNo) {
-        return setValue("sSourceCd", sourceNo);
+        return setValue("sSourceNo", sourceNo);
     }
 
     public String getSouceNo() {
-        return (String) getValue("sSourceCd");
+        return (String) getValue("sSourceNo");
     }
 
     public JSONObject setModifiedDate(Date modifiedDate) {
@@ -318,13 +318,13 @@ public class Model_PO_Detail extends Model {
     }
 
     public Model_Inventory Inventory() {
-        if (!"".equals((String) getValue("sStockID"))) {
+        if (!"".equals((String) getValue("sStockIDx"))) {
             if (poInventory.getEditMode() == EditMode.READY
-                    && poInventory.getStockId().equals((String) getValue("sStockID"))) {
+                    && poInventory.getStockId().equals((String) getValue("sStockIDx"))) {
                 return poInventory;
             } else {
                 try {
-                    poJSON = poInventory.openRecord((String) getValue("sStockID"));
+                    poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
                     
                     if ("success".equals((String) poJSON.get("result"))) {
                         return poInventory;
@@ -344,12 +344,12 @@ public class Model_PO_Detail extends Model {
     }
 
     public Model_Inv_Master InventoryMaster() {
-        if (!"".equals((String) getValue("sStockID"))) {
+        if (!"".equals((String) getValue("sStockIDx"))) {
             if (poInventoryMaster.getEditMode() == EditMode.READY
-                    && poInventoryMaster.getStockId().equals((String) getValue("sStockID"))) {
+                    && poInventoryMaster.getStockId().equals((String) getValue("sStockIDx"))) {
                 return poInventoryMaster;
             } else {
-                poJSON = poInventoryMaster.openRecord((String) getValue("sStockID"));
+                poJSON = poInventoryMaster.openRecord((String) getValue("sStockIDx"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poInventoryMaster;

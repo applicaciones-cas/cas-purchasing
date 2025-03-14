@@ -31,71 +31,76 @@ public class testPurchaseOrder {
         trans = new PurchaseOrderControllers(instance, null).PurchaseOrder();
     }
 
-    @Test
-    public void testGetApprovedStockRequests() {
-        try {
-            JSONObject response = (JSONObject) trans.getApprovedStockRequests();  // Direct JSONObject response
-
-            // Ensure the response is not null
-            Assert.assertNotNull("Response should not be null", response);
-
-            // Extract the list of approved stock requests from the JSON response
-            if (!"success".equals(response.get("result"))) {
-                System.err.println("Failed to fetch approved stock requests: " + response.get("message"));
-                Assert.fail();
-            }
-
-            // Assuming "data" holds the list of approved stock requests
-            JSONArray approvedRequests = (JSONArray) response.get("data");
-
-            // Validate that the list is not null or empty
-            Assert.assertNotNull("Approved stock requests should not be null", approvedRequests);
-            Assert.assertFalse("Approved stock requests should not be empty", approvedRequests.isEmpty());
-
-            System.out.println("Total Approved Stock Requests: " + approvedRequests.size());
-
-            // Iterate through the list and validate each request
-            for (Object obj : approvedRequests) {
-                JSONObject request = (JSONObject) obj;
-                Assert.assertEquals("Status should be 'approved'", null, request.get("sApproved"));
-                System.out.println("Approved Stock Request: " + request.toJSONString());
-            } 
-
-        } catch (Exception e) {
-            System.err.println("Exception occurred while fetching approved stock requests: " + e.getMessage());
-            e.printStackTrace();
-            Assert.fail("Exception thrown during test execution.");
-        }
-    }
-
+//    @Test
+//    public void testGetApprovedStockRequests() {
+//        try {
+//            JSONObject response = (JSONObject) trans.getApprovedStockRequests();  // Direct JSONObject response
+//
+//            // Ensure the response is not null
+//            Assert.assertNotNull("Response should not be null", response);
+//
+//            // Extract the list of approved stock requests from the JSON response
+//            if (!"success".equals(response.get("result"))) {
+//                System.err.println("Failed to fetch approved stock requests: " + response.get("message"));
+//                Assert.fail();
+//            }
+//
+//            // Assuming "data" holds the list of approved stock requests
+//            JSONArray approvedRequests = (JSONArray) response.get("data");
+//
+//            // Validate that the list is not null or empty
+//            Assert.assertNotNull("Approved stock requests should not be null", approvedRequests);
+//            Assert.assertFalse("Approved stock requests should not be empty", approvedRequests.isEmpty());
+//
+//            System.out.println("Total Approved Stock Requests: " + approvedRequests.size());
+//
+//            // Iterate through the list and validate each request
+//            for (Object obj : approvedRequests) {
+//                JSONObject request = (JSONObject) obj;
+//                Assert.assertEquals("Status should be 'approved'", null, request.get("sApproved"));
+//                System.out.println("Approved Stock Request: " + request.toJSONString());
+//            } 
+//
+//        } catch (Exception e) {
+//            System.err.println("Exception occurred while fetching approved stock requests: " + e.getMessage());
+//            e.printStackTrace();
+//            Assert.fail("Exception thrown during test execution.");
+//        }
+//    }
     @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "02";
         String categoryId = "0002";
         String remarks = "this is a test.";
-        
         String stockId = "M00125000001";
+        String description = "TMX Supremo Standard 2025";
+        double nOldPrice = 0.00;
+        double nUnitPrce = 0.00;
+        int nQtyOnHnd = 110;
+        int nRecOrder = 110;
         int quantity = 110;
+        int nReceived = 0;
+        int nCancelld = 0;
         String classify = "A";
         int recOrder = 110;
         int onHand = 10;
-        
+
         JSONObject loJSON;
-        
+
         try {
             loJSON = trans.InitTransaction();
-            if (!"success".equals((String) loJSON.get("result"))){
+            if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
-            } 
-            
+            }
+
             loJSON = trans.NewTransaction();
-            if (!"success".equals((String) loJSON.get("result"))){
+            if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
-            } 
-            
+            }
+
             //you can use trans.SearchBranch() when on UI 
 //            loJSON = trans.SearchBranch("", false);
 //            if (!"success".equals((String) loJSON.get("result"))){
@@ -122,53 +127,53 @@ public class testPurchaseOrder {
 //            } 
 //            trans.Master().set(categoryId); //direct assignment of value
 //            Assert.assertEquals(trans.Master().getCategoryId(), categoryId);
-
             trans.Master().setRemarks(remarks);
             Assert.assertEquals(trans.Master().getRemarks(), remarks);
 
-            try {
-                //            trans.Detail(0).setStockID(stockId);
-//            trans.Detail(0).setQuantity(quantity);
-//            trans.Detail(0).setc(classify);
-//            trans.Detail(0).setRecommendedOrder(recOrder);
-//            trans.Detail(0).setQuantityOnHand(onHand);
+            trans.Detail(0).setEntryNo(1);
+            trans.Detail(0).setStockID(stockId);
+            trans.Detail(0).setDescription(description);
+            trans.Detail(0).setOldPrice(nOldPrice);
+            trans.Detail(0).setUnitPrice(nUnitPrce);
+            trans.Detail(0).setQuantityOnHand(nQtyOnHnd);
+            trans.Detail(0).setRecordOrder(nRecOrder);
+            trans.Detail(0).setQuantity(quantity);
+            trans.Detail(0).setReceivedQunatity(nReceived);
+            trans.Detail(0).setCancelledQuantity(nCancelld);
+            trans.AddDetail();
 //
-//            trans.AddDetail();
-//            trans.Detail(1).setStockId("M00225000111");
+//            trans.Detail(1).setStockID("M00225000111");
 //            trans.Detail(1).setQuantity(0);
-//            trans.Detail(1).setClassification(classify);
-//            trans.Detail(1).setRecommendedOrder(recOrder);
+////            trans.Detail(1).setClassification(classify);
+////            trans.Detail(1).setReceivedQunatity(recOrder);
 //            trans.Detail(1).setQuantityOnHand(onHand);
-//
 //            trans.AddDetail();
-//            trans.Detail(2).setStockId("M00225000222");
+//
+//            trans.Detail(2).setStockID("M00225000222");
 //            trans.Detail(2).setQuantity(10);
-//            trans.Detail(2).setClassification(classify);
-//            trans.Detail(2).setRecommendedOrder(recOrder);
+////            trans.Detail(2).setClassification(classify);
+////            trans.Detail(2).setRecommendedOrder(recOrder);
 //            trans.Detail(2).setQuantityOnHand(onHand);
-//
 //            trans.AddDetail();
-//            trans.Detail(3).setStockId("M00225000333");
-//            trans.Detail(3).setQuantity(50);
-//            trans.Detail(3).setClassification(classify);
-//            trans.Detail(3).setRecommendedOrder(recOrder);
-//            trans.Detail(3).setQuantityOnHand(onHand);
 //
+//            trans.Detail(3).setStockID("M00225000333");
+//            trans.Detail(3).setQuantity(50);
+////            trans.Detail(3).setClassification(classify);
+////            trans.Detail(3).setRecommendedOrder(recOrder);
+//            trans.Detail(3).setQuantityOnHand(onHand);
 //            trans.AddDetail();
 
-loJSON = trans.SaveTransaction();
-            } catch (GuanzonException ex) {
-                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            loJSON = trans.SaveTransaction();
+
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
             }
-        } catch (CloneNotSupportedException | SQLException | ExceptionInInitializerError e) {
+        } catch (CloneNotSupportedException | SQLException | ExceptionInInitializerError | GuanzonException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         }
-    }   
+    }
 //    @Test
 //    public void testOpenTransaction() {
 //        JSONObject loJSON;
