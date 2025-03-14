@@ -16,7 +16,6 @@ import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
-import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Company;
@@ -495,13 +494,13 @@ public class PurchaseOrder extends Transaction {
         System.out.println("Executing SQL: " + lsSQL);
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-        JSONObject poJSON = new JSONObject();
+        JSONObject loJSON = new JSONObject();
         JSONArray dataArray = new JSONArray();
 
         if (loRS == null) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Query execution failed.");
-            return poJSON;
+            loJSON.put("result", "error");
+            loJSON.put("message", "Query execution failed.");
+            return loJSON;
         }
 
         try {
@@ -522,64 +521,55 @@ public class PurchaseOrder extends Transaction {
             }
 
             if (lnctr > 0) {
-                poJSON.put("result", "success");
-                poJSON.put("message", "Record loaded successfully.");
-                poJSON.put("data", dataArray);
+                loJSON.put("result", "success");
+                loJSON.put("message", "Record loaded successfully.");
+                loJSON.put("data", dataArray);
             } else {
-                poJSON.put("result", "error");
-                poJSON.put("continue", true);
-                poJSON.put("message", "No records found.");
+                loJSON.put("result", "error");
+                loJSON.put("continue", true);
+                loJSON.put("message", "No records found.");
             }
         } catch (SQLException e) {
-            poJSON.put("result", "error");
-            poJSON.put("message", e.getMessage());
+            loJSON.put("result", "error");
+            loJSON.put("message", e.getMessage());
         } finally {
             MiscUtil.close(loRS);
         }
+        return loJSON;
+    }
+
+    public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
+        InvWarehouseControllers loTrans = new InvWarehouseControllers(poGRider, logwrapr);
+        poJSON = new JSONObject();
+        poJSON = loTrans.StockRequest().InitTransaction();
+        if ("success".equals((String) poJSON.get("result"))) {
+            poJSON = loTrans.StockRequest().OpenTransaction(transactionNo);
+            if ("success".equals((String) poJSON.get("result"))) {
+                for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
+                    if ((loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued()) > 0) {
+                        Detail(getDetailCount() - 1).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+                        Detail(getDetailCount() - 1).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+//                    Detail(getDetailCount() - 1).setEntryNo(lnCtr + 1); // Set Entry Number Sequentially
+                        Detail(getDetailCount() - 1).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
+                        Detail(getDetailCount() - 1).setRecordOrder(0);
+                        Detail(getDetailCount() - 1).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
+                        Detail(getDetailCount() - 1).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+                        Detail(getDetailCount() - 1).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
+                        Detail(getDetailCount() - 1).setSouceCode(SOURCE_CODE);
+
+                        AddDetail();
+                    }
+
+                }
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+            }
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+        }
         return poJSON;
     }
-
-    
-    
-
-public JSONObject addOrdersToDetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
-    InvWarehouseControllers loTrans = new InvWarehouseControllers(poGRider, logwrapr);
-    poJSON = new JSONObject();
-    poJSON = loTrans.StockRequest().InitTransaction();
-
-    if ("success".equals((String) poJSON.get("result"))) {
-        poJSON = loTrans.StockRequest().OpenTransaction(transactionNo);
-
-        if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
-                
-                if ((loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued()) > 0) {
-                    System.out.println("MASTER  " + loTrans.StockRequest().Master().getTransactionNo());
-                    System.out.println("stockid  " + loTrans.StockRequest().Detail(lnCtr).getStockId());
-                    Detail(getDetailCount() - 1).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-//                    Detail(getDetailCount() - 1).setEntryNo(lnCtr + 1); // Set Entry Number Sequentially
-                    Detail(getDetailCount() - 1).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
-                    Detail(getDetailCount() - 1).setRecordOrder(0);
-                    Detail(getDetailCount() - 1).setQuantity(0);
-                    Detail(getDetailCount() - 1).setReceivedQunatity(0);
-                    Detail(getDetailCount() - 1).setCancelledQuantity(0);
-                    Detail(getDetailCount() - 1).setSouceCode(SOURCE_CODE);
-                    Detail(getDetailCount() - 1).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-                    AddDetail();
-                }
-                
-            }
-        }else{
-        poJSON.put("result", "error");
-        poJSON.put("message", "No records found.");
-        }
-    }else{
-        poJSON.put("result", "error");
-        poJSON.put("message", "No records found.");
-    }
-    return poJSON;
-}           
-
-
 
 }
