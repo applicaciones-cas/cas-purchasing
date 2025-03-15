@@ -2,8 +2,6 @@ package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -12,9 +10,14 @@ import org.guanzon.cas.inv.model.Model_Inv_Master;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.model.Model_Brand;
 import org.guanzon.cas.parameter.model.Model_Category;
+import org.guanzon.cas.parameter.model.Model_Color;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.model.Model_Inv_Type;
+import org.guanzon.cas.parameter.model.Model_Measure;
+import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
@@ -24,9 +27,14 @@ public class Model_PO_Detail extends Model {
     //reference objects
     Model_Branch poBranch;
     Model_Industry poIndustry;
-    Model_Category poCategory;
     Model_Company poCompany;
     Model_Term poTerm;
+    Model_Brand poBrand;
+    Model_Model poModel;
+    Model_Color poColor;
+    Model_Category poCategory;
+    Model_Inv_Type poInv_Type;
+    Model_Measure poMeasure;
 
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
@@ -42,10 +50,13 @@ public class Model_PO_Detail extends Model {
             MiscUtil.initRowSet(poEntity);
 
             //assign default values
-//            poEntity.updateObject("nEntryNox", 0);
-//            poEntity.updateString("cTranStat", PurchaseOrderStatus.CONFIRMED);
-//            poEntity.updateString("cTranStat", PurchaseOrderStatus.OPEN);
-            //end - assign default values
+            poEntity.updateObject("nUnitPrce", 0.00);
+            poEntity.updateObject("nOldPrice", 0.00);
+            poEntity.updateObject("nQtyOnHnd", 0);
+            poEntity.updateObject("nRecOrder", 0);
+            poEntity.updateObject("nQuantity", 0);
+            poEntity.updateObject("nReceived", 0);
+            poEntity.updateObject("nCancelld", 0);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -53,6 +64,7 @@ public class Model_PO_Detail extends Model {
             poEntity.absolute(1);
 
             ID = "sTransNox";
+            ID2 = "nEntryNox";
 
             //initialize reference objects
             ParamModels model = new ParamModels(poGRider);
@@ -61,7 +73,11 @@ public class Model_PO_Detail extends Model {
             poCategory = model.Category();
             poCompany = model.Company();
             poTerm = model.Term();
-
+            poBrand = model.Brand();
+            poColor = model.Color();
+            poModel = model.Model();
+            poInv_Type = model.InventoryType();
+            poMeasure = model.Measurement();
             InvModels invModel = new InvModels(poGRider);
             poInventory = invModel.Inventory();
             poInventoryMaster = invModel.InventoryMaster();
@@ -106,7 +122,7 @@ public class Model_PO_Detail extends Model {
         return (String) getValue("sDescript");
     }
 
-    public JSONObject setOldPrice(Double oldPrice) {
+    public JSONObject setOldPrice(double oldPrice) {
         return setValue("nOldPrice", oldPrice);
     }
 
@@ -114,7 +130,7 @@ public class Model_PO_Detail extends Model {
         return (Double) getValue("nOldPrice");
     }
 
-    public JSONObject setUnitPrice(Double unitPrice) {
+    public JSONObject setUnitPrice(double unitPrice) {
         return setValue("nUnitPrce", unitPrice);
     }
 
@@ -187,163 +203,132 @@ public class Model_PO_Detail extends Model {
     }
 
     //reference object models
-    public Model_Branch Branch() {
+    public Model_Branch Branch() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sBranchCd"))) {
             if (poBranch.getEditMode() == EditMode.READY
                     && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
                 return poBranch;
             } else {
-                try {
-                    poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poBranch;
-                    } else {
-                        poBranch.initialize();
-                        return poBranch;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+                poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBranch;
+                } else {
+                    poBranch.initialize();
+                    return poBranch;
+                }
             }
         } else {
             poBranch.initialize();
             return poBranch;
         }
-            return poBranch;
     }
 
-    public Model_Industry Industry() {
+    public Model_Industry Industry() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sIndstCdx"))) {
             if (poIndustry.getEditMode() == EditMode.READY
                     && poIndustry.getIndustryId().equals((String) getValue("sIndstCdx"))) {
                 return poIndustry;
             } else {
-                try {
-                    poJSON = poIndustry.openRecord((String) getValue("sIndstCdx"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poIndustry;
-                    } else {
-                        poIndustry.initialize();
-                        return poIndustry;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+                poJSON = poIndustry.openRecord((String) getValue("sIndstCdx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poIndustry;
+                } else {
+                    poIndustry.initialize();
+                    return poIndustry;
+                }
             }
         } else {
             poIndustry.initialize();
             return poIndustry;
         }
-            return poIndustry;
     }
 
-    public Model_Category Category() {
+    public Model_Category Category() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sCategrCd"))) {
             if (poCategory.getEditMode() == EditMode.READY
                     && poCategory.getCategoryId().equals((String) getValue("sCategrCd"))) {
                 return poCategory;
             } else {
-                try {
-                    poJSON = poCategory.openRecord((String) getValue("sCategrCd"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poCategory;
-                    } else {
-                        poCategory.initialize();
-                        return poCategory;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+                poJSON = poCategory.openRecord((String) getValue("sCategrCd"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poCategory;
+                } else {
+                    poCategory.initialize();
+                    return poCategory;
+                }
             }
         } else {
             poCategory.initialize();
             return poCategory;
         }
-            return poCategory;
     }
 
-    public Model_Company Company() {
+    public Model_Company Company() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sCompanyID"))) {
             if (poCompany.getEditMode() == EditMode.READY
                     && poCompany.getCompanyId().equals((String) getValue("sCompanyID"))) {
                 return poCompany;
             } else {
-                try {
-                    poJSON = poCompany.openRecord((String) getValue("sCategrCd"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poCompany;
-                    } else {
-                        poCompany.initialize();
-                        return poCompany;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+
+                poJSON = poCompany.openRecord((String) getValue("sCompanyID"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poCompany;
+                } else {
+                    poCompany.initialize();
+                    return poCompany;
+                }
             }
         } else {
             poCompany.initialize();
             return poCompany;
         }
-            return poCompany;
     }
 
-    public Model_Term Term() {
+    public Model_Term Term() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
                     && poTerm.getTermCode().equals((String) getValue("sTermCode"))) {
                 return poTerm;
             } else {
-                try {
-                    poJSON = poTerm.openRecord((String) getValue("sTermCode"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poTerm;
-                    } else {
-                        poTerm.initialize();
-                        return poTerm;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+
+                poJSON = poTerm.openRecord((String) getValue("sTermCode"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poTerm;
+                } else {
+                    poTerm.initialize();
+                    return poTerm;
+                }
             }
         } else {
             poTerm.initialize();
             return poTerm;
         }
-            return poTerm;
     }
 
-    public Model_Inventory Inventory() {
+    public Model_Inventory Inventory() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sStockIDx"))) {
             if (poInventory.getEditMode() == EditMode.READY
                     && poInventory.getStockId().equals((String) getValue("sStockIDx"))) {
                 return poInventory;
             } else {
-                try {
-                    poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
-                    
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poInventory;
-                    } else {
-                        poInventory.initialize();
-                        return poInventory;
-                    }
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(Model_PO_Detail.class.getName()).log(Level.SEVERE, null, ex);
-                } 
+
+                poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInventory;
+                } else {
+                    poInventory.initialize();
+                    return poInventory;
+                }
+
             }
         } else {
             poInventory.initialize();
             return poInventory;
         }
-            return poInventory;
     }
 
-    public Model_Inv_Master InventoryMaster() {
+    public Model_Inv_Master InventoryMaster() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sStockIDx"))) {
             if (poInventoryMaster.getEditMode() == EditMode.READY
                     && poInventoryMaster.getStockId().equals((String) getValue("sStockIDx"))) {
@@ -364,5 +349,107 @@ public class Model_PO_Detail extends Model {
         }
     }
 
+    public Model_Brand Brand() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sBrandIDx"))) {
+            if (poBrand.getEditMode() == EditMode.READY
+                    && poBrand.getBrandId().equals((String) getValue("sBrandIDx"))) {
+                return poBrand;
+            } else {
+                poJSON = poBrand.openRecord((String) getValue("sBrandIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBrand;
+                } else {
+                    poBrand.initialize();
+                    return poBrand;
+                }
+            }
+        } else {
+            poBrand.initialize();
+            return poBrand;
+        }
+    }
+
+    public Model_Color Color() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sColorIDx"))) {
+            if (poColor.getEditMode() == EditMode.READY
+                    && poColor.getColorId().equals((String) getValue("sColorIDx"))) {
+                return poColor;
+            } else {
+                poJSON = poColor.openRecord((String) getValue("sColorIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poColor;
+                } else {
+                    poColor.initialize();
+                    return poColor;
+                }
+            }
+        } else {
+            poColor.initialize();
+            return poColor;
+        }
+    }
+
+    public Model_Inv_Type InventoryType() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sInvTypCd"))) {
+            if (poInv_Type.getEditMode() == EditMode.READY
+                    && poInv_Type.getInventoryTypeId().equals((String) getValue("sInvTypCd"))) {
+                return poInv_Type;
+            } else {
+                poJSON = poInv_Type.openRecord((String) getValue("sInvTypCd"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInv_Type;
+                } else {
+                    poInv_Type.initialize();
+                    return poInv_Type;
+                }
+            }
+        } else {
+            poInv_Type.initialize();
+            return poInv_Type;
+        }
+    }
+
+    public Model_Measure Measure() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sMeasurID"))) {
+            if (poMeasure.getEditMode() == EditMode.READY
+                    && poMeasure.getMeasureId().equals((String) getValue("sMeasurID"))) {
+                return poMeasure;
+            } else {
+                poJSON = poMeasure.openRecord((String) getValue("sMeasurID"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poMeasure;
+                } else {
+                    poMeasure.initialize();
+                    return poMeasure;
+                }
+            }
+        } else {
+            poMeasure.initialize();
+            return poMeasure;
+        }
+    }
+
+    public Model_Model Model() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sModelIDx"))) {
+            if (poModel.getEditMode() == EditMode.READY
+                    && poModel.getModelId().equals((String) getValue("sModelIDx"))) {
+                return poModel;
+            } else {
+                poJSON = poModel.openRecord((String) getValue("sModelIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poModel;
+                } else {
+                    poModel.initialize();
+                    return poModel;
+                }
+            }
+        } else {
+            poModel.initialize();
+            return poModel;
+        }
+    }
     //end - reference object models
 }

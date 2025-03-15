@@ -5,6 +5,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -16,6 +18,7 @@ import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Company;
@@ -33,9 +36,10 @@ import org.json.simple.parser.ParseException;
 
 public class PurchaseOrder extends Transaction {
 
+    List<Model_Inv_Stock_Request_Master> paStockRequest;
+
     public JSONObject InitTransaction() {
         SOURCE_CODE = "InvR";
-
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
@@ -232,14 +236,12 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject AddDetail() throws CloneNotSupportedException {
-
         if (Detail(getDetailCount() - 1).getStockID().isEmpty()) {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", "Last row has empty item.");
             return poJSON;
         }
-
         return addDetail();
     }
 
@@ -477,7 +479,7 @@ public class PurchaseOrder extends Transaction {
                 + "  a.sReferNox,"
                 + "  a.cTranStat,"
                 + "  e.sBranchNm,"
-                + "  COUNT(DISTINCT b.sStockIDx) AS total_details"
+                + "  COUNT(b.sStockIDx) AS total_details"
                 + " FROM inv_stock_request_master a"
                 + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
                 + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
@@ -494,13 +496,13 @@ public class PurchaseOrder extends Transaction {
         System.out.println("Executing SQL: " + lsSQL);
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-        JSONObject loJSON = new JSONObject();
+        JSONObject poJSON = new JSONObject();
         JSONArray dataArray = new JSONArray();
 
         if (loRS == null) {
-            loJSON.put("result", "error");
-            loJSON.put("message", "Query execution failed.");
-            return loJSON;
+            poJSON.put("result", "error");
+            poJSON.put("message", "Query execution failed.");
+            return poJSON;
         }
 
         try {
@@ -521,31 +523,124 @@ public class PurchaseOrder extends Transaction {
             }
 
             if (lnctr > 0) {
-                loJSON.put("result", "success");
-                loJSON.put("message", "Record loaded successfully.");
-                loJSON.put("data", dataArray);
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+                poJSON.put("data", dataArray);
             } else {
-                loJSON.put("result", "error");
-                loJSON.put("continue", true);
-                loJSON.put("message", "No records found.");
+                poJSON.put("result", "error");
+                poJSON.put("continue", true);
+                poJSON.put("message", "No records found.");
             }
         } catch (SQLException e) {
-            loJSON.put("result", "error");
-            loJSON.put("message", e.getMessage());
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
         } finally {
             MiscUtil.close(loRS);
         }
-        return loJSON;
+        return poJSON;
     }
+//    public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
+//        String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
+//                ? "WHERE d.sIndstCdx LIKE '%' AND d.sIndstCdx = c.sIndstCdx)"
+//                : "WHERE d.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND d.sIndstCdx = c.sIndstCdx)";
+//        String lsCompanyCondition = Master().getCompanyID().isEmpty() || Master().getCompanyID() == null
+//                ? "WHERE f.sCompnyID LIKE '%' AND f.sCompnyID = e.sCompnyID)"
+//                : "WHERE f.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND f.sCompnyID = e.sCompnyID)";
+//
+//        String lsSQL = "SELECT"
+//                + "  a.sTransNox,"
+//                + "  a.sBranchCd,"
+//                + "  a.dTransact,"
+//                + "  a.sReferNox,"
+//                + "  a.cTranStat,"
+//                + "  e.sBranchNm,"
+//                + "  COUNT(b.sStockIDx) AS total_details"
+//                + " FROM inv_stock_request_master a"
+//                + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
+//                + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
+//                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd";
+//
+////        String condition = " EXISTS (SELECT 1 FROM industry d "
+////                + lsIndustryCondition
+////                + " AND EXISTS (SELECT 1 FROM company f "
+////                + lsCompanyCondition;
+////
+////        lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
+//        lsSQL = lsSQL + (" GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm");
+//        lsSQL = lsSQL + (" ORDER BY a.dTransact ASC");
+//        System.out.println("Executing SQL: " + lsSQL);
+//        ResultSet loRS = poGRider.executeQuery(lsSQL);
+//        JSONObject loJSON = new JSONObject();
+//
+////        JSONArray dataArray = new JSONArray();
+//        try {
+//            int lnCntr = 0;
+//            if (MiscUtil.RecordCount(loRS) >= 0) {
+//                paStockRequest = new ArrayList<>();
+//                while (loRS.next()) {
+//                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+//                    System.out.println("sBranchCd: " + loRS.getString("sBranchCd"));
+//                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
+//
+//                    paStockRequest.add(invStockRequestMaster(loRS.getString("sTransNox")));
+//                    paStockRequest.get(paStockRequest.size() - 1);
+//
+//                    System.out.println("sTransNox: " + InventoryStockRequestMaster().getTransactionNo());
+//                    lnCntr++;
+//                }
+//                System.out.println("Records found: " + lnCntr);
+//                loJSON.put("result", "success");
+//                loJSON.put("message", "Record loaded successfully.");
+//            } else {
+//                paStockRequest = new ArrayList<>();
+//                loJSON.put("result", "error");
+//                loJSON.put("continue", true);
+//                loJSON.put("message", "No record found .");
+//            }
+//            MiscUtil.close(loRS);
+//        } catch (SQLException e) {
+//            loJSON.put("result", "error");
+//            loJSON.put("message", e.getMessage());
+//        }
+//        return loJSON;
+//    }
+//
+//    private Model_Inv_Stock_Request_Master invStockRequestMaster(String transactionNo) {
+//        try {
+//            Model_Inv_Stock_Request_Master object = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
+//            JSONObject loJSON = object.openRecord(transactionNo);
+//            if ("success".equals((String) loJSON.get("result"))) {
+//                return object;
+//            } else {
+//                return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
+//            }
+//        } catch (SQLException | GuanzonException ex) {
+//            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        return null;
+//    }
+//
+//    public Model_Inv_Stock_Request_Master InventoryStockRequestMaster() {
+//        return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
+//    }
+//
+//    public Model_Inv_Stock_Request_Master InventoryStockRequestMasterList(int row) {
+//        return (Model_Inv_Stock_Request_Master) paStockRequest.get(row);
+//    }
+//
+//    public int getInventoryStockRequestCount() {
+//        return this.paStockRequest.size();
+//    }
 
     public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
         InvWarehouseControllers loTrans = new InvWarehouseControllers(poGRider, logwrapr);
+
         poJSON = new JSONObject();
         poJSON = loTrans.StockRequest().InitTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = loTrans.StockRequest().OpenTransaction(transactionNo);
             if ("success".equals((String) poJSON.get("result"))) {
-                for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
+                for (int lnCtr = 0; lnCtr < loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
                     if ((loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued()) > 0) {
                         Detail(getDetailCount() - 1).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
                         Detail(getDetailCount() - 1).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
