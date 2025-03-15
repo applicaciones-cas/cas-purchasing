@@ -80,6 +80,8 @@ public class PurchaseOrderReceiving_General implements GValidator{
     
     private JSONObject validateNew(){
         poJSON = new JSONObject();
+        
+        
                 
         poJSON.put("result", "success");
         return poJSON;

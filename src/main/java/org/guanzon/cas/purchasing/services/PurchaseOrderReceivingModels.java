@@ -9,6 +9,7 @@ import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
+import org.guanzon.cas.purchasing.model.Model_POR_Serial;
 
 /**
  *
@@ -19,6 +20,7 @@ public class PurchaseOrderReceivingModels {
     private final GRiderCAS poGRider;
     private Model_POR_Master POMaster;
     private Model_POR_Detail PODetail;
+    private Model_POR_Serial POSerial;
     
     public PurchaseOrderReceivingModels(GRiderCAS applicationDriver){
         poGRider = applicationDriver;
@@ -56,6 +58,23 @@ public class PurchaseOrderReceivingModels {
         }
 
         return PODetail;
+    }
+    
+    public Model_POR_Serial PurchaseOrderReceivingSerial(){
+        if (poGRider == null){
+            System.err.println("PurchaseOrderReceivingModels.PurchaseOrderReceivingSerial: Application driver is not set.");
+            return null;
+        }
+        
+        if (POSerial == null){
+            POSerial = new Model_POR_Serial();
+            POSerial.setApplicationDriver(poGRider);
+            POSerial.setXML("Model_PO_Receiving_Serial");
+            POSerial.setTableName("PO_Receiving_Serial");
+            POSerial.initialize();
+        }
+
+        return POSerial;
     }
     
 }

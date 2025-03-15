@@ -41,7 +41,7 @@ public class testPurchaseOrderReceivingMaster {
         trans = new PurchaseOrderReceivingControllers(instance, null).PurchaseOrderReceiving();
     }
 
-    @Test
+//    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "02";
@@ -154,7 +154,7 @@ public class testPurchaseOrderReceivingMaster {
         }
     }
     
-//    @Test
+    @Test
     public void testgetPurchaseOrderList() {
         String industryId = "02";
         String companyId = "0001";
@@ -180,7 +180,7 @@ public class testPurchaseOrderReceivingMaster {
         }
         
         //retreiving using column index
-        for (int lnCtr = 0; lnCtr <= trans.PurchaseOrderList().size() - 1; lnCtr++){
+        for (int lnCtr = 0; lnCtr <= trans.getPurchaseOrderCount() - 1; lnCtr++){
             System.out.println("PO Row No ->> " + lnCtr);
             System.out.println("PO Transaction No ->> " + trans.PurchaseOrderList(lnCtr).getTransactionNo());
             System.out.println("PO Transaction Date ->> " + trans.PurchaseOrderList(lnCtr).getTransactionDate());

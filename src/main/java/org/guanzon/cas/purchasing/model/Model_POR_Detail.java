@@ -177,12 +177,12 @@ public class Model_POR_Detail extends Model{
     
     //reference object models
     public Model_Inventory Inventory() throws SQLException, GuanzonException {
-        if (!"".equals((String) getValue("sStockID"))) {
+        if (!"".equals((String) getValue("sStockIDx"))) {
             if (poInventory.getEditMode() == EditMode.READY
-                    && poInventory.getStockId().equals((String) getValue("sStockID"))) {
+                    && poInventory.getStockId().equals((String) getValue("sStockIDx"))) {
                 return poInventory;
             } else {
-                poJSON = poInventory.openRecord((String) getValue("sStockID"));
+                poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poInventory;

@@ -28,13 +28,16 @@ import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
-import org.guanzon.cas.parameter.ModelSeries;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
+import org.guanzon.cas.purchasing.model.Model_POR_Serial;
+import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
+import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderReceivingValidatorFactory;
@@ -46,16 +49,19 @@ import org.json.simple.parser.ParseException;
  * @author Arsiela 03-12-2025
  */
 public class PurchaseOrderReceiving extends Transaction{ 
-    
-    List<Model_PO_Master> poPOMaster;
+    private Model_POR_Serial poOthers;
+    List<Model_POR_Serial> paOthers;
+    List<Model_PO_Master> paPOMaster;
     
     public JSONObject InitTransaction(){      
         SOURCE_CODE = "InvR";
         
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
+        poOthers = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
+        paOthers = new ArrayList<>();
         paDetail = new ArrayList<>();
-        poPOMaster = new ArrayList<>();
+        paPOMaster = new ArrayList<>();
         
         return initialize();
     }
@@ -306,7 +312,7 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = object.searchRecord(value, byCode);
 
         if ("success".equals((String) poJSON.get("result"))){
-            Master().setTermCode(object.getModel().getTermCode());
+            Master().setTermCode(object.getModel().getTermId());
         }
 
         return poJSON;
@@ -366,13 +372,14 @@ public class PurchaseOrderReceiving extends Transaction{
     }
     
     public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException {
-        ModelSeries object = new ParamControllers(poGRider, logwrapr).ModelSeries();
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+        object.getModel().setBrandId( Detail(row).Inventory().getBrandId());
 
-        poJSON = object.searchRecord(value, byCode);
+        poJSON = object.searchRecordOfVariants(value, byCode);
 
         if ("success".equals((String) poJSON.get("result"))){
-            Detail(row).Inventory().setStockId("");
+            Detail(row).setStockId(object.getModel().getStockId());
         }
 
         return poJSON;
@@ -417,7 +424,7 @@ public class PurchaseOrderReceiving extends Transaction{
             int lnctr = 0;
 
             if (MiscUtil.RecordCount(loRS) >= 0) {
-                poPOMaster = new ArrayList<>();
+                paPOMaster = new ArrayList<>();
                 while (loRS.next()) {
                     // Print the result set
                     System.out.println("sTransNox: " + loRS.getString("sTransNox"));
@@ -425,8 +432,8 @@ public class PurchaseOrderReceiving extends Transaction{
                     System.out.println("sSupplier: " + loRS.getString("sSupplier"));
                     System.out.println("------------------------------------------------------------------------------");
 
-                    poPOMaster.add(PurchaseOrderMaster(loRS.getString("sTransNox")));
-                    poPOMaster.get(poPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                    paPOMaster.add(PurchaseOrderMaster());
+                    paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
                     lnctr++;
                 }
 
@@ -435,8 +442,8 @@ public class PurchaseOrderReceiving extends Transaction{
                 poJSON.put("message", "Record loaded successfully.");
 
             } else {
-                poPOMaster = new ArrayList<>();
-                addPurchaseOrderMaster();
+                paPOMaster = new ArrayList<>();
+                paPOMaster.add(PurchaseOrderMaster());
                 poJSON.put("result", "error");
                 poJSON.put("continue", true);
                 poJSON.put("message", "No record found .");
@@ -451,30 +458,116 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-    private Model_PO_Master PurchaseOrderMaster(String transactionNo) throws SQLException, GuanzonException {
-        Model_PO_Master object = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
-
-        JSONObject loJSON = object.openRecord(transactionNo);
-
-        if ("success".equals((String) loJSON.get("result"))) {
-            return object;
-        } else {
-            return new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
-        }
-    }
-    
     private Model_PO_Master PurchaseOrderMaster() {
         return new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
     }
     
-    public JSONObject addPurchaseOrderMaster() {
+    public Model_PO_Master PurchaseOrderList(int row) {
+        return (Model_PO_Master) paPOMaster.get(row);
+    }
+    
+    public int getPurchaseOrderCount() {
+       return this.paPOMaster.size();
+    }
+    
+    public JSONObject addPurchaseOrderToPORDetail(String transactionNo) throws CloneNotSupportedException {
+        poJSON = new JSONObject();
+        
+        PurchaseOrderControllers loTrans = new PurchaseOrderControllers(poGRider, logwrapr);
+        poJSON = loTrans.PurchaseOrder().InitTransaction();
+        
+        if ("success".equals((String) poJSON.get("result"))) {
+            poJSON = loTrans.PurchaseOrder().OpenTransaction(transactionNo);
+            if ("success".equals((String) poJSON.get("result"))) {
+                for (int lnCtr = 0; lnCtr <= loTrans.PurchaseOrder().getDetailCount() - 1; lnCtr++) {
+                    Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo());
+                    Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrder().Detail(lnCtr).getStockID());
+                    Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getUnitType());
+                    Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getOrderQuantity());
+                    Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getOrderQuantity());
+                    Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
+
+                    AddDetail();
+                }
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+            }
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+        }
+        return poJSON;
+    }
+    
+    public JSONObject getPurchaseOrderReceivingSerial(int entryNo) throws SQLException, GuanzonException{
+        poJSON = new JSONObject();
+        
+        try {
+            String lsSQL = " SELECT "                                                
+                            + "    sTransNox "                                          
+                            + " ,  nEntryNox "                                           
+                            + " ,  sSerialID "                          
+                            + " FROM po_receiving_serial " ;
+            
+            lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())
+                                                + " AND nEntryNox = " + SQLUtil.toSQL(entryNo)
+                                        )       + " ORDER BY sSerialID ASC ";
+            
+            System.out.println("Executing SQL: " + lsSQL);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            JSONObject poJSON = new JSONObject();
+
+            int lnctr = 0;
+
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                paOthers = new ArrayList<>();
+                while (loRS.next()) {
+                    // Print the result set
+                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                    System.out.println("nEntryNox: " + loRS.getInt("nEntryNox"));
+                    System.out.println("sSerialID: " + loRS.getString("sSerialID"));
+                    System.out.println("------------------------------------------------------------------------------");
+
+                    paOthers.add(PurchaseOrderReceivingSerial());
+                    paOthers.get(paOthers.size() - 1).openRecord(loRS.getString("sTransNox"), loRS.getInt("nEntryNox"),loRS.getString("sSerialID") );
+                    lnctr++;
+                }
+
+                System.out.println("Records found: " + lnctr);
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+
+            } else {
+                paOthers = new ArrayList<>();
+                addPurchaseOrderReceivingSerial();
+                poJSON.put("result", "error");
+                poJSON.put("continue", true);
+                poJSON.put("message", "No record found .");
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return poJSON;
+    }
+    
+    private Model_POR_Serial PurchaseOrderReceivingSerial() {
+        return new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
+    }
+    
+    public JSONObject addPurchaseOrderReceivingSerial() {
         poJSON = new JSONObject();
 
-        if (poPOMaster.isEmpty()) {
-            poPOMaster.add(PurchaseOrderMaster());
+        if (paOthers.isEmpty()) {
+            paOthers.add(PurchaseOrderReceivingSerial());
         } else {
-            if (!poPOMaster.get(poPOMaster.size() - 1).getTransactionNo().isEmpty()) {
-                poPOMaster.add(PurchaseOrderMaster());
+            if (!paOthers.get(paOthers.size() - 1).getTransactionNo().isEmpty()) {
+                paOthers.add(PurchaseOrderReceivingSerial());
             } else {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Unable to add purchase order.");
@@ -486,12 +579,12 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-    public Model_PO_Master PurchaseOrderList(int row) {
-        return (Model_PO_Master) poPOMaster.get(row);
+    public Model_POR_Serial PurchaseOrderReceivingSerialList(int row) {
+        return (Model_POR_Serial) paOthers.get(row);
     }
     
-    public List<Model_PO_Master> PurchaseOrderList() {
-       return this.poPOMaster;
+    public int getPurchaseOrderReceivingSerialCount() {
+       return this.paOthers.size();
     }
     
     @Override
@@ -536,6 +629,7 @@ public class PurchaseOrderReceiving extends Transaction{
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr ++){            
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
+            Detail(lnCtr).setWhCount(Detail(lnCtr).getQuantity());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
         }
         

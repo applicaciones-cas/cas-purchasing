@@ -444,7 +444,7 @@ public class Model_POR_Master extends Model {
     public Model_Term Term() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
-                    && poTerm.getTermCode().equals((String) getValue("sTermCode"))) {
+                    && poTerm.getTermId().equals((String) getValue("sTermCode"))) {
                 return poTerm;
             } else {
                 poJSON = poTerm.openRecord((String) getValue("sTermCode"));
