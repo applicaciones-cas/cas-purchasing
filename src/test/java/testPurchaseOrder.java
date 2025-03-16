@@ -1,4 +1,5 @@
 
+import com.lowagie.text.pdf.PdfName;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,7 +60,7 @@ public class testPurchaseOrder {
 //                JSONObject request = (JSONObject) obj;
 //                Assert.assertEquals("Status should be 'approved'", null, request.get("sApproved"));
 //                System.out.println("Approved Stock Request: " + request.toJSONString());
-//            } 
+//            }
 //
 //        } catch (Exception e) {
 //            System.err.println("Exception occurred while fetching approved stock requests: " + e.getMessage());
@@ -67,6 +68,57 @@ public class testPurchaseOrder {
 //            Assert.fail("Exception thrown during test execution.");
 //        }
 //    }
+    @Test
+    public void testGetApprovedRequest() {
+        JSONObject loJSON;
+        try {
+            loJSON = trans.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = trans.getApprovedStockRequests();
+            if ("success".equals((String) loJSON.get("result"))) {
+                System.out.println("RESULT" + (String) loJSON.get("message"));
+                for (int lnCntr = 0; lnCntr <= trans.getInvStockRequestCount() - 1; lnCntr++) {
+                    System.out.println("trans no:" + trans.InvStockRequestMaster(lnCntr).getTransactionNo());
+                    System.out.println("trans entry no:" + trans.InvStockRequestMaster(lnCntr).getEntryNo());
+                }
+            }
+        } catch (ExceptionInInitializerError e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
+    @Test
+    public void testPOMaster() {
+        JSONObject loJSON;
+        try {
+            loJSON = trans.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = trans.getPurchaseOrder();
+            if ("success".equals((String) loJSON.get("result"))) {
+                System.out.println("RESULT" + (String) loJSON.get("message"));
+                for (int lnCntr = 0; lnCntr <= trans.getPOMasterCount() - 1; lnCntr++) {
+                    System.out.println("trans no:" + trans.POMaster(lnCntr).getTransactionNo());
+                    System.out.println("trans entry no:" + trans.POMaster(lnCntr).getEntryNo());
+                    System.out.println("trans status:" + trans.POMaster(lnCntr).getTransactionStatus());
+                }
+            }
+        } catch (ExceptionInInitializerError e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
     @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
@@ -101,30 +153,30 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            //you can use trans.SearchBranch() when on UI 
+            //you can use trans.SearchBranch() when on UI
 //            loJSON = trans.SearchBranch("", false);
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
             trans.Master().setBranchCode(branchCd); //direct assignment of value
             Assert.assertEquals(trans.Master().getBranchCode(), branchCd);
 
-            //you can use trans.SearchIndustry() when on UI 
+            //you can use trans.SearchIndustry() when on UI
 //            loJSON = trans.SearchIndustry("", false);
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
             trans.Master().setIndustryID(industryId); //direct assignment of value
             Assert.assertEquals(trans.Master().getIndustryID(), industryId);
 
-            //you can use trans.SearchCategory() when on UI 
+            //you can use trans.SearchCategory() when on UI
 //            loJSON = trans.SearchCategory("", false);
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
 //            trans.Master().set(categoryId); //direct assignment of value
 //            Assert.assertEquals(trans.Master().getCategoryId(), categoryId);
             trans.Master().setRemarks(remarks);
@@ -177,19 +229,19 @@ public class testPurchaseOrder {
 //    @Test
 //    public void testOpenTransaction() {
 //        JSONObject loJSON;
-//        
+//
 //        try {
 //            loJSON = trans.InitTransaction();
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
 //
 //            loJSON = trans.OpenTransaction("M00125000002");
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
 //
 //            //retreiving using column index
 //            for (int lnCol = 1; lnCol <= trans.Master().getColumnCount(); lnCol++){
@@ -209,11 +261,12 @@ public class testPurchaseOrder {
 //            System.err.println(MiscUtil.getException(e));
 //            Assert.fail();
 //        }
-//        
-//        
-//    }   
-//    
+//
+//
+//    }
+//
 //    @Test
+
     public void testUpdateTransaction() throws GuanzonException {
         JSONObject loJSON;
 
@@ -251,23 +304,23 @@ public class testPurchaseOrder {
         }
 
     }
-//    
+//
 //    @Test
 //    public void testConfirmTransaction() {
 //        JSONObject loJSON;
-//        
+//
 //        try {
 //            loJSON = trans.InitTransaction();
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
 //
 //            loJSON = trans.OpenTransaction("M00125000003");
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
+//            }
 //
 //            //retreiving using column index
 //            for (int lnCol = 1; lnCol <= trans.Master().getColumnCount(); lnCol++){
@@ -283,21 +336,21 @@ public class testPurchaseOrder {
 //                    System.out.println(trans.Detail(lnCtr).getColumn(lnCol) + " ->> " + trans.Detail(lnCtr).getValue(lnCol));
 //                }
 //            }
-//            
+//
 //            loJSON = trans.ConfirmTransaction("");
 //            if (!"success".equals((String) loJSON.get("result"))){
 //                System.err.println((String) loJSON.get("message"));
 //                Assert.fail();
-//            } 
-//            
+//            }
+//
 //            System.out.println((String) loJSON.get("message"));
 //        } catch (CloneNotSupportedException |ParseException e) {
 //            System.err.println(MiscUtil.getException(e));
 //            Assert.fail();
 //        }
-//        
-//        
-//    }   
+//
+//
+//    }
 
     @AfterClass
     public static void tearDownClass() {
