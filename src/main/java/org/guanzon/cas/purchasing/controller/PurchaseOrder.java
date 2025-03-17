@@ -44,7 +44,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject InitTransaction() {
         psTranStat = PurchaseOrderStatus.OPEN;
-        SOURCE_CODE = "InvR";
+        SOURCE_CODE = "PO";
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
