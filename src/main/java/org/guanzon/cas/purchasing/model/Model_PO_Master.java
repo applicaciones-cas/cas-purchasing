@@ -58,7 +58,7 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("dExpected", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
-
+            poEntity.updateObject("sTermCode", "0000004");
             poEntity.updateObject("nDiscount", 0.00);
             poEntity.updateObject("nAddDiscx", 0.00);
             poEntity.updateObject("nTranTotl", 0.00);
@@ -466,7 +466,7 @@ public class Model_PO_Master extends Model {
     public Model_Term Term() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
-                    && poTerm.getTermCode().equals((String) getValue("sTermCode"))) {
+                    && poTerm.getTermId().equals((String) getValue("sTermCode"))) {
                 return poTerm;
             } else {
                 poJSON = poTerm.openRecord((String) getValue("sTermCode"));

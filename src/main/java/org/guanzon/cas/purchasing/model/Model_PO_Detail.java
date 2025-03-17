@@ -292,7 +292,7 @@ public class Model_PO_Detail extends Model {
     public Model_Term Term() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
-                    && poTerm.getTermCode().equals((String) getValue("sTermCode"))) {
+                    && poTerm.getTermId().equals((String) getValue("sTermCode"))) {
                 return poTerm;
             } else {
 
