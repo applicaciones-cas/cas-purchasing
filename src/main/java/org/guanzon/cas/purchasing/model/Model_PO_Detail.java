@@ -9,6 +9,9 @@ import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.inv.model.Model_Inv_Master;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
+import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Brand;
 import org.guanzon.cas.parameter.model.Model_Category;
@@ -37,7 +40,8 @@ public class Model_PO_Detail extends Model {
     Model_Inv_Type poInv_Type;
     Model_Measure poMeasure;
     Model_Variant poModelVariant;
-
+    Model_Inv_Stock_Request_Master poInvStockMaster;
+    Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
 
@@ -87,6 +91,9 @@ public class Model_PO_Detail extends Model {
             poInventory = invModel.Inventory();
             poInventoryMaster = invModel.InventoryMaster();
 
+            InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
+            poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
+            poInvStockDetail = invWarehouseModel.InventoryStockRequestDetail();
             //end - initialize reference objects
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -474,6 +481,46 @@ public class Model_PO_Detail extends Model {
         } else {
             poModelVariant.initialize();
             return poModelVariant;
+        }
+    }
+
+    public Model_Inv_Stock_Request_Master InvStockRequestMaster() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTransNox"))) {
+            if (poInvStockMaster.getEditMode() == EditMode.READY
+                    && poInvStockMaster.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                return poInvStockMaster;
+            } else {
+                poJSON = poInvStockMaster.openRecord((String) getValue("sTransNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockMaster;
+                } else {
+                    poInvStockMaster.initialize();
+                    return poInvStockMaster;
+                }
+            }
+        } else {
+            poInvStockMaster.initialize();
+            return poInvStockMaster;
+        }
+    }
+
+    public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTransNox"))) {
+            if (poInvStockDetail.getEditMode() == EditMode.READY
+                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                return poInvStockDetail;
+            } else {
+                poJSON = poInvStockDetail.openRecord((String) getValue("sTransNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockDetail;
+                } else {
+                    poInvStockDetail.initialize();
+                    return poInvStockDetail;
+                }
+            }
+        } else {
+            poInvStockDetail.initialize();
+            return poInvStockDetail;
         }
     }
     //end - reference object models

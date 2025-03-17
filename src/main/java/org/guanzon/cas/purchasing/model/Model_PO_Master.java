@@ -17,6 +17,7 @@ import org.guanzon.cas.client.services.ClientModel;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
@@ -38,6 +39,7 @@ public class Model_PO_Master extends Model {
     Model_Company poCompany;
     Model_Term poTerm;
     Model_Inv_Stock_Request_Master poInvStockMaster;
+    Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
 
     Model_Client_Master poSupplier;
@@ -97,6 +99,7 @@ public class Model_PO_Master extends Model {
             //end - initialize reference objects
             InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
             poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
+            poInvStockDetail = invWarehouseModel.InventoryStockRequestDetail();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -553,13 +556,33 @@ public class Model_PO_Master extends Model {
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poInvStockMaster;
                 } else {
-                    poSupplierContactPerson.initialize();
+                    poInvStockMaster.initialize();
                     return poInvStockMaster;
                 }
             }
         } else {
             poInvStockMaster.initialize();
             return poInvStockMaster;
+        }
+    }
+
+    public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTransNox"))) {
+            if (poInvStockDetail.getEditMode() == EditMode.READY
+                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                return poInvStockDetail;
+            } else {
+                poJSON = poInvStockDetail.openRecord((String) getValue("sTransNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockDetail;
+                } else {
+                    poInvStockDetail.initialize();
+                    return poInvStockDetail;
+                }
+            }
+        } else {
+            poInvStockDetail.initialize();
+            return poInvStockDetail;
         }
     }
 

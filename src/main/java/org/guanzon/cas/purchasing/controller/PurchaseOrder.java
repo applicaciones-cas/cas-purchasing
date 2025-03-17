@@ -608,7 +608,8 @@ public class PurchaseOrder extends Transaction {
         String condition = " EXISTS (SELECT 1 FROM industry d "
                 + lsIndustryCondition
                 + " AND EXISTS (SELECT 1 FROM company f "
-                + lsCompanyCondition;
+                + lsCompanyCondition
+                + " AND b.nApproved > 0";
 
         lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
         lsSQL = lsSQL + (" GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm");
@@ -679,20 +680,33 @@ public class PurchaseOrder extends Transaction {
         }
 
         for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
-            if (loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued() <= 0) {
-                continue;
+//            if (loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued() <= 0) {
+//                continue;
+//            }
+//            AddDetail();
+//            int lnLastIndex = getDetailCount() - 1;
+//            Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+//            Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+//            Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
+//            Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
+//            Detail(lnLastIndex).setRecordOrder(0);
+//            Detail(lnLastIndex).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
+//            Detail(lnLastIndex).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+//            Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
+//            Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
+            if (loTrans.StockRequest().Detail(lnCtr).getApproved() - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase()) > 0) {
+                AddDetail();
+                int lnLastIndex = getDetailCount() - 1;
+                Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
+                Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
+                Detail(lnLastIndex).setRecordOrder(0);
+                Detail(lnLastIndex).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
+                Detail(lnLastIndex).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+                Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
+                Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
             }
-            AddDetail();
-            int lnLastIndex = getDetailCount() - 1;
-            Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-            Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-            Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
-            Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
-            Detail(lnLastIndex).setRecordOrder(0);
-            Detail(lnLastIndex).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
-            Detail(lnLastIndex).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
-            Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
-            Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
         }
 
         loJSON.put("result", "success");
