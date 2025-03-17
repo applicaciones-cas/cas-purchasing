@@ -2,8 +2,6 @@ package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -14,13 +12,11 @@ import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModel;
-import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
@@ -196,36 +192,36 @@ public class Model_PO_Master extends Model {
         return (String) getValue("sTermCode");
     }
 
-    public JSONObject setDiscount(Double discount) {
+    public JSONObject setDiscount(Number discount) {
         return setValue("nDiscount", discount);
     }
 
-    public Double getDiscount() {
-        return (Double) getValue("nDiscount");
+    public Number getDiscount() {
+        return (Number) getValue("nDiscount");
     }
 
-    public JSONObject setAdditionalDiscount(Double additionalDiscount) {
+    public JSONObject setAdditionalDiscount(Number additionalDiscount) {
         return setValue("nAddDiscx", additionalDiscount);
     }
 
-    public Double getAdditionalDiscount() {
-        return (Double) getValue("nAddDiscx");
+    public Number getAdditionalDiscount() {
+        return (Number) getValue("nAddDiscx");
     }
 
-    public JSONObject setTranTotal(Double tranTotal) {
+    public JSONObject setTranTotal(Number tranTotal) {
         return setValue("nTranTotl", tranTotal);
     }
 
-    public Double getTranTotal() {
-        return (Double) getValue("nTranTotl");
+    public Number getTranTotal() {
+        return (Number) getValue("nTranTotl");
     }
 
-    public JSONObject setAmountPaid(Double amountPaid) {
+    public JSONObject setAmountPaid(Number amountPaid) {
         return setValue("nAmtPaidx", amountPaid);
     }
 
-    public Double getAmountPaid() {
-        return (Double) getValue("nAmtPaidx");
+    public Number getAmountPaid() {
+        return (Number) getValue("nAmtPaidx");
     }
 
     public JSONObject isWithAdvPaym(boolean isWithAdvPaym) {
@@ -236,28 +232,28 @@ public class Model_PO_Master extends Model {
         return ((String) getValue("cWithAddx")).equals("1");
     }
 
-    public JSONObject setDownPaymentRatesPercentage(Double downPaymentRatesPercentage) {
+    public JSONObject setDownPaymentRatesPercentage(Number downPaymentRatesPercentage) {
         return setValue("nDPRatexx", downPaymentRatesPercentage);
     }
 
-    public Double getDownPaymentRatesPercentage() {
-        return (Double) getValue("nDPRatexx");
+    public Number getDownPaymentRatesPercentage() {
+        return (Number) getValue("nDPRatexx");
     }
 
-    public JSONObject setDownPaymentRatesAmount(Double downPaymentRatesAmount) {
+    public JSONObject setDownPaymentRatesAmount(Number downPaymentRatesAmount) {
         return setValue("nAdvAmtxx", downPaymentRatesAmount);
     }
 
-    public Double getDownPaymentRatesAmount() {
-        return (Double) getValue("nAdvAmtxx");
+    public Number getDownPaymentRatesAmount() {
+        return (Number) getValue("nAdvAmtxx");
     }
 
-    public JSONObject setNetTotal(Double netTotal) {
+    public JSONObject setNetTotal(Number netTotal) {
         return setValue("nNetTotal", netTotal);
     }
 
-    public Double getNetTotal() {
-        return (Double) getValue("nNetTotal");
+    public Number getNetTotal() {
+        return (Number) getValue("nNetTotal");
     }
 
     public JSONObject setRemarks(String industryId) {
@@ -276,20 +272,20 @@ public class Model_PO_Master extends Model {
         return (String) getValue("cVATaxabl");
     }
 
-    public JSONObject setVatRate(Double vatRate) {
+    public JSONObject setVatRate(Number vatRate) {
         return setValue("nVatRatex", vatRate);
     }
 
-    public Double getVatRate() {
-        return (Double) getValue("nVatRatex");
+    public Number getVatRate() {
+        return (Number) getValue("nVatRatex");
     }
 
-    public JSONObject setWithHoldingTax(Double withHoldingTax) {
+    public JSONObject setWithHoldingTax(Number withHoldingTax) {
         return setValue("nTWithHld", withHoldingTax);
     }
 
-    public Double getWithHoldingTax() {
-        return (Double) getValue("nTWithHld");
+    public Number getWithHoldingTax() {
+        return (Number) getValue("nTWithHld");
     }
 
     public JSONObject setExpectedDate(Date expectedDate) {
@@ -308,12 +304,12 @@ public class Model_PO_Master extends Model {
         return (String) getValue("cEmailSnt");
     }
 
-    public JSONObject setNoEmailSent(int noEmailSent) {
+    public JSONObject setNoEmailSent(Number noEmailSent) {
         return setValue("nEmailSnt", noEmailSent);
     }
 
-    public int getNoEmailSent() {
-        return (int) getValue("nEmailSnt");
+    public Number getNoEmailSent() {
+        return (Number) getValue("nEmailSnt");
     }
 
     public JSONObject setPrint(String print) {
@@ -324,12 +320,12 @@ public class Model_PO_Master extends Model {
         return (String) getValue("cPrintxxx");
     }
 
-    public JSONObject setEntryNo(int entryNo) {
+    public JSONObject setEntryNo(Number entryNo) {
         return setValue("nEntryNox", entryNo);
     }
 
-    public int getEntryNo() {
-        return (int) getValue("nEntryNox");
+    public Number getEntryNo() {
+        return (Number) getValue("nEntryNox");
     }
 
     public JSONObject setInventoryTypeCode(String inventoryTypeCode) {

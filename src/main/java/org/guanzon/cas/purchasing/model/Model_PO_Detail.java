@@ -58,8 +58,10 @@ public class Model_PO_Detail extends Model {
             //assign default values
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nCancelld", 0);
-            poEntity.updateObject("nUnitPrce", 0.00);
-            poEntity.updateObject("nOldPrice", 0.00);
+            poEntity.updateObject("nUnitPrce", 0.0);
+            poEntity.updateObject("nOldPrice", 0.0);
+//            poEntity.updateObject("nUnitPrce", 0.00);
+//            poEntity.updateObject("nOldPrice", 0.00);
             poEntity.updateObject("nQtyOnHnd", 0);
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
@@ -110,12 +112,12 @@ public class Model_PO_Detail extends Model {
         return (String) getValue("sTransNox");
     }
 
-    public JSONObject setEntryNo(int entryNo) {
+    public JSONObject setEntryNo(Number entryNo) {
         return setValue("nEntryNox", entryNo);
     }
 
-    public int getEntryNo() {
-        return (int) getValue("nEntryNox");
+    public Number getEntryNo() {
+        return (Number) getValue("nEntryNox");
     }
 
     public JSONObject setStockID(String stockID) {
@@ -134,36 +136,36 @@ public class Model_PO_Detail extends Model {
         return (String) getValue("sDescript");
     }
 
-    public JSONObject setOldPrice(double oldPrice) {
+    public JSONObject setOldPrice(Number oldPrice) {
         return setValue("nOldPrice", oldPrice);
     }
 
-    public Double getOldPrice() {
-        return (Double) getValue("nOldPrice");
+    public Number getOldPrice() {
+        return (Number) getValue("nOldPrice");
     }
 
-    public JSONObject setUnitPrice(double unitPrice) {
+    public JSONObject setUnitPrice(Number unitPrice) {
         return setValue("nUnitPrce", unitPrice);
     }
 
-    public Double getUnitPrice() {
-        return (Double) getValue("nUnitPrce");
+    public Number getUnitPrice() {
+        return (Number) getValue("nUnitPrce");
     }
 
-    public JSONObject setQuantityOnHand(int quantityOnHand) {
+    public JSONObject setQuantityOnHand(Number quantityOnHand) {
         return setValue("nQtyOnHnd", quantityOnHand);
     }
 
-    public int getQuantityOnHand() {
-        return (int) getValue("nQtyOnHnd");
+    public Number getQuantityOnHand() {
+        return (Number) getValue("nQtyOnHnd");
     }
 
-    public JSONObject setRecordOrder(int recordOrder) {
+    public JSONObject setRecordOrder(Number recordOrder) {
         return setValue("nRecOrder", recordOrder);
     }
 
-    public int getRecordOrder() {
-        return (int) getValue("nRecOrder");
+    public Number getRecordOrder() {
+        return (Number) getValue("nRecOrder");
     }
 
     public JSONObject setQuantity(Number quantity) {
@@ -174,20 +176,20 @@ public class Model_PO_Detail extends Model {
         return (Number) getValue("nQuantity");
     }
 
-    public JSONObject setReceivedQuantity(int receivedQuantity) {
+    public JSONObject setReceivedQuantity(Number receivedQuantity) {
         return setValue("nReceived", receivedQuantity);
     }
 
-    public int getReceivedQuantity() {
-        return (int) getValue("nReceived");
+    public Number getReceivedQuantity() {
+        return (Number) getValue("nReceived");
     }
 
-    public JSONObject setCancelledQuantity(int cancelledQuantity) {
+    public JSONObject setCancelledQuantity(Number cancelledQuantity) {
         return setValue("nCancelld", cancelledQuantity);
     }
 
-    public int getCancelledQuantity() {
-        return (int) getValue("nCancelld");
+    public Number getCancelledQuantity() {
+        return (Number) getValue("nCancelld");
     }
 
     public JSONObject setSouceCode(String sourceCode) {

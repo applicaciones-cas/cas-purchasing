@@ -1,20 +1,23 @@
 package org.guanzon.cas.purchasing.validator;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
-import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
+import org.guanzon.cas.purchasing.model.Model_PO_Detail;
+import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.json.simple.JSONObject;
 
-public class PurchaseOrder_SP implements GValidator{
+public class PurchaseOrder_SP implements GValidator {
+
     GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
-    
-    Model_Inv_Stock_Request_Master poMaster;
-    ArrayList<Model_Inv_Stock_Request_Detail> poDetail;
+
+    Model_PO_Master poMaster;
+    ArrayList<Model_PO_Detail> poDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -28,14 +31,14 @@ public class PurchaseOrder_SP implements GValidator{
 
     @Override
     public void setMaster(Object value) {
-        poMaster = (Model_Inv_Stock_Request_Master) value;
+        poMaster = (Model_PO_Master) value;
     }
 
     @Override
     public void setDetail(ArrayList<Object> value) {
         poDetail.clear();
-        for(int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++){
-            poDetail.add((Model_Inv_Stock_Request_Detail) value.get(lnCtr));
+        for (int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++) {
+            poDetail.add((Model_PO_Detail) value.get(lnCtr));
         }
     }
 
@@ -46,7 +49,7 @@ public class PurchaseOrder_SP implements GValidator{
 
     @Override
     public JSONObject validate() {
-        switch (psTranStat){
+        switch (psTranStat) {
             case StockRequestStatus.OPEN:
                 return validateNew();
             case StockRequestStatus.CONFIRMED:
@@ -61,41 +64,119 @@ public class PurchaseOrder_SP implements GValidator{
                 poJSON = new JSONObject();
                 poJSON.put("result", "success");
         }
-        
+
         return poJSON;
     }
-    
-    private JSONObject validateNew(){
+
+    private JSONObject validateNew() {
         poJSON = new JSONObject();
-                
+        Date loTransactionDate = poMaster.getTransactionDate();
+        Date loExpectedDate = poMaster.getExpectedDate();
+
+        if (loTransactionDate == null) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        if ("1900-01-01".equals(sdf.format(loTransactionDate))) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        Date currentDate = new Date();
+        String currentDateStr = sdf.format(currentDate);
+        String transactionDateStr = sdf.format(loTransactionDate);
+        if (transactionDateStr.compareTo(currentDateStr) > 0) {
+            poJSON.put("message", "Future transaction dates are not allowed.");
+            return poJSON;
+        }
+
+        if (transactionDateStr.compareTo(currentDateStr) < 0) {
+            if (poMaster.getReference() == null || poMaster.getReference().trim().isEmpty()) {
+                poJSON.put("message", "Back-dating requires a Reference No.");
+                return poJSON;
+            }
+        }
+
+        if (poMaster.getIndustryID() == null) {
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
+            poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
+        if (poMaster.getDestinationID() == null || poMaster.getDestinationID().isEmpty()) {
+            poJSON.put("message", "Destination is not set.");
+            return poJSON;
+        }
+        if (poMaster.getExpectedDate() == null) {
+            poJSON.put("message", "Invalid Expected Delivery Date.");
+            return poJSON;
+        }
+        if ("1900-01-01".equals(loExpectedDate)) {
+            poJSON.put("message", "Invalid Expected Delivery Date.");
+            return poJSON;
+        }
+        if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Term.");
+            return poJSON;
+        }
+        if (poMaster.isWithAdvPaym() == true) {
+            if (poMaster.getDownPaymentRatesPercentage() == null
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.00
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.0
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00) {
+                poJSON.put("message", "Invalid Advance Payment Rates.");
+                return poJSON;
+            }
+            if (poMaster.getDownPaymentRatesAmount() == null || poMaster.getDownPaymentRatesAmount().doubleValue() < 0.00) {
+                poJSON.put("message", "Invalid Advance Payment Amount.");
+                return poJSON;
+            }
+            if (poMaster.getDownPaymentRatesPercentage() == null) {
+                poJSON.put("message", "Invalid Advance Payment Rates.");
+                return poJSON;
+            }
+            if (poMaster.getDownPaymentRatesAmount() == null) {
+                poJSON.put("message", "Invalid Advance Payment Amount.");
+                return poJSON;
+            }
+        }
         poJSON.put("result", "success");
         return poJSON;
     }
-    
-    private JSONObject validateConfirmed(){
+
+    private JSONObject validateConfirmed() {
         poJSON = new JSONObject();
-                
+
         poJSON.put("result", "success");
         return poJSON;
     }
-    
-    private JSONObject validateProcessed(){
+
+    private JSONObject validateProcessed() {
         poJSON = new JSONObject();
-                
+
         poJSON.put("result", "success");
         return poJSON;
     }
-    
-    private JSONObject validateCancelled(){
+
+    private JSONObject validateCancelled() {
         poJSON = new JSONObject();
-                
+
         poJSON.put("result", "success");
         return poJSON;
     }
-    
-    private JSONObject validateVoid(){
+
+    private JSONObject validateVoid() {
         poJSON = new JSONObject();
-                
+
         poJSON.put("result", "success");
         return poJSON;
     }

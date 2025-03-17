@@ -3,6 +3,7 @@ package org.guanzon.cas.purchasing.controller;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -396,7 +397,7 @@ public class PurchaseOrder extends Transaction {
 
         if (getDetailCount() == 1) {
             //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantityOnHand() == 0) {
+            if (Detail(0).getQuantityOnHand().equals(0)) {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Your order has zero quantity.");
                 return poJSON;
@@ -448,6 +449,7 @@ public class PurchaseOrder extends Transaction {
 
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
+        loValidator.setMaster(Master());
 
         poJSON = loValidator.validate();
 
