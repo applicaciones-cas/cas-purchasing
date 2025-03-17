@@ -143,20 +143,20 @@ public class Model_POR_Detail extends Model{
         return (Date) getValue("dExpiryDt");
     }
     
-    public JSONObject setWhCount(int whCount){
+    public JSONObject setWhCount(Number whCount){
         return setValue("nWHCountx", whCount);
     }
     
-    public int getWhCount(){
-        return (int) getValue("nWHCountx");
+    public Number getWhCount(){
+        return (Number) getValue("nWHCountx");
     }
     
-    public JSONObject setOrderQty(int orderQty){
+    public JSONObject setOrderQty(Number orderQty){
         return setValue("nOrderQty", orderQty);
     }
     
-    public int getOrderQty(){
-        return (int) getValue("nOrderQty");
+    public Number getOrderQty(){
+        return (Number) getValue("nOrderQty");
     }
     
     public JSONObject setWithVat(String withVat){
