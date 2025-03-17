@@ -245,8 +245,8 @@ public class PurchaseOrderReceiving extends Transaction{
                 lsSQL,
                 "",
                 "Transaction Date»Transaction No»Supplier",
-                "dTransact»sTransNox»sDescript",
-                "dTransact»sTransNox»sDescript",
+                "dTransact»sTransNox»sCompnyNm",
+                "dTransact»sTransNox»sCompnyNm",
                 1);
 
         if (poJSON != null) {
@@ -372,7 +372,7 @@ public class PurchaseOrderReceiving extends Transaction{
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).setUnitPrce((Double) object.getModel().getCost());
+            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
 
         return poJSON;
@@ -522,7 +522,7 @@ public class PurchaseOrderReceiving extends Transaction{
             System.out.println("Executing SQL: " + lsSQL);
 
             ResultSet loRS = poGRider.executeQuery(lsSQL);
-            JSONObject poJSON = new JSONObject();
+            poJSON = new JSONObject();
 
             int lnctr = 0;
 
@@ -543,7 +543,6 @@ public class PurchaseOrderReceiving extends Transaction{
                 System.out.println("Records found: " + lnctr);
                 poJSON.put("result", "success");
                 poJSON.put("message", "Record loaded successfully.");
-
             } else {
                 paPOMaster = new ArrayList<>();
                 paPOMaster.add(PurchaseOrderMaster());
