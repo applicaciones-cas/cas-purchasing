@@ -702,8 +702,9 @@ public class PurchaseOrder extends Transaction {
                 Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
                 Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
                 Detail(lnLastIndex).setRecordOrder(0);
-                Detail(lnLastIndex).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
-                Detail(lnLastIndex).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+                Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).InvMaster().Inventory().getCost().doubleValue());
+                Detail(lnLastIndex).setQuantity(0);
+                Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
                 Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
                 Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
             }

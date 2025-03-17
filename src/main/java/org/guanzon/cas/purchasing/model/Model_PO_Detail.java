@@ -174,11 +174,11 @@ public class Model_PO_Detail extends Model {
         return (Number) getValue("nQuantity");
     }
 
-    public JSONObject setReceivedQunatity(int receivedQuantity) {
+    public JSONObject setReceivedQuantity(int receivedQuantity) {
         return setValue("nReceived", receivedQuantity);
     }
 
-    public int getReceivedQunatity() {
+    public int getReceivedQuantity() {
         return (int) getValue("nReceived");
     }
 
