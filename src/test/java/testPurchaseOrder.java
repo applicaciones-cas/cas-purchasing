@@ -103,7 +103,13 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = trans.getPurchaseOrder();
+            try {
+                loJSON = trans.getPurchaseOrder();
+            } catch (SQLException ex) {
+                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (GuanzonException ex) {
+                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            }
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
                 for (int lnCntr = 0; lnCntr <= trans.getPOMasterCount() - 1; lnCntr++) {

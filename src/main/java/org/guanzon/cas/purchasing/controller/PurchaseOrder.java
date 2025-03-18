@@ -439,7 +439,19 @@ public class PurchaseOrder extends Transaction {
 
     @Override
     public void initSQL() {
-        SQL_BROWSE = "";
+        //the comment SQL_BROWSE is use for single table
+//        SQL_BROWSE = MiscUtil.makeSelect(poMaster);
+        SQL_BROWSE = "SELECT "
+                + "  a.sTransNox,"
+                + "  b.sDescript,"
+                + "  c.sCompnyNm,"
+                + "  e.sCompnyNm "
+                + " FROM po_master a "
+                + "LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
+                + "LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
+                + "LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier "
+                + "LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
+
     }
 
     @Override
@@ -463,19 +475,19 @@ public class PurchaseOrder extends Transaction {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
                     lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
                 }
-                lsCondition = "cTranStat IN (" + lsCondition.substring(2) + ")";
+                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
             } else {
-                lsCondition = "cTranStat = " + SQLUtil.toSQL(psTranStat);
+                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(psTranStat);
             }
-            initSQL();
+            
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsCondition);
-
+            
             loJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "ID»Purchase Order",
+                    "Transaction No»Industry",
                     "sTransNox»sDescript",
-                    "sTransNox»sDescript",
+                    "a.sTransNox»b.sDescript",
                     byCode ? 0 : 1);
 
             if (loJSON != null) {
@@ -492,21 +504,7 @@ public class PurchaseOrder extends Transaction {
         return loJSON;
     }
 
-    public ResultSet getApprovedStockRequestss() throws SQLException {
-        String lsSQL = SQL_BROWSE;
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-        try {
-            if (loRS != null && loRS.next()) {
-                loRS.beforeFirst(); // Move cursor back to the first row for iteration
-                return loRS;
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            logwrapr.severe(e.getMessage());
-            return null;
-        }
-    }
+   
 
     private Model_Inv_Stock_Request_Master InvStockRequestList() {
         return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
