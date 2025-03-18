@@ -104,6 +104,11 @@ public class Model_PO_Detail extends Model {
         }
     }
 
+    @Override
+    public String getNextCode(){
+        return ""; 
+    }
+    
     public JSONObject setTransactionNo(String transactionNo) {
         return setValue("sTransNox", transactionNo);
     }

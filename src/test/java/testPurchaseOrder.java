@@ -86,7 +86,7 @@ public class testPurchaseOrder {
                     System.out.println("trans entry no:" + trans.InvStockRequestMaster(lnCntr).getEntryNo());
                 }
             }
-        } catch (ExceptionInInitializerError e) {
+        } catch (ExceptionInInitializerError | SQLException | GuanzonException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         }
@@ -190,7 +190,7 @@ public class testPurchaseOrder {
             trans.Detail(0).setQuantityOnHand(nQtyOnHnd);
             trans.Detail(0).setRecordOrder(nRecOrder);
             trans.Detail(0).setQuantity(quantity);
-            trans.Detail(0).setReceivedQunatity(nReceived);
+//            trans.Detail(0).setReceivedQunatity(nReceived);
             trans.Detail(0).setCancelledQuantity(nCancelld);
             trans.AddDetail();
 //

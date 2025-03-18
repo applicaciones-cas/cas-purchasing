@@ -3,7 +3,6 @@ package org.guanzon.cas.purchasing.controller;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -15,6 +14,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
@@ -23,7 +23,6 @@ import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
@@ -42,9 +41,9 @@ public class PurchaseOrder extends Transaction {
 
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
+    String psRecdStat = Logical.YES;
 
     public JSONObject InitTransaction() {
-        psTranStat = PurchaseOrderStatus.OPEN;
         SOURCE_CODE = "PO";
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
@@ -397,7 +396,7 @@ public class PurchaseOrder extends Transaction {
 
         if (getDetailCount() == 1) {
             //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantityOnHand().equals(0)) {
+            if (Detail(0).getQuantity().equals(0)) {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Your order has zero quantity.");
                 return poJSON;
@@ -522,71 +521,15 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        JSONObject loJSON = new JSONObject();
-//        try {
-//            String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
-//                    ? "a.sIndstCdx LIKE '%'"
-//                    : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
-//            String lsSQL = " SELECT "
-//                    + "  a.sTransNox,"
-//                    + "  d.sBranchNm,"
-//                    + "  a.sBranchCd,"
-//                    + "  a.dTransact,"
-//                    + "  a.sReferNox,"
-//                    + "  a.cTranStat,"
-//                    + " COUNT(b.sStockIDx) AS nNoItemsx"
-//                    + " FROM inv_stock_request_master a "
-//                    + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
-//                    + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
-//                    + " LEFT JOIN branch d ON a.sBranchCd = d.sBranchCd"
-//                    + " LEFT JOIN industry e ON a.sIndstCdx = e.sIndstCdx";
-//
-////            lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
-////                    + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
-////                    + " AND a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
-////            );
-//            lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition
-//                    + " AND a.cTranStat = " + StockRequestStatus.PROCESSED);
-//            lsSQL = lsSQL + " GROUP BY  a.sTransNox, a.sBranchCd, a.dTransact,a.sReferNox,a.cTranStat, d.sBranchNm "
-//                    + "ORDER BY dTransact ASC";
-//            System.out.println("Executing SQL: " + lsSQL);
-//            ResultSet loRS = poGRider.executeQuery(lsSQL);
-//
-//            int lnctr = 0;
-//
-//            if (MiscUtil.RecordCount(loRS) >= 0) {
-//                paStockRequest = new ArrayList<>();
-//                while (loRS.next()) {
-//                    // Print the result set
-//                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
-//                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
-//                    System.out.println("------------------------------------------------------------------------------");
-//
-//                    paStockRequest.add(InvStockRequestList());
-//                    paStockRequest.get(paStockRequest.size() - 1).openRecord(loRS.getString("sTransNox"));
-//                    lnctr++;
-//                }
-//
-//                System.out.println("Records found: " + lnctr);
-//                loJSON.put("result", "success");
-//                loJSON.put("message", "Record loaded successfully.");
-//
-//            } else {
-//                paStockRequest = new ArrayList<>();
-//                paStockRequest.add(InvStockRequestList());
-//                loJSON.put("result", "error");
-//                loJSON.put("continue", true);
-//                loJSON.put("message", "No record found .");
-//            }
-//            MiscUtil.close(loRS);
-//        } catch (SQLException e) {
-//            loJSON.put("result", "error");
-//            loJSON.put("message", e.getMessage());
-//        } catch (GuanzonException ex) {
-//            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return loJSON;
-
+        String lsRecdStat = "";
+        if (psTranStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                lsRecdStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+            }
+            lsRecdStat = " AND a.cTranStat IN (" + lsRecdStat.substring(2) + ")";
+        } else {
+            lsRecdStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+        }
         String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
                 ? "WHERE d.sIndstCdx LIKE '%' AND d.sIndstCdx = c.sIndstCdx)"
                 : "WHERE d.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND d.sIndstCdx = c.sIndstCdx)";
@@ -614,12 +557,18 @@ public class PurchaseOrder extends Transaction {
                 + " AND b.nApproved > 0";
 
         lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
+        if (!psRecdStat.isEmpty()) {
+            lsSQL = lsSQL + lsRecdStat;
+        }
+
         lsSQL = lsSQL + (" GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm");
         lsSQL = lsSQL + (" ORDER BY a.dTransact DESC");
         System.out.println("Executing SQL: " + lsSQL);
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
+
         JSONArray dataArray = new JSONArray();
+        JSONObject loJSON = new JSONObject();
 
         if (loRS == null) {
             loJSON.put("result", "error");
@@ -682,20 +631,7 @@ public class PurchaseOrder extends Transaction {
         }
 
         for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
-//            if (loTrans.StockRequest().Detail(lnCtr).getApproved() - loTrans.StockRequest().Detail(lnCtr).getIssued() <= 0) {
-//                continue;
-//            }
-//            AddDetail();
-//            int lnLastIndex = getDetailCount() - 1;
-//            Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-//            Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-//            Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
-//            Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
-//            Detail(lnLastIndex).setRecordOrder(0);
-//            Detail(lnLastIndex).setQuantity(loTrans.StockRequest().Detail(lnCtr).getQuantity());
-//            Detail(lnLastIndex).setReceivedQunatity(loTrans.StockRequest().Detail(lnCtr).getReceived());
-//            Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
-//            Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
+
             if (loTrans.StockRequest().Detail(lnCtr).getApproved() - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase()) > 0) {
                 AddDetail();
                 int lnLastIndex = getDetailCount() - 1;
@@ -730,74 +666,81 @@ public class PurchaseOrder extends Transaction {
         return this.paPOMaster.size();
     }
 
-    public JSONObject getPurchaseOrder() {
+    public JSONObject getPurchaseOrder() throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();
-        try {
-            String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
-                    ? "a.sIndstCdx LIKE '%'"
-                    : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
-            String lsSQL = " SELECT "
-                    + "  a.sTransNox,"
-                    + "  c.sBranchNm,"
-                    + "  a.sBranchCd,"
-                    + "  a.dTransact,"
-                    + "  a.sReferNox,"
-                    + "  a.cTranStat,"
-                    + " COUNT(b.sStockIDx) AS nNoItemsx"
-                    + " FROM po_master a "
-                    + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox"
-                    + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
-                    + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
+        String lsRecdStat = "";
+        if (psTranStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                lsRecdStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+            }
+            lsRecdStat = " AND a.cTranStat IN (" + lsRecdStat.substring(2) + ")";
+        } else {
+            lsRecdStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+        }
+
+        String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
+                ? "a.sIndstCdx LIKE '%'"
+                : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
+        String lsSQL = " SELECT "
+                + "  a.sTransNox,"
+                + "  c.sBranchNm,"
+                + "  a.sBranchCd,"
+                + "  a.dTransact,"
+                + "  a.sReferNox,"
+                + "  a.cTranStat,"
+                + " COUNT(b.sStockIDx) AS nNoItemsx"
+                + " FROM po_master a "
+                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox"
+                + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
+                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
 
 //            lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
 //                    + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
 //                    + " AND a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
 //            );
-            lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition
-                    + " AND a.cTranStat IN "
-                    + "(" + SQLUtil.toSQL(PurchaseOrderStatus.OPEN) + ","
-                    + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED) + ","
-                    + SQLUtil.toSQL(PurchaseOrderStatus.PROCESSED) + ","
-                    + SQLUtil.toSQL(PurchaseOrderStatus.RETURN) + ")"
-            );
-            lsSQL = lsSQL + " GROUP BY  a.sTransNox, a.sBranchCd, a.dTransact,a.sReferNox,a.cTranStat, c.sBranchNm "
-                    + "ORDER BY dTransact ASC";
-            System.out.println("Executing SQL: " + lsSQL);
-            ResultSet loRS = poGRider.executeQuery(lsSQL);
+        
 
-            int lnctr = 0;
-
-            if (MiscUtil.RecordCount(loRS) >= 0) {
-                paPOMaster = new ArrayList<>();
-                while (loRS.next()) {
-                    // Print the result set
-                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
-                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
-                    System.out.println("------------------------------------------------------------------------------");
-
-                    paPOMaster.add(POMasterList());
-                    paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
-                    lnctr++;
-                }
-
-                System.out.println("Records found: " + lnctr);
-                loJSON.put("result", "success");
-                loJSON.put("message", "Record loaded successfully.");
-
-            } else {
-                paPOMaster = new ArrayList<>();
-                paPOMaster.add(POMasterList());
-                loJSON.put("result", "error");
-                loJSON.put("continue", true);
-                loJSON.put("message", "No record found .");
-            }
-            MiscUtil.close(loRS);
-        } catch (SQLException e) {
-            loJSON.put("result", "error");
-            loJSON.put("message", e.getMessage());
-        } catch (GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+        lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition);
+        if (!psRecdStat.isEmpty()) {
+            lsSQL = lsSQL + lsRecdStat;
         }
+        lsSQL = lsSQL + " GROUP BY  a.sTransNox, a.sBranchCd, a.dTransact,a.sReferNox,a.cTranStat, c.sBranchNm "
+                + "ORDER BY dTransact ASC";
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        int lnctr = 0;
+
+        if (MiscUtil.RecordCount(loRS) >= 0) {
+            paPOMaster = new ArrayList<>();
+            while (loRS.next()) {
+                // Print the result set
+                System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                System.out.println("dTransact: " + loRS.getDate("dTransact"));
+                System.out.println("------------------------------------------------------------------------------");
+
+                paPOMaster.add(POMasterList());
+                paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                lnctr++;
+            }
+
+            System.out.println("Records found: " + lnctr);
+            loJSON.put("result", "success");
+            loJSON.put("message", "Record loaded successfully.");
+
+        } else {
+            paPOMaster = new ArrayList<>();
+            paPOMaster.add(POMasterList());
+            loJSON.put("result", "error");
+            loJSON.put("continue", true);
+            loJSON.put("message", "No record found .");
+        }
+        MiscUtil.close(loRS);
+
         return loJSON;
     }
+//    @Override
+//    public void setTransactionStatus(String transactionStatus) {
+//        psTranStat = transactionStatus;
+//    }
 }
