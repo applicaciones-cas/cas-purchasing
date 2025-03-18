@@ -176,6 +176,11 @@ public class Model_POR_Detail extends Model{
         return (Date) getValue("dModified");
     }
     
+    @Override
+    public String getNextCode() {
+        return "";
+    }
+    
     //reference object models
     public Model_Inventory Inventory() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sStockIDx"))) {

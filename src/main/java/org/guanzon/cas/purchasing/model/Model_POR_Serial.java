@@ -75,8 +75,8 @@ public class Model_POR_Serial extends Model {
         return (int) getValue("nEntryNox");
     }
     
-    public JSONObject setStockId(String stockID){
-        return setValue("sStockIDx", stockID);
+    public JSONObject setStockId(String stockId){
+        return setValue("sStockIDx", stockId);
     }
     
     public String getStockId(){
@@ -105,6 +105,11 @@ public class Model_POR_Serial extends Model {
     
     public Date getModifiedDate(){
         return (Date) getValue("dModified");
+    }
+    
+    @Override
+    public String getNextCode() {
+        return "";
     }
     
     public JSONObject openRecord(String transactionNo, int entryNo, String serialId) throws SQLException, GuanzonException {

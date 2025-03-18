@@ -74,6 +74,8 @@ public class testPurchaseOrderReceivingMaster {
                 
                 trans.Master().setTransactionDate(instance.getServerDate()); //direct assignment of value
                 Assert.assertEquals(trans.Master().getTransactionDate(), instance.getServerDate());
+                trans.Master().setCompanyId("0002"); //direct assignment of value
+                Assert.assertEquals(trans.Master().getTransactionDate(), instance.getServerDate());
                 
 //                trans.Master().setRefernceDate(instance.getServerDate()); //direct assignment of value
 //                Assert.assertEquals(trans.Master().getRefernceDate(), instance.getServerDate());
@@ -125,7 +127,7 @@ public class testPurchaseOrderReceivingMaster {
 
                 trans.AddDetail();
                 trans.Detail(2).setStockId("M00225000222");
-                trans.Detail(2).setQuantity(8);
+                trans.Detail(2).setQuantity(1);
 //                trans.Detail(2).setExpiryDate(instance.getServerDate()); //direct assignment of value
 
                 trans.AddDetail();
@@ -136,8 +138,15 @@ public class testPurchaseOrderReceivingMaster {
                 trans.AddDetail();
                 
                 System.out.println("unit price" + trans.Detail(trans.getDetailCount() - 1).getUnitPrce());
-
-//                loJSON = trans.SaveTransaction();
+                
+                //populate POR Serial
+                loJSON = trans.getPurchaseOrderReceivingSerial(2);
+                if("success".equals((String) loJSON.get("result"))){
+                    trans.InventorySerialList(0).setSerial01("0011");
+                    trans.InventorySerialList(0).setSerial02("0013");
+                }
+                
+                loJSON = trans.SaveTransaction();
                 if (!"success".equals((String) loJSON.get("result"))) {
                     System.err.println((String) loJSON.get("message"));
                     Assert.fail();

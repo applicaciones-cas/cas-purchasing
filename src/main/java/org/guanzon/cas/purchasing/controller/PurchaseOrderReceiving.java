@@ -7,14 +7,25 @@ package org.guanzon.cas.purchasing.controller;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.view.JasperViewer;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
@@ -26,12 +37,16 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
+import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
+import org.guanzon.cas.parameter.InvLocation;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
@@ -52,8 +67,14 @@ import org.json.simple.parser.ParseException;
  */
 public class PurchaseOrderReceiving extends Transaction{ 
     private Model_POR_Serial poOthers;
-    List<Model_POR_Serial> paOthers;
+    private Model_Inv_Serial poInvSerial;
+    
     List<Model_PO_Master> paPOMaster;
+    List<Model_POR_Serial> paOthers;
+    List<Model_Inv_Serial> paInvSerial;
+    
+    List<List<Model_POR_Serial>> outerList;
+    List<Model_Inv_Serial> innerList;
     
     public JSONObject InitTransaction(){      
         SOURCE_CODE = "InvR";
@@ -61,9 +82,15 @@ public class PurchaseOrderReceiving extends Transaction{
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
         poOthers = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
+        poInvSerial = new InvModels(poGRider).InventorySerial();
+        
         paOthers = new ArrayList<>();
         paDetail = new ArrayList<>();
         paPOMaster = new ArrayList<>();
+        paInvSerial = new ArrayList<>();
+        
+        outerList = new ArrayList<>();
+        innerList = new ArrayList<>();
         
         return initialize();
     }
@@ -366,17 +393,54 @@ public class PurchaseOrderReceiving extends Transaction{
     public JSONObject SearchBarcode(String value, boolean byCode, int row) throws SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
-
         poJSON = object.searchRecord(value, byCode);
-
         if ("success".equals((String) poJSON.get("result"))){
+            for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+                if(lnRow != getDetailCount()-1 ){
+                    if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
+                        (Detail(lnRow).getStockId().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Stock ID: " + object.getModel().getStockId() + " already exist in table at row " + (lnRow+1) + ".");
+                        return poJSON;
+                    } 
+                }
+            }
+            
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
-
         return poJSON;
     }
+    
+//    private JSONObject checkExistingStockId(String orderNo, String stockId){
+//        boolean lbExist = false;
+//        //Check if exist in table
+//        for(int lnRow = 0; lnRow <= getDetailCount()-1; lnRow++){
+//            if(orderNo.isEmpty()){
+//                if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
+//                    (Detail(lnRow).getStockId().equals(stockId))) {
+//                    lbExist = true;
+//                    break;
+//                } 
+//            } else {
+//                if  (Detail(lnRow).getOrderNo().equals(orderNo) &&
+//                    (Detail(lnRow).getStockId().equals(stockId))) {
+//                    lbExist = true;
+//                    break;
+//                } 
+//            }
+//            
+//            if(lbExist){
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "Stock ID: " + stockId + " already exist in table at row #" +lnRow + ".");
+//                return poJSON;
+//            }
+//        }
+//        
+//        poJSON.put("result", "success");
+//        return poJSON;
+//    }
     
     public JSONObject SearchSupersede(String value, boolean byCode, int row) throws SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
@@ -399,6 +463,8 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setStockId(object.getModel().getStockId());
+            Detail(row).setUnitType(object.getModel().getUnitType());
+            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
 
         return poJSON;
@@ -426,6 +492,27 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setStockId(object.getModel().getStockId());
+            Detail(row).setUnitType(object.getModel().getUnitType());
+            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        }
+
+        return poJSON;
+    }
+    
+    public JSONObject SearchLocation(String value, boolean byCode, String stockId, String serialId) throws SQLException, GuanzonException {
+        InvLocation object = new ParamControllers(poGRider, logwrapr).InventoryLocation();
+        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))){
+            //Update specific Inventory serial location
+            for(int lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++){
+                if(InventorySerialList(lnCtr).getStockId().equals(stockId) && 
+                    (InventorySerialList(lnCtr).getSerialId()).equals(serialId) ){
+                    InventorySerialList(lnCtr).setLocation(object.getModel().getLocationId());
+                    break;
+                }
+            }
         }
 
         return poJSON;
@@ -447,63 +534,134 @@ public class PurchaseOrderReceiving extends Transaction{
 //        }
 //    }
     
-    public JSONObject computeFields() throws SQLException, GuanzonException{
+//    public JSONObject computeFields() throws SQLException, GuanzonException{
+//        poJSON = new JSONObject();
+//        
+//        //Compute Transaction Total
+//        Double ldblUnitPrice = 0.00;
+//        Double ldblDiscount = Master().getDiscount().doubleValue();
+//        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+//            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
+//            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+//        }
+//        ldblUnitPrice = ldblUnitPrice - ldblDiscount;
+//        Master().setTransactionTotal(ldblUnitPrice);
+//        
+//        //Compute Term Due Date
+//        LocalDate ldReferenceDate =  strToDate(xsDateShort(Master().getReferenceDate()));
+//        Long lnTerm = Math.round(Double.parseDouble(Master().Term().getTermValue().toString()));
+//        Date ldTermDue = java.util.Date.from(ldReferenceDate.plusDays(lnTerm).atStartOfDay(ZoneId.systemDefault()).toInstant());
+//        Master().setDueDate(ldTermDue);
+//        Master().setTermDueDate(ldTermDue);
+//        
+//        return poJSON;
+//    }
+    
+    public JSONObject computeFields() throws SQLException, GuanzonException {
         poJSON = new JSONObject();
-        
+
         //Compute Transaction Total
-        Double ldblUnitPrice = 0.00;
+        Double ldblTotal = 0.00;
         Double ldblDiscount = Master().getDiscount().doubleValue();
-        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
-            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
-            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity());
         }
-        ldblUnitPrice = ldblUnitPrice - ldblDiscount;
-        Master().setTransactionTotal(ldblUnitPrice);
-        
+        if (ldblDiscount < 0 || ldblDiscount > ldblTotal) {
+        } else {
+            ldblTotal = ldblTotal - ldblDiscount;
+            Master().setTransactionTotal(ldblTotal);
+        }
         //Compute Term Due Date
-       
+        LocalDate ldReferenceDate = strToDate(xsDateShort(Master().getReferenceDate()));
         Long lnTerm = Math.round(Double.parseDouble(Master().Term().getTermValue().toString()));
-        LocalDate ldReferenceDate = Master().getReferenceDate().toInstant()
-                                 .atZone(ZoneId.systemDefault())
-                                 .toLocalDate();
         Date ldTermDue = java.util.Date.from(ldReferenceDate.plusDays(lnTerm).atStartOfDay(ZoneId.systemDefault()).toInstant());
         Master().setDueDate(ldTermDue);
         Master().setTermDueDate(ldTermDue);
-        
+
         return poJSON;
     }
     
-    public JSONObject computeDiscount(double discount){
+    /*Convert Date to String*/
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
+    }
+    
+    private LocalDate strToDate(String val) {
+        DateTimeFormatter date_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate localDate = LocalDate.parse(val, date_formatter);
+        return localDate;
+    }
+    
+    public JSONObject computeDiscountRate(double discount){
         poJSON = new JSONObject();
-        Double ldblUnitPrice = 0.00;
+        Double ldblTotal = 0.00;
         Double ldblDiscRate = 0.00;
         
         for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
-            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
-            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity());
         }
         
-        ldblDiscRate = discount / ldblUnitPrice;
-        Master().setDiscountRate(ldblDiscRate);
-        
+        if (discount < 0 || discount > ldblTotal) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Discount amount cannot be negative or exceed the transaction total.");
+        } else{
+           poJSON.put("result", "success");
+           poJSON.put("message", "success");
+           ldblDiscRate = (discount / ldblTotal) * 100;
+           Master().setDiscountRate(ldblDiscRate);
+        }
         return poJSON;
     }
     
-    public JSONObject computeDiscountRate(double discountRate){
+    public JSONObject computeDiscount(double discountRate){
         poJSON = new JSONObject();
-        Double ldblUnitPrice = 0.00;
+        Double ldblTotal = 0.00;
         Double ldblDiscount = 0.00;
         
         for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
-            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
-            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity());
         }
         
-        ldblDiscount = ldblUnitPrice * discountRate;
+        ldblDiscount = ldblTotal * (discountRate / 100.00);
         Master().setDiscount(ldblDiscount);
         
         return poJSON;
     }
+    
+//    public JSONObject computeDiscountRate(double discount){
+//        poJSON = new JSONObject();
+//        Double ldblUnitPrice = 0.00;
+//        Double ldblDiscRate = 0.00;
+//        
+//        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+//            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
+//            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+//        }
+//        
+//        ldblDiscRate = discount / ldblUnitPrice;
+//        Master().setDiscountRate(ldblDiscRate);
+//        
+//        return poJSON;
+//    }
+//    
+//    public JSONObject computeDiscount(double discountRate){
+//        poJSON = new JSONObject();
+//        Double ldblUnitPrice = 0.00;
+//        Double ldblDiscount = 0.00;
+//        
+//        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+//            ldblUnitPrice = Detail(lnCtr).getUnitPrce().doubleValue();
+//            ldblUnitPrice = ldblUnitPrice + (ldblUnitPrice * Detail(lnCtr).getQuantity());
+//        }
+//        
+//        ldblDiscount = ldblUnitPrice * discountRate;
+//        Master().setDiscount(ldblDiscount);
+//        
+//        return poJSON;
+//    }
     
     public JSONObject getApprovedPurchaseOrder(){
         try {
@@ -583,11 +741,13 @@ public class PurchaseOrderReceiving extends Transaction{
             poJSON = loTrans.PurchaseOrder().OpenTransaction(transactionNo);
             if ("success".equals((String) poJSON.get("result"))) {
                 for (int lnCtr = 0; lnCtr <= loTrans.PurchaseOrder().getDetailCount() - 1; lnCtr++) {
-                    if (getDetailCount() > 1) {
-                        if  (Detail(getDetailCount() - 2).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo()) &&
-                            (Detail(getDetailCount() - 2).getStockId().equals(loTrans.PurchaseOrder().Detail(lnCtr).getStockID()))) {
+                    
+                    for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+                        if  (Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo()) &&
+                            (Detail(lnRow).getStockId().equals(loTrans.PurchaseOrder().Detail(lnCtr).getStockID()))) {
                             lbExist = true;
-                        }   
+                            break;
+                        } 
                     }
                     
                     if(!lbExist){
@@ -596,9 +756,9 @@ public class PurchaseOrderReceiving extends Transaction{
                         Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getUnitType());
                         Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity());
                         Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity());
-                        Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice()); //TODO CONFLICT WITH BIGDECIMAL IN PO CLASS
-                        
-                        AddDetail();
+                        Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
+
+                        AddDetail(); 
                     }
                 }
             } else {
@@ -671,8 +831,55 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-    private Model_POR_Serial PurchaseOrderReceivingSerial() {
-        return new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
+    private JSONObject populatePurchaseOrderReceivingSerial(int entryNo, String serialId) throws SQLException, GuanzonException{
+        poJSON = new JSONObject();
+        int lnQuantity = Detail(entryNo).getQuantity();
+        int lnSerialCnt = 0;
+        
+        if(!serialId.isEmpty()){
+            paOthers.add(PurchaseOrderReceivingSerial());
+            paInvSerial.add(InventorySerial());
+            
+            paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).openRecord(Master().getTransactionNo(), entryNo,serialId );
+            paInvSerial.get(getInventorySerialCount()- 1).openRecord(serialId );
+        } else {
+            //get total count of serial per per entry no
+            for(int lnCtr = 0; lnCtr <= getInventorySerialCount() - 1;lnCtr++){
+                if(paOthers.get(lnCtr).getEntryNo() == entryNo ){
+                    lnSerialCnt++;
+                }
+            }
+
+            while (lnSerialCnt < lnQuantity){
+                paOthers.add(PurchaseOrderReceivingSerial());
+                paInvSerial.add(InventorySerial());
+                
+                //Inventory Serial
+                poJSON = InventorySerialList(getInventorySerialCount() - 1).newRecord();
+                if("success".equals((String) poJSON.get("result"))){
+                    paInvSerial.get(getInventorySerialCount() - 1).setBranchCode(poGRider.getBranchCode());
+                    paInvSerial.get(getInventorySerialCount() - 1).setCompnyId(Master().getCompanyId());
+                    paInvSerial.get(getInventorySerialCount() - 1).setStockId(Detail(entryNo).getStockId());
+                } else {
+                    return poJSON;
+                }
+                
+                //POR Serial
+                poJSON = paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).newRecord();
+                if("success".equals((String) poJSON.get("result"))){
+                    paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setEntryNo(entryNo);
+                    paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setStockId(Detail(entryNo).getStockId());
+                    paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setSerialId(InventorySerialList(getInventorySerialCount() - 1).getSerialId());
+                } else {
+                    return poJSON;
+                }
+
+                lnSerialCnt++;
+            }
+        }
+        
+        poJSON.put("result", "success");
+        return poJSON;
     }
     
     public JSONObject addPurchaseOrderReceivingSerial() {
@@ -694,37 +901,8 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-    private JSONObject populatePurchaseOrderReceivingSerial(int entryNo, String serialId) throws SQLException, GuanzonException{
-        poJSON = new JSONObject();
-        int lnQuantity = Detail(entryNo).getQuantity();
-        int lnSerialCnt = 0;
-        
-        paOthers.add(PurchaseOrderReceivingSerial());
-        if(serialId.isEmpty()){
-            paOthers.get(paOthers.size() - 1).openRecord(Master().getTransactionNo(), entryNo,serialId );
-        } else {
-            //get total count of serial per per entry no
-            for(int lnCtr = 0; lnCtr <= paOthers.size() - 1;lnCtr++){
-                if(paOthers.get(lnCtr).getEntryNo() == entryNo ){
-                    lnSerialCnt++;
-                }
-            }
-
-            while (lnSerialCnt < lnQuantity){
-                poJSON = paOthers.get(paOthers.size() - 1).newRecord();
-                if("success".equals((String) poJSON.get("result"))){
-                     paOthers.get(paOthers.size() - 1).setEntryNo(entryNo);
-                     paOthers.get(paOthers.size() - 1).setStockId(Detail(entryNo).getStockId());
-                } else {
-                    return poJSON;
-                }
-
-                lnSerialCnt++;
-            }
-        }
-        
-        poJSON.put("result", "success");
-        return poJSON;
+    private Model_POR_Serial PurchaseOrderReceivingSerial() {
+        return new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
     }
     
     public Model_POR_Serial PurchaseOrderReceivingSerialList(int row) {
@@ -733,6 +911,26 @@ public class PurchaseOrderReceiving extends Transaction{
     
     public int getPurchaseOrderReceivingSerialCount() {
        return this.paOthers.size();
+    }
+    
+    public List<Model_POR_Serial> PurchaseOrderReceivingSerialList() {
+        return paOthers;
+    }
+    
+    private Model_Inv_Serial InventorySerial() {
+        return new InvModels(poGRider).InventorySerial();
+    }
+    
+    public Model_Inv_Serial InventorySerialList(int row) {
+        return (Model_Inv_Serial) paInvSerial.get(row);
+    }
+    
+    public int getInventorySerialCount() {
+       return this.paInvSerial.size();
+    }
+    
+    public List<Model_Inv_Serial> InventorySerialList() {
+        return paInvSerial;
     }
     
     @Override
@@ -766,11 +964,11 @@ public class PurchaseOrderReceiving extends Transaction{
 
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
-            Model item = detail.next(); // Store the item before checking conditions
+            Model item = detail.next(); 
 
             if ("".equals((String) item.getValue("sStockIDx"))
                     || (int) item.getValue("nQuantity") <= 0) {
-                detail.remove(); // Correctly remove the item
+                detail.remove(); 
             }
         }
         
@@ -785,6 +983,24 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
             Detail(lnCtr).setWhCount(Detail(lnCtr).getQuantity());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
+        }
+        
+        Iterator<Model_POR_Serial> porSerialList = PurchaseOrderReceivingSerialList().iterator();
+        while (porSerialList.hasNext()) {
+            Model item = porSerialList.next(); 
+
+            if ("".equals((String) item.getValue("sStockIDx")) || "".equals(((String) item.getValue("sSerialID")))) {
+                porSerialList.remove(); 
+            }
+        }
+        
+        Iterator<Model_Inv_Serial> invSerialList = InventorySerialList().iterator();
+        while (invSerialList.hasNext()) {
+            Model item = invSerialList.next(); 
+
+            if ("".equals((String) item.getValue("sStockIDx")) || "".equals(((String) item.getValue("sSerialID")))) {
+                invSerialList.remove(); 
+            }
         }
         
         //assign other info on por serial
@@ -806,7 +1022,55 @@ public class PurchaseOrderReceiving extends Transaction{
     public JSONObject saveOthers() {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
+        int lnCtr, lnRow;
+        List<String> lsPrevSerial = new ArrayList<>();
+        List<String> lsNewSerial = new ArrayList<>();
         
+        try {
+            //Save Inventory Serial
+            for(lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++ ){
+                //Store initial serial number
+                if( paInvSerial.get(lnCtr).getEditMode() == EditMode.ADDNEW){
+                    lsPrevSerial.add(paInvSerial.get(lnCtr).getSerialId());
+                    lsNewSerial.add(paInvSerial.get(lnCtr).getSerialId());
+                }
+                
+                paInvSerial.get(lnCtr).setModifiedDate(poGRider.getServerDate());
+                poJSON = paInvSerial.get(lnCtr).saveRecord();
+                if("error".equals((String) poJSON.get("result"))){
+                    System.out.println("ERROR: " + (String) poJSON.get("message"));
+                    return poJSON;
+                } 
+                
+                //Update new serial number
+                lsNewSerial.set(lsNewSerial.size()-1, paInvSerial.get(lnCtr).getSerialId());
+            }
+        
+            //Save Purchase Order Receiving Serial
+            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+                //Update serial ID of POR Serial
+                for(lnCtr = 0; lnCtr <= lsPrevSerial.size()-1; lnCtr++){
+                    if(!lsPrevSerial.get(lnCtr).equals(lsNewSerial.get(lnCtr))){
+                        if(lsPrevSerial.equals(paOthers.get(lnRow).getSerialId())){
+                            paOthers.get(lnRow).setSerialId(lsNewSerial.get(lnCtr));
+                        }
+                    }
+                }
+                
+                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+                poJSON = paOthers.get(lnRow).saveRecord();
+                if("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                } 
+            }
+
+            //Save Inventory Ledger
+        
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -848,6 +1112,114 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = loValidator.validate();
         
         return poJSON;
+    }
+    
+    public JSONObject printRecord() {
+        poJSON = new JSONObject();
+        String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
+        try {
+            // 1. Prepare parameters
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sBranchNm", poGRider.getBranchName());
+            parameters.put("sAddressx", poGRider.getAddress());
+            parameters.put("sCompnyNm", poGRider.getClientName());
+            parameters.put("sTransNox", Master().getTransactionNo());
+            parameters.put("dReferDte", Master().getReferenceDate());
+            parameters.put("sReferNox", Master().getReferenceNo());
+            parameters.put("sApprval1", "Jane Smith");
+            parameters.put("sApprval2", "Mike Johnson");
+            parameters.put("sApprval3", "Sarah Williams");
+            parameters.put("sRemarks", Master().getRemarks());
+            parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
+            parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
+
+            // Set watermark based on approval status
+            if(Master().getTransactionStatus().equals(PurchaseOrderReceivingStatus.APPROVED) || 
+                    Master().getTransactionStatus().equals(PurchaseOrderReceivingStatus.POSTED)){
+                watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+            }
+            parameters.put("watermarkImagePath", watermarkPath);
+            List<OrderDetail> orderDetails = new ArrayList<>();
+
+            double lnTotal = 0.0;
+            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity();
+                orderDetails.add(new OrderDetail(lnCtr, String.valueOf(Detail(lnCtr).getOrderNo()), Detail(lnCtr).Inventory().getBarCode(), Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity(), lnTotal));
+            }
+
+            // 3. Create data source
+            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
+
+            // 4. Compile and fill report
+            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving.jrxml"; //TODO
+            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    parameters,
+                    dataSource
+            );
+            JasperViewer viewer = new JasperViewer(jasperPrint, false);
+            viewer.setVisible(true);
+
+        } catch (JRException e) {
+            System.err.println("Error generating report: " + e.getMessage());
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return poJSON;
+    }
+
+    public static class OrderDetail {
+        private Integer nRowNo;
+        private String sOrderNo;
+        private String sBarcode;
+        private String sDescription;
+        private double nUprice;
+        private Integer nOrder;
+        private double nTotal;
+
+        public OrderDetail(Integer rowNo, String orderNo, String barcode, String description,
+                double uprice, Integer order, double total) {
+            this.nRowNo = rowNo;
+            this.sOrderNo = orderNo;
+            this.sBarcode = barcode;
+            this.sDescription = description;
+            this.nUprice = uprice;
+            this.nOrder = order;
+            this.nTotal = total;
+        }
+
+        public Integer getnRowNo() {
+            return nRowNo;
+        }
+
+        public String getsOrderNo() {
+            return sOrderNo;
+        }
+
+        public String getsBarcode() {
+            return sBarcode;
+        }
+
+        public String getsDescription() {
+            return sDescription;
+        }
+
+        public double getnUprice() {
+            return nUprice;
+        }
+
+        public Integer getnOrder() {
+            return nOrder;
+        }
+
+        public double getnTotal() {
+            return nTotal;
+        }
     }
     
 }

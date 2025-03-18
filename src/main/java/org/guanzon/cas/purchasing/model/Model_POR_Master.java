@@ -354,6 +354,7 @@ public class Model_POR_Master extends Model {
     
     @Override
     public String getNextCode() {
+//        return "";
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
     
