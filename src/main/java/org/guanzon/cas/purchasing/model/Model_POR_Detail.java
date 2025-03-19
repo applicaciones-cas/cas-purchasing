@@ -12,8 +12,23 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.inv.model.Model_Inv_Master;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
+import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.model.Model_Brand;
+import org.guanzon.cas.parameter.model.Model_Category;
+import org.guanzon.cas.parameter.model.Model_Color;
+import org.guanzon.cas.parameter.model.Model_Company;
+import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.model.Model_Inv_Type;
+import org.guanzon.cas.parameter.model.Model_Measure;
+import org.guanzon.cas.parameter.model.Model_Model;
+import org.guanzon.cas.parameter.model.Model_Term;
+import org.guanzon.cas.parameter.model.Model_Variant;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -22,8 +37,22 @@ import org.json.simple.JSONObject;
  */
 public class Model_POR_Detail extends Model{
     
-    //reference objects  
-    Model_Inventory poInventory;    
+    //reference objects
+    Model_Branch poBranch;
+    Model_Industry poIndustry;
+    Model_Company poCompany;
+    Model_Term poTerm;
+    Model_Brand poBrand;
+    Model_Model poModel;
+    Model_Color poColor;
+    Model_Category poCategory;
+    Model_Inv_Type poInv_Type;
+    Model_Measure poMeasure;
+    Model_Variant poModelVariant;
+    Model_Inv_Stock_Request_Master poInvStockMaster;
+    Model_Inv_Stock_Request_Detail poInvStockDetail;
+    Model_Inventory poInventory;
+    Model_Inv_Master poInventoryMaster;
     
     @Override
     public void initialize() {
@@ -53,6 +82,18 @@ public class Model_POR_Detail extends Model{
             ID2 = "nEntryNox";
             
             //initialize reference objects
+            ParamModels model = new ParamModels(poGRider);
+            poBranch = model.Branch();
+            poIndustry = model.Industry();
+            poCategory = model.Category();
+            poCompany = model.Company();
+            poTerm = model.Term();
+            poBrand = model.Brand();
+            poColor = model.Color();
+            poModel = model.Model();
+            poInv_Type = model.InventoryType();
+            poMeasure = model.Measurement();
+            
             InvModels invModel = new InvModels(poGRider); 
             poInventory = invModel.Inventory();
             //end - initialize reference objects
@@ -176,6 +217,14 @@ public class Model_POR_Detail extends Model{
         return (Date) getValue("dModified");
     }
     
+    public JSONObject setBrandId(String brandId){
+        return poBrand.setBrandId(brandId);
+    }
+    
+    public String getBrandId(){
+        return poBrand.getBrandId();
+    }
+    
     @Override
     public String getNextCode() {
         return "";
@@ -223,5 +272,151 @@ public class Model_POR_Detail extends Model{
                 return poInventory;
             }
     }
+
+    public Model_Brand Brand() throws GuanzonException, SQLException {
+        if (!"".equals(getBrandId())) {
+            if (poBrand.getEditMode() == EditMode.READY
+                    && poBrand.getBrandId().equals(getBrandId())) {
+                return poBrand;
+            } else {
+                poJSON = poBrand.openRecord(getBrandId());
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBrand;
+                } else {
+                    poBrand.initialize();
+                    return poBrand;
+                }
+            }
+        } else {
+            poBrand.initialize();
+            return poBrand;
+        }
+    }
+    
+    
+//    public Model_Inv_Master InventoryMaster() throws GuanzonException, SQLException {
+//        if (!"".equals((String) getValue("sStockIDx"))) {
+//            if (poInventoryMaster.getEditMode() == EditMode.READY
+//                    && poInventoryMaster.getStockId().equals((String) getValue("sStockIDx"))) {
+//                return poInventoryMaster;
+//            } else {
+//                poJSON = poInventoryMaster.openRecord((String) getValue("sStockIDx"));
+//
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poInventoryMaster;
+//                } else {
+//                    poInventoryMaster.initialize();
+//                    return poInventoryMaster;
+//                }
+//            }
+//        } else {
+//            poInventoryMaster.initialize();
+//            return poInventoryMaster;
+//        }
+//    }
+//
+//    public Model_Color Color() throws GuanzonException, SQLException {
+//        if (!"".equals(Inventory().getColorId())) {
+//            if (poColor.getEditMode() == EditMode.READY
+//                    && poColor.getColorId().equals(Inventory().getColorId())) {
+//                return poColor;
+//            } else {
+//                poJSON = poColor.openRecord(Inventory().getColorId());
+//
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poColor;
+//                } else {
+//                    poColor.initialize();
+//                    return poColor;
+//                }
+//            }
+//        } else {
+//            poColor.initialize();
+//            return poColor;
+//        }
+//    }
+//
+//    public Model_Inv_Type InventoryType() throws GuanzonException, SQLException {
+//        if (!"".equals((String) getValue("sInvTypCd"))) {
+//            if (poInv_Type.getEditMode() == EditMode.READY
+//                    && poInv_Type.getInventoryTypeId().equals((String) getValue("sInvTypCd"))) {
+//                return poInv_Type;
+//            } else {
+//                poJSON = poInv_Type.openRecord((String) getValue("sInvTypCd"));
+//
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poInv_Type;
+//                } else {
+//                    poInv_Type.initialize();
+//                    return poInv_Type;
+//                }
+//            }
+//        } else {
+//            poInv_Type.initialize();
+//            return poInv_Type;
+//        }
+//    }
+//
+//    public Model_Measure Measure() throws GuanzonException, SQLException {
+//        if (!"".equals(Inventory().getMeasurementId())) {
+//            if (poMeasure.getEditMode() == EditMode.READY
+//                    && poMeasure.getMeasureId().equals(Inventory().getMeasurementId())) {
+//                return poMeasure;
+//            } else {
+//                poJSON = poMeasure.openRecord(Inventory().getMeasurementId());
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poMeasure;
+//                } else {
+//                    poMeasure.initialize();
+//                    return poMeasure;
+//                }
+//            }
+//        } else {
+//            poMeasure.initialize();
+//            return poMeasure;
+//        }
+//    }
+//
+//    public Model_Model Model() throws GuanzonException, SQLException {
+//        if (!"".equals(Inventory().getModelId())) {
+//            if (poModel.getEditMode() == EditMode.READY
+//                    && poModel.getModelId().equals(Inventory().getModelId())) {
+//                return poModel;
+//            } else {
+//                poJSON = poModel.openRecord(Inventory().getModelId());
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poModel;
+//                } else {
+//                    poModel.initialize();
+//                    return poModel;
+//                }
+//            }
+//        } else {
+//            poModel.initialize();
+//            return poModel;
+//        }
+//    }
+
+//    public Model_Variant ModelVariant() throws GuanzonException, SQLException {
+//        if (!"".equals((String) getValue("sVrntIDxx"))) {
+//            if (poModelVariant.getEditMode() == EditMode.READY
+//                    && poModelVariant.getVariantId().equals((String) getValue("sVrntIDxx"))) {
+//                return poModelVariant;
+//            } else {
+//                poJSON = poModelVariant.openRecord((String) getValue("sVrntIDxx"));
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poModelVariant;
+//                } else {
+//                    poModelVariant.initialize();
+//                    return poModelVariant;
+//                }
+//            }
+//        } else {
+//            poModelVariant.initialize();
+//            return poModelVariant;
+//        }
+//    }
+    
     //end reference object models
 }

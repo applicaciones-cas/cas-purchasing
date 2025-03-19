@@ -142,8 +142,9 @@ public class testPurchaseOrderReceivingMaster {
                 //populate POR Serial
                 loJSON = trans.getPurchaseOrderReceivingSerial(2);
                 if("success".equals((String) loJSON.get("result"))){
-                    trans.InventorySerialList(0).setSerial01("0011");
-                    trans.InventorySerialList(0).setSerial02("0013");
+                    trans.PurchaseOrderReceivingSerialList(0).setSerial01("0011");
+                    trans.PurchaseOrderReceivingSerialList(0).setSerial02("0013");
+                    trans.PurchaseOrderReceivingSerialList(0).setPlateNo("001sa1");
                 }
                 
                 loJSON = trans.SaveTransaction();
