@@ -330,9 +330,9 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchSupplier(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setClientType("0");
+        object.Master().setRecordStatus(RecordStatus.ACTIVE);
 
-        poJSON = object.Master().searchRecord(value, byCode);
+        poJSON = object.Master().searchRecordWithClientType("1", byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setSupplierID(object.Master().getModel().getClientId());
@@ -368,12 +368,15 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject SearchBrand(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
-        Brand object = new ParamControllers(poGRider, logwrapr).Brand();
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
         poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         }
 
         return poJSON;
@@ -384,7 +387,7 @@ public class PurchaseOrder extends Transaction {
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
-        poJSON = object.searchRecordOfVariants(value, byCode);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());

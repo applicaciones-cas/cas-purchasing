@@ -232,6 +232,30 @@ public class testPurchaseOrder {
             Assert.fail();
         }
     }
+
+    @Test
+    public void testPrintTransaction() {
+        JSONObject loJSON = new JSONObject();
+        try {
+            loJSON = trans.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = trans.OpenTransaction("M00125000007");
+
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+            loJSON = trans.printTransaction();
+
+        } catch (CloneNotSupportedException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+    }
 //    @Test
 //    public void testOpenTransaction() {
 //        JSONObject loJSON;
