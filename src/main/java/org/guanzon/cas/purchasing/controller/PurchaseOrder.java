@@ -3,8 +3,19 @@ package org.guanzon.cas.purchasing.controller;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.view.JasperViewer;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
@@ -114,7 +125,7 @@ public class PurchaseOrder extends Transaction {
     public JSONObject PostTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
         poJSON = new JSONObject();
 
-        String lsStatus = PurchaseOrderStatus.PROCESSED;
+        String lsStatus = PurchaseOrderStatus.APPROVED;
         boolean lbConfirm = true;
 
         if (getEditMode() != EditMode.READY) {
@@ -753,6 +764,118 @@ public class PurchaseOrder extends Transaction {
         MiscUtil.close(loRS);
 
         return loJSON;
+    }
+
+    public JSONObject printTransaction() {
+        poJSON = new JSONObject();
+        String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sBranchNm", poGRider.getBranchName());
+            parameters.put("sAddressx", poGRider.getAddress());
+            parameters.put("sCompnyNm", poGRider.getClientName());
+            parameters.put("sTransNox", Master().getTransactionNo());
+            parameters.put("sApprval1", "John Doe");
+            parameters.put("sApprval2", "Lu Cifer");
+            parameters.put("sApprval3", "Le Min Hoo");
+            parameters.put("sRemarks", Master().getRemarks());
+            parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
+            parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
+
+            if (Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)) {
+                watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+            }
+            parameters.put("watermarkImagePath", watermarkPath);
+            List<OrderDetail> orderDetails = new ArrayList<>();
+
+            double lnTotal = 0.0;
+            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().intValue();
+                try {
+                    orderDetails.add(new OrderDetail(lnCtr,
+                            String.valueOf(Detail(lnCtr).getSouceNo()),
+                            Detail(lnCtr).Inventory().getBarCode(),
+                            Detail(lnCtr).Inventory().getDescription(),
+                            Detail(lnCtr).getUnitPrice().doubleValue(),
+                            Detail(lnCtr).getQuantity().intValue(),
+                            lnTotal));
+                } catch (GuanzonException ex) {
+                    Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+            // 3. Create data source
+            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
+
+            // 4. Compile and fill report
+            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrder.jrxml"; //TODO
+            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    parameters,
+                    dataSource
+            );
+            JasperViewer viewer = new JasperViewer(jasperPrint, false);
+            viewer.setVisible(true);
+
+        } catch (JRException e) {
+            System.err.println("Error generating report: " + e.getMessage());
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return poJSON;
+    }
+
+    public static class OrderDetail {
+
+        private Integer nRowNo;
+        private String sOrderNo;
+        private String sBarcode;
+        private String sDescription;
+        private double nUprice;
+        private Integer nOrder;
+        private double nTotal;
+
+        public OrderDetail(Integer rowNo, String orderNo, String barcode, String description,
+                double uprice, Integer order, double total) {
+            this.nRowNo = rowNo;
+            this.sOrderNo = orderNo;
+            this.sBarcode = barcode;
+            this.sDescription = description;
+            this.nUprice = uprice;
+            this.nOrder = order;
+            this.nTotal = total;
+        }
+
+        public Integer getnRowNo() {
+            return nRowNo;
+        }
+
+        public String getsOrderNo() {
+            return sOrderNo;
+        }
+
+        public String getsBarcode() {
+            return sBarcode;
+        }
+
+        public String getsDescription() {
+            return sDescription;
+        }
+
+        public double getnUprice() {
+            return nUprice;
+        }
+
+        public Integer getnOrder() {
+            return nOrder;
+        }
+
+        public double getnTotal() {
+            return nTotal;
+        }
     }
 
 }

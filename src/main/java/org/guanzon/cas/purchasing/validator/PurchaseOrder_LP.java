@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
+import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.json.simple.JSONObject;
@@ -50,15 +50,15 @@ public class PurchaseOrder_LP implements GValidator {
     @Override
     public JSONObject validate() {
         switch (psTranStat) {
-            case StockRequestStatus.OPEN:
+            case PurchaseOrderStatus.OPEN:
                 return validateNew();
-            case StockRequestStatus.CONFIRMED:
+            case PurchaseOrderStatus.CONFIRMED:
                 return validateConfirmed();
-            case StockRequestStatus.PROCESSED:
+            case PurchaseOrderStatus.APPROVED:
                 return validateProcessed();
-            case StockRequestStatus.CANCELLED:
+            case PurchaseOrderStatus.CANCELLED:
                 return validateCancelled();
-            case StockRequestStatus.VOID:
+            case PurchaseOrderStatus.VOID:
                 return validateVoid();
             default:
                 poJSON = new JSONObject();

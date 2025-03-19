@@ -54,7 +54,7 @@ public class PurchaseOrder_MP implements GValidator {
                 return validateNew();
             case PurchaseOrderStatus.CONFIRMED:
                 return validateConfirmed();
-            case PurchaseOrderStatus.PROCESSED:
+            case PurchaseOrderStatus.APPROVED:
                 return validateProcessed();
             case PurchaseOrderStatus.CANCELLED:
                 return validateCancelled();
