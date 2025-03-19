@@ -107,10 +107,10 @@ public class PurchaseOrder_MC implements GValidator {
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
-            poJSON.put("message", "Supplier is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
+//            poJSON.put("message", "Supplier is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getDestinationID() == null || poMaster.getDestinationID().isEmpty()) {
             poJSON.put("message", "Destination is not set.");
             return poJSON;
