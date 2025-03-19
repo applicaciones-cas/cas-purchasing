@@ -5,8 +5,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
@@ -15,6 +13,7 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.Logical;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
@@ -24,6 +23,7 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.Branch;
+import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.Term;
@@ -254,7 +254,7 @@ public class PurchaseOrder extends Transaction {
     /*Search Master References*/
     public JSONObject SearchBranch(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Branch object = new ParamControllers(poGRider, logwrapr).Branch();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -267,7 +267,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchIndustry(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Industry object = new ParamControllers(poGRider, logwrapr).Industry();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -293,7 +293,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchBarcode(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -306,7 +306,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchBarcodeDescription(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -332,7 +332,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchCompany(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Company object = new ParamControllers(poGRider, logwrapr).Company();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -345,7 +345,7 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject SearchDestination(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Branch object = new ParamControllers(poGRider, logwrapr).Branch();
-        object.setRecordStatus("1");
+        object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
 
@@ -355,6 +355,33 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
+
+    public JSONObject SearchBrand(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Brand object = new ParamControllers(poGRider, logwrapr).Brand();
+        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))) {
+            Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+        }
+
+        return poJSON;
+    }
+
+    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException {
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
+
+        poJSON = object.searchRecordOfVariants(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))) {
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        }
+
+        return poJSON;
+    }
+
 
     /*End - Search Master References*/
     @Override
@@ -439,10 +466,9 @@ public class PurchaseOrder extends Transaction {
 
     @Override
     public void initSQL() {
-        //the comment SQL_BROWSE is use for single table
-//        SQL_BROWSE = MiscUtil.makeSelect(poMaster);
         SQL_BROWSE = "SELECT "
                 + "  a.sTransNox,"
+                + "  a.dTransact,"
                 + "  b.sDescript,"
                 + "  c.sCompnyNm,"
                 + "  e.sCompnyNm "
@@ -467,44 +493,37 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject searchTransaction(String value, boolean byCode) {
-        JSONObject loJSON = new JSONObject();
+    public JSONObject searchTransaction(String fsValue) throws CloneNotSupportedException, SQLException, GuanzonException {
+        poJSON = new JSONObject();
         String lsCondition = "";
-        try {
-            if (psTranStat.length() > 1) {
-                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                    lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
-                }
-                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
-            } else {
-                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+        if (psTranStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            
-            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsCondition);
-            
-            loJSON = ShowDialogFX.Search(poGRider,
-                    lsSQL,
-                    value,
-                    "Transaction No»Industry",
-                    "sTransNox»sDescript",
-                    "a.sTransNox»b.sDescript",
-                    byCode ? 0 : 1);
-
-            if (loJSON != null) {
-                return poMaster.openRecord((String) poJSON.get("sTransNox"));
-            } else {
-                loJSON = new JSONObject();
-                loJSON.put("result", "error");
-                loJSON.put("message", "No record loaded.");
-                return loJSON;
-            }
-        } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            lsCondition = "cTranStat IN (" + lsCondition.substring(2) + ")";
+        } else {
+            lsCondition = "cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
-        return loJSON;
-    }
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry()));
 
-   
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                fsValue,
+                "Transaction Date»Transaction No»Company»Supplier",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
 
     private Model_Inv_Stock_Request_Master InvStockRequestList() {
         return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
@@ -696,8 +715,6 @@ public class PurchaseOrder extends Transaction {
 //                    + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
 //                    + " AND a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
 //            );
-        
-
         lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition);
         if (!psRecdStat.isEmpty()) {
             lsSQL = lsSQL + lsRecdStat;
@@ -737,8 +754,5 @@ public class PurchaseOrder extends Transaction {
 
         return loJSON;
     }
-//    @Override
-//    public void setTransactionStatus(String transactionStatus) {
-//        psTranStat = transactionStatus;
-//    }
+
 }
