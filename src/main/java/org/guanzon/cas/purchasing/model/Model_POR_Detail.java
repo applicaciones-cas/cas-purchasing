@@ -93,6 +93,7 @@ public class Model_POR_Detail extends Model{
             poModel = model.Model();
             poInv_Type = model.InventoryType();
             poMeasure = model.Measurement();
+            poModelVariant = model.ModelVariant();
             
             InvModels invModel = new InvModels(poGRider); 
             poInventory = invModel.Inventory();
@@ -225,6 +226,14 @@ public class Model_POR_Detail extends Model{
         return poBrand.getBrandId();
     }
     
+    public JSONObject setModelVariantId(String modelVariantId){
+        return poModelVariant.setVariantId(modelVariantId);
+    }
+    
+    public String getModelVariantId(){
+        return poModelVariant.getVariantId();
+    }
+    
     @Override
     public String getNextCode() {
         return "";
@@ -294,6 +303,25 @@ public class Model_POR_Detail extends Model{
         }
     }
     
+    public Model_Variant ModelVariant() throws GuanzonException, SQLException {
+        if (!"".equals(getModelVariantId())) {
+            if (poModelVariant.getEditMode() == EditMode.READY
+                    && poModelVariant.getVariantId().equals(getModelVariantId())) {
+                return poModelVariant;
+            } else {
+                poJSON = poModelVariant.openRecord(getModelVariantId());
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poModelVariant;
+                } else {
+                    poModelVariant.initialize();
+                    return poModelVariant;
+                }
+            }
+        } else {
+            poModelVariant.initialize();
+            return poModelVariant;
+        }
+    }
     
 //    public Model_Inv_Master InventoryMaster() throws GuanzonException, SQLException {
 //        if (!"".equals((String) getValue("sStockIDx"))) {
@@ -398,25 +426,6 @@ public class Model_POR_Detail extends Model{
 //        }
 //    }
 
-//    public Model_Variant ModelVariant() throws GuanzonException, SQLException {
-//        if (!"".equals((String) getValue("sVrntIDxx"))) {
-//            if (poModelVariant.getEditMode() == EditMode.READY
-//                    && poModelVariant.getVariantId().equals((String) getValue("sVrntIDxx"))) {
-//                return poModelVariant;
-//            } else {
-//                poJSON = poModelVariant.openRecord((String) getValue("sVrntIDxx"));
-//                if ("success".equals((String) poJSON.get("result"))) {
-//                    return poModelVariant;
-//                } else {
-//                    poModelVariant.initialize();
-//                    return poModelVariant;
-//                }
-//            }
-//        } else {
-//            poModelVariant.initialize();
-//            return poModelVariant;
-//        }
-//    }
     
     //end reference object models
 }

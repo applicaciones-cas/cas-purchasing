@@ -314,19 +314,6 @@ public class PurchaseOrderReceiving extends Transaction{
     }
     
     /*Search Master References*/
-    public JSONObject SearchIndustry(String value, boolean byCode) throws SQLException, GuanzonException {
-        Industry object = new ParamControllers(poGRider, logwrapr).Industry();
-        object.setRecordStatus(RecordStatus.ACTIVE);
-
-        poJSON = object.searchRecord(value, byCode);
-
-        if ("success".equals((String) poJSON.get("result"))){
-            Master().setIndustryId(object.getModel().getIndustryId());
-        }
-
-        return poJSON;
-    }
-    
     public JSONObject SearchCompany(String value, boolean byCode) throws SQLException, GuanzonException {
         Company object = new ParamControllers(poGRider, logwrapr).Company();
         object.setRecordStatus(RecordStatus.ACTIVE);
@@ -335,21 +322,10 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setCompanyId(object.getModel().getCompanyId());
+        } else {
+            Master().setCompanyId("");
         }
 
-        return poJSON;
-    }
-    
-    public JSONObject SearchBranch(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException{
-        Branch object = new ParamControllers(poGRider, logwrapr).Branch();
-        object.setRecordStatus(RecordStatus.ACTIVE);
-
-        poJSON = object.searchRecord(value, byCode);
-
-        if ("success".equals((String) poJSON.get("result"))){
-            Master().setBranchCode(object.getModel().getBranchCode());
-        }    
-        
         return poJSON;
     }
     
@@ -365,6 +341,10 @@ public class PurchaseOrderReceiving extends Transaction{
             Master().setAddressId(object.ClientAddress().getModel().getAddressId()); //TODO
             Master().setContactId(object.ClientInstitutionContact().getModel().getClientId()); //TODO
             Master().setTermCode("");//TODO
+        } else {
+            Master().setSupplierId("");
+            Master().setAddressId(""); //TODO
+            Master().setContactId(""); //TODO
         }
 
         return poJSON;
@@ -378,6 +358,8 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setTruckingId(object.Master().getModel().getClientId());
+        } else {
+            Master().setTruckingId("");
         }
 
         return poJSON;
@@ -391,6 +373,8 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setTermCode(object.getModel().getTermId());
+        } else {
+            Master().setTermCode("");
         }
 
         return poJSON;
@@ -415,6 +399,10 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        } else {
+            Detail(row).setStockId("");
+            Detail(row).setUnitType("");
+            Detail(row).setUnitPrce(0.00);
         }
         return poJSON;
     }
@@ -456,6 +444,8 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setReplaceId(object.getModel().getStockId());
+        } else {
+            Detail(row).setReplaceId("");
         }
 
         return poJSON;
@@ -471,6 +461,10 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        } else {
+            Detail(row).setStockId("");
+            Detail(row).setUnitType("");
+            Detail(row).setUnitPrce(0.00);
         }
 
         return poJSON;
@@ -481,10 +475,11 @@ public class PurchaseOrderReceiving extends Transaction{
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
-
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setBrandId(object.getModel().getBrandId());
-        }    
+        } else {
+            Detail(row).setBrandId("");
+        }
         
         return poJSON;
     }
@@ -495,11 +490,16 @@ public class PurchaseOrderReceiving extends Transaction{
         object.getModel().setBrandId( Detail(row).Inventory().getBrandId());
 
         poJSON = object.searchRecordOfVariants(value, byCode);
-
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
+            Detail(row).setModelVariantId(object.getModel().getVariantId());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        } else {
+            Detail(row).setStockId("");
+            Detail(row).setUnitType("");
+            Detail(row).setModelVariantId("");
+            Detail(row).setUnitPrce(0.00);
         }
 
         return poJSON;
@@ -520,6 +520,8 @@ public class PurchaseOrderReceiving extends Transaction{
 //                    break;
 //                }
 //            }
+        } else {
+            PurchaseOrderReceivingSerialList(porRow).setLocationID("");
         }
 
         return poJSON;
@@ -863,7 +865,7 @@ public class PurchaseOrderReceiving extends Transaction{
                     System.out.println("sSerialID: " + loRS.getString("sSerialID"));
                     System.out.println("------------------------------------------------------------------------------");
 
-                    populatePurchaseOrderReceivingSerial(entryNo, loRS.getString("sSerialID"));
+                        populatePurchaseOrderReceivingSerial(entryNo, loRS.getString("sSerialID"));
                     
                     lnctr++;
                 }
@@ -892,12 +894,20 @@ public class PurchaseOrderReceiving extends Transaction{
     
     private JSONObject populatePurchaseOrderReceivingSerial(int entryNo, String serialId) throws SQLException, GuanzonException{
         poJSON = new JSONObject();
-        int lnQuantity = Detail(entryNo).getQuantity();
+        int lnQuantity = Detail(entryNo-1).getQuantity();
         int lnSerialCnt = 0;
         
         if(!serialId.isEmpty()){
+            for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()- 1;lnCtr++){
+                if(paOthers.get(lnCtr).getSerialId().equals(serialId)){
+                    poJSON.put("result", "success");
+                    return poJSON;
+                }
+            }
+            
             paOthers.add(PurchaseOrderReceivingSerial());
             paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).openRecord(Master().getTransactionNo(), entryNo,serialId );
+            
         } else {
             //get total count of serial per per entry no
             for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()- 1;lnCtr++){
@@ -912,7 +922,7 @@ public class PurchaseOrderReceiving extends Transaction{
                 poJSON = paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).newRecord();
                 if("success".equals((String) poJSON.get("result"))){
                     paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setEntryNo(entryNo);
-                    paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setStockId(Detail(entryNo).getStockId());
+                    paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setStockId(Detail(entryNo-1).getStockId());
                     paOthers.get(getPurchaseOrderReceivingSerialCount() - 1).setSerialId("");
                 } else {
                     return poJSON;
@@ -1118,92 +1128,92 @@ public class PurchaseOrderReceiving extends Transaction{
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
         int lnCtr, lnRow;
-        List<String> lsPrevSerial = new ArrayList<>();
-        List<String> lsNewSerial = new ArrayList<>();
         
         try {
-//            //Save Inventory Serial
-//            for(lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++ ){
-//                //Store initial serial number
-//                if( paInvSerial.get(lnCtr).getEditMode() == EditMode.ADDNEW){
-//                    lsPrevSerial.add(paInvSerial.get(lnCtr).getSerialId());
-//                    lsNewSerial.add(paInvSerial.get(lnCtr).getSerialId());
-//                }
-//                
-//                paInvSerial.get(lnCtr).setModifiedDate(poGRider.getServerDate());
-//                poJSON = paInvSerial.get(lnCtr).saveRecord();
-//                if("error".equals((String) poJSON.get("result"))){
-//                    System.out.println("ERROR: " + (String) poJSON.get("message"));
-//                    return poJSON;
-//                } 
-//                
-//                //Update new serial number
-//                lsNewSerial.set(lsNewSerial.size()-1, paInvSerial.get(lnCtr).getSerialId());
-//            }
-//        
-//            //Save Purchase Order Receiving Serial
-//            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
-//                //Update serial ID of POR Serial
-//                for(lnCtr = 0; lnCtr <= lsPrevSerial.size()-1; lnCtr++){
-//                    if(!lsPrevSerial.get(lnCtr).equals(lsNewSerial.get(lnCtr))){
-//                        if(lsPrevSerial.equals(paOthers.get(lnRow).getSerialId())){
-//                            paOthers.get(lnRow).setSerialId(lsNewSerial.get(lnCtr));
-//                            lsPrevSerial.remove(lnCtr);
-//                            lsNewSerial.remove(lnCtr);
-//                            break;
-//                        }
-//                    }
-//                }
-//                
-//                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
-//                poJSON = paOthers.get(lnRow).saveRecord();
-//                if("error".equals((String) poJSON.get("result"))){
-//                    return poJSON;
-//                } 
-//            }
         
             //Save Purchase Order Receiving Serial
             for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+                
                 if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
-                    //Save Inventory Serial
+                    //Inventory Serial
                     poJSON = poInvSerial.newRecord();
                     if("error".equals((String) poJSON.get("result"))){
                         return poJSON; //TODO
-                    } else {
-                        poInvSerial.setBranchCode(poGRider.getBranchCode());
-                        poInvSerial.setCompnyId(Master().getCompanyId());
-                        poInvSerial.setLocation(paOthers.get(lnRow).getLocationID());
-                        poInvSerial.setStockId(paOthers.get(lnRow).getStockId());
-                        poInvSerial.setSerial01(paOthers.get(lnRow).getSerial01());
-                        poInvSerial.setSerial02(paOthers.get(lnRow).getSerial02());
-                    }
+                    } 
                     
-                    poInvSerial.setModifiedDate(poGRider.getServerDate());
-                    poJSON = poInvSerial.saveRecord();
-                    if("error".equals((String) poJSON.get("result"))){
-//                        return poJSON; //TODO
-                    }
-                        
                     //Inventory Serial Registration
-                    if((!paOthers.get(lnRow).getConductionSticker().equals("") || paOthers.get(lnRow).getConductionSticker() != null) ||
+                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
                             (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
                         poJSON = poInvSerialRegistration.newRecord();
                         if("error".equals((String) poJSON.get("result"))){
                             return poJSON; //TODO
-                        } else {
-                            //Inventory Serial
-                            poInvSerialRegistration.setSerialId(poInvSerial.getSerialId());
-                            poInvSerialRegistration.setPlateNoH(paOthers.get(lnRow).getPlateNo());
-//                            poInvSerialRegistration.setConductionSticker(paOthers.get(lnRow).getConductionSticker());
-                        }
-                        
-                        poJSON = poInvSerialRegistration.saveRecord();
-                        if("error".equals((String) poJSON.get("result"))){
-//                            return poJSON; //TODO
-                        }
+                        } 
                     }
                     
-                    paOthers.get(lnRow).setSerialId(poInvSerial.getSerialId());
+                } else {
+                    poJSON = poInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
+                    if("error".equals((String) poJSON.get("result"))){
+                        return poJSON; //TODO
+                    } else {
+                        poJSON = poInvSerial.updateRecord();
+                        if("error".equals((String) poJSON.get("result"))){
+                            return poJSON; //TODO
+                        } 
+                    }
+                    
+                    
+                    //Inventory Serial Registration
+                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
+                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
+                        poJSON = poInvSerialRegistration.openRecord(paOthers.get(lnRow).getSerialId());
+                        if("error".equals((String) poJSON.get("result"))){
+                            poJSON = poInvSerialRegistration.newRecord();
+                            if("error".equals((String) poJSON.get("result"))){
+                                return poJSON; //TODO
+                            } 
+                        } else {
+                            poJSON = poInvSerialRegistration.updateRecord();
+                            if("error".equals((String) poJSON.get("result"))){
+                                return poJSON; //TODO
+                            } 
+                        } 
+                    } 
+                }
+                
+                if(poInvSerial.getEditMode() == EditMode.ADDNEW || poInvSerial.getEditMode() == EditMode.UPDATE){
+                    poInvSerial.setLocation(paOthers.get(lnRow).getLocationID());
+                    poInvSerial.setStockId(paOthers.get(lnRow).getStockId());
+                    poInvSerial.setSerial01(paOthers.get(lnRow).getSerial01());
+                    poInvSerial.setSerial02(paOthers.get(lnRow).getSerial02());
+                    
+                    if(poInvSerial.getEditMode() == EditMode.ADDNEW){
+                        poInvSerial.setBranchCode(poGRider.getBranchCode());
+                        poInvSerial.setCompnyId(Master().getCompanyId());
+                        paOthers.get(lnRow).setSerialId(poInvSerial.getSerialId());
+                    }
+                
+                    poInvSerial.setModifiedDate(poGRider.getServerDate());
+                    poJSON = poInvSerial.saveRecord();
+                    if("error".equals((String) poJSON.get("result"))){
+                        return poJSON; //TODO
+                    }
+                }
+                
+                //Inventory Serial Registration
+                if(poInvSerialRegistration.getEditMode() == EditMode.ADDNEW || poInvSerialRegistration.getEditMode() == EditMode.UPDATE){
+                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
+                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
+                        //Inventory Serial Registration
+                        poInvSerialRegistration.setSerialId(poInvSerial.getSerialId());
+                        poInvSerialRegistration.setPlateNoH(paOthers.get(lnRow).getPlateNo());
+                        poInvSerialRegistration.setPlateNoP(paOthers.get(lnRow).getPlateNo());
+//                            poInvSerialRegistration.setConductionSticker(paOthers.get(lnRow).getConductionSticker());
+
+                        poJSON = poInvSerialRegistration.saveRecord();
+                        if("error".equals((String) poJSON.get("result"))){
+                            return poJSON; //TODO
+                        }
+                    }
                 }
                 
                 //Update Inventory Serial
@@ -1224,6 +1234,232 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON.put("result", "success");
         return poJSON;
     }
+    
+//    @Override
+//    public JSONObject saveOthers() {
+//        /*Only modify this if there are other tables to modify except the master and detail tables*/
+//        poJSON = new JSONObject();
+//        int lnCtr, lnRow;
+//        List<String> lsPrevSerial = new ArrayList<>();
+//        List<String> lsNewSerial = new ArrayList<>();
+//        
+//        try {
+////            //Save Inventory Serial
+////            for(lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++ ){
+////                //Store initial serial number
+////                if( paInvSerial.get(lnCtr).getEditMode() == EditMode.ADDNEW){
+////                    lsPrevSerial.add(paInvSerial.get(lnCtr).getSerialId());
+////                    lsNewSerial.add(paInvSerial.get(lnCtr).getSerialId());
+////                }
+////                
+////                paInvSerial.get(lnCtr).setModifiedDate(poGRider.getServerDate());
+////                poJSON = paInvSerial.get(lnCtr).saveRecord();
+////                if("error".equals((String) poJSON.get("result"))){
+////                    System.out.println("ERROR: " + (String) poJSON.get("message"));
+////                    return poJSON;
+////                } 
+////                
+////                //Update new serial number
+////                lsNewSerial.set(lsNewSerial.size()-1, paInvSerial.get(lnCtr).getSerialId());
+////            }
+////        
+////            //Save Purchase Order Receiving Serial
+////            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+////                //Update serial ID of POR Serial
+////                for(lnCtr = 0; lnCtr <= lsPrevSerial.size()-1; lnCtr++){
+////                    if(!lsPrevSerial.get(lnCtr).equals(lsNewSerial.get(lnCtr))){
+////                        if(lsPrevSerial.equals(paOthers.get(lnRow).getSerialId())){
+////                            paOthers.get(lnRow).setSerialId(lsNewSerial.get(lnCtr));
+////                            lsPrevSerial.remove(lnCtr);
+////                            lsNewSerial.remove(lnCtr);
+////                            break;
+////                        }
+////                    }
+////                }
+////                
+////                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+////                poJSON = paOthers.get(lnRow).saveRecord();
+////                if("error".equals((String) poJSON.get("result"))){
+////                    return poJSON;
+////                } 
+////            }
+//        
+//            //Save Purchase Order Receiving Serial
+//            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+//                if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
+//                    //Save Inventory Serial
+//                    poJSON = poInvSerial.newRecord();
+//                    if("error".equals((String) poJSON.get("result"))){
+//                        return poJSON; //TODO
+//                    } else {
+//                        poInvSerial.setBranchCode(poGRider.getBranchCode());
+//                        poInvSerial.setCompnyId(Master().getCompanyId());
+//                        poInvSerial.setLocation(paOthers.get(lnRow).getLocationID());
+//                        poInvSerial.setStockId(paOthers.get(lnRow).getStockId());
+//                        poInvSerial.setSerial01(paOthers.get(lnRow).getSerial01());
+//                        poInvSerial.setSerial02(paOthers.get(lnRow).getSerial02());
+//                    }
+//                    
+//                    poInvSerial.setModifiedDate(poGRider.getServerDate());
+//                    poJSON = poInvSerial.saveRecord();
+//                    if("error".equals((String) poJSON.get("result"))){
+////                        return poJSON; //TODO
+//                    }
+//                        
+//                    //Inventory Serial Registration
+//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
+//                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
+//                        poJSON = poInvSerialRegistration.newRecord();
+//                        if("error".equals((String) poJSON.get("result"))){
+//                            return poJSON; //TODO
+//                        } else {
+//                            //Inventory Serial
+//                            poInvSerialRegistration.setSerialId(poInvSerial.getSerialId());
+//                            poInvSerialRegistration.setPlateNoH(paOthers.get(lnRow).getPlateNo());
+////                            poInvSerialRegistration.setConductionSticker(paOthers.get(lnRow).getConductionSticker());
+//                        }
+//                        
+//                        poJSON = poInvSerialRegistration.saveRecord();
+//                        if("error".equals((String) poJSON.get("result"))){
+////                            return poJSON; //TODO
+//                        }
+//                    }
+//                    
+//                    paOthers.get(lnRow).setSerialId(poInvSerial.getSerialId());
+//                }
+//                
+//                //Update Inventory Serial
+//                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+//                poJSON = paOthers.get(lnRow).saveRecord();
+//                if("error".equals((String) poJSON.get("result"))){
+//                    return poJSON;
+//                } 
+//            }
+//
+//            //Save Inventory Ledger
+//        
+//        } catch (SQLException ex) {
+//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (GuanzonException ex) {
+//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        poJSON.put("result", "success");
+//        return poJSON;
+//    }
+//    
+//    @Override
+//    public JSONObject saveOthers() {
+//        /*Only modify this if there are other tables to modify except the master and detail tables*/
+//        poJSON = new JSONObject();
+//        int lnCtr, lnRow;
+//        List<String> lsPrevSerial = new ArrayList<>();
+//        List<String> lsNewSerial = new ArrayList<>();
+//        
+//        try {
+////            //Save Inventory Serial
+////            for(lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++ ){
+////                //Store initial serial number
+////                if( paInvSerial.get(lnCtr).getEditMode() == EditMode.ADDNEW){
+////                    lsPrevSerial.add(paInvSerial.get(lnCtr).getSerialId());
+////                    lsNewSerial.add(paInvSerial.get(lnCtr).getSerialId());
+////                }
+////                
+////                paInvSerial.get(lnCtr).setModifiedDate(poGRider.getServerDate());
+////                poJSON = paInvSerial.get(lnCtr).saveRecord();
+////                if("error".equals((String) poJSON.get("result"))){
+////                    System.out.println("ERROR: " + (String) poJSON.get("message"));
+////                    return poJSON;
+////                } 
+////                
+////                //Update new serial number
+////                lsNewSerial.set(lsNewSerial.size()-1, paInvSerial.get(lnCtr).getSerialId());
+////            }
+////        
+////            //Save Purchase Order Receiving Serial
+////            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+////                //Update serial ID of POR Serial
+////                for(lnCtr = 0; lnCtr <= lsPrevSerial.size()-1; lnCtr++){
+////                    if(!lsPrevSerial.get(lnCtr).equals(lsNewSerial.get(lnCtr))){
+////                        if(lsPrevSerial.equals(paOthers.get(lnRow).getSerialId())){
+////                            paOthers.get(lnRow).setSerialId(lsNewSerial.get(lnCtr));
+////                            lsPrevSerial.remove(lnCtr);
+////                            lsNewSerial.remove(lnCtr);
+////                            break;
+////                        }
+////                    }
+////                }
+////                
+////                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+////                poJSON = paOthers.get(lnRow).saveRecord();
+////                if("error".equals((String) poJSON.get("result"))){
+////                    return poJSON;
+////                } 
+////            }
+//        
+//            //Save Purchase Order Receiving Serial
+//            InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
+//                loInvSerial.initialize();
+//            
+//            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
+//                if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
+//                    //Create New Inventory Serial
+//                    poJSON = loInvSerial.newRecord();
+//                    if("error".equals((String) poJSON.get("result"))){
+//                        return poJSON; //TODO
+//                    } 
+//                    
+//                } else {
+//                    //Update Inventory Serial / Registration//Create New Inventory Serial
+//                    poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
+//                    if("error".equals((String) poJSON.get("result"))){
+//                        return poJSON; //TODO
+//                    } 
+//                }
+//
+//                if(loInvSerial.getEditMode() == EditMode.ADDNEW || loInvSerial.getEditMode() == EditMode.UPDATE){
+//                    loInvSerial.getModel().setStockId(paOthers.get(lnRow).getStockId());
+//                    loInvSerial.getModel().setSerial01(paOthers.get(lnRow).getSerial01());
+//                    loInvSerial.getModel().setSerial02(paOthers.get(lnRow).getSerial02());
+//                    loInvSerial.getModel().setLocation(paOthers.get(lnRow).getLocationID());
+//                    
+//                    //Only set branch code and company id during creation of serila in por
+//                    if(loInvSerial.getEditMode() == EditMode.ADDNEW){
+//                        loInvSerial.getModel().setBranchCode(poGRider.getBranchCode());
+//                        loInvSerial.getModel().setCompnyId(Master().getCompanyId());
+//                    }
+//                    
+//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
+//                        (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
+////                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+//                        loInvSerial.SerialRegistration().setPlateNoH(paOthers.get(lnRow).getPlateNo());
+//                    }
+//                    
+//                    poJSON = loInvSerial.saveRecord();
+//                    if("error".equals((String) poJSON.get("result"))){
+//                        System.out.println("inv serial" + (String) poJSON.get("message"));
+//                        return poJSON; //TODO
+//                    }
+//                }
+//                
+//                //Update Inventory Serial
+//                paOthers.get(lnRow).setSerialId(loInvSerial.getModel().getSerialId()); //Set serial id to por serial
+//                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+//                poJSON = paOthers.get(lnRow).saveRecord();
+//                if("error".equals((String) poJSON.get("result"))){
+//                    return poJSON;
+//                } 
+//            }
+//
+//            //Save Inventory Ledger
+//        
+//        } catch (SQLException ex) {
+//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (GuanzonException ex) {
+//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        poJSON.put("result", "success");
+//        return poJSON;
+//    }
     
     @Override
     public void saveComplete() {

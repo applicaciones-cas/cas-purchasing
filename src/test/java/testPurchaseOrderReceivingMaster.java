@@ -145,6 +145,9 @@ public class testPurchaseOrderReceivingMaster {
                     trans.PurchaseOrderReceivingSerialList(0).setSerial01("0011");
                     trans.PurchaseOrderReceivingSerialList(0).setSerial02("0013");
                     trans.PurchaseOrderReceivingSerialList(0).setPlateNo("001sa1");
+                    trans.PurchaseOrderReceivingSerialList(0).setConductionStickerNo("333");
+                    trans.PurchaseOrderReceivingSerialList(0).setLocationID("333");
+                    trans.PurchaseOrderReceivingSerialList(0).setStockId("333");
                 }
                 
                 loJSON = trans.SaveTransaction();
