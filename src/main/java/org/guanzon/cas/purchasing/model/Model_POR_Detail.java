@@ -284,18 +284,12 @@ public class Model_POR_Detail extends Model{
 
     public Model_Brand Brand() throws GuanzonException, SQLException {
         if (!"".equals(getBrandId())) {
-            if (poBrand.getEditMode() == EditMode.READY
-                    && poBrand.getBrandId().equals(getBrandId())) {
+            poJSON = poBrand.openRecord(getBrandId());
+            if ("success".equals((String) poJSON.get("result"))) {
                 return poBrand;
             } else {
-                poJSON = poBrand.openRecord(getBrandId());
-
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poBrand;
-                } else {
-                    poBrand.initialize();
-                    return poBrand;
-                }
+                poBrand.initialize();
+                return poBrand;
             }
         } else {
             poBrand.initialize();

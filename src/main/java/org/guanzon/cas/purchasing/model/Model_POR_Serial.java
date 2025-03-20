@@ -14,6 +14,7 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
+import org.guanzon.cas.inv.model.Model_Inv_Serial_Ledger;
 import org.guanzon.cas.inv.model.Model_Inv_Serial_Registration;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
@@ -31,7 +32,8 @@ public class Model_POR_Serial extends Model {
     Model_Inventory poInventory;  
     Model_Inv_Location poLocation;  
     Model_Inv_Serial poInvSerial; 
-    Model_Inv_Serial_Registration poInvSerialRegistration;   
+    Model_Inv_Serial_Registration poInvSerialRegistration; 
+    Model_Inv_Serial_Ledger poInvSerialLedger;    
     
     @Override
     public void initialize() {
@@ -53,6 +55,7 @@ public class Model_POR_Serial extends Model {
 
             ID = "sTransNox";
             ID2 = "nEntryNox";
+            ID3 = "sSerialID";
             
             //initialize reference objects
             ParamModels location = new ParamModels(poGRider);
@@ -137,58 +140,57 @@ public class Model_POR_Serial extends Model {
         return poInvSerial.getSerial02();
     }
 
-    public JSONObject setConductionStickerNo(String csNo) {
-        return poInvSerial.setSerial02(csNo); //TODO
-//s        return poInvSerialRegistration.setConductionStickerNo(csNo);
+    public JSONObject setConductionStickerNo(String conductionStickerNo) {
+        return poInvSerialRegistration.setConductionStickerNo(conductionStickerNo);
     }
 
     public String getConductionStickerNo() {
-        return poInvSerial.getSerial02(); //TODO
-//        return poInvSerialRegistration.getConductionStickerNo();
+        return poInvSerialRegistration.getConductionStickerNo();
     }
 
     public JSONObject setPlateNo(String plateNo) {
-        return poInvSerialRegistration.setPlateNoH(plateNo);
+        return poInvSerialRegistration.setPlateNoP(plateNo);
     }
 
     public String getPlateNo() {
-        return poInvSerialRegistration.getPlateNoH();
+        return poInvSerialRegistration.getPlateNoP();
     }
     
     @Override
     public String getNextCode() {
         return "";
+//        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
     
-    public JSONObject openRecord(String transactionNo, int entryNo, String serialId) throws SQLException, GuanzonException {
-        poJSON = new JSONObject();
-        String lsSQL = MiscUtil.makeSelect(this);
-        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(transactionNo) 
-                                    + " AND nEntryNox = " + SQLUtil.toSQL(entryNo) 
-                                    + " AND sSerialID = " + SQLUtil.toSQL(serialId));
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-        try {
-            if (loRS.next()) {
-                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++){
-                  setValue(lnCtr, loRS.getObject(lnCtr)); 
-                }
-                MiscUtil.close(loRS);
-                pnEditMode = 1;
-                poJSON = new JSONObject();
-                poJSON.put("result", "success");
-                poJSON.put("message", "Record loaded successfully.");
-            } else {
-                poJSON = new JSONObject();
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record to load.");
-            } 
-        } catch (SQLException e) {
-          poJSON = new JSONObject();
-          poJSON.put("result", "error");
-          poJSON.put("message", e.getMessage());
-        } 
-        return this.poJSON;
-    }
+//    public JSONObject openRecord(String transactionNo, int entryNo, String serialId) throws SQLException, GuanzonException {
+//        poJSON = new JSONObject();
+//        String lsSQL = MiscUtil.makeSelect(this);
+//        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(transactionNo) 
+//                                    + " AND nEntryNox = " + SQLUtil.toSQL(entryNo) 
+//                                    + " AND sSerialID = " + SQLUtil.toSQL(serialId));
+//        ResultSet loRS = poGRider.executeQuery(lsSQL);
+//        try {
+//            if (loRS.next()) {
+//                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++){
+//                  setValue(lnCtr, loRS.getObject(lnCtr)); 
+//                }
+//                MiscUtil.close(loRS);
+//                pnEditMode = 1;
+//                poJSON = new JSONObject();
+//                poJSON.put("result", "success");
+//                poJSON.put("message", "Record loaded successfully.");
+//            } else {
+//                poJSON = new JSONObject();
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "No record to load.");
+//            } 
+//        } catch (SQLException e) {
+//          poJSON = new JSONObject();
+//          poJSON.put("result", "error");
+//          poJSON.put("message", e.getMessage());
+//        } 
+//        return this.poJSON;
+//    }
     
     //reference object models
     public Model_Inventory Inventory() throws SQLException, GuanzonException {
@@ -254,24 +256,45 @@ public class Model_POR_Serial extends Model {
         }
     }
     
-    public Model_Inv_Serial InventorySerialRegistration() throws SQLException, GuanzonException {
+    public Model_Inv_Serial_Registration InventorySerialRegistration() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sSerialID"))) {
-            if (poInvSerial.getEditMode() == EditMode.READY
-                    && poInvSerial.getStockId().equals((String) getValue("sSerialID"))) {
-                return poInvSerial;
+            if (poInvSerialRegistration.getEditMode() == EditMode.READY
+                    && poInvSerialRegistration.getSerialId().equals((String) getValue("sSerialID"))) {
+                return poInvSerialRegistration;
             } else {
-                poJSON = poInvSerial.openRecord((String) getValue("sSerialID"));
+                poJSON = poInvSerialRegistration.openRecord((String) getValue("sSerialID"));
 
                 if ("success".equals((String) poJSON.get("result"))) {
-                    return poInvSerial;
+                    return poInvSerialRegistration;
                 } else {
-                    poInvSerial.initialize();
-                    return poInvSerial;
+                    poInvSerialRegistration.initialize();
+                    return poInvSerialRegistration;
                 }
             }
         } else {
-            poInvSerial.initialize();
-            return poInvSerial;
+            poInvSerialRegistration.initialize();
+            return poInvSerialRegistration;
+        }
+    }
+    
+    public Model_Inv_Serial_Ledger InventorySerialLedger() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sSerialID"))) {
+            if (poInvSerialLedger.getEditMode() == EditMode.READY
+                    && poInvSerialLedger.getSerialId().equals((String) getValue("sSerialID"))) {
+                return poInvSerialLedger;
+            } else {
+                poJSON = poInvSerialLedger.openRecord((String) getValue("sSerialID"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvSerialLedger;
+                } else {
+                    poInvSerialLedger.initialize();
+                    return poInvSerialLedger;
+                }
+            }
+        } else {
+            poInvSerialLedger.initialize();
+            return poInvSerialLedger;
         }
     }
     
