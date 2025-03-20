@@ -718,23 +718,18 @@ public class PurchaseOrder extends Transaction {
                 + "  a.sBranchCd,"
                 + "  a.dTransact,"
                 + "  a.sReferNox,"
-                + "  a.cTranStat,"
-                + " COUNT(b.sStockIDx) AS nNoItemsx"
+                + "  a.cTranStat"
                 + " FROM po_master a "
-                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox"
                 + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
-                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
+                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx"
+                + " , po_detail b " ;
 
-//            lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
-//                    + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
-//                    + " AND a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
-//            );
         lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition);
         if (!psRecdStat.isEmpty()) {
             lsSQL = lsSQL + lsRecdStat;
         }
-        lsSQL = lsSQL + " GROUP BY  a.sTransNox, a.sBranchCd, a.dTransact,a.sReferNox,a.cTranStat, c.sBranchNm "
-                + "ORDER BY dTransact ASC";
+        lsSQL = lsSQL + " GROUP BY  a.sTransNox"
+                + " ORDER BY dTransact ASC";
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
