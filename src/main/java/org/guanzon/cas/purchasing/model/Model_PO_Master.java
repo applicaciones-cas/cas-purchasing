@@ -23,6 +23,7 @@ import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.cas.purchasing.status.PurchaseOrderProcessedStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.json.simple.JSONObject;
 
@@ -53,6 +54,8 @@ public class Model_PO_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             //assign default values
+            poEntity.updateObject("cProcessd", PurchaseOrderProcessedStatus.NO);
+            poEntity.updateObject("cPreOwned", Logical.NO);
             poEntity.updateObject("dExpected", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());

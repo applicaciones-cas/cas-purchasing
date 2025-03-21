@@ -57,11 +57,10 @@ public class Model_PO_Detail extends Model {
 
             //assign default values
             poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nCancelld", 0);
             poEntity.updateObject("nUnitPrce", 0.0);
             poEntity.updateObject("nOldPrice", 0.0);
-//            poEntity.updateObject("nUnitPrce", 0.00);
-//            poEntity.updateObject("nOldPrice", 0.00);
             poEntity.updateObject("nQtyOnHnd", 0);
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
@@ -105,10 +104,10 @@ public class Model_PO_Detail extends Model {
     }
 
     @Override
-    public String getNextCode(){
-        return ""; 
+    public String getNextCode() {
+        return "";
     }
-    
+
     public JSONObject setTransactionNo(String transactionNo) {
         return setValue("sTransNox", transactionNo);
     }

@@ -23,7 +23,6 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
@@ -51,7 +50,6 @@ public class PurchaseOrder extends Transaction {
 
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
-    String psRecdStat = Logical.YES;
 
     public JSONObject InitTransaction() {
         SOURCE_CODE = "PO";
@@ -594,52 +592,51 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsRecdStat = "";
+        String lsTransStat = "";
         if (psTranStat.length() > 1) {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                lsRecdStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            lsRecdStat = " AND a.cTranStat IN (" + lsRecdStat.substring(2) + ")";
+            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
         } else {
-            lsRecdStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
-        String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
-                ? "WHERE d.sIndstCdx LIKE '%' AND d.sIndstCdx = c.sIndstCdx)"
-                : "WHERE d.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND d.sIndstCdx = c.sIndstCdx)";
-        String lsCompanyCondition = Master().getCompanyID().isEmpty() || Master().getCompanyID() == null
-                ? "WHERE f.sCompnyID LIKE '%' AND f.sCompnyID = e.sCompnyID)"
-                : "WHERE f.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID()) + " AND f.sCompnyID = e.sCompnyID)";
+        String lsIndustryCondition = Master().getIndustryID().isEmpty()
+                ? "a.sIndstCdx LIKE '%'"
+                : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
+        String lsCompanyCondition = Master().getCompanyID().isEmpty()
+                ? "e.sCompnyID LIKE '%'"
+                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID());
 
+        String lsFilterCondition = lsIndustryCondition
+                + " AND "
+                + lsCompanyCondition
+                + " AND b.nApproved > 0 ";
         String lsSQL = "SELECT"
                 + "  a.sTransNox,"
+                + "  e.sBranchNm,"
                 + "  a.sBranchCd,"
+                + "  a.cTranStat,"
                 + "  a.dTransact,"
                 + "  a.sReferNox,"
                 + "  a.cTranStat,"
-                + "  e.sBranchNm,"
+                + "  a.sIndstCdx,"
                 + "  COUNT(DISTINCT b.sStockIDx) AS total_details"
                 + " FROM inv_stock_request_master a"
                 + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
                 + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd";
+                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
+                + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx";
 
-        String condition = " EXISTS (SELECT 1 FROM industry d "
-                + lsIndustryCondition
-                + " AND EXISTS (SELECT 1 FROM company f "
-                + lsCompanyCondition
-                + " AND b.nApproved > 0";
-
-        lsSQL = lsSQL + (MiscUtil.addCondition("", condition));
-        if (!psRecdStat.isEmpty()) {
-            lsSQL = lsSQL + lsRecdStat;
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+        if (!psTranStat.isEmpty()) {
+            lsSQL = lsSQL + lsTransStat;
         }
 
-        lsSQL = lsSQL + (" GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm");
-        lsSQL = lsSQL + (" ORDER BY a.dTransact DESC");
+        lsSQL = lsSQL + " GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm"
+                + " ORDER BY a.dTransact DESC";
         System.out.println("Executing SQL: " + lsSQL);
-
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-
         JSONArray dataArray = new JSONArray();
         JSONObject loJSON = new JSONObject();
 
@@ -651,38 +648,36 @@ public class PurchaseOrder extends Transaction {
 
         try {
             int lnctr = 0;
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                while (loRS.next()) {
+                    JSONObject request = new JSONObject();
+                    request.put("sTransNox", loRS.getString("a.sTransNox"));
+                    request.put("sBranchCd", loRS.getString("a.sBranchCd"));
+                    request.put("dTransact", loRS.getDate("a.dTransact"));
+                    request.put("sReferNox", loRS.getString("a.sReferNox"));
+                    request.put("cTranStat", loRS.getString("a.cTranStat"));
+                    request.put("sBranchNm", loRS.getString("e.sBranchNm"));
+                    request.put("total_details", loRS.getInt("total_details"));
 
-            while (loRS.next()) {
-                JSONObject request = new JSONObject();
-                request.put("sTransNox", loRS.getString("sTransNox"));
-                request.put("sBranchCd", loRS.getString("sBranchCd"));
-                request.put("dTransact", loRS.getDate("dTransact"));
-                request.put("sReferNox", loRS.getString("sReferNox"));
-                request.put("cTranStat", loRS.getString("cTranStat"));
-                request.put("sBranchNm", loRS.getString("sBranchNm"));
-                request.put("total_details", loRS.getInt("total_details"));
-
-                dataArray.add(request);
-                lnctr++;
-            }
-
-            if (lnctr > 0) {
+                    dataArray.add(request);
+                    lnctr++;
+                }
                 loJSON.put("result", "success");
                 loJSON.put("message", "Record loaded successfully.");
                 loJSON.put("data", dataArray);
             } else {
+                dataArray = new JSONArray();
+                dataArray.add("{}");
                 loJSON.put("result", "error");
                 loJSON.put("continue", true);
-                loJSON.put("message", "No records found.");
+                loJSON.put("message", "No record found .");
             }
+            MiscUtil.close(loRS);
         } catch (SQLException e) {
             loJSON.put("result", "error");
             loJSON.put("message", e.getMessage());
-        } finally {
-            MiscUtil.close(loRS);
         }
         return loJSON;
-
     }
 
     public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -704,7 +699,6 @@ public class PurchaseOrder extends Transaction {
         }
 
         for (int lnCtr = 0; lnCtr <= loTrans.StockRequest().getDetailCount() - 1; lnCtr++) {
-
             if (loTrans.StockRequest().Detail(lnCtr).getApproved() - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase()) > 0) {
                 AddDetail();
                 int lnLastIndex = getDetailCount() - 1;
@@ -741,14 +735,14 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject getPurchaseOrder() throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();
-        String lsRecdStat = "";
+        String lsTransStat = "";
         if (psTranStat.length() > 1) {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                lsRecdStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            lsRecdStat = " AND a.cTranStat IN (" + lsRecdStat.substring(2) + ")";
+            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
         } else {
-            lsRecdStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
 
         String lsSQL = " SELECT "
@@ -783,8 +777,8 @@ public class PurchaseOrder extends Transaction {
                 + " AND "
                 + lsReferNo;
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
-        if (!psRecdStat.isEmpty()) {
-            lsSQL = lsSQL + lsRecdStat;
+        if (!psTranStat.isEmpty()) {
+            lsSQL = lsSQL + lsTransStat;
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
                 + " ORDER BY dTransact ASC";
@@ -855,8 +849,10 @@ public class PurchaseOrder extends Transaction {
                             Detail(lnCtr).getUnitPrice().doubleValue(),
                             Detail(lnCtr).getQuantity().intValue(),
                             lnTotal));
+
                 } catch (GuanzonException ex) {
-                    Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(PurchaseOrder.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             }
 
@@ -877,11 +873,14 @@ public class PurchaseOrder extends Transaction {
         } catch (JRException e) {
             System.err.println("Error generating report: " + e.getMessage());
             e.printStackTrace();
+
         } catch (SQLException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PurchaseOrder.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
+
     }
 
     public static class OrderDetail {
