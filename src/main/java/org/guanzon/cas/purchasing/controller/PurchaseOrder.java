@@ -99,12 +99,9 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
 
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
