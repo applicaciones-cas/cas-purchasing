@@ -98,13 +98,6 @@ public class PurchaseOrder_Hospitality implements GValidator {
             return poJSON;
         }
 
-        if (transactionDateStr.compareTo(currentDateStr) < 0) {
-            if (poMaster.getReference() == null || poMaster.getReference().trim().isEmpty()) {
-                poJSON.put("message", "Back-dating requires a Reference No.");
-                return poJSON;
-            }
-        }
-
         if (poMaster.getIndustryID() == null) {
             poJSON.put("message", "Industry is not set.");
             return poJSON;
