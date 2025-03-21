@@ -1,8 +1,11 @@
 package org.guanzon.cas.purchasing.validator;
 
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
@@ -49,26 +52,31 @@ public class PurchaseOrder_LP implements GValidator {
 
     @Override
     public JSONObject validate() {
-        switch (psTranStat) {
-            case PurchaseOrderStatus.OPEN:
-                return validateNew();
-            case PurchaseOrderStatus.CONFIRMED:
-                return validateConfirmed();
-            case PurchaseOrderStatus.APPROVED:
-                return validateApproved();
-            case PurchaseOrderStatus.CANCELLED:
-                return validateCancelled();
-            case PurchaseOrderStatus.VOID:
-                return validateVoid();
-            default:
-                poJSON = new JSONObject();
-                poJSON.put("result", "success");
-        }
+        try {
+            switch (psTranStat) {
+                case PurchaseOrderStatus.OPEN:
+                    return validateNew();
+                case PurchaseOrderStatus.CONFIRMED:
+                    return validateConfirmed();
+                case PurchaseOrderStatus.APPROVED:
+                    return validateApproved();
+                case PurchaseOrderStatus.CANCELLED:
+                    return validateCancelled();
+                case PurchaseOrderStatus.VOID:
+                    return validateVoid();
+                default:
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "success");
+            }
 
-        return poJSON;
+            return poJSON;
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrder_MP.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
-    private JSONObject validateNew() {
+    private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         Date loExpectedDate = poMaster.getExpectedDate();
@@ -78,15 +86,13 @@ public class PurchaseOrder_LP implements GValidator {
             return poJSON;
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        if ("1900-01-01".equals(sdf.format(loTransactionDate))) {
+        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
 
-        Date currentDate = new Date();
-        String currentDateStr = sdf.format(currentDate);
-        String transactionDateStr = sdf.format(loTransactionDate);
+        String currentDateStr = xsDateShort(poGrider.getServerDate());
+        String transactionDateStr = xsDateShort(loTransactionDate);
         if (transactionDateStr.compareTo(currentDateStr) > 0) {
             poJSON.put("message", "Future transaction dates are not allowed.");
             return poJSON;
@@ -119,7 +125,7 @@ public class PurchaseOrder_LP implements GValidator {
             poJSON.put("message", "Invalid Expected Delivery Date.");
             return poJSON;
         }
-        if ("1900-01-01".equals(sdf.format(loExpectedDate))) {
+        if ("1900-01-01".equals(xsDateShort(loExpectedDate))) {
             poJSON.put("message", "Invalid Expected Delivery Transaction Date.");
             return poJSON;
         }
@@ -151,6 +157,13 @@ public class PurchaseOrder_LP implements GValidator {
         }
         poJSON.put("result", "success");
         return poJSON;
+
+    }
+
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
     }
 
     private JSONObject validateConfirmed() {
