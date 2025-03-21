@@ -519,8 +519,27 @@ public class PurchaseOrder extends Transaction {
             lsCondition = "cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
         initSQL();
-        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry()));
-
+        String lsIndustryCondition = !Master().getIndustryID().isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
+                : " a.sIndstCdx LIKE '%'";
+        String lsCompanyCondition = !Master().getCompanyID().isEmpty()
+                ? " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
+                : " a.sCompnyID LIKE '%'";
+        String lsSupplier = !Master().getSupplierID().isEmpty()
+                ? " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
+                : " a.sSupplier LIKE '%'";
+        String lsReferNo = !Master().getReference().isEmpty()
+                ? " a.sReferNox = " + SQLUtil.toSQL(Master().getReference())
+                : " a.sReferNox LIKE '%'";
+        String lsFilterCondition = lsIndustryCondition
+                + " AND "
+                + lsCompanyCondition
+                + " AND "
+                + lsSupplier
+                + " AND "
+                + lsReferNo;
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
+        System.out.println("SQLl: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
@@ -709,9 +728,6 @@ public class PurchaseOrder extends Transaction {
             lsRecdStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
 
-        String lsIndustryCondition = Master().getIndustryID().isEmpty() || Master().getIndustryID() == null
-                ? "a.sIndstCdx LIKE '%'"
-                : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
         String lsSQL = " SELECT "
                 + "  a.sTransNox,"
                 + "  c.sBranchNm,"
@@ -722,9 +738,28 @@ public class PurchaseOrder extends Transaction {
                 + " FROM po_master a "
                 + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
                 + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx"
-                + " , po_detail b " ;
+                + " , po_detail b ";
 
-        lsSQL = MiscUtil.addCondition(lsSQL, lsIndustryCondition);
+        String lsIndustryCondition = !Master().getIndustryID().isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
+                : " a.sIndstCdx LIKE '%'";
+        String lsCompanyCondition = !Master().getCompanyID().isEmpty()
+                ? " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
+                : " a.sCompnyID LIKE '%'";
+        String lsSupplier = !Master().getSupplierID().isEmpty()
+                ? " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
+                : " a.sSupplier LIKE '%'";
+        String lsReferNo = !Master().getReference().isEmpty()
+                ? " a.sReferNox = " + SQLUtil.toSQL(Master().getReference())
+                : " a.sReferNox LIKE '%'";
+        String lsFilterCondition = lsIndustryCondition
+                + " AND "
+                + lsCompanyCondition
+                + " AND "
+                + lsSupplier
+                + " AND "
+                + lsReferNo;
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psRecdStat.isEmpty()) {
             lsSQL = lsSQL + lsRecdStat;
         }

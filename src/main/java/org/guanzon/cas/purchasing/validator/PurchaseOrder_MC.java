@@ -119,8 +119,8 @@ public class PurchaseOrder_MC implements GValidator {
             poJSON.put("message", "Invalid Expected Delivery Date.");
             return poJSON;
         }
-        if ("1900-01-01".equals(loExpectedDate)) {
-            poJSON.put("message", "Invalid Expected Delivery Date.");
+        if ("1900-01-01".equals(sdf.format(loExpectedDate))) {
+            poJSON.put("message", "Invalid Expected Delivery Transaction Date.");
             return poJSON;
         }
         if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {

@@ -55,7 +55,7 @@ public class PurchaseOrder_MP implements GValidator {
             case PurchaseOrderStatus.CONFIRMED:
                 return validateConfirmed();
             case PurchaseOrderStatus.APPROVED:
-                return validateProcessed();
+                return validateApproved();
             case PurchaseOrderStatus.CANCELLED:
                 return validateCancelled();
             case PurchaseOrderStatus.VOID:
@@ -119,8 +119,8 @@ public class PurchaseOrder_MP implements GValidator {
             poJSON.put("message", "Invalid Expected Delivery Date.");
             return poJSON;
         }
-        if ("1900-01-01".equals(loExpectedDate)) {
-            poJSON.put("message", "Invalid Expected Delivery Date.");
+        if ("1900-01-01".equals(sdf.format(loExpectedDate))) {
+            poJSON.put("message", "Invalid Expected Delivery Transaction Date.");
             return poJSON;
         }
         if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
@@ -167,7 +167,7 @@ public class PurchaseOrder_MP implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateProcessed() {
+    private JSONObject validateApproved() {
         poJSON = new JSONObject();
 
         poJSON.put("result", "success");
