@@ -34,7 +34,6 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.Branch;
-import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.Term;
