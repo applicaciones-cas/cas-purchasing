@@ -102,7 +102,13 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        //change status
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
 
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -140,11 +146,16 @@ public class PurchaseOrder extends Transaction {
         }
 
         //validator
-        poJSON = isEntryOkay(PurchaseOrderStatus.CONFIRMED);
+        poJSON = isEntryOkay(PurchaseOrderStatus.APPROVED);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
 
@@ -183,14 +194,20 @@ public class PurchaseOrder extends Transaction {
         }
 
         //validator
-        poJSON = isEntryOkay(PurchaseOrderStatus.CONFIRMED);
+        poJSON = isEntryOkay(PurchaseOrderStatus.CANCELLED);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
-
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -226,9 +243,16 @@ public class PurchaseOrder extends Transaction {
         }
 
         //validator
-        poJSON = isEntryOkay(PurchaseOrderStatus.CONFIRMED);
+        poJSON = isEntryOkay(PurchaseOrderStatus.VOID);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
+        }
+
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
 
         //change status
