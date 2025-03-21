@@ -379,6 +379,14 @@ public class Model_PO_Master extends Model {
         return (Date) getValue("dModified");
     }
 
+    public JSONObject isPreOwned(boolean isWithAdvPaym) {
+        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
+    }
+
+    public boolean isPreOwned() {
+        return ((String) getValue("cPreOwned")).equals("1");
+    }
+
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
