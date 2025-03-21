@@ -328,6 +328,14 @@ public class Model_POR_Master extends Model {
         return (String) getValue("sInvTypCd");
     }
     
+    public String getProcessed(){
+        return (String) getValue("cProcessd");
+    }
+    
+    public JSONObject setProcessed(String processed){
+        return setValue("cProcessd", processed);
+    }
+    
     public JSONObject setTransactionStatus(String transactionStatus){
         return setValue("cTranStat", transactionStatus);
     }

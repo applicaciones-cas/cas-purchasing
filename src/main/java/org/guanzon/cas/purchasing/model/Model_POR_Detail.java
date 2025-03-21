@@ -5,6 +5,7 @@
  */
 package org.guanzon.cas.purchasing.model;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
@@ -53,6 +54,8 @@ public class Model_POR_Detail extends Model{
     Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
+    
+    String psBrandId = "";
     
     @Override
     public void initialize() {
@@ -154,12 +157,12 @@ public class Model_POR_Detail extends Model{
         return (String) getValue("cUnitType");
     }
     
-    public JSONObject setQuantity(int quantity){
+    public JSONObject setQuantity(Number quantity){
         return setValue("nQuantity", quantity);
     }
     
-    public int getQuantity(){
-        return (int) getValue("nQuantity");
+    public Number getQuantity(){
+        return (Number) getValue("nQuantity");
     }
     
     public JSONObject setUnitPrce(Number unitPrce){
@@ -218,12 +221,16 @@ public class Model_POR_Detail extends Model{
         return (Date) getValue("dModified");
     }
     
+    //TODO
     public JSONObject setBrandId(String brandId){
-        return poBrand.setBrandId(brandId);
+        psBrandId = brandId;
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
     }
     
     public String getBrandId(){
-        return poBrand.getBrandId();
+        return psBrandId;
     }
     
     public JSONObject setModelVariantId(String modelVariantId){
@@ -284,12 +291,17 @@ public class Model_POR_Detail extends Model{
 
     public Model_Brand Brand() throws GuanzonException, SQLException {
         if (!"".equals(getBrandId())) {
-            poJSON = poBrand.openRecord(getBrandId());
-            if ("success".equals((String) poJSON.get("result"))) {
+            if (poBrand.getEditMode() == EditMode.READY
+                    && poBrand.getBrandId().equals(getBrandId())) {
                 return poBrand;
             } else {
-                poBrand.initialize();
-                return poBrand;
+                poJSON = poBrand.openRecord(getBrandId());
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBrand;
+                } else {
+                    poBrand.initialize();
+                    return poBrand;
+                }
             }
         } else {
             poBrand.initialize();
@@ -419,7 +431,7 @@ public class Model_POR_Detail extends Model{
 //            return poModel;
 //        }
 //    }
-
+    
     
     //end reference object models
 }

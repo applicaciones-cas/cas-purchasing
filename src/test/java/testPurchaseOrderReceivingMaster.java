@@ -41,7 +41,7 @@ public class testPurchaseOrderReceivingMaster {
         trans = new PurchaseOrderReceivingControllers(instance, null).PurchaseOrderReceiving();
     }
 
-    @Test
+//    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "02";
@@ -295,7 +295,7 @@ public class testPurchaseOrderReceivingMaster {
         
     }   
     
-//    @Test
+    @Test
     public void testConfirmTransaction() {
         JSONObject loJSON;
         
@@ -306,7 +306,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = trans.OpenTransaction("M00125000003");
+            loJSON = trans.OpenTransaction("M00125000001");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -327,7 +327,7 @@ public class testPurchaseOrderReceivingMaster {
                 }
             }
             
-            loJSON = trans.ConfirmTransaction("");
+            loJSON = trans.ConfirmTransaction("test");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();

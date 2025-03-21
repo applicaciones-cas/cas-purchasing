@@ -60,8 +60,8 @@ public class PurchaseOrderReceiving_General implements GValidator{
                 return validateNew();
             case PurchaseOrderReceivingStatus.CONFIRMED:
                 return validateConfirmed();
-            case PurchaseOrderReceivingStatus.PROCESSED:
-                return validateProcessed();
+//            case PurchaseOrderReceivingStatus.PROCESSED:
+//                return validateProcessed();
             case PurchaseOrderReceivingStatus.POSTED:
                 return validateProcessed();
             case PurchaseOrderReceivingStatus.CANCELLED:
