@@ -57,6 +57,7 @@ public class Model_POR_Master extends Model {
             poEntity.updateObject("dRefernce", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTermDuex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dDueDatex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nDiscount", 0.00);
             poEntity.updateObject("nAddDiscx", 0.00);
