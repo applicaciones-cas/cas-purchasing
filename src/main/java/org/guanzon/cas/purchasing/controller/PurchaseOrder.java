@@ -506,13 +506,13 @@ public class PurchaseOrder extends Transaction {
                 detail.remove(); // Remove items with empty stock ID or zero quantity
             }
         }
-        try {
-            AddDetail();
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-        }
         // If all items had quantity 0, return an error
         if (!hasValidQuantity) {
+//            try {
+//                AddDetail();
+//            } catch (CloneNotSupportedException ex) {
+//                Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+//            }
             poJSON.put("result", "error");
             poJSON.put("message", "Your order contains no valid items.");
             return poJSON;

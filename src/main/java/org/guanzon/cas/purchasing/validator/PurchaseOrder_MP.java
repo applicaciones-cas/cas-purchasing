@@ -137,7 +137,7 @@ public class PurchaseOrder_MP implements GValidator {
             poJSON.put("message", "Invalid Term.");
             return poJSON;
         }
-        if (poMaster.isWithAdvPaym() == true) {
+        if (poMaster.getWithAdvPaym() == true) {
             if (poMaster.getDownPaymentRatesPercentage() == null
                     || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.00
                     || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00

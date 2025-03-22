@@ -227,11 +227,11 @@ public class Model_PO_Master extends Model {
         return (Number) getValue("nAmtPaidx");
     }
 
-    public JSONObject isWithAdvPaym(boolean isWithAdvPaym) {
+    public JSONObject setWithAdvPaym(boolean isWithAdvPaym) {
         return setValue("cWithAddx", isWithAdvPaym ? "1" : "0");
     }
 
-    public boolean isWithAdvPaym() {
+    public boolean getWithAdvPaym() {
         return ((String) getValue("cWithAddx")).equals("1");
     }
 
@@ -379,11 +379,19 @@ public class Model_PO_Master extends Model {
         return (Date) getValue("dModified");
     }
 
-    public JSONObject isPreOwned(boolean isWithAdvPaym) {
+    public JSONObject setPreOwned(boolean isWithAdvPaym) {
         return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
     }
 
-    public boolean isPreOwned() {
+    public boolean getPreOwned() {
+        return ((String) getValue("cPreOwned")).equals("1");
+    }
+
+    public JSONObject setProcessed(boolean isProcessed) {
+        return setValue("cPreOwned", isProcessed ? "1" : "0");
+    }
+
+    public boolean getProcessed() {
         return ((String) getValue("cPreOwned")).equals("1");
     }
 
