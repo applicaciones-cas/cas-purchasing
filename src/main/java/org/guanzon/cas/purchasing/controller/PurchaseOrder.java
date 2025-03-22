@@ -315,15 +315,33 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcode(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchBarcode(String value, boolean byCode, int row)
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
-        if ("success".equals((String) poJSON.get("result"))) {
-            Detail(row).setStockID(object.getModel().getStockId());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
+
+        String scannedStockID = object.getModel().getStockId();
+
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
+                }
+            }
+        }
+
+        Detail(row).setStockID(scannedStockID);
         AddDetail();
+
         return poJSON;
     }
 
@@ -332,9 +350,24 @@ public class PurchaseOrder extends Transaction {
         object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
-        if ("success".equals((String) poJSON.get("result"))) {
-            Detail(row).setStockID(object.getModel().getStockId());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
+
+        String scannedStockID = object.getModel().getStockId();
+
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
+                }
+            }
+        }
+
+        Detail(row).setStockID(scannedStockID);
         AddDetail();
         return poJSON;
     }
@@ -386,12 +419,25 @@ public class PurchaseOrder extends Transaction {
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
         poJSON = object.searchRecord(value, byCode);
-        if ("success".equals((String) poJSON.get("result"))) {
-            Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
-            Detail(row).setStockID(object.getModel().getStockId());
-            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
 
+        String scannedStockID = object.getModel().getStockId();
+
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
+                }
+            }
+        }
+        Detail(row).setStockID(scannedStockID);
+        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         AddDetail();
         return poJSON;
     }
@@ -402,10 +448,23 @@ public class PurchaseOrder extends Transaction {
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
         poJSON = object.searchRecord(value, byCode);
-        if ("success".equals((String) poJSON.get("result"))) {
-            Detail(row).setStockID(object.getModel().getStockId());
-            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
+
+        String scannedStockID = object.getModel().getStockId();
+
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
+                }
+            }
+        }
+        Detail(row).setStockID(scannedStockID);
         AddDetail();
         return poJSON;
     }
