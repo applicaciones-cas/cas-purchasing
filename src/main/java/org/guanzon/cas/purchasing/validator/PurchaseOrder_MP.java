@@ -159,9 +159,15 @@ public class PurchaseOrder_MP implements GValidator {
                 return poJSON;
             }
         }
-//        if (poMaster.getReference()) {
-//
-//        }
+
+        // Validate if Backdated & Reference No is Required
+        if (loTransactionDate.before(poGrider.getServerDate())) {
+            String referenceNo = poMaster.getReference();
+            if (referenceNo == null || referenceNo.trim().isEmpty()) {
+                poJSON.put("message", "A reference number is required for backdated transactions.");
+                return poJSON;
+            }
+        }
         poJSON = ShowDialogFX.getUserApproval(poGrider);
         if (!"success".equals((String) poJSON.get("result"))) {
             poJSON.put("message", (String) poJSON.get("message"));
