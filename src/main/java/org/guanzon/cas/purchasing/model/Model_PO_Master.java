@@ -196,36 +196,36 @@ public class Model_PO_Master extends Model {
         return (String) getValue("sTermCode");
     }
 
-    public JSONObject setDiscount(Double discount) {
+    public JSONObject setDiscount(Number discount) {
         return setValue("nDiscount", discount);
     }
 
-    public Double getDiscount() {
-        return (Double) getValue("nDiscount");
+    public Number getDiscount() {
+        return (Number) getValue("nDiscount");
     }
 
-    public JSONObject setAdditionalDiscount(Double additionalDiscount) {
+    public JSONObject setAdditionalDiscount(Number additionalDiscount) {
         return setValue("nAddDiscx", additionalDiscount);
     }
 
-    public Double getAdditionalDiscount() {
-        return (Double) getValue("nAddDiscx");
+    public Number getAdditionalDiscount() {
+        return (Number) getValue("nAddDiscx");
     }
 
-    public JSONObject setTranTotal(Double tranTotal) {
+    public JSONObject setTranTotal(Number tranTotal) {
         return setValue("nTranTotl", tranTotal);
     }
 
-    public Double getTranTotal() {
-        return (Double) getValue("nTranTotl");
+    public Number getTranTotal() {
+        return (Number) getValue("nTranTotl");
     }
 
-    public JSONObject setAmountPaid(Double amountPaid) {
+    public JSONObject setAmountPaid(Number amountPaid) {
         return setValue("nAmtPaidx", amountPaid);
     }
 
-    public Double getAmountPaid() {
-        return (Double) getValue("nAmtPaidx");
+    public Number getAmountPaid() {
+        return (Number) getValue("nAmtPaidx");
     }
 
     public JSONObject setWithAdvPaym(boolean isWithAdvPaym) {
@@ -236,28 +236,28 @@ public class Model_PO_Master extends Model {
         return ((String) getValue("cWithAddx")).equals("1");
     }
 
-    public JSONObject setDownPaymentRatesPercentage(Double downPaymentRatesPercentage) {
+    public JSONObject setDownPaymentRatesPercentage(Number downPaymentRatesPercentage) {
         return setValue("nDPRatexx", downPaymentRatesPercentage);
     }
 
-    public Double getDownPaymentRatesPercentage() {
-        return (Double) getValue("nDPRatexx");
+    public Number getDownPaymentRatesPercentage() {
+        return (Number) getValue("nDPRatexx");
     }
 
-    public JSONObject setDownPaymentRatesAmount(Double downPaymentRatesAmount) {
+    public JSONObject setDownPaymentRatesAmount(Number downPaymentRatesAmount) {
         return setValue("nAdvAmtxx", downPaymentRatesAmount);
     }
 
-    public Double getDownPaymentRatesAmount() {
-        return (Double) getValue("nAdvAmtxx");
+    public Number getDownPaymentRatesAmount() {
+        return (Number) getValue("nAdvAmtxx");
     }
 
-    public JSONObject setNetTotal(Double netTotal) {
+    public JSONObject setNetTotal(Number netTotal) {
         return setValue("nNetTotal", netTotal);
     }
 
-    public Double getNetTotal() {
-        return (Double) getValue("nNetTotal");
+    public Number getNetTotal() {
+        return (Number) getValue("nNetTotal");
     }
 
     public JSONObject setRemarks(String industryId) {
@@ -276,20 +276,20 @@ public class Model_PO_Master extends Model {
         return (String) getValue("cVATaxabl");
     }
 
-    public JSONObject setVatRate(Double vatRate) {
+    public JSONObject setVatRate(Number vatRate) {
         return setValue("nVatRatex", vatRate);
     }
 
-    public Double getVatRate() {
-        return (Double) getValue("nVatRatex");
+    public Number getVatRate() {
+        return (Number) getValue("nVatRatex");
     }
 
-    public JSONObject setWithHoldingTax(Double withHoldingTax) {
+    public JSONObject setWithHoldingTax(Number withHoldingTax) {
         return setValue("nTWithHld", withHoldingTax);
     }
 
-    public Double getWithHoldingTax() {
-        return (Double) getValue("nTWithHld");
+    public Number getWithHoldingTax() {
+        return (Number) getValue("nTWithHld");
     }
 
     public JSONObject setExpectedDate(Date expectedDate) {
