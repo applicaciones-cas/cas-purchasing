@@ -444,89 +444,55 @@ public class PurchaseOrder extends Transaction {
         return (Model_PO_Detail) paDetail.get(row);
     }
 
-//    @Override
-//    public JSONObject willSave() {
-//        /*Put system validations and other assignments here*/
-//        poJSON = new JSONObject();
-//
-//        if (getDetailCount() >= 1) {
-//            if (Detail(0).getQuantity().equals(0)) {
-//                try {
-//                    AddDetail();
-//                    poJSON.put("result", "error");
-//                    poJSON.put("message", "Your order has zero quantity.");
-//                    return poJSON;
-//                } catch (CloneNotSupportedException ex) {
-//                    Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//        }
-//
-//        //remove items with no stockid or quantity order
-//        Iterator<Model> detail = Detail().iterator();
-//        while (detail.hasNext()) {
-//            Model item = detail.next(); // Store the item before checking conditions
-//            if ("".equals((String) item.getValue("sStockIDx"))
-//                    || (int) item.getValue("nQuantity") <= 0) {
-//                detail.remove(); // Correctly remove the item
-//            }
-//        }
-//        //assign other info on detail
-//        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-//            Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
-//            Detail(lnCtr).setEntryNo(lnCtr + 1);
-//        }
-//        poJSON.put("result", "success");
-//        return poJSON;
-//    }
     @Override
     public JSONObject willSave() {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
 
-        if (getDetailCount() == 0) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Your order is empty.");
-            return poJSON;
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
+            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
         }
 
-        boolean hasValidQuantity = false;
+        if (getDetailCount() == 1) {
+            //do not allow a single item detail with no quantity order
+            if (Detail(0).getQuantity().intValue() == 0) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Your order has zero quantity.");
+                return poJSON;
+            }
+        }
 
-        // Check if all quantities are 0 and remove invalid items
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
-            int quantity = (int) item.getValue("nQuantity");
 
-            if (quantity > 0) {
-                hasValidQuantity = true; // At least one item has quantity > 0
-            }
-
-            if ("".equals((String) item.getValue("sStockIDx")) || quantity <= 0) {
-                detail.remove(); // Remove items with empty stock ID or zero quantity
+            if ("".equals((String) item.getValue("sStockIDx"))
+                    || (int) item.getValue("nQuantity") <= 0) {
+                detail.remove();
             }
         }
-        // If all items had quantity 0, return an error
-        if (!hasValidQuantity) {
-//            try {
-//                AddDetail();
-//            } catch (CloneNotSupportedException ex) {
-//                Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-//            }
+
+        if (getDetailCount() <= 0) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Your order contains no valid items.");
+            poJSON.put("message", "No Purchase order detail to be save.");
             return poJSON;
         }
 
-        // Assign transaction details from master
-        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
-            Detail(lnCtr).setEntryNo(lnCtr + 1);
+        //assign other info on detail
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            try {
+                Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
+                Detail(lnCtr).setEntryNo(lnCtr + 1);
+                Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
+            } catch (SQLException ex) {
+                Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         poJSON.put("result", "success");
         return poJSON;
     }
+//    }
 
     @Override
     public JSONObject save() {
