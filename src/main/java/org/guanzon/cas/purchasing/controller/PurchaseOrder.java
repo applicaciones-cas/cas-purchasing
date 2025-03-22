@@ -315,27 +315,35 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcode(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchBarcode(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
-
         if ("success".equals((String) poJSON.get("result"))) {
-            Detail(getDetailCount() - 1).setStockID(object.getModel().getStockId());
+            Detail(row).setStockID(object.getModel().getStockId());
+        }
+        try {
+            AddDetail();
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeDescription(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
         poJSON = object.searchRecord(value, byCode);
-
         if ("success".equals((String) poJSON.get("result"))) {
-            Detail(getDetailCount() - 1).setStockID(object.getModel().getStockId());
+            Detail(row).setStockID(object.getModel().getStockId());
+        }
+        try {
+            AddDetail();
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
@@ -391,6 +399,11 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         }
+        try {
+            AddDetail();
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         return poJSON;
     }
@@ -404,6 +417,11 @@ public class PurchaseOrder extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        }
+        try {
+            AddDetail();
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
@@ -426,35 +444,84 @@ public class PurchaseOrder extends Transaction {
         return (Model_PO_Detail) paDetail.get(row);
     }
 
+//    @Override
+//    public JSONObject willSave() {
+//        /*Put system validations and other assignments here*/
+//        poJSON = new JSONObject();
+//
+//        if (getDetailCount() >= 1) {
+//            if (Detail(0).getQuantity().equals(0)) {
+//                try {
+//                    AddDetail();
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "Your order has zero quantity.");
+//                    return poJSON;
+//                } catch (CloneNotSupportedException ex) {
+//                    Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            }
+//        }
+//
+//        //remove items with no stockid or quantity order
+//        Iterator<Model> detail = Detail().iterator();
+//        while (detail.hasNext()) {
+//            Model item = detail.next(); // Store the item before checking conditions
+//            if ("".equals((String) item.getValue("sStockIDx"))
+//                    || (int) item.getValue("nQuantity") <= 0) {
+//                detail.remove(); // Correctly remove the item
+//            }
+//        }
+//        //assign other info on detail
+//        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+//            Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
+//            Detail(lnCtr).setEntryNo(lnCtr + 1);
+//        }
+//        poJSON.put("result", "success");
+//        return poJSON;
+//    }
     @Override
     public JSONObject willSave() {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
 
-        //remove items with no stockid or quantity order
+        if (getDetailCount() == 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Your order is empty.");
+            return poJSON;
+        }
+
+        boolean hasValidQuantity = false;
+
+        // Check if all quantities are 0 and remove invalid items
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
-            Model item = detail.next(); // Store the item before checking conditions
+            Model item = detail.next();
+            int quantity = (int) item.getValue("nQuantity");
 
-            if ("".equals((String) item.getValue("sStockIDx"))
-                    || (int) item.getValue("nQuantity") <= 0) {
-                detail.remove(); // Correctly remove the item
+            if (quantity > 0) {
+                hasValidQuantity = true; // At least one item has quantity > 0
+            }
+
+            if ("".equals((String) item.getValue("sStockIDx")) || quantity <= 0) {
+                detail.remove(); // Remove items with empty stock ID or zero quantity
             }
         }
+        try {
+            AddDetail();
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // If all items had quantity 0, return an error
+        if (!hasValidQuantity) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Your order contains no valid items.");
+            return poJSON;
+        }
 
-        //assign other info on detail
-        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+        // Assign transaction details from master
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
-        }
-
-        if (getDetailCount() == 1) {
-            //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantity().equals(0)) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Your order has zero quantity.");
-                return poJSON;
-            }
         }
 
         poJSON.put("result", "success");
