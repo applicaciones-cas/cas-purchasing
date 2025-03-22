@@ -315,7 +315,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcode(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchBarcode(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
@@ -323,16 +323,11 @@ public class PurchaseOrder extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setStockID(object.getModel().getStockId());
         }
-        try {
-            AddDetail();
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        AddDetail();
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
@@ -340,12 +335,7 @@ public class PurchaseOrder extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setStockID(object.getModel().getStockId());
         }
-        try {
-            AddDetail();
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        AddDetail();
         return poJSON;
     }
 
@@ -390,7 +380,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBrand(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchBrand(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
@@ -401,16 +391,12 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         }
-        try {
-            AddDetail();
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
+        AddDetail();
         return poJSON;
     }
 
-    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException {
+    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
@@ -420,12 +406,7 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         }
-        try {
-            AddDetail();
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        AddDetail();
         return poJSON;
     }
 
@@ -447,7 +428,7 @@ public class PurchaseOrder extends Transaction {
     }
 
     @Override
-    public JSONObject willSave() {
+    public JSONObject willSave() throws SQLException {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
 
@@ -482,13 +463,9 @@ public class PurchaseOrder extends Transaction {
 
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            try {
-                Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
-                Detail(lnCtr).setEntryNo(lnCtr + 1);
-                Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
-            } catch (SQLException ex) {
-                Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
+            Detail(lnCtr).setEntryNo(lnCtr + 1);
+            Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
         }
 
         poJSON.put("result", "success");
