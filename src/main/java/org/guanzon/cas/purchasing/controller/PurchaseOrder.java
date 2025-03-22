@@ -349,14 +349,16 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchSupplier(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
         object.Master().setRecordStatus(RecordStatus.ACTIVE);
 
-        poJSON = object.Master().searchRecordWithClientType("1", byCode);
+        poJSON = object.Master().searchRecord(value, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setSupplierID(object.Master().getModel().getClientId());
+            Master().setAddressID(object.ClientAddress().getModel().getAddressId()); //TODO
+            Master().setContactID(object.ClientInstitutionContact().getModel().getClientId()); //TODO
         }
 
         return poJSON;
@@ -492,7 +494,6 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
-//    }
 
     @Override
     public JSONObject save() {

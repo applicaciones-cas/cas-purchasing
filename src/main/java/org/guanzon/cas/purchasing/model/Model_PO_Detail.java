@@ -5,6 +5,7 @@ import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.inv.model.Model_Inv_Master;
 import org.guanzon.cas.inv.model.Model_Inventory;
@@ -64,7 +65,7 @@ public class Model_PO_Detail extends Model {
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nReceived", 0);
-            poEntity.updateObject("nCancelld", 0);
+            poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();

@@ -159,11 +159,14 @@ public class PurchaseOrder_MP implements GValidator {
                 return poJSON;
             }
         }
-//        poJSON = ShowDialogFX.getUserApproval(poGrider);
-//        if (!"success".equals((String) poJSON.get("result"))) {
-//            poJSON.put("message", (String) poJSON.get("message"));
-//            return poJSON;
+//        if (poMaster.getReference()) {
+//
 //        }
+        poJSON = ShowDialogFX.getUserApproval(poGrider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
         poJSON.put("result", "success");
         return poJSON;
 
