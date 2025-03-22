@@ -1,9 +1,12 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -14,74 +17,64 @@ import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModel;
-import org.guanzon.cas.inv.Inventory;
-import org.guanzon.cas.inv.model.Model_Inventory;
-import org.guanzon.cas.inv.services.InvModels;
-import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
-import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
-import org.guanzon.cas.purchasing.status.PurchaseOrderProcessedStatus;
-import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.json.simple.JSONObject;
 
-public class Model_PO_Master extends Model {
-
+/**
+ *
+ * @author Arsiela 03-12-2025
+ */
+public class Model_POR_Master extends Model {
+        
     //reference objects
     Model_Branch poBranch;
     Model_Industry poIndustry;
     Model_Category poCategory;
-    Model_Company poCompany;
+    Model_Company poCompany;    
     Model_Term poTerm;
-    Model_Inv_Stock_Request_Master poInvStockMaster;
-    Model_Inventory poInventory;
-
-    Model_Client_Master poSupplier;
+    Model_Client_Master poSupplier;    
     Model_Client_Address poSupplierAdress;
-    Model_Client_Institution_Contact poSupplierContactPerson;
-
+    Model_Client_Institution_Contact poSupplierContactPerson;    
+    
     @Override
     public void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
-
+            
             poEntity.last();
             poEntity.moveToInsertRow();
 
             MiscUtil.initRowSet(poEntity);
-
+            
             //assign default values
-            poEntity.updateObject("cProcessd", PurchaseOrderProcessedStatus.NO);
-            poEntity.updateObject("cPreOwned", Logical.NO);
-            poEntity.updateObject("dExpected", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
-            poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
-            poEntity.updateObject("sTermCode", "0000004");
+            poEntity.updateObject("dRefernce", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dTermDuex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dDueDatex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nDiscount", 0.00);
             poEntity.updateObject("nAddDiscx", 0.00);
             poEntity.updateObject("nTranTotl", 0.00);
+            poEntity.updateObject("nVATRatex", 0.00);
+            poEntity.updateObject("nTWithHld", 0.00);
             poEntity.updateObject("nAmtPaidx", 0.00);
-            poEntity.updateObject("nDPRatexx", 0.00);
-            poEntity.updateObject("nAdvAmtxx", 0.00);
-            poEntity.updateObject("nNetTotal", 0.00);
-            poEntity.updateObject("cEmailSnt", Logical.NO);
-            poEntity.updateObject("nEmailSnt", 0);
-            poEntity.updateObject("cPrintxxx", Logical.NO);
-            poEntity.updateString("cTranStat", PurchaseOrderStatus.OPEN);
+            poEntity.updateObject("nFreightx", 0.00);
+            poEntity.updateString("cPrintxxx", Logical.NO);
+            poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
             //end - assign default values
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
             poEntity.absolute(1);
 
             ID = "sTransNox";
-
+            
             //initialize reference objects
             ParamModels model = new ParamModels(poGRider);
             poBranch = model.Branch();
@@ -89,326 +82,299 @@ public class Model_PO_Master extends Model {
             poCategory = model.Category();
             poCompany = model.Company();
             poTerm = model.Term();
-
-            InvModels invModel = new InvModels(poGRider);
-            poInventory = invModel.Inventory();
-
-            ClientModel clientModel = new ClientModel(poGRider);
+            
+            ClientModel clientModel = new ClientModel(poGRider); 
             poSupplier = clientModel.ClientMaster();
             poSupplierAdress = clientModel.ClientAddress();
             poSupplierContactPerson = clientModel.ClientInstitutionContact();
-            //end - initialize reference objects
-            InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
-            poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
-
+//            end - initialize reference objects
+            
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
     }
-
-    public JSONObject setTransactionNo(String transactionNo) {
+    
+    public JSONObject setTransactionNo(String transactionNo){
         return setValue("sTransNox", transactionNo);
     }
-
-    public String getTransactionNo() {
+    
+    public String getTransactionNo  (){
         return (String) getValue("sTransNox");
     }
-
-    public JSONObject setBranchCode(String branchCode) {
+    
+    public JSONObject setBranchCode(String branchCode){
         return setValue("sBranchCd", branchCode);
     }
-
-    public String getBranchCode() {
+    
+    public String getBranchCode(){
         return (String) getValue("sBranchCd");
     }
-
-    public JSONObject setIndustryID(String industryID) {
+    
+    public JSONObject setIndustryId(String industryID){
         return setValue("sIndstCdx", industryID);
     }
-
-    public String getIndustryID() {
+    
+    public String getIndustryId(){
         return (String) getValue("sIndstCdx");
     }
-
-    public JSONObject setTransactionDate(Date transactionDate) {
+    
+    public JSONObject setDepartmentId(String departmentID){
+        return setValue("sDeptIDxx", departmentID);
+    }
+    
+    public String getDepartmentId(){
+        return (String) getValue("sDeptIDxx");
+    }
+    
+    public JSONObject setTransactionDate(Date transactionDate){
         return setValue("dTransact", transactionDate);
     }
-
-    public Date getTransactionDate() {
+    
+    public Date getTransactionDate(){
         return (Date) getValue("dTransact");
     }
-
-    public JSONObject setCompanyID(String companyID) {
+    
+    public JSONObject setCompanyId(String companyID){
         return setValue("sCompnyID", companyID);
     }
-
-    public String getCompanyID() {
+    
+    public String getCompanyId(){
         return (String) getValue("sCompnyID");
     }
-
-    public JSONObject setDestinationID(String destinationID) {
-        return setValue("sDestinat", destinationID);
-    }
-
-    public String getDestinationID() {
-        return (String) getValue("sDestinat");
-    }
-
-    public JSONObject setSupplierID(String supplierID) {
+    
+    public JSONObject setSupplierId(String supplierID){
         return setValue("sSupplier", supplierID);
     }
-
-    public String getSupplierID() {
+    
+    public String getSupplierId(){
         return (String) getValue("sSupplier");
     }
-
-    public JSONObject setAddressID(String addressID) {
+    
+    public JSONObject setAddressId(String addressID){
         return setValue("sAddrssID", addressID);
     }
-
-    public String getAddressID() {
+    
+    public String getAddressId(){
         return (String) getValue("sAddrssID");
     }
-
-    public JSONObject setContactID(String contactID) {
+    
+    public JSONObject setContactId(String contactID){
         return setValue("sContctID", contactID);
     }
-
-    public String getContactID() {
+    
+    public String getContactId(){
         return (String) getValue("sContctID");
     }
-
-    public JSONObject setReference(String reference) {
-        return setValue("sReferNox", reference);
+    
+    public JSONObject setTruckingId(String truckingID){
+        return setValue("sTrucking", truckingID);
     }
-
-    public String getReference() {
+    
+    public String getTruckingId(){
+        return (String) getValue("sTrucking");
+    }
+    
+    public JSONObject setReferenceNo(String referenceNo){
+        return setValue("sReferNox", referenceNo);
+    }
+    
+    public String getReferenceNo(){
         return (String) getValue("sReferNox");
     }
-
-    public JSONObject setTermCode(String termCode) {
+    
+    public JSONObject setReferenceDate(Date refernceDate){
+        return setValue("dRefernce", refernceDate);
+    }
+    
+    public Date getReferenceDate(){
+        return (Date) getValue("dRefernce");
+    }
+    
+    public JSONObject setTermCode(String termCode){
         return setValue("sTermCode", termCode);
     }
-
-    public String getTermCode() {
+    
+    public String getTermCode(){
         return (String) getValue("sTermCode");
     }
-
-    public JSONObject setDiscount(Double discount) {
-        return setValue("nDiscount", discount);
+    
+    public JSONObject setTermDueDate(Date termDueDate){
+        return setValue("dTermDuex", termDueDate);
     }
-
-    public Double getDiscount() {
-        return (Double) getValue("nDiscount");
+    
+    public Date getTermDueDate(){
+        return (Date) getValue("dTermDuex");
     }
-
-    public JSONObject setAdditionalDiscount(Double additionalDiscount) {
-        return setValue("nAddDiscx", additionalDiscount);
+    
+    public JSONObject setDueDate(Date dueDate){
+        return setValue("dDueDatex", dueDate);
     }
-
-    public Double getAdditionalDiscount() {
-        return (Double) getValue("nAddDiscx");
+    
+    public Date getDueDate(){
+        return (Date) getValue("dDueDatex");
     }
-
-    public JSONObject setTranTotal(Double tranTotal) {
-        return setValue("nTranTotl", tranTotal);
+    
+    public JSONObject setDiscountRate(Number discountRate){
+        return setValue("nDiscount", discountRate);
     }
-
-    public Double getTranTotal() {
-        return (Double) getValue("nTranTotl");
+    
+    public Number getDiscountRate(){
+        return (Number) getValue("nDiscount");
     }
-
-    public JSONObject setAmountPaid(Double amountPaid) {
-        return setValue("nAmtPaidx", amountPaid);
+    
+    public JSONObject setDiscount(Number discount){
+        return setValue("nAddDiscx", discount);
     }
-
-    public Double getAmountPaid() {
-        return (Double) getValue("nAmtPaidx");
+    
+    public Number getDiscount(){
+        return (Number) getValue("nAddDiscx");
     }
-
-    public JSONObject setWithAdvPaym(boolean isWithAdvPaym) {
-        return setValue("cWithAddx", isWithAdvPaym ? "1" : "0");
+    
+    public JSONObject setTransactionTotal(Number transactionTotal){
+        return setValue("nTranTotl", transactionTotal);
     }
-
-    public boolean getWithAdvPaym() {
-        return ((String) getValue("cWithAddx")).equals("1");
+    
+    public Number getTransactionTotal(){
+        return (Number) getValue("nTranTotl");
     }
-
-    public JSONObject setDownPaymentRatesPercentage(Double downPaymentRatesPercentage) {
-        return setValue("nDPRatexx", downPaymentRatesPercentage);
+    
+    public JSONObject setSalesInvoice(String salesInvoice){
+        return setValue("sSalesInv", salesInvoice);
     }
-
-    public Double getDownPaymentRatesPercentage() {
-        return (Double) getValue("nDPRatexx");
+    
+    public String getSalesInvoice(){
+        return (String) getValue("sSalesInv");
     }
-
-    public JSONObject setDownPaymentRatesAmount(Double downPaymentRatesAmount) {
-        return setValue("nAdvAmtxx", downPaymentRatesAmount);
+    
+    public JSONObject setVatableTax(String vatableTax){
+        return setValue("cVATaxabl", vatableTax);
     }
-
-    public Double getDownPaymentRatesAmount() {
-        return (Double) getValue("nAdvAmtxx");
-    }
-
-    public JSONObject setNetTotal(Double netTotal) {
-        return setValue("nNetTotal", netTotal);
-    }
-
-    public Double getNetTotal() {
-        return (Double) getValue("nNetTotal");
-    }
-
-    public JSONObject setRemarks(String industryId) {
-        return setValue("sRemarksx", industryId);
-    }
-
-    public String getRemarks() {
-        return (String) getValue("sRemarksx");
-    }
-
-    public JSONObject setVatable(String vatable) {
-        return setValue("cVATaxabl", vatable);
-    }
-
-    public String getVatable() {
+    
+    public String getVatableTax(){
         return (String) getValue("cVATaxabl");
     }
-
-    public JSONObject setVatRate(Double vatRate) {
-        return setValue("nVatRatex", vatRate);
+    
+    public JSONObject setVatRate(Number vatRate){
+        return setValue("nVATRatex", vatRate);
     }
-
-    public Double getVatRate() {
-        return (Double) getValue("nVatRatex");
+    
+    public Number getVatRate(){
+        return (Number) getValue("nVATRatex");
     }
-
-    public JSONObject setWithHoldingTax(Double withHoldingTax) {
+    
+    public JSONObject setWithHoldingTax(Number withHoldingTax){
         return setValue("nTWithHld", withHoldingTax);
     }
-
-    public Double getWithHoldingTax() {
-        return (Double) getValue("nTWithHld");
+    
+    public Number getWithHoldingTax(){
+        return (Number) getValue("nTWithHld");
     }
-
-    public JSONObject setExpectedDate(Date expectedDate) {
-        return setValue("dExpected", expectedDate);
+    
+    public JSONObject setAmountPaid(Number amountPaid){
+        return setValue("nAmtPaidx", amountPaid);
     }
-
-    public Date getExpectedDate() {
-        return (Date) getValue("dExpected");
+    
+    public Number getAmountPaid(){
+        return (Number) getValue("nAmtPaidx");
     }
-
-    public JSONObject setEmailSent(String emailSent) {
-        return setValue("cEmailSnt", emailSent);
+    
+    public JSONObject setFreight(Number freight){
+        return setValue("nFreightx", freight);
     }
-
-    public String getEmailSent() {
-        return (String) getValue("cEmailSnt");
+    
+    public Number getFreight(){
+        return (Number) getValue("nFreightx");
     }
-
-    public JSONObject setNoEmailSent(int noEmailSent) {
-        return setValue("nEmailSnt", noEmailSent);
+    
+    public JSONObject setRemarks(String remarks){
+        return setValue("sRemarksx", remarks);
     }
-
-    public int getNoEmailSent() {
-        return (int) getValue("nEmailSnt");
+    
+    public String getRemarks(){
+        return (String) getValue("sRemarksx");
     }
-
-    public JSONObject setPrint(String print) {
+    
+    public JSONObject setPurpose(String purpose){
+        return setValue("cPurposex", purpose);
+    }
+    
+    public String getPurpose(){
+        return (String) getValue("cPurposex");
+    }
+    
+    public JSONObject setPrint(String print){
         return setValue("cPrintxxx", print);
     }
-
-    public String getPrint() {
+    
+    public String getPrint(){
         return (String) getValue("cPrintxxx");
     }
-
-    public JSONObject setEntryNo(int entryNo) {
+    
+    public JSONObject setEntryNo(int entryNo){
         return setValue("nEntryNox", entryNo);
     }
-
-    public int getEntryNo() {
+    
+    public int getEntryNo(){
         return (int) getValue("nEntryNox");
     }
-
-    public JSONObject setInventoryTypeCode(String inventoryTypeCode) {
+    
+    public JSONObject setInventoryTypeCode(String inventoryTypeCode){
         return setValue("sInvTypCd", inventoryTypeCode);
     }
-
-    public String getInventoryTypeCode() {
+    
+    public String getInventoryTypeCode(){
         return (String) getValue("sInvTypCd");
     }
-
-    public JSONObject setTransactionStatus(String transactionStatus) {
+    
+    public String getProcessed(){
+        return (String) getValue("cProcessd");
+    }
+    
+    public JSONObject setProcessed(String processed){
+        return setValue("cProcessd", processed);
+    }
+    
+    public JSONObject setTransactionStatus(String transactionStatus){
         return setValue("cTranStat", transactionStatus);
     }
-
-    public String getTransactionStatus() {
+    
+    public String getTransactionStatus(){
         return (String) getValue("cTranStat");
     }
-
-    public JSONObject setSourceCode(String sourceCode) {
-        return setValue("sSourceCd", sourceCode);
-    }
-
-    public String getSourceCode() {
-        return (String) getValue("sSourceCd");
-    }
-
-    public JSONObject setSourceNo(String sourceNo) {
-        return setValue("sSourceNo", sourceNo);
-    }
-
-    public String getSourceNo() {
-        return (String) getValue("sSourceNo");
-    }
-
-    public JSONObject setModifyingId(String modifyingId) {
+    
+    public JSONObject setModifyingId(String modifyingId){
         return setValue("sModified", modifyingId);
     }
-
-    public String getModifyingId() {
+    
+    public String getModifyingId(){
         return (String) getValue("sModified");
     }
-
-    public JSONObject setModifiedDate(Date modifiedDate) {
+    
+    public JSONObject setModifiedDate(Date modifiedDate){
         return setValue("dModified", modifiedDate);
     }
-
-    public Date getModifiedDate() {
+    
+    public Date getModifiedDate(){
         return (Date) getValue("dModified");
     }
-
-    public JSONObject setPreOwned(boolean isWithAdvPaym) {
-        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
-    }
-
-    public boolean getPreOwned() {
-        return ((String) getValue("cPreOwned")).equals("1");
-    }
-
-    public JSONObject setProcessed(boolean isProcessed) {
-        return setValue("cPreOwned", isProcessed ? "1" : "0");
-    }
-
-    public boolean getProcessed() {
-        return ((String) getValue("cPreOwned")).equals("1");
-    }
-
+    
     @Override
     public String getNextCode() {
+//        return "";
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
-
+    
     //reference object models
-    public Model_Branch Branch() throws GuanzonException, SQLException {
+    public Model_Branch Branch() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sBranchCd"))) {
             if (poBranch.getEditMode() == EditMode.READY
                     && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
                 return poBranch;
             } else {
                 poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poBranch;
                 } else {
@@ -421,14 +387,15 @@ public class Model_PO_Master extends Model {
             return poBranch;
         }
     }
-
-    public Model_Industry Industry() throws GuanzonException, SQLException {
+    
+    public Model_Industry Industry() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sIndstCdx"))) {
             if (poIndustry.getEditMode() == EditMode.READY
                     && poIndustry.getIndustryId().equals((String) getValue("sIndstCdx"))) {
                 return poIndustry;
             } else {
                 poJSON = poIndustry.openRecord((String) getValue("sIndstCdx"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poIndustry;
                 } else {
@@ -441,14 +408,15 @@ public class Model_PO_Master extends Model {
             return poIndustry;
         }
     }
-
-    public Model_Category Category() throws GuanzonException, SQLException {
+    
+    public Model_Category Category() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sCategrCd"))) {
             if (poCategory.getEditMode() == EditMode.READY
                     && poCategory.getCategoryId().equals((String) getValue("sCategrCd"))) {
                 return poCategory;
             } else {
                 poJSON = poCategory.openRecord((String) getValue("sCategrCd"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poCategory;
                 } else {
@@ -461,14 +429,15 @@ public class Model_PO_Master extends Model {
             return poCategory;
         }
     }
-
-    public Model_Company Company() throws GuanzonException, SQLException {
+    
+    public Model_Company Company() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sCompnyID"))) {
             if (poCompany.getEditMode() == EditMode.READY
                     && poCompany.getCompanyId().equals((String) getValue("sCompnyID"))) {
                 return poCompany;
             } else {
                 poJSON = poCompany.openRecord((String) getValue("sCompnyID"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poCompany;
                 } else {
@@ -481,14 +450,15 @@ public class Model_PO_Master extends Model {
             return poCompany;
         }
     }
-
-    public Model_Term Term() throws GuanzonException, SQLException {
+    
+    public Model_Term Term() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
                     && poTerm.getTermId().equals((String) getValue("sTermCode"))) {
                 return poTerm;
             } else {
                 poJSON = poTerm.openRecord((String) getValue("sTermCode"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poTerm;
                 } else {
@@ -501,14 +471,16 @@ public class Model_PO_Master extends Model {
             return poTerm;
         }
     }
-
-    public Model_Client_Master Supplier() throws GuanzonException, SQLException {
+    
+    
+    public Model_Client_Master Supplier() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sSupplier"))) {
             if (poSupplier.getEditMode() == EditMode.READY
                     && poSupplier.getClientId().equals((String) getValue("sSupplier"))) {
                 return poSupplier;
             } else {
                 poJSON = poSupplier.openRecord((String) getValue("sSupplier"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplier;
                 } else {
@@ -521,14 +493,15 @@ public class Model_PO_Master extends Model {
             return poSupplier;
         }
     }
-
-    public Model_Client_Address SupplierAddress() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sClientID"))) {
+    
+    public Model_Client_Address SupplierAddress() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sAddressID"))) {
             if (poSupplierAdress.getEditMode() == EditMode.READY
                     && poSupplierAdress.getClientId().equals((String) getValue("sAddressID"))) {
                 return poSupplierAdress;
             } else {
-                poJSON = poSupplierAdress.openRecord((String) getValue("sClientID"));
+                poJSON = poSupplierAdress.openRecord((String) getValue("sAddressID"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplierAdress;
                 } else {
@@ -541,14 +514,15 @@ public class Model_PO_Master extends Model {
             return poSupplierAdress;
         }
     }
-
-    public Model_Client_Institution_Contact SupplierContactPerson() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sClientID"))) {
+    
+    public Model_Client_Institution_Contact SupplierContactPerson() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sContctID"))) {
             if (poSupplierContactPerson.getEditMode() == EditMode.READY
                     && poSupplierContactPerson.getClientId().equals((String) getValue("sContctID"))) {
                 return poSupplierContactPerson;
             } else {
                 poJSON = poSupplierContactPerson.openRecord((String) getValue("sContctID"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poSupplierContactPerson;
                 } else {
@@ -561,47 +535,27 @@ public class Model_PO_Master extends Model {
             return poSupplierContactPerson;
         }
     }
-
-    public Model_Inv_Stock_Request_Master InvStockRequestMaster() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sTransNox"))) {
-            if (poInvStockMaster.getEditMode() == EditMode.READY
-                    && poInvStockMaster.getTransactionNo().equals((String) getValue("sTransNox"))) {
-                return poInvStockMaster;
+    
+    public Model_Client_Master Trucking() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sTrucking"))) {
+            if (poSupplier.getEditMode() == EditMode.READY
+                    && poSupplier.getClientId().equals((String) getValue("sTrucking"))) {
+                return poSupplier;
             } else {
-                poJSON = poInvStockMaster.openRecord((String) getValue("sTransNox"));
+                poJSON = poSupplier.openRecord((String) getValue("sTrucking"));
+
                 if ("success".equals((String) poJSON.get("result"))) {
-                    return poInvStockMaster;
+                    return poSupplier;
                 } else {
-                    poSupplierContactPerson.initialize();
-                    return poInvStockMaster;
+                    poSupplier.initialize();
+                    return poSupplier;
                 }
             }
         } else {
-            poInvStockMaster.initialize();
-            return poInvStockMaster;
-        }
-    }
-
-    public Model_Inventory Inventory() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sStockIDx"))) {
-            if (poInventory.getEditMode() == EditMode.READY
-                    && poInventory.getStockId().equals((String) getValue("sStockIDx"))) {
-                return poInventory;
-            } else {
-
-                poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poInventory;
-                } else {
-                    poInventory.initialize();
-                    return poInventory;
-                }
-
-            }
-        } else {
-            poInventory.initialize();
-            return poInventory;
+            poSupplier.initialize();
+            return poSupplier;
         }
     }
     //end - reference object models
+    
 }

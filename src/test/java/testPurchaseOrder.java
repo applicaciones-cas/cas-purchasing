@@ -86,7 +86,7 @@ public class testPurchaseOrder {
                     System.out.println("trans entry no:" + trans.InvStockRequestMaster(lnCntr).getEntryNo());
                 }
             }
-        } catch (ExceptionInInitializerError | SQLException | GuanzonException e) {
+        } catch (ExceptionInInitializerError e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         }
@@ -103,13 +103,7 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            try {
-                loJSON = trans.getPurchaseOrder();
-            } catch (SQLException ex) {
-                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (GuanzonException ex) {
-                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            loJSON = trans.getPurchaseOrder();
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
                 for (int lnCntr = 0; lnCntr <= trans.getPOMasterCount() - 1; lnCntr++) {
@@ -196,7 +190,7 @@ public class testPurchaseOrder {
             trans.Detail(0).setQuantityOnHand(nQtyOnHnd);
             trans.Detail(0).setRecordOrder(nRecOrder);
             trans.Detail(0).setQuantity(quantity);
-//            trans.Detail(0).setReceivedQunatity(nReceived);
+            trans.Detail(0).setReceivedQunatity(nReceived);
             trans.Detail(0).setCancelledQuantity(nCancelld);
             trans.AddDetail();
 //
