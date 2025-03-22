@@ -308,12 +308,12 @@ public class Model_PO_Master extends Model {
         return (String) getValue("cEmailSnt");
     }
 
-    public JSONObject setNoEmailSent(int noEmailSent) {
+    public JSONObject setNoEmailSent(Number noEmailSent) {
         return setValue("nEmailSnt", noEmailSent);
     }
 
-    public int getNoEmailSent() {
-        return (int) getValue("nEmailSnt");
+    public Number getNoEmailSent() {
+        return (Number) getValue("nEmailSnt");
     }
 
     public JSONObject setPrint(String print) {
@@ -328,8 +328,8 @@ public class Model_PO_Master extends Model {
         return setValue("nEntryNox", entryNo);
     }
 
-    public int getEntryNo() {
-        return (int) getValue("nEntryNox");
+    public Number getEntryNo() {
+        return (Number) getValue("nEntryNox");
     }
 
     public JSONObject setInventoryTypeCode(String inventoryTypeCode) {
