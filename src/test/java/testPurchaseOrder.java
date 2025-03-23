@@ -109,6 +109,7 @@ public class testPurchaseOrder {
             }
 
             loJSON = poPurchasingController.PurchaseOrder().getPurchaseOrder();
+
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
                 for (int lnCntr = 0; lnCntr <= poPurchasingController.PurchaseOrder().getPOMasterCount() - 1; lnCntr++) {
@@ -117,7 +118,7 @@ public class testPurchaseOrder {
                     System.out.println("poPurchasingController status:" + poPurchasingController.PurchaseOrder().POMaster(lnCntr).getTransactionStatus());
                 }
             }
-        } catch (ExceptionInInitializerError e) {
+        } catch (ExceptionInInitializerError | SQLException | GuanzonException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         }
