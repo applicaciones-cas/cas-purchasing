@@ -47,6 +47,7 @@ public class Model_POR_Serial extends Model {
             
             //assign default values
             poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             //end - assign default values
 
             poEntity.insertRow();
@@ -108,11 +109,11 @@ public class Model_POR_Serial extends Model {
         return (String) getValue("sSerialID");
     }
     
-    public JSONObject setLocationID(String locationId){
+    public JSONObject setLocationId(String locationId){
         return setValue("sLocatnID", locationId);
     }
     
-    public String getLocationID(){
+    public String getLocationId(){
         return (String) getValue("sLocatnID");
     }
     

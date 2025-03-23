@@ -30,6 +30,8 @@ import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.model.Model_Variant;
 import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.cas.purchasing.controller.PurchaseOrder;
+import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -54,8 +56,8 @@ public class Model_POR_Detail extends Model{
     Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
+    Model_PO_Master poPurchaseOrder;
     
-    String psBrandId = "";
     
     @Override
     public void initialize() {
@@ -69,6 +71,7 @@ public class Model_POR_Detail extends Model{
             
             //assign default values
             poEntity.updateObject("dExpiryDt", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nWHCountx", 0);
@@ -100,6 +103,9 @@ public class Model_POR_Detail extends Model{
             
             InvModels invModel = new InvModels(poGRider); 
             poInventory = invModel.Inventory();
+            
+            Model_PO_Master purchaseOrderModel = new PurchaseOrderModels(poGRider).PurchaseOrderMaster(); 
+            poPurchaseOrder = purchaseOrderModel;
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -223,14 +229,17 @@ public class Model_POR_Detail extends Model{
     
     //TODO
     public JSONObject setBrandId(String brandId){
-        psBrandId = brandId;
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        return poJSON;
+//        psBrandId = brandId;
+//        poJSON = new JSONObject();
+//        poJSON.put("result", "success");
+//        
+//            ParamModels model = new ParamModels(poGRider);
+//            
+        return poBrand.setBrandId(brandId);
     }
     
     public String getBrandId(){
-        return psBrandId;
+        return poBrand.getBrandId();
     }
     
     public JSONObject setModelVariantId(String modelVariantId){
@@ -291,10 +300,10 @@ public class Model_POR_Detail extends Model{
 
     public Model_Brand Brand() throws GuanzonException, SQLException {
         if (!"".equals(getBrandId())) {
-            if (poBrand.getEditMode() == EditMode.READY
-                    && poBrand.getBrandId().equals(getBrandId())) {
-                return poBrand;
-            } else {
+//            if (poBrand.getEditMode() == EditMode.READY
+//                    && poBrand.getBrandId().equals(getBrandId())) {
+//                return poBrand;
+//            } else {
                 poJSON = poBrand.openRecord(getBrandId());
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poBrand;
@@ -302,7 +311,7 @@ public class Model_POR_Detail extends Model{
                     poBrand.initialize();
                     return poBrand;
                 }
-            }
+//            }
         } else {
             poBrand.initialize();
             return poBrand;
@@ -327,6 +336,27 @@ public class Model_POR_Detail extends Model{
             poModelVariant.initialize();
             return poModelVariant;
         }
+    }
+    
+    public Model_PO_Master PurchaseOrderMaster() throws SQLException, GuanzonException {
+            if (!"".equals((String) getValue("sOrderNox"))) {
+                if (poPurchaseOrder.getEditMode() == EditMode.READY
+                        && poPurchaseOrder.getTransactionNo().equals((String) getValue("sOrderNox"))) {
+                    return poPurchaseOrder;
+                } else {
+                    poJSON = poPurchaseOrder.openRecord((String) getValue("sOrderNox"));
+
+                    if ("success".equals((String) poJSON.get("result"))) {
+                        return poPurchaseOrder;
+                    } else {
+                        poPurchaseOrder.initialize();
+                        return poPurchaseOrder;
+                    }
+                }
+            } else {
+                poPurchaseOrder.initialize();
+                return poPurchaseOrder;
+            }
     }
     
 //    public Model_Inv_Master InventoryMaster() throws GuanzonException, SQLException {
