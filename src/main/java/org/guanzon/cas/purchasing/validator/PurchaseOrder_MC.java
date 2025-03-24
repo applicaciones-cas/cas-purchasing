@@ -2,8 +2,9 @@ package org.guanzon.cas.purchasing.validator;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,19 +94,17 @@ public class PurchaseOrder_MC implements GValidator {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
+        LocalDate transactionDate = poMaster.getTransactionDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate serverDate = poGrider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate oneYearAgo = serverDate.minusYears(1);
 
-        String currentDateStr = xsDateShort(poGrider.getServerDate());
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(poGrider.getServerDate());
-        cal.add(Calendar.YEAR, -1);
-        Date oneYearAgo = cal.getTime();
-
-        String transactionDateStr = xsDateShort(loTransactionDate);
-        if (transactionDateStr.compareTo(currentDateStr) > 0) {
+        if (transactionDate.isAfter(serverDate)) {
             poJSON.put("message", "Future transaction dates are not allowed.");
             return poJSON;
         }
-        if (loTransactionDate.before(oneYearAgo)) {
+
+        // Backdated beyond 1 year validation
+        if (transactionDate.isBefore(oneYearAgo)) {
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
@@ -160,9 +159,8 @@ public class PurchaseOrder_MC implements GValidator {
                 return poJSON;
             }
         }
-
         if (poMaster.getEditMode() == EditMode.ADDNEW) {
-            if (loTransactionDate.before(poGrider.getServerDate())) {
+            if (transactionDate.isBefore(serverDate)) {
                 String referenceNo = poMaster.getReference();
                 if (referenceNo == null || referenceNo.trim().isEmpty()) {
                     poJSON.put("message", "A reference number is required for backdated transactions.");
@@ -178,7 +176,6 @@ public class PurchaseOrder_MC implements GValidator {
 
         poJSON.put("result", "success");
         return poJSON;
-
     }
 
     private static String xsDateShort(Date fdValue) {

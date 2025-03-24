@@ -752,7 +752,7 @@ public class PurchaseOrder extends Transaction {
                 : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
         String lsCompanyCondition = Master().getCompanyID().isEmpty()
                 ? "e.sCompnyID LIKE '%'"
-                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID());
+                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
 
         String lsFilterCondition = lsIndustryCondition
                 + " AND "
