@@ -67,10 +67,10 @@ import org.json.simple.parser.ParseException;
  * @author Arsiela 03-12-2025
  */
 public class PurchaseOrderReceiving extends Transaction{ 
-    private Model_POR_Serial poOthers;
-    private Model_Inv_Serial poInvSerial;
-    private Model_Inv_Serial_Registration poInvSerialRegistration;
-    private Model_Inv_Serial_Ledger poInvSerialLedger;
+//    private Model_POR_Serial poOthers;
+//    private Model_Inv_Serial poInvSerial;
+//    private Model_Inv_Serial_Registration poInvSerialRegistration;
+//    private Model_Inv_Serial_Ledger poInvSerialLedger;
     private boolean pbApproval = false;
     
     List<Model_PO_Master> paPOMaster;
@@ -79,14 +79,14 @@ public class PurchaseOrderReceiving extends Transaction{
     List<PurchaseOrder> paPurchaseOrder;
     
     public JSONObject InitTransaction(){      
-        SOURCE_CODE = "InvR";
+        SOURCE_CODE = "POR";
         
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
-        poOthers = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
-        poInvSerial = new InvModels(poGRider).InventorySerial();
-        poInvSerialRegistration = new InvModels(poGRider).InventorySerialRegistration();
-        poInvSerialLedger = new InvModels(poGRider).InventorySerialLedger();
+//        poOthers = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
+//        poInvSerial = new InvModels(poGRider).InventorySerial();
+//        poInvSerialRegistration = new InvModels(poGRider).InventorySerialRegistration();
+//        poInvSerialLedger = new InvModels(poGRider).InventorySerialLedger();
         
         paPurchaseOrder = new ArrayList<>();
         paPORMaster = new ArrayList<>();
@@ -417,9 +417,10 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setCompanyId(object.getModel().getCompanyId());
-        } else {
-            Master().setCompanyId("");
-        }
+        } 
+//        else {
+//            Master().setCompanyId("");
+//        }
 
         return poJSON;
     }
@@ -436,11 +437,12 @@ public class PurchaseOrderReceiving extends Transaction{
             Master().setAddressId(object.ClientAddress().getModel().getAddressId()); //TODO
             Master().setContactId(object.ClientInstitutionContact().getModel().getClientId()); //TODO
             Master().setTermCode("");//TODO
-        } else {
-            Master().setSupplierId("");
-            Master().setAddressId(""); //TODO
-            Master().setContactId(""); //TODO
-        }
+        } 
+//        else {
+//            Master().setSupplierId("");
+//            Master().setAddressId(""); //TODO
+//            Master().setContactId(""); //TODO
+//        }
 
         return poJSON;
     }
@@ -453,9 +455,10 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setTruckingId(object.Master().getModel().getClientId());
-        } else {
-            Master().setTruckingId("");
-        }
+        } 
+//        else {
+//            Master().setTruckingId("");
+//        }
 
         return poJSON;
     }
@@ -468,9 +471,10 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Master().setTermCode(object.getModel().getTermId());
-        } else {
-            Master().setTermCode("");
-        }
+        } 
+//        else {
+//            Master().setTermCode("");
+//        }
 
         return poJSON;
     }
@@ -496,11 +500,7 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
-        } else {
-            Detail(row).setStockId("");
-            Detail(row).setUnitType("");
-            Detail(row).setUnitPrce(0.00);
-        }
+        } 
         return poJSON;
     }
     
@@ -513,9 +513,10 @@ public class PurchaseOrderReceiving extends Transaction{
 
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setReplaceId(object.getModel().getStockId());
-        } else {
-            Detail(row).setReplaceId("");
-        }
+        } 
+//        else {
+//            Detail(row).setReplaceId("");
+//        }
 
         return poJSON;
     }
@@ -542,11 +543,7 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
-        } else {
-            Detail(row).setStockId("");
-            Detail(row).setUnitType("");
-            Detail(row).setUnitPrce(0.00);
-        }
+        } 
 
         return poJSON;
     }
@@ -558,12 +555,20 @@ public class PurchaseOrderReceiving extends Transaction{
 
         poJSON = object.searchRecord(value, byCode,poGRider.getIndustry());
         if ("success".equals((String) poJSON.get("result"))){
+            if(!Detail(row).getBrandId().equals(object.getModel().getBrandId())){
+                Detail(row).setStockId("");
+                Detail(row).setModelVariantId("");
+            }
+            
             Detail(row).setBrandId(object.getModel().getBrandId());
-            Detail(row).setModelVariantId("");
-        } else {
-            Detail(row).setBrandId("");
-            Detail(row).setModelVariantId("");
-        }
+        } 
+//        else {
+//            Detail(row).setBrandId("");
+//            Detail(row).setModelVariantId("");
+//            Detail(row).setStockId("");
+//            Detail(row).setUnitType("");
+//            Detail(row).setUnitPrce(0.00);
+//        }
         
         return poJSON;
     }
@@ -593,13 +598,14 @@ public class PurchaseOrderReceiving extends Transaction{
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setModelVariantId(object.getModel().getVariantId());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
-        } else {
-            Detail(row).setStockId("");
-            Detail(row).setUnitType("");
-            Detail(row).setBrandId("");
-            Detail(row).setModelVariantId("");
-            Detail(row).setUnitPrce(0.00);
-        }
+        } 
+//        else {
+//            Detail(row).setStockId("");
+//            Detail(row).setUnitType("");
+//            Detail(row).setBrandId("");
+//            Detail(row).setModelVariantId("");
+//            Detail(row).setUnitPrce(0.00);
+//        }
 
         return poJSON;
     }
@@ -611,9 +617,10 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))){
             PurchaseOrderReceivingSerialList(porRow).setLocationId(object.getModel().getLocationId());
-        } else {
-            PurchaseOrderReceivingSerialList(porRow).setLocationId("");
-        }
+        } 
+//        else {
+//            PurchaseOrderReceivingSerialList(porRow).setLocationId("");
+//        }
 
         return poJSON;
     }
@@ -1204,19 +1211,22 @@ public class PurchaseOrderReceiving extends Transaction{
                     continue;
                 }
 
-                //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
-                if((PurchaseOrderReceivingSerialList(lnList).getSerial01() != null || !PurchaseOrderReceivingSerialList(lnList).getSerial01().equals("")) 
-                    && ((PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || PurchaseOrderReceivingSerialList(lnList).getSerial02().equals(""))
-                    || (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || PurchaseOrderReceivingSerialList(lnList).getLocationId().equals(""))
-                        ) ||
-                    (PurchaseOrderReceivingSerialList(lnList).getSerial02() != null || !PurchaseOrderReceivingSerialList(lnList).getSerial02().equals("")) 
-                    && ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || PurchaseOrderReceivingSerialList(lnList).getSerial01().equals(""))
-                    || (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || PurchaseOrderReceivingSerialList(lnList).getLocationId().equals(""))
-                        )){
+                //Require location for Car and Motorcycle Industry
+                if(Master().getIndustryId().equals("02") || Master().getIndustryId().equals("03") ){
+                    //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
+                    if((PurchaseOrderReceivingSerialList(lnList).getSerial01() != null || !PurchaseOrderReceivingSerialList(lnList).getSerial01().equals("")) 
+                        && ((PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || PurchaseOrderReceivingSerialList(lnList).getSerial02().equals(""))
+                        || (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || PurchaseOrderReceivingSerialList(lnList).getLocationId().equals(""))
+                            ) ||
+                        (PurchaseOrderReceivingSerialList(lnList).getSerial02() != null || !PurchaseOrderReceivingSerialList(lnList).getSerial02().equals("")) 
+                        && ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || PurchaseOrderReceivingSerialList(lnList).getSerial01().equals(""))
+                        || (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || PurchaseOrderReceivingSerialList(lnList).getLocationId().equals(""))
+                            )){
 
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Serial and Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
-                    return poJSON;
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Serial / Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                        return poJSON;
+                    }
                 }
             }
             lnList++;
