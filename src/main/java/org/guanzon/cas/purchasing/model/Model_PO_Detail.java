@@ -1,6 +1,7 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -65,7 +66,7 @@ public class Model_PO_Detail extends Model {
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nReceived", 0);
-            poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -101,6 +102,12 @@ public class Model_PO_Detail extends Model {
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
+    }
+
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
     }
 
     @Override

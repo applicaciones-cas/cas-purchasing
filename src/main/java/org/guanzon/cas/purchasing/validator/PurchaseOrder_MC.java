@@ -24,7 +24,8 @@ public class PurchaseOrder_MC implements GValidator {
     JSONObject poJSON;
 
     Model_PO_Master poMaster;
-    ArrayList<Model_PO_Detail> poDetail;
+    Model_PO_Detail poDetail;
+    ArrayList<Model_PO_Detail> paDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -41,11 +42,15 @@ public class PurchaseOrder_MC implements GValidator {
         poMaster = (Model_PO_Master) value;
     }
 
+    public void setDetail(Object value) {
+        poDetail = (Model_PO_Detail) value;
+    }
+
     @Override
     public void setDetail(ArrayList<Object> value) {
-        poDetail.clear();
+        paDetail.clear();
         for (int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++) {
-            poDetail.add((Model_PO_Detail) value.get(lnCtr));
+            paDetail.add((Model_PO_Detail) value.get(lnCtr));
         }
     }
 

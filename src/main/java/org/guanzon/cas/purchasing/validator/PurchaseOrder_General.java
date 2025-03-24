@@ -18,14 +18,14 @@ import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.json.simple.JSONObject;
 
-public class PurchaseOrder_LP implements GValidator {
+public class PurchaseOrder_General implements GValidator {
 
     GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
+
     Model_PO_Master poMaster;
-    Model_PO_Detail poDetail;
-    ArrayList<Model_PO_Detail> paDetail;
+    ArrayList<Model_PO_Detail> poDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -42,15 +42,11 @@ public class PurchaseOrder_LP implements GValidator {
         poMaster = (Model_PO_Master) value;
     }
 
-    public void setDetail(Object value) {
-        poDetail = (Model_PO_Detail) value;
-    }
-
     @Override
     public void setDetail(ArrayList<Object> value) {
-        paDetail.clear();
+        poDetail.clear();
         for (int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++) {
-            paDetail.add((Model_PO_Detail) value.get(lnCtr));
+            poDetail.add((Model_PO_Detail) value.get(lnCtr));
         }
     }
 
