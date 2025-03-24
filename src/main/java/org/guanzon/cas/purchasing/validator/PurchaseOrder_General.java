@@ -18,7 +18,7 @@ import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.json.simple.JSONObject;
 
-public class PurchaseOrder_Hospitality implements GValidator {
+public class PurchaseOrder_General implements GValidator {
 
     GRiderCAS poGrider;
     String psTranStat;

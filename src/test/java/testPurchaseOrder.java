@@ -165,7 +165,7 @@ public class testPurchaseOrder {
             Assert.assertEquals(poPurchasingController.PurchaseOrder().Master().getIndustryID(), industryId);
 
             poPurchasingController.PurchaseOrder().Master().setCompanyID(companyId); //direct assignment of value
-            Assert.assertEquals(poPurchasingController.PurchaseOrder().Master().getCompanyID(), branchCd);
+            Assert.assertEquals(poPurchasingController.PurchaseOrder().Master().getCompanyID(), companyId);
 
             poPurchasingController.PurchaseOrder().Master().setSupplierID(supplierId); //direct assignment of value
             Assert.assertEquals(poPurchasingController.PurchaseOrder().Master().getCompanyID(), supplierId);

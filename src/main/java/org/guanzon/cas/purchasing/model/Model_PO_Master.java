@@ -1,6 +1,7 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,8 +57,8 @@ public class Model_PO_Master extends Model {
             //assign default values
             poEntity.updateObject("cProcessd", PurchaseOrderProcessedStatus.NO);
             poEntity.updateObject("cPreOwned", Logical.NO);
-            poEntity.updateObject("dExpected", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
-            poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dExpected", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dTransact", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("sTermCode", "0000004");
             poEntity.updateObject("nDiscount", 0.00);
@@ -104,6 +105,12 @@ public class Model_PO_Master extends Model {
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
+    }
+
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
     }
 
     public JSONObject setTransactionNo(String transactionNo) {
