@@ -944,6 +944,7 @@ public class PurchaseOrder extends Transaction {
                 }
                 poMaster.setValue("dModified", poGRider.getServerDate());
                 poMaster.setValue("sModified", poGRider.getUserID());
+                poMaster.setValue("cPrintxxx", Logical.YES);
 
                 poJSON = SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
@@ -1019,6 +1020,8 @@ public class PurchaseOrder extends Transaction {
             );
             JasperViewer viewer = new JasperViewer(jasperPrint, false);
             viewer.setVisible(true);
+
+            poJSON.put("result", "success");
 
         } catch (JRException e) {
             System.err.println("Error generating report: " + e.getMessage());
