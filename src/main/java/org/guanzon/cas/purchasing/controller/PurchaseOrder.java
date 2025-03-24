@@ -1058,10 +1058,12 @@ public class PurchaseOrder extends Transaction {
         } catch (JRException e) {
             System.err.println("Error generating report: " + e.getMessage());
             e.printStackTrace();
+            poJSON.put("result", "error");
 
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrder.class
                     .getName()).log(Level.SEVERE, null, ex);
+            poJSON.put("result", "error");
         }
 
         return poJSON;
