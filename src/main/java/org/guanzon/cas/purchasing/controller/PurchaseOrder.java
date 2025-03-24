@@ -77,7 +77,7 @@ public class PurchaseOrder extends Transaction {
         return updateTransaction();
     }
 
-    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.CONFIRMED;
@@ -95,6 +95,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.CONFIRMED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -123,7 +129,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject PostTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+    public JSONObject PostTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.APPROVED;
@@ -141,11 +147,19 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
+
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.APPROVED);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+
         poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -170,7 +184,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject CancelTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+    public JSONObject CancelTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.CANCELLED;
@@ -188,6 +202,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.CANCELLED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -217,7 +237,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject VoidTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+    public JSONObject VoidTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.VOID;
@@ -235,6 +255,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.VOID);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -265,7 +291,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject ReturnTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+    public JSONObject ReturnTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.RETURNED;
@@ -283,6 +309,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.RETURNED);
         if (!"success".equals((String) poJSON.get("result"))) {
