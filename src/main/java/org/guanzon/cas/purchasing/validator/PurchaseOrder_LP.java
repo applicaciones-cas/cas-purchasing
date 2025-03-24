@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
@@ -160,19 +161,21 @@ public class PurchaseOrder_LP implements GValidator {
             }
         }
 
-        // Validate if Backdated & Reference No is Required
-        if (loTransactionDate.before(poGrider.getServerDate())) {
-            String referenceNo = poMaster.getReference();
-            if (referenceNo == null || referenceNo.trim().isEmpty()) {
-                poJSON.put("message", "A reference number is required for backdated transactions.");
+        if (poMaster.getEditMode() == EditMode.ADDNEW) {
+            if (loTransactionDate.before(poGrider.getServerDate())) {
+                String referenceNo = poMaster.getReference();
+                if (referenceNo == null || referenceNo.trim().isEmpty()) {
+                    poJSON.put("message", "A reference number is required for backdated transactions.");
+                    return poJSON;
+                }
+            }
+            poJSON = ShowDialogFX.getUserApproval(poGrider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poJSON.put("message", (String) poJSON.get("message"));
                 return poJSON;
             }
         }
-        poJSON = ShowDialogFX.getUserApproval(poGrider);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
+
         poJSON.put("result", "success");
         return poJSON;
 

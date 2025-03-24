@@ -289,6 +289,10 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
 
@@ -922,36 +926,40 @@ public class PurchaseOrder extends Transaction {
         return loJSON;
     }
 
-    public JSONObject PrintTransaction() {
+    public JSONObject PrintTransaction() throws SQLException, CloneNotSupportedException, GuanzonException {
         poJSON = new JSONObject();
-
-        boolean lnPrint = true;
-
-        if (getEditMode() != EditMode.READY) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
-            return poJSON;
-        }
+        boolean lbPrint = true;
         poJSON = printTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
+            if (((String) poMaster.getValue("cTranStat")).equals(PurchaseOrderStatus.APPROVED)) {
+                poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message", (String) poJSON.get("message"));
+                    lbPrint = false;
+                }
+                poJSON = UpdateTransaction();
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message", (String) poJSON.get("message"));
+                    lbPrint = false;
+                }
+                poMaster.setValue("dModified", poGRider.getServerDate());
+                poMaster.setValue("sModified", poGRider.getUserID());
 
+                poJSON = SaveTransaction();
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message", (String) poJSON.get("message"));
+                    lbPrint = false;
+                }
+            }
+        } else {
+            lbPrint = false;
         }
 
-        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)) {
-            Master().setPrint(Logical.YES);
-        }
-        //validator
-        poJSON = isEntryOkay(PurchaseOrderStatus.CANCELLED);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-
-        if (lnPrint) {
+        if (lbPrint) {
+            poJSON.put("result", "success");
             poJSON.put("message", "Transaction printed successfully.");
         } else {
+            poJSON.put("result", "error");
             poJSON.put("message", "Transaction printed aborted.");
         }
 
