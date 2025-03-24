@@ -110,14 +110,6 @@ public class PurchaseOrder_LP implements GValidator {
             return poJSON;
         }
 
-        if (transactionDate.isBefore(serverDate)) {
-            String referenceNo = poMaster.getReference();
-            if (referenceNo == null || referenceNo.trim().isEmpty()) {
-                poJSON.put("message", "A reference number is required for backdated transactions.");
-                return poJSON;
-            }
-        }
-
         if (poMaster.getIndustryID() == null) {
             poJSON.put("message", "Industry is not set.");
             return poJSON;
@@ -168,6 +160,21 @@ public class PurchaseOrder_LP implements GValidator {
                 return poJSON;
             }
         }
+        if (poMaster.getEditMode() == EditMode.ADDNEW) {
+            if (transactionDate.isBefore(serverDate)) {
+                String referenceNo = poMaster.getReference();
+                if (referenceNo == null || referenceNo.trim().isEmpty()) {
+                    poJSON.put("message", "A reference number is required for backdated transactions.");
+                    return poJSON;
+                }
+            }
+            poJSON = ShowDialogFX.getUserApproval(poGrider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poJSON.put("message", (String) poJSON.get("message"));
+                return poJSON;
+            }
+        }
+
         poJSON.put("result", "success");
         return poJSON;
     }
