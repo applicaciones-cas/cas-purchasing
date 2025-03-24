@@ -23,6 +23,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
@@ -259,6 +260,49 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("message", "Transaction voided successfully.");
         } else {
             poJSON.put("message", "Transaction voiding request submitted successfully.");
+        }
+
+        return poJSON;
+    }
+
+    public JSONObject ReturnTransaction(String remarks) throws ParseException, SQLException, GuanzonException {
+        poJSON = new JSONObject();
+
+        String lsStatus = PurchaseOrderStatus.RETURNED;
+        boolean lbReturn = true;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (lsStatus.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already returned.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(PurchaseOrderStatus.RETURNED);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        //change status
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
+
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+
+        if (lbReturn) {
+            poJSON.put("message", "Transaction returned successfully.");
+        } else {
+            poJSON.put("message", "Transaction returned request submitted successfully.");
         }
 
         return poJSON;
@@ -876,6 +920,42 @@ public class PurchaseOrder extends Transaction {
         MiscUtil.close(loRS);
 
         return loJSON;
+    }
+
+    public JSONObject PrintTransaction() {
+        poJSON = new JSONObject();
+
+        boolean lnPrint = true;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+        poJSON = printTransaction();
+        if ("success".equals((String) poJSON.get("result"))) {
+
+        }
+
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)) {
+            Master().setPrint(Logical.YES);
+        }
+        //validator
+        poJSON = isEntryOkay(PurchaseOrderStatus.CANCELLED);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+
+        if (lnPrint) {
+            poJSON.put("message", "Transaction printed successfully.");
+        } else {
+            poJSON.put("message", "Transaction printed aborted.");
+        }
+
+        return poJSON;
     }
 
     public JSONObject printTransaction() {
