@@ -738,21 +738,21 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsTransStat = "";
-        if (psTranStat.length() > 1) {
-            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
-            }
-            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
-        } else {
-            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
-        }
+//        String lsTransStat = "";
+//        if (psTranStat.length() > 1) {
+//            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+//                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+//            }
+//            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+//        } else {
+//            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+//        }
         String lsIndustryCondition = Master().getIndustryID().isEmpty()
                 ? "a.sIndstCdx LIKE '%'"
                 : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
         String lsCompanyCondition = Master().getCompanyID().isEmpty()
                 ? "e.sCompnyID LIKE '%'"
-                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getIndustryID());
+                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
 
         String lsFilterCondition = lsIndustryCondition
                 + " AND "
@@ -774,10 +774,10 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
                 + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx";
 
-        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
-        if (!psTranStat.isEmpty()) {
-            lsSQL = lsSQL + lsTransStat;
-        }
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition + " AND a.cTranStat = '1'");
+//        if (!psTranStat.isEmpty()) {
+//            lsSQL = lsSQL + lsTransStat;
+//        }
 
         lsSQL = lsSQL + " GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm"
                 + " ORDER BY a.dTransact DESC";
