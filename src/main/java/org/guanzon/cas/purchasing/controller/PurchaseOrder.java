@@ -1,5 +1,7 @@
 package org.guanzon.cas.purchasing.controller;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -672,14 +674,14 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject searchTransaction(String fsValue) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
-        String lsCondition = "";
+        String lsTransStat = "";
         if (psTranStat.length() > 1) {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                lsCondition += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            lsCondition = "cTranStat IN (" + lsCondition.substring(2) + ")";
+            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
         } else {
-            lsCondition = "cTranStat = " + SQLUtil.toSQL(psTranStat);
+            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
         initSQL();
         String lsIndustryCondition = !Master().getIndustryID().isEmpty()
@@ -702,7 +704,9 @@ public class PurchaseOrder extends Transaction {
                 + " AND "
                 + lsReferNo;
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
-        System.out.println("SQLl: " + lsSQL);
+        if (!psTranStat.isEmpty()) {
+            lsSQL = lsSQL + lsTransStat;
+        }
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
@@ -1053,21 +1057,33 @@ public class PurchaseOrder extends Transaction {
             JasperViewer viewer = new JasperViewer(jasperPrint, false);
             viewer.setVisible(true);
 
+            viewer.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowOpened(WindowEvent e) {
+                    System.out.println("JasperViewer opened");
+                }
+
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    System.out.println("JasperViewer closing...");
+                }
+
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    System.out.println("JasperViewer closed");
+                }
+            });
             poJSON.put("result", "success");
 
         } catch (JRException e) {
-            System.err.println("Error generating report: " + e.getMessage());
-            e.printStackTrace();
             poJSON.put("result", "error");
-
+            poJSON.put("message", e.getMessage());
         } catch (SQLException ex) {
-            Logger.getLogger(PurchaseOrder.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
             poJSON.put("result", "error");
+            poJSON.put("message", ex.getMessage());
         }
-
         return poJSON;
-
     }
 
     public static class OrderDetail {
