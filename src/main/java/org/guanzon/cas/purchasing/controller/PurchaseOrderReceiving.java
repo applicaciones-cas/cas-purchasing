@@ -1713,7 +1713,7 @@ public class PurchaseOrderReceiving extends Transaction{
         return lnRecQty;
     }
     
-     private JSONObject updateOthers() {
+     private JSONObject updateOthers() throws CloneNotSupportedException {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
         int lnCtr, lnRow;
