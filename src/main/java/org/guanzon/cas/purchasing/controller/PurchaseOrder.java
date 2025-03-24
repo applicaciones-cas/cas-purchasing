@@ -582,45 +582,53 @@ public class PurchaseOrder extends Transaction {
 
     @Override
     public JSONObject willSave() throws SQLException, CloneNotSupportedException {
-        /*Put system validations and other assignments here*/
+        /* Put system validations and other assignments here */
         poJSON = new JSONObject();
 
         if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
-            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
+            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); // If edited, update transaction status to OPEN
         }
 
-        if (getDetailCount() == 1) {
-            //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantity().intValue() == 0) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Your order has zero quantity.");
-                return poJSON;
+        boolean allZeroQuantity = true;  // Assume all items have zero quantity initially
+        boolean hasValidItem = false;    // Flag for at least one valid item
+
+        // Step 1: Scan all items first
+        for (int lnCntr = 0; lnCntr < getDetailCount(); lnCntr++) {
+            int quantity = Detail(lnCntr).getQuantity().intValue();
+            String stockID = (String) Detail(lnCntr).getValue("sStockIDx");
+
+            if (quantity > 0 && !stockID.isEmpty()) {
+                allZeroQuantity = false;  // Found at least one valid item
+                hasValidItem = true;
             }
         }
 
-        Iterator<Model> detail = Detail().iterator();
-        while (detail.hasNext()) {
-            Model item = detail.next();
-
-            if ("".equals((String) item.getValue("sStockIDx"))
-                    || (int) item.getValue("nQuantity") <= 0) {
-                detail.remove();
-            }
-        }
-
-        if (getDetailCount() <= 0) {
+        // Step 2: If all items have zero quantity, return an error and stop
+        if (allZeroQuantity) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No Purchase order detail to be save.");
+            poJSON.put("message", "All items have zero quantity. Please enter a valid quantity.");
             return poJSON;
         }
 
-        //assign other info on detail
+        // Step 3: If there is at least one valid item, proceed to remove invalid rows
+        if (hasValidItem) {
+            Iterator<Model> detail = Detail().iterator();
+            while (detail.hasNext()) {
+                Model item = detail.next();
+                int quantity = (int) item.getValue("nQuantity");
+                String stockID = (String) item.getValue("sStockIDx");
+
+                // Remove only items with empty stock ID or zero quantity
+                if (stockID.isEmpty() || quantity <= 0) {
+                    detail.remove();
+                }
+            }
+        }
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
             Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
         }
-
         poJSON.put("result", "success");
         return poJSON;
     }
