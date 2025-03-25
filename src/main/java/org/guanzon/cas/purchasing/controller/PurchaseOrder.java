@@ -712,6 +712,63 @@ public class PurchaseOrder extends Transaction {
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
         }
+
+        System.out.println("SQL EXECUTED: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                fsValue,
+                "Transaction Date»Transaction No»Company»Supplier",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+
+    public JSONObject searchTransaction(String fsValue, String lsIndustryID, String lsCompanyID, String lsSupplierID, String lsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+            }
+            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+        } else {
+            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+        }
+        initSQL();
+        String lsIndustryCondition = !lsIndustryID.isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(lsIndustryID)
+                : " a.sIndstCdx LIKE '%'";
+        String lsCompanyCondition = !lsCompanyID.isEmpty()
+                ? " a.sCompnyID = " + SQLUtil.toSQL(lsCompanyID)
+                : " a.sCompnyID LIKE '%'";
+        String lsSupplier = !lsSupplierID.isEmpty()
+                ? " a.sSupplier = " + SQLUtil.toSQL(lsSupplierID)
+                : " a.sSupplier LIKE '%'";
+        String lsReferNo = !lsReferID.isEmpty()
+                ? " a.sReferNox = " + SQLUtil.toSQL(lsReferID)
+                : " a.sReferNox LIKE '%'";
+        String lsFilterCondition = lsIndustryCondition
+                + " AND "
+                + lsCompanyCondition
+                + " AND "
+                + lsSupplier
+                + " AND "
+                + lsReferNo;
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
+        if (!psTranStat.isEmpty()) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("SQL EXECUTED: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
@@ -912,7 +969,7 @@ public class PurchaseOrder extends Transaction {
         return this.paPOMaster.size();
     }
 
-    public JSONObject getPurchaseOrder() throws SQLException, GuanzonException {
+    public JSONObject getPurchaseOrder(String fsIndustryID, String fsCompanyID, String fsSupplierID, String fsReferID) throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat.length() > 1) {
@@ -936,17 +993,17 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx"
                 + " , po_detail b ";
 
-        String lsIndustryCondition = !Master().getIndustryID().isEmpty()
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
+        String lsIndustryCondition = !fsIndustryID.isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(fsIndustryID)
                 : " a.sIndstCdx LIKE '%'";
-        String lsCompanyCondition = !Master().getCompanyID().isEmpty()
-                ? " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
+        String lsCompanyCondition = !fsCompanyID.isEmpty()
+                ? " a.sCompnyID = " + SQLUtil.toSQL(fsCompanyID)
                 : " a.sCompnyID LIKE '%'";
-        String lsSupplier = !Master().getSupplierID().isEmpty()
-                ? " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
+        String lsSupplier = !fsSupplierID.isEmpty()
+                ? " a.sSupplier = " + SQLUtil.toSQL(fsSupplierID)
                 : " a.sSupplier LIKE '%'";
-        String lsReferNo = !Master().getReference().isEmpty()
-                ? " a.sReferNox = " + SQLUtil.toSQL(Master().getReference())
+        String lsReferNo = !fsReferID.isEmpty()
+                ? " a.sReferNox = " + SQLUtil.toSQL(fsReferID)
                 : " a.sReferNox LIKE '%'";
         String lsFilterCondition = lsIndustryCondition
                 + " AND "
@@ -965,7 +1022,6 @@ public class PurchaseOrder extends Transaction {
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
         int lnctr = 0;
-
         if (MiscUtil.RecordCount(loRS) >= 0) {
             paPOMaster = new ArrayList<>();
             while (loRS.next()) {
@@ -978,10 +1034,15 @@ public class PurchaseOrder extends Transaction {
                 paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
                 lnctr++;
             }
-
-            System.out.println("Records found: " + lnctr);
-            loJSON.put("result", "success");
-            loJSON.put("message", "Record loaded successfully.");
+            if (lnctr > 0) {
+                loJSON.put("result", "success");
+                loJSON.put("message", "Record loaded successfully.");
+            } else {
+                paPOMaster = new ArrayList<>();
+                paPOMaster.add(POMasterList());
+                loJSON.put("result", "success");
+                loJSON.put("message", "No records found.");
+            }
 
         } else {
             paPOMaster = new ArrayList<>();
