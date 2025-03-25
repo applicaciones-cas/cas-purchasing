@@ -110,7 +110,7 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().getPurchaseOrder();
+            loJSON = poPurchasingController.PurchaseOrder().getPurchaseOrder("", "", "", "");
 
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
