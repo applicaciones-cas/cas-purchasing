@@ -51,7 +51,6 @@ public class PurchaseOrder extends Transaction {
 
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
-    ArrayList<Model_PO_Detail> paPODetail;
 
     public JSONObject InitTransaction() {
         SOURCE_CODE = "PO";
@@ -775,6 +774,7 @@ public class PurchaseOrder extends Transaction {
 
         lsSQL = lsSQL + " GROUP BY a.sTransNox, a.sBranchCd, a.dTransact, a.sReferNox, a.cTranStat, e.sBranchNm"
                 + " ORDER BY a.dTransact DESC";
+
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONArray dataArray = new JSONArray();
@@ -788,35 +788,35 @@ public class PurchaseOrder extends Transaction {
 
         try {
             int lnctr = 0;
-            if (MiscUtil.RecordCount(loRS) >= 0) {
-                while (loRS.next()) {
-                    JSONObject request = new JSONObject();
-                    request.put("sTransNox", loRS.getString("a.sTransNox"));
-                    request.put("sBranchCd", loRS.getString("a.sBranchCd"));
-                    request.put("dTransact", loRS.getDate("a.dTransact"));
-                    request.put("sReferNox", loRS.getString("a.sReferNox"));
-                    request.put("cTranStat", loRS.getString("a.cTranStat"));
-                    request.put("sBranchNm", loRS.getString("e.sBranchNm"));
-                    request.put("total_details", loRS.getInt("total_details"));
+            while (loRS.next()) {
+                JSONObject request = new JSONObject();
+                request.put("sTransNox", loRS.getString("sTransNox"));
+                request.put("sBranchCd", loRS.getString("sBranchCd"));
+                request.put("dTransact", loRS.getDate("dTransact"));
+                request.put("sReferNox", loRS.getString("sReferNox"));
+                request.put("cTranStat", loRS.getString("cTranStat"));
+                request.put("sBranchNm", loRS.getString("sBranchNm"));
+                request.put("total_details", loRS.getInt("total_details"));
 
-                    dataArray.add(request);
-                    lnctr++;
-                }
+                dataArray.add(request);
+                lnctr++;
+            }
+
+            if (lnctr > 0) {
                 loJSON.put("result", "success");
-                loJSON.put("message", "Record loaded successfully.");
                 loJSON.put("data", dataArray);
+                loJSON.put("total_records", lnctr);
             } else {
-                dataArray = new JSONArray();
-                dataArray.add("{}");
-                loJSON.put("result", "error");
-                loJSON.put("continue", true);
-                loJSON.put("message", "No record found .");
+                loJSON.put("result", "success");
+                loJSON.put("data", new JSONArray());
+                loJSON.put("message", "No records found.");
             }
             MiscUtil.close(loRS);
         } catch (SQLException e) {
             loJSON.put("result", "error");
             loJSON.put("message", e.getMessage());
         }
+
         return loJSON;
     }
 
@@ -1094,8 +1094,7 @@ public class PurchaseOrder extends Transaction {
             Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        poJSON.put(
-                "result", "success");
+        poJSON.put("result", "success");
         return poJSON;
     }
 
