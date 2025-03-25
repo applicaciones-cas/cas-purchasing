@@ -698,10 +698,13 @@ public class PurchaseOrderReceiving extends Transaction{
     public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String companyId, String supplierId, String referenceNo){ 
 //    public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String referenceNo ){ 
         try {
+            if(companyId == null) companyId = "";
+            if(supplierId == null) supplierId = "";
+            if(referenceNo == null) referenceNo = "";
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " +  SQLUtil.toSQL(poGRider.getIndustry())
-                                                                + " AND a.sCompnyID LIKE " +  SQLUtil.toSQL("%"+ Master().getCompanyId()))
-//                                                                + " AND a.sSupplier LIKE " +  SQLUtil.toSQL("%"+ Master().getSupplierId())
+                                                                + " AND a.sCompnyID LIKE " +  SQLUtil.toSQL("%"+ companyId))
+                                                                + " AND a.sSupplier LIKE " +  SQLUtil.toSQL("%"+ supplierId)
                                                                 + " AND a.sTransNox LIKE " +  SQLUtil.toSQL("%"+ referenceNo);
             if(isConfirmed){
                 lsSQL = lsSQL + " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
