@@ -40,11 +40,7 @@ import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
-import org.guanzon.cas.inv.model.Model_Inv_Serial;
-import org.guanzon.cas.inv.model.Model_Inv_Serial_Ledger;
-import org.guanzon.cas.inv.model.Model_Inv_Serial_Registration;
 import org.guanzon.cas.inv.services.InvControllers;
-import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.InvLocation;
@@ -101,7 +97,7 @@ public class PurchaseOrderReceiving extends Transaction{
         return newTransaction();
     }
     
-    public JSONObject SaveTransaction() throws SQLException, GuanzonException{
+    public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException{
         return saveTransaction();
     }
     
@@ -699,8 +695,8 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-//    public JSONObject getPurchaseOrderReceiving(boolean isConfirmed, String companyId, String supplierId, String referenceNo){ 
-    public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String referenceNo ){ 
+    public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String companyId, String supplierId, String referenceNo){ 
+//    public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String referenceNo ){ 
         try {
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " +  SQLUtil.toSQL(poGRider.getIndustry())
@@ -839,19 +835,20 @@ public class PurchaseOrderReceiving extends Transaction{
     public JSONObject addPurchaseOrderToPORDetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
         boolean lbExist = false;
-        
+        int lnTotal = 0;
+        int lnRow = 0;
         PurchaseOrderControllers loTrans = new PurchaseOrderControllers(poGRider, logwrapr);
         poJSON = loTrans.PurchaseOrder().InitTransaction();
-        
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = loTrans.PurchaseOrder().OpenTransaction(transactionNo);
             if ("success".equals((String) poJSON.get("result"))) {
                 for (int lnCtr = 0; lnCtr <= loTrans.PurchaseOrder().getDetailCount() - 1; lnCtr++) {
                     
-                    for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+                    for(lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
                         if  (Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo()) &&
                             (Detail(lnRow).getStockId().equals(loTrans.PurchaseOrder().Detail(lnCtr).getStockID()))) {
                             lbExist = true;
+                            lnTotal++;
                             break;
                         } 
                         
@@ -878,8 +875,14 @@ public class PurchaseOrderReceiving extends Transaction{
 
                             AddDetail(); 
                         }
+                    } else {
+                        if(lnTotal == loTrans.PurchaseOrder().getDetailCount() - 1){
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Purchase Order "+loTrans.PurchaseOrder().Master().getTransactionNo()+" already exist in receiving detail row " + lnRow + 1);
+                            return poJSON;
+                        }
                     }
-                }
+                }   
             } else {
                 poJSON.put("result", "error");
                 poJSON.put("message", "No records found.");
@@ -1658,9 +1661,9 @@ public class PurchaseOrderReceiving extends Transaction{
                                 //Add received qty in po receiving
                                 lnRecQty = lnRecQty + Detail(lnCtr).getQuantity().intValue();
 
-                                if(!paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().equals(lnRecQty)){
-                                    pbApproval = false;
-                                }
+//                                if(!paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().equals(lnRecQty)){
+//                                    pbApproval = false;
+//                                }
                                 break;
                             case PurchaseOrderReceivingStatus.RETURNED: 
                                 //Deduct received qty in po receiving
@@ -1789,6 +1792,8 @@ public class PurchaseOrderReceiving extends Transaction{
         
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
+        loValidator.setMaster(poMaster);
+//        loValidator.setDetail(paDetail);
         
         poJSON = loValidator.validate();
         

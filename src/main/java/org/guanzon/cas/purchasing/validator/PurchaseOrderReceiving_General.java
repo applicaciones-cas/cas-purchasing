@@ -5,7 +5,14 @@
  */
 package org.guanzon.cas.purchasing.validator;
 
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
@@ -23,7 +30,7 @@ public class PurchaseOrderReceiving_General implements GValidator{
     JSONObject poJSON;
     
     Model_POR_Master poMaster;
-    ArrayList<Model_POR_Detail> poDetail;
+    ArrayList<Model_POR_Detail> paDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -42,9 +49,9 @@ public class PurchaseOrderReceiving_General implements GValidator{
 
     @Override
     public void setDetail(ArrayList<Object> value) {
-        poDetail.clear();
+        paDetail.clear();
         for(int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++){
-            poDetail.add((Model_POR_Detail) value.get(lnCtr));
+            paDetail.add((Model_POR_Detail) value.get(lnCtr));
         }
     }
 
@@ -55,32 +62,104 @@ public class PurchaseOrderReceiving_General implements GValidator{
 
     @Override
     public JSONObject validate() {
-        switch (psTranStat){
-            case PurchaseOrderReceivingStatus.OPEN:
-                return validateNew();
-            case PurchaseOrderReceivingStatus.CONFIRMED:
-                return validateConfirmed();
-//            case PurchaseOrderReceivingStatus.PROCESSED:
-//                return validateProcessed();
-            case PurchaseOrderReceivingStatus.POSTED:
-                return validateProcessed();
-            case PurchaseOrderReceivingStatus.CANCELLED:
-                return validateCancelled();
-            case PurchaseOrderReceivingStatus.VOID:
-                return validateVoid();
-            case PurchaseOrderReceivingStatus.RETURNED:
-                return validateProcessed();
-            default:
-                poJSON = new JSONObject();
-                poJSON.put("result", "success");
+        try {
+            switch (psTranStat){
+                case PurchaseOrderReceivingStatus.OPEN:
+                    return validateNew();
+                case PurchaseOrderReceivingStatus.CONFIRMED:
+                    return validateConfirmed();
+                case PurchaseOrderReceivingStatus.POSTED:
+                    return validateProcessed();
+                case PurchaseOrderReceivingStatus.CANCELLED:
+                    return validateCancelled();
+                case PurchaseOrderReceivingStatus.VOID:
+                    return validateVoid();
+                case PurchaseOrderReceivingStatus.RETURNED:
+                    return validateProcessed();
+                default:
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "success");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving_General.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;
     }
     
-    private JSONObject validateNew(){
+    private JSONObject validateNew() throws SQLException{
         poJSON = new JSONObject();
-                
+        Date loTransactionDate = poMaster.getTransactionDate();
+        Date loReferenceDate = poMaster.getReferenceDate();
+
+        if (loTransactionDate == null) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+        LocalDate transactionDate = poMaster.getTransactionDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate serverDate = poGrider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate oneYearAgo = serverDate.minusYears(1);
+        if (transactionDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future transaction dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (transactionDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
+            return poJSON;
+        }
+        
+        if (poMaster.getReferenceNo()== null || poMaster.getReferenceNo().isEmpty()) {
+            poJSON.put("message", "Reference is not set.");
+            return poJSON;
+        }
+        if (loReferenceDate == null) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        if ("1900-01-01".equals(xsDateShort(loReferenceDate))) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        LocalDate ReferenceDate = poMaster.getReferenceDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        serverDate = poGrider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        oneYearAgo = serverDate.minusYears(1);
+        if (ReferenceDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future reference dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (transactionDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
+            return poJSON;
+        }
+        
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
+            poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
+        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
+            poJSON.put("message", "Trucking is not set.");
+            return poJSON;
+        }
+        if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Term.");
+            return poJSON;
+        }
+        
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -133,5 +212,12 @@ public class PurchaseOrderReceiving_General implements GValidator{
         poJSON.put("result", "success");
         return poJSON;
     }
+    
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
+    }
+    
     
 }

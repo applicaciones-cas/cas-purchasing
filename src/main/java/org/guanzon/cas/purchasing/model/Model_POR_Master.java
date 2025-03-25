@@ -16,7 +16,8 @@ import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
-import org.guanzon.cas.client.services.ClientModel;
+import org.guanzon.cas.client.services.ClientModels;
+//import org.guanzon.cas.client.services.ClientModel;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
@@ -84,7 +85,7 @@ public class Model_POR_Master extends Model {
             poCompany = model.Company();
             poTerm = model.Term();
             
-            ClientModel clientModel = new ClientModel(poGRider); 
+            ClientModels clientModel = new ClientModels(poGRider); 
             poSupplier = clientModel.ClientMaster();
             poSupplierAdress = clientModel.ClientAddress();
             poSupplierContactPerson = clientModel.ClientInstitutionContact();
