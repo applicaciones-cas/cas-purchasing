@@ -82,21 +82,20 @@ public class PurchaseOrder_MP implements GValidator {
 
     private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
-        Date loTransactionDate = poMaster.getTransactionDate();
-        Date loExpectedDate = poMaster.getExpectedDate();
+        LocalDate transactionDate = new java.sql.Date(poMaster.getTransactionDate().getTime()).toLocalDate();
+        LocalDate expectedDate = new java.sql.Date(poMaster.getExpectedDate().getTime()).toLocalDate();
+        LocalDate serverDate = new java.sql.Date(poGrider.getServerDate().getTime()).toLocalDate();
+            LocalDate oneYearAgo = serverDate.minusYears(1);
 
-        if (loTransactionDate == null) {
+        if (transactionDate == null) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
 
-        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
+        if (LocalDate.of(1900, 1, 1).equals(transactionDate)) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
-        LocalDate transactionDate = poMaster.getTransactionDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate serverDate = poGrider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate oneYearAgo = serverDate.minusYears(1);
 
         if (transactionDate.isAfter(serverDate)) {
             poJSON.put("message", "Future transaction dates are not allowed.");
@@ -108,6 +107,7 @@ public class PurchaseOrder_MP implements GValidator {
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
+        
 
         if (poMaster.getIndustryID() == null) {
             poJSON.put("message", "Industry is not set.");
@@ -117,10 +117,10 @@ public class PurchaseOrder_MP implements GValidator {
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-//        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
-//            poJSON.put("message", "Supplier is not set.");
-//            return poJSON;
-//        }
+        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
         if (poMaster.getDestinationID() == null || poMaster.getDestinationID().isEmpty()) {
             poJSON.put("message", "Destination is not set.");
             return poJSON;
@@ -129,10 +129,15 @@ public class PurchaseOrder_MP implements GValidator {
             poJSON.put("message", "Invalid Expected Delivery Date.");
             return poJSON;
         }
-        if ("1900-01-01".equals(xsDateShort(loExpectedDate))) {
+        if ("1900-01-01".equals(expectedDate)) {
             poJSON.put("message", "Invalid Expected Delivery Transaction Date.");
             return poJSON;
         }
+        if (expectedDate.isBefore(transactionDate)) {
+            poJSON.put("message", "The expected date cannot be earlier than the transaction date.");
+            return poJSON;
+        }
+
         if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
             poJSON.put("message", "Invalid Term.");
             return poJSON;
@@ -166,14 +171,13 @@ public class PurchaseOrder_MP implements GValidator {
                     poJSON.put("message", "A reference number is required for backdated transactions.");
                     return poJSON;
                 }
-            }
-            poJSON = ShowDialogFX.getUserApproval(poGrider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poJSON.put("message", (String) poJSON.get("message"));
-                return poJSON;
+                poJSON = ShowDialogFX.getUserApproval(poGrider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message", (String) poJSON.get("message"));
+                    return poJSON;
+                }
             }
         }
-
         poJSON.put("result", "success");
         return poJSON;
     }
