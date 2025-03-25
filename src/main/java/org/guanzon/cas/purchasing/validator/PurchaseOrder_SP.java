@@ -82,17 +82,17 @@ public class PurchaseOrder_SP implements GValidator {
 
     private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
-        LocalDate transactionDate = poMaster.getTransactionDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate expectedDate = poMaster.getExpectedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate serverDate = poGrider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate oneYearAgo = serverDate.minusYears(1);
+        LocalDate transactionDate = new java.sql.Date(poMaster.getTransactionDate().getTime()).toLocalDate();
+        LocalDate expectedDate = new java.sql.Date(poMaster.getExpectedDate().getTime()).toLocalDate();
+        LocalDate serverDate = new java.sql.Date(poGrider.getServerDate().getTime()).toLocalDate();
+            LocalDate oneYearAgo = serverDate.minusYears(1);
 
         if (transactionDate == null) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
 
-        if ("1900-01-01".equals(transactionDate)) {
+        if (LocalDate.of(1900, 1, 1).equals(transactionDate)) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
@@ -107,6 +107,7 @@ public class PurchaseOrder_SP implements GValidator {
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
+        
 
         if (poMaster.getIndustryID() == null) {
             poJSON.put("message", "Industry is not set.");
