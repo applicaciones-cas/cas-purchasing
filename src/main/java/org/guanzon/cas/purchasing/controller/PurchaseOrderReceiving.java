@@ -73,7 +73,7 @@ public class PurchaseOrderReceiving extends Transaction{
     List<Model_POR_Master> paPORMaster;
     List<Model_POR_Serial> paOthers;
     List<PurchaseOrder> paPurchaseOrder;
-    List<PurchaseOrder> paInventory;
+//    List<PurchaseOrder> paInventory; //TODO
     
     public JSONObject InitTransaction(){      
         SOURCE_CODE = "POR";
@@ -681,39 +681,50 @@ public class PurchaseOrderReceiving extends Transaction{
         return localDate;
     }
     
-    public JSONObject computeDiscountRate(double discount){
+    public JSONObject computeDiscountRate(double discount) {
         poJSON = new JSONObject();
         Double ldblTotal = 0.00;
         Double ldblDiscRate = 0.00;
-        
-        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
         }
-        
+
         if (discount < 0 || discount > ldblTotal) {
+            Master().setDiscount(0.00);
+            computeDiscountRate(0.00);
             poJSON.put("result", "error");
             poJSON.put("message", "Discount amount cannot be negative or exceed the transaction total.");
-        } else{
-           poJSON.put("result", "success");
-           poJSON.put("message", "success");
-           ldblDiscRate = (discount / ldblTotal) * 100;
-           Master().setDiscountRate(ldblDiscRate);
+        } else {
+            poJSON.put("result", "success");
+            poJSON.put("message", "success");
+            ldblDiscRate = (discount / ldblTotal) * 100;
+            Master().setDiscountRate(ldblDiscRate);
         }
         return poJSON;
     }
-    
-    public JSONObject computeDiscount(double discountRate){
+
+    public JSONObject computeDiscount(double discountRate) {
         poJSON = new JSONObject();
         Double ldblTotal = 0.00;
         Double ldblDiscount = 0.00;
-        
-        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
         }
-        
-        ldblDiscount = ldblTotal * (discountRate / 100.00);
-        Master().setDiscount(ldblDiscount);
-        
+
+        if (discountRate < 0 || discountRate > 100.00) {
+            Master().setDiscountRate(0.00);
+            computeDiscount(0.00);
+            poJSON.put("result", "error");
+            poJSON.put("message", "Discount rate cannot be negative or exceed 100.00");
+        } else {
+            poJSON.put("result", "success");
+            poJSON.put("message", "success");
+            ldblDiscount = ldblTotal * (discountRate / 100.00);
+            Master().setDiscount(ldblDiscount);
+        }
+
         return poJSON;
     }
     
