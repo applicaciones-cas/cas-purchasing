@@ -844,26 +844,26 @@ public class PurchaseOrder extends Transaction {
 
         try {
             int lnctr = 0;
-            while (loRS.next()) {
-                JSONObject request = new JSONObject();
-                request.put("sTransNox", loRS.getString("sTransNox"));
-                request.put("sBranchCd", loRS.getString("sBranchCd"));
-                request.put("dTransact", loRS.getDate("dTransact"));
-                request.put("sReferNox", loRS.getString("sReferNox"));
-                request.put("cTranStat", loRS.getString("cTranStat"));
-                request.put("sBranchNm", loRS.getString("sBranchNm"));
-                request.put("total_details", loRS.getInt("total_details"));
 
-                dataArray.add(request);
-                lnctr++;
-            }
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                while (loRS.next()) {
+                    JSONObject request = new JSONObject();
+                    request.put("sTransNox", loRS.getString("sTransNox"));
+                    request.put("sBranchCd", loRS.getString("sBranchCd"));
+                    request.put("dTransact", loRS.getDate("dTransact"));
+                    request.put("sReferNox", loRS.getString("sReferNox"));
+                    request.put("cTranStat", loRS.getString("cTranStat"));
+                    request.put("sBranchNm", loRS.getString("sBranchNm"));
+                    request.put("total_details", loRS.getInt("total_details"));
 
-            if (lnctr > 0) {
-                loJSON.put("result", "success");
+                    dataArray.add(request);
+                    lnctr++;
+                }
                 loJSON.put("data", dataArray);
-                loJSON.put("total_records", lnctr);
-            } else {
                 loJSON.put("result", "success");
+                loJSON.put("message", "Record loaded successfully.");
+            } else {
+                loJSON.put("result", "error");
                 loJSON.put("data", new JSONArray());
                 loJSON.put("message", "No records found.");
             }
@@ -992,8 +992,8 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
                 + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
 
-        String lsIndustryCondition = !Master().getIndustryID().equals("")
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
+        String lsIndustryCondition = !fsIndustryID.equals("")
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(fsIndustryID)
                 : " a.sIndstCdx LIKE '%'";
         String lsCompanyCondition = !fsCompanyID.isEmpty()
                 ? " a.sCompnyID = " + SQLUtil.toSQL(fsCompanyID)
