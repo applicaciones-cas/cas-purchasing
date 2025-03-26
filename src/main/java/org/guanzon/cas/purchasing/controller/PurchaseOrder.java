@@ -51,6 +51,8 @@ public class PurchaseOrder extends Transaction {
 
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
+    String psCompanyID = "";
+    String psSupplierID = "";
 
     public JSONObject InitTransaction() {
         SOURCE_CODE = "PO";
@@ -688,8 +690,8 @@ public class PurchaseOrder extends Transaction {
             lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
         initSQL();
-        String lsIndustryCondition = !Master().getIndustryID().isEmpty()
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
+        String lsIndustryCondition = !poGRider.getIndustry().isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry())
                 : " a.sIndstCdx LIKE '%'";
         String lsCompanyCondition = !Master().getCompanyID().isEmpty()
                 ? " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
@@ -743,8 +745,8 @@ public class PurchaseOrder extends Transaction {
             lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
         initSQL();
-        String lsIndustryCondition = !lsIndustryID.isEmpty()
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(lsIndustryID)
+        String lsIndustryCondition = !poGRider.getIndustry().isEmpty()
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry())
                 : " a.sIndstCdx LIKE '%'";
         String lsCompanyCondition = !lsCompanyID.isEmpty()
                 ? " a.sCompnyID = " + SQLUtil.toSQL(lsCompanyID)
@@ -799,9 +801,9 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsIndustryCondition = Master().getIndustryID().isEmpty()
+        String lsIndustryCondition = poGRider.getIndustry().isEmpty()
                 ? "a.sIndstCdx LIKE '%'"
-                : "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID());
+                : "a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry());
         String lsCompanyCondition = Master().getCompanyID().isEmpty()
                 ? "e.sCompnyID LIKE '%'"
                 : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
