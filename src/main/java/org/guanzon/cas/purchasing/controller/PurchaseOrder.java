@@ -56,7 +56,6 @@ public class PurchaseOrder extends Transaction {
         SOURCE_CODE = "PO";
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
-
         paDetail = new ArrayList<>();
 
         return initialize();
@@ -989,12 +988,12 @@ public class PurchaseOrder extends Transaction {
                 + "  a.sReferNox,"
                 + "  a.cTranStat"
                 + " FROM po_master a "
+                + " LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox"
                 + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
-                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx"
-                + " , po_detail b ";
+                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
 
-        String lsIndustryCondition = !fsIndustryID.isEmpty()
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(fsIndustryID)
+        String lsIndustryCondition = !Master().getIndustryID().equals("")
+                ? " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
                 : " a.sIndstCdx LIKE '%'";
         String lsCompanyCondition = !fsCompanyID.isEmpty()
                 ? " a.sCompnyID = " + SQLUtil.toSQL(fsCompanyID)
@@ -1021,7 +1020,7 @@ public class PurchaseOrder extends Transaction {
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
-        int lnctr = 0;
+        int lnCtr = 0;
         if (MiscUtil.RecordCount(loRS) >= 0) {
             paPOMaster = new ArrayList<>();
             while (loRS.next()) {
@@ -1032,18 +1031,11 @@ public class PurchaseOrder extends Transaction {
 
                 paPOMaster.add(POMasterList());
                 paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
-                lnctr++;
+                lnCtr++;
             }
-            if (lnctr > 0) {
-                loJSON.put("result", "success");
-                loJSON.put("message", "Record loaded successfully.");
-            } else {
-                paPOMaster = new ArrayList<>();
-                paPOMaster.add(POMasterList());
-                loJSON.put("result", "success");
-                loJSON.put("message", "No records found.");
-            }
-
+            System.out.println("Records found: " + lnCtr);
+            loJSON.put("result", "success");
+            loJSON.put("message", "Record loaded successfully.");
         } else {
             paPOMaster = new ArrayList<>();
             paPOMaster.add(POMasterList());
@@ -1052,7 +1044,6 @@ public class PurchaseOrder extends Transaction {
             loJSON.put("message", "No record found .");
         }
         MiscUtil.close(loRS);
-
         return loJSON;
     }
 
