@@ -136,6 +136,11 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = updatePurchaseOrder(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         
+        if(pbApproval){
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        }
+        
         //change status
         poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbConfirm);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
