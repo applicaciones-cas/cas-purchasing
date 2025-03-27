@@ -394,11 +394,11 @@ public class Model_PO_Master extends Model {
     }
 
     public JSONObject setProcessed(boolean isProcessed) {
-        return setValue("cPreOwned", isProcessed ? "1" : "0");
+        return setValue("cProcessd", isProcessed ? "1" : "0");
     }
 
     public boolean getProcessed() {
-        return ((String) getValue("cPreOwned")).equals("1");
+        return ((String) getValue("cProcessd")).equals("1");
     }
 
     @Override
