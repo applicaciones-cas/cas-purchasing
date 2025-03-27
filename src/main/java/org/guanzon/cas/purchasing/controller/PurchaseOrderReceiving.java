@@ -141,13 +141,23 @@ public class PurchaseOrderReceiving extends Transaction{
             if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         }
         
+        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbConfirm);
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbConfirm, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
         
         //Update Purchase Order, Inventory, Serial Ledger
         poJSON = saveUpdateOthers();
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
+        
+        poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -188,13 +198,23 @@ public class PurchaseOrderReceiving extends Transaction{
             if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         }
         
+        poGRider.beginTrans("UPDATE STATUS", "ApproveTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbApprove);
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbApprove, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
         
         //Update Purchase Order, Serial Ledger, Inventory
         poJSON = saveUpdateOthers();
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
+        
+        poGRider.commitTrans();
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -261,18 +281,27 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = isEntryOkay(PurchaseOrderReceivingStatus.CANCELLED);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         
-        
         //update Purchase Order
         poJSON = setValueToPurchaseOrder(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         
+        poGRider.beginTrans("UPDATE STATUS", "ApproveTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbCancelled);
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbCancelled, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
         
         //Update Purchase Order, Serial Ledger, Inventory
         poJSON = saveUpdateOthers();
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
+        
+        poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -304,17 +333,27 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = isEntryOkay(PurchaseOrderReceivingStatus.VOID);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
         
-        //Validate Discrepancy
+        //update Purchase Order
         poJSON = setValueToPurchaseOrder(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
-
+        
+        poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbVoid);
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbVoid, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
         
         //Update Purchase Order, Serial Ledger, Inventory
         poJSON = saveUpdateOthers();
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
+        
+        poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -345,14 +384,28 @@ public class PurchaseOrderReceiving extends Transaction{
         //validator
         poJSON = isEntryOkay(PurchaseOrderReceivingStatus.RETURNED);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
-
-        //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbReturn);
+        
+        //update Purchase Order
+        poJSON = setValueToPurchaseOrder(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        
+        poGRider.beginTrans("UPDATE STATUS", "ReturnTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
+        //change status
+        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbReturn, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
         
         //Update Purchase Order, Serial Ledger, Inventory
         poJSON = saveUpdateOthers();
-        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        } 
+        
+        poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -489,11 +542,11 @@ public class PurchaseOrderReceiving extends Transaction{
     public JSONObject SearchBarcode(String value, boolean byCode, int row) throws SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
-//        poJSON = object.searchRecord(value, byCode, Master().getSupplierId()); TODO
+//        poJSON = object.searchRecord(value, byCode, Master().getSupplierId()); //TODO
         
         poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))){
-            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row);
+            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row, false);
             if("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
@@ -523,7 +576,7 @@ public class PurchaseOrderReceiving extends Transaction{
 
         poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))){
-            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row);
+            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row, false);
             if("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
@@ -572,7 +625,6 @@ public class PurchaseOrderReceiving extends Transaction{
         if ("success".equals((String) poJSON.get("result"))){
             if(!Detail(row).getBrandId().equals(object.getModel().getBrandId())){
                 Detail(row).setStockId("");
-                Detail(row).setModelVariantId("");
             }
             
             Detail(row).setBrandId(object.getModel().getBrandId());
@@ -597,7 +649,7 @@ public class PurchaseOrderReceiving extends Transaction{
 //        poJSON = object.searchRecord(value, byCode, null,Detail(row).Inventory().getBrandId() );
 //        poJSON = object.searchRecord(value, byCode, Detail(row).Inventory().getBrandId(), Detail(row).Inventory().getBrandId()); TODO
         if ("success".equals((String) poJSON.get("result"))){
-            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row);
+            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getDescription(),"1900-01-01", row, false);
             if("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
@@ -615,7 +667,6 @@ public class PurchaseOrderReceiving extends Transaction{
             
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).setModelVariantId(object.getModel().getVariantId());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         } 
 //        else {
@@ -767,22 +818,43 @@ public class PurchaseOrderReceiving extends Transaction{
         }
     }
     
-    public JSONObject checkExistingStock(String stockId,String barcode, String expiryDate, int row){
+    public JSONObject checkExistingStock(String stockId, String barcode, String expiryDate, int row, boolean isSave){
         for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
-            if(lnRow != row ){
-                if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
-                    (Detail(lnRow).getStockId().equals(stockId)) &&
-                        expiryDate.equals(xsDateShort(Detail(lnRow).getExpiryDate()))) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", row + " already exist in table at row " + (lnRow+1) + ".");
-                    return poJSON;
-                } 
+            if(Detail(lnRow).getStockId() != null && !Detail(lnRow).getStockId().equals("")){
+                if(lnRow != row ){
+                    if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
+                        (Detail(lnRow).getStockId().equals(stockId))) {
+                        //Do not allow same stock Id without expiry date that already exist in po receiving detail
+                        if("1900-01-01".equals(xsDateShort(Detail(lnRow).getExpiryDate()))){
+                            poJSON.put("result", "error");
+                            poJSON.put("message", barcode + " already exist in table at row " + (lnRow+1) + ".");
+                            return poJSON;
+                        } else {
+                            //Do not allow saving stock id without expiry date when it expiry date exist from another row
+                            if(isSave){
+                                if("1900-01-01".equals(xsDateShort(Detail(lnRow).getExpiryDate()))){
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message",  "Expiry date cannot be empty for row "+(lnRow+1)+". Please provide a valid expiry date.");
+                                    return poJSON;
+                                }
+                            } else {
+                                //Do not allow same stock Id with the same expiry date
+                                if(expiryDate.equals(xsDateShort(Detail(lnRow).getExpiryDate()))){
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", barcode + " already exist in table at row " + (lnRow+1) + ".");
+                                    Detail().remove(row);
+                                    return poJSON;
+                                }
+                            }
+                        }
+                    } 
+                }
             }
         }
         return poJSON;
     }
     
-    public JSONObject loadPurchaseOrderReceiving(String FormName, String companyId, String supplierId, String referenceNo){ 
+    public JSONObject loadPurchaseOrderReceiving(String formName, String companyId, String supplierId, String referenceNo){ 
 //    public JSONObject loadPurchaseOrderReceiving(boolean isConfirmed, String referenceNo ){ 
         try {
             if(companyId == null) companyId = "";
@@ -793,7 +865,7 @@ public class PurchaseOrderReceiving extends Transaction{
                                                                 + " AND a.sCompnyID LIKE " +  SQLUtil.toSQL("%"+ companyId))
                                                                 + " AND a.sSupplier LIKE " +  SQLUtil.toSQL("%"+ supplierId)
                                                                 + " AND a.sTransNox LIKE " +  SQLUtil.toSQL("%"+ referenceNo);
-            switch(FormName){
+            switch(formName){
                 case "approval":
                     lsSQL = lsSQL + " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
                               + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.APPROVED) + " ) ";
@@ -997,6 +1069,10 @@ public class PurchaseOrderReceiving extends Transaction{
     public void resetOthers(){
         paOthers = new ArrayList<>();
     }
+    
+    public void resetMaster(){
+        poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+    }  
     
     //Purchase Order Receiving Serial
     public JSONObject getPurchaseOrderReceivingSerial(int entryNo) throws SQLException, GuanzonException{
@@ -1263,13 +1339,14 @@ public class PurchaseOrderReceiving extends Transaction{
     }    
         
     @Override
-    public JSONObject willSave() throws SQLException {
+    public JSONObject willSave() throws SQLException, GuanzonException {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
         
         if(Master().getTransactionStatus().equals(PurchaseOrderReceivingStatus.RETURNED)){
             Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN); //If edited update trasaction status into open
         }
+        
         Master().setModifiedDate(poGRider.getServerDate());      
 
         Iterator<Model> detail = Detail().iterator();
@@ -1338,7 +1415,12 @@ public class PurchaseOrderReceiving extends Transaction{
         }
         
         //assign other info on detail
-        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr ++){            
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr ++){          
+            poJSON = checkExistingStock(Detail(lnCtr).getStockId(), Detail(lnCtr).Inventory().getDescription(),xsDateShort(Detail(lnCtr).getExpiryDate()), lnCtr, true);
+            if("error".equals((String) poJSON.get("result"))){
+                return poJSON;
+            }
+            
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
             Detail(lnCtr).setWhCount(Detail(lnCtr).getQuantity());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
@@ -1361,254 +1443,6 @@ public class PurchaseOrderReceiving extends Transaction{
         return isEntryOkay(PurchaseOrderReceivingStatus.OPEN);
     }
     
-//    @Override
-//    public JSONObject saveOthers() {
-//        /*Only modify this if there are other tables to modify except the master and detail tables*/
-//        poJSON = new JSONObject();
-//        int lnRow;
-//        
-//        try {
-//        
-//            //Purchase Order Receiving Serial
-//            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
-//                //1. Check for serial ID
-//                if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
-//                    //Inventory Serial
-//                    poJSON = poInvSerial.newRecord();
-//                    if("error".equals((String) poJSON.get("result"))){
-//                        System.out.println((String) poJSON.get("message"));
-//                    } 
-//                    
-//                    //Inventory Serial Registration
-//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
-//                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
-//                        poJSON = poInvSerialRegistration.newRecord();
-//                        if("error".equals((String) poJSON.get("result"))){
-//                            System.out.println((String) poJSON.get("message"));
-//                        } 
-//                    }
-//                    
-//                } else {
-//                    //2. Open Inventory Serial / Registration equal to serial ID value
-//                    poJSON = poInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
-//                    if("error".equals((String) poJSON.get("result"))){
-//                        System.out.println((String) poJSON.get("message"));
-//                    } else {
-//                        poJSON = poInvSerial.updateRecord();
-//                        if("error".equals((String) poJSON.get("result"))){
-//                            System.out.println((String) poJSON.get("message"));
-//                        } 
-//                    }
-//                    
-//                    //Inventory Serial Registration
-//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
-//                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
-//                        poJSON = poInvSerialRegistration.openRecord(paOthers.get(lnRow).getSerialId());
-//                        if("error".equals((String) poJSON.get("result"))){
-//                            poJSON = poInvSerialRegistration.newRecord();
-//                            if("error".equals((String) poJSON.get("result"))){
-//                                System.out.println((String) poJSON.get("message"));
-//                            } 
-//                        } else {
-//                            poJSON = poInvSerialRegistration.updateRecord();
-//                            if("error".equals((String) poJSON.get("result"))){
-//                                System.out.println((String) poJSON.get("message"));
-//                            } 
-//                        } 
-//                    } 
-//                }
-//                
-//                //3. Set value to Inventory Serial / Registration 
-//                if(poInvSerial.getEditMode() == EditMode.ADDNEW || poInvSerial.getEditMode() == EditMode.UPDATE){
-//                    poInvSerial.setLocation(paOthers.get(lnRow).getLocationId());
-//                    poInvSerial.setStockId(paOthers.get(lnRow).getStockId());
-//                    poInvSerial.setSerial01(paOthers.get(lnRow).getSerial01());
-//                    poInvSerial.setSerial02(paOthers.get(lnRow).getSerial02());
-//                    
-//                    if(poInvSerial.getEditMode() == EditMode.ADDNEW){
-//                        poInvSerial.setBranchCode(poGRider.getBranchCode());
-//                        poInvSerial.setCompnyId(Master().getCompanyId());
-//                    }
-//                    
-//                    //3.1 Save Inventory Serial 
-//                    poInvSerial.setModifiedDate(poGRider.getServerDate());
-//                    poJSON = poInvSerial.saveRecord();
-//                    if("error".equals((String) poJSON.get("result"))){
-//                        System.out.println((String) poJSON.get("message"));
-//                    }
-//                }
-//                
-//                if(poInvSerialRegistration.getEditMode() == EditMode.ADDNEW || poInvSerialRegistration.getEditMode() == EditMode.UPDATE){
-//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
-//                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
-//                        //Inventory Serial Registration
-//                        poInvSerialRegistration.setSerialId(poInvSerial.getSerialId());
-//                        poInvSerialRegistration.setPlateNoP(paOthers.get(lnRow).getPlateNo());
-//                        poInvSerialRegistration.setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
-//                        
-//                        //3.2 Save Inventory Serial Registration
-//                        poJSON = poInvSerialRegistration.saveRecord();
-//                        if("error".equals((String) poJSON.get("result"))){
-//                            System.out.println((String) poJSON.get("message"));
-//                        }
-//                    }
-//                }
-//                
-//                if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
-//                    //Set saved serial id in POR Serial
-//                    paOthers.get(lnRow).setSerialId(poInvSerial.getSerialId());
-//                }
-//                
-//                System.out.println("edit mode" + paOthers.get(lnRow).getEditMode());
-//                //4. Save Purchase Receiving Serial
-//                poJSON = paOthers.get(lnRow).saveRecord();
-//                if("error".equals((String) poJSON.get("result"))){
-//                    return poJSON;
-//                } 
-//            }
-//
-////            //Save Inventory Ledger when transaction is confirmed
-////            if(Master().getTransactionStatus().equals(PurchaseOrderReceivingStatus.CONFIRMED)){
-////                poJSON = poInvSerialLedger.openRecord(paOthers.get(lnRow).getSerialId()); 
-////                //if it does not exist in Serial Ledger, generate new entry for serial ledger
-////                if("error".equals((String) poJSON.get("result"))){
-////                    poInvSerialLedger.newRecord();
-////                    poInvSerialLedger.setSerialId(paOthers.get(lnRow).getSerialId());
-////                    poInvSerialLedger.setBranchCode(poGRider.getBranchCode());
-////                    poInvSerialLedger.setLedgerNo(lnRow);
-////                    poInvSerialLedger.setTransactionDate(Master().getTransactionDate());
-////                    poInvSerialLedger.setSourceNo(Master().getTransactionNo());
-////                    poInvSerialLedger.setSourceCode(SOURCE_CODE);
-////                    poInvSerialLedger.setSoldStatus(paOthers.get(lnRow).InventorySerial().getSoldStatus());
-////                    
-////                    poJSON = poInvSerialLedger.saveRecord();
-////                    if("error".equals((String) poJSON.get("result"))){
-////                        System.out.println((String) poJSON.get("message"));
-////                    } 
-////                } 
-////            
-////            }
-//        } catch (SQLException ex) {
-//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (GuanzonException ex) {
-//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        poJSON.put("result", "success");
-//        return poJSON;
-//    }
-    
-//    @Override
-//    public JSONObject saveOthers() {
-//        /*Only modify this if there are other tables to modify except the master and detail tables*/
-//        poJSON = new JSONObject();
-//        int lnCtr, lnRow;
-//        List<String> lsPrevSerial = new ArrayList<>();
-//        List<String> lsNewSerial = new ArrayList<>();
-//        
-//        try {
-////            //Save Inventory Serial
-////            for(lnCtr = 0; lnCtr <= getInventorySerialCount() - 1; lnCtr++ ){
-////                //Store initial serial number
-////                if( paInvSerial.get(lnCtr).getEditMode() == EditMode.ADDNEW){
-////                    lsPrevSerial.add(paInvSerial.get(lnCtr).getSerialId());
-////                    lsNewSerial.add(paInvSerial.get(lnCtr).getSerialId());
-////                }
-////                
-////                paInvSerial.get(lnCtr).setModifiedDate(poGRider.getServerDate());
-////                poJSON = paInvSerial.get(lnCtr).saveRecord();
-////                if("error".equals((String) poJSON.get("result"))){
-////                    System.out.println("ERROR: " + (String) poJSON.get("message"));
-////                    return poJSON;
-////                } 
-////                
-////                //Update new serial number
-////                lsNewSerial.set(lsNewSerial.size()-1, paInvSerial.get(lnCtr).getSerialId());
-////            }
-////        
-////            //Save Purchase Order Receiving Serial
-////            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
-////                //Update serial ID of POR Serial
-////                for(lnCtr = 0; lnCtr <= lsPrevSerial.size()-1; lnCtr++){
-////                    if(!lsPrevSerial.get(lnCtr).equals(lsNewSerial.get(lnCtr))){
-////                        if(lsPrevSerial.equals(paOthers.get(lnRow).getSerialId())){
-////                            paOthers.get(lnRow).setSerialId(lsNewSerial.get(lnCtr));
-////                            lsPrevSerial.remove(lnCtr);
-////                            lsNewSerial.remove(lnCtr);
-////                            break;
-////                        }
-////                    }
-////                }
-////                
-////                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
-////                poJSON = paOthers.get(lnRow).saveRecord();
-////                if("error".equals((String) poJSON.get("result"))){
-////                    return poJSON;
-////                } 
-////            }
-//        
-//            //Save Purchase Order Receiving Serial
-//            for(lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++){
-//                if(paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null){
-//                    //Save Inventory Serial
-//                    poJSON = poInvSerial.newRecord();
-//                    if("error".equals((String) poJSON.get("result"))){
-//                        return poJSON; //TODO
-//                    } else {
-//                        poInvSerial.setBranchCode(poGRider.getBranchCode());
-//                        poInvSerial.setCompnyId(Master().getCompanyId());
-//                        poInvSerial.setLocation(paOthers.get(lnRow).getLocationId());
-//                        poInvSerial.setStockId(paOthers.get(lnRow).getStockId());
-//                        poInvSerial.setSerial01(paOthers.get(lnRow).getSerial01());
-//                        poInvSerial.setSerial02(paOthers.get(lnRow).getSerial02());
-//                    }
-//                    
-//                    poInvSerial.setModifiedDate(poGRider.getServerDate());
-//                    poJSON = poInvSerial.saveRecord();
-//                    if("error".equals((String) poJSON.get("result"))){
-////                        return poJSON; //TODO
-//                    }
-//                        
-//                    //Inventory Serial Registration
-//                    if((!paOthers.get(lnRow).getConductionStickerNo().equals("") || paOthers.get(lnRow).getConductionStickerNo() != null) ||
-//                            (!paOthers.get(lnRow).getPlateNo().equals("") || paOthers.get(lnRow).getPlateNo() != null)) {
-//                        poJSON = poInvSerialRegistration.newRecord();
-//                        if("error".equals((String) poJSON.get("result"))){
-//                            return poJSON; //TODO
-//                        } else {
-//                            //Inventory Serial
-//                            poInvSerialRegistration.setSerialId(poInvSerial.getSerialId());
-//                            poInvSerialRegistration.setPlateNoH(paOthers.get(lnRow).getPlateNo());
-////                            poInvSerialRegistration.setConductionSticker(paOthers.get(lnRow).getConductionSticker());
-//                        }
-//                        
-//                        poJSON = poInvSerialRegistration.saveRecord();
-//                        if("error".equals((String) poJSON.get("result"))){
-////                            return poJSON; //TODO
-//                        }
-//                    }
-//                    
-//                    paOthers.get(lnRow).setSerialId(poInvSerial.getSerialId());
-//                }
-//                
-//                //Update Inventory Serial
-//                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
-//                poJSON = paOthers.get(lnRow).saveRecord();
-//                if("error".equals((String) poJSON.get("result"))){
-//                    return poJSON;
-//                } 
-//            }
-//
-//            //Save Inventory Ledger
-//        
-//        } catch (SQLException ex) {
-//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (GuanzonException ex) {
-//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        poJSON.put("result", "success");
-//        return poJSON;
-//    }
-//    
     @Override
     public JSONObject saveOthers() {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
@@ -1727,15 +1561,8 @@ public class PurchaseOrderReceiving extends Transaction{
                 
                 //1. Check for discrepancy
                 if(Detail(lnCtr).getOrderQty().intValue() != Detail(lnCtr).getQuantity().intValue()){
+                    System.out.println("Require Approval");
                     pbApproval = true;
-//                    if(isUpdateStatus){
-//                        System.out.println("Require Approval");
-//                        if(!pbApproval){
-//                            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//                            if (!"success".equals((String) poJSON.get("result"))) return poJSON;
-//                            pbApproval = true; //set value into True since user approval already called.
-//                        }
-//                    }
                 }
                 
                 //2.check if order no is already exist in purchase order array list
@@ -1763,20 +1590,19 @@ public class PurchaseOrderReceiving extends Transaction{
 
                 for(lnRow = 0; lnRow <= paPurchaseOrder.get(lnList).getDetailCount()-1; lnRow++){
                     if(Detail(lnCtr).getStockId().equals(paPurchaseOrder.get(lnList).Detail(lnRow).getStockID())){
-                        //Get total received qty from other po receiving entry
-                        lnRecQty = getReceivedQty(Detail(lnCtr).getOrderNo(), Detail(lnCtr).getStockId());
-
+                        
                         switch(status){
                             case PurchaseOrderReceivingStatus.CONFIRMED:
                             case PurchaseOrderReceivingStatus.APPROVED: 
+                                //Get total received qty from other po receiving entry
+                                lnRecQty = getReceivedQty(Detail(lnCtr).getOrderNo(), Detail(lnCtr).getStockId(), true);
                                 //Add received qty in po receiving
                                 lnRecQty = lnRecQty + Detail(lnCtr).getQuantity().intValue();
-
-//                                if(!paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().equals(lnRecQty)){
-//                                    pbApproval = false;
-//                                }
                                 break;
+                            case PurchaseOrderReceivingStatus.VOID:
                             case PurchaseOrderReceivingStatus.RETURNED: 
+                                //Get total received qty from other po receiving entry
+                                lnRecQty = getReceivedQty(Detail(lnCtr).getOrderNo(), Detail(lnCtr).getStockId(), false);
                                 //Deduct received qty in po receiving
                                 lnRecQty = lnRecQty - Detail(lnCtr).getQuantity().intValue();
                                 break;
@@ -1789,6 +1615,7 @@ public class PurchaseOrderReceiving extends Transaction{
                 }
             } else {
                 //Require approve for all po receiving without po
+                System.out.println("Require Approval");
                 pbApproval = true; 
             }
 
@@ -1801,19 +1628,23 @@ public class PurchaseOrderReceiving extends Transaction{
     }
     
     //Open record for checking total receive qty per purchase order
-    private int getReceivedQty(String orderNo, String stockId) throws SQLException, GuanzonException {
+    private int getReceivedQty(String orderNo, String stockId, boolean isAdd) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         int lnRecQty = 0;
         String lsSQL =    " SELECT "
                         + " b.nQuantity AS nQuantity "
                         + " FROM po_receiving_master a "
                         + " LEFT JOIN po_receiving_detail b ON b.sTransNox = a.sTransNox ";
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo()) 
-                                    + " AND b.sOrderNox = " + SQLUtil.toSQL(orderNo) 
+        lsSQL = MiscUtil.addCondition(lsSQL, " b.sOrderNox = " + SQLUtil.toSQL(orderNo) 
                                     + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
                                     + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
                                     + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.APPROVED)
                                     + " ) ");
+        
+        if(isAdd){
+            lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo()) ;
+        }
+        
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (MiscUtil.RecordCount(loRS) >= 0) {
