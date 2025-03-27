@@ -78,6 +78,7 @@
             <groupId>org.guanzon</groupId>
             <artifactId>cas-inv</artifactId>
             <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.guanzon</groupId>
