@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javax.swing.JButton;
+import javax.swing.SwingUtilities;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -1057,48 +1059,6 @@ public class PurchaseOrder extends Transaction {
         return loJSON;
     }
 
-    public JSONObject PrintTransaction() throws SQLException, CloneNotSupportedException, GuanzonException {
-        poJSON = new JSONObject();
-        boolean lbPrint = true;
-        poJSON = printTransaction();
-        if ("success".equals((String) poJSON.get("result"))) {
-            if (((String) poMaster.getValue("cTranStat")).equals(PurchaseOrderStatus.APPROVED)) {
-                poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-                if ("error".equals((String) poJSON.get("result"))) {
-                    poJSON.put("message", (String) poJSON.get("message"));
-                    lbPrint = false;
-                }
-                poJSON = UpdateTransaction();
-                if ("error".equals((String) poJSON.get("result"))) {
-                    poJSON.put("message", (String) poJSON.get("message"));
-                    lbPrint = false;
-                }
-
-                poMaster.setValue("dModified", poGRider.getServerDate());
-                poMaster.setValue("sModified", poGRider.getUserID());
-                poMaster.setValue("cPrintxxx", Logical.YES);
-
-                poJSON = SaveTransaction();
-                if ("error".equals((String) poJSON.get("result"))) {
-                    poJSON.put("message", (String) poJSON.get("message"));
-                    lbPrint = false;
-                }
-            }
-        } else {
-            lbPrint = false;
-        }
-
-        if (lbPrint) {
-            poJSON.put("result", "success");
-            poJSON.put("message", "Transaction printed successfully.");
-        } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction printed aborted.");
-        }
-
-        return poJSON;
-    }
-
     public JSONObject printTransaction() {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
@@ -1152,12 +1112,12 @@ public class PurchaseOrder extends Transaction {
 
             CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
             viewer.setVisible(true);
-
+            poJSON.put("result", "success");
         } catch (JRException | SQLException | GuanzonException ex) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction print aborted!");
             Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        poJSON.put("result", "success");
         return poJSON;
     }
 
@@ -1214,12 +1174,10 @@ public class PurchaseOrder extends Transaction {
     public class CustomJasperViewer extends JasperViewer {
 
         public CustomJasperViewer(JasperPrint jasperPrint) {
-            super(jasperPrint, false);  // false to disable auto-close
+            super(jasperPrint, false);
             customizePrintButton(jasperPrint);
-//            customizeSaveButton(jasperPrint);
         }
 
-        // Override Print Button
         private void customizePrintButton(JasperPrint jasperPrint) {
             poJSON = new JSONObject();
             try {
@@ -1228,56 +1186,107 @@ public class PurchaseOrder extends Transaction {
                     System.out.println("JRViewer not found!");
                     return;
                 }
+
                 for (int i = 0; i < viewer.getComponentCount(); i++) {
-                    JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(i);
-                    for (int j = 0; j < toolbar.getComponentCount(); j++) {
-                        if (toolbar.getComponent(j) instanceof JButton) {
-                            JButton button = (JButton) toolbar.getComponent(j);
-                            if ("Print".equals(button.getToolTipText())) {
-                                button.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
+                    if (viewer.getComponent(i) instanceof JRViewerToolbar) {
+                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(i);
+
+                        for (int j = 0; j < toolbar.getComponentCount(); j++) {
+                            if (toolbar.getComponent(j) instanceof JButton) {
+                                JButton button = (JButton) toolbar.getComponent(j);
+
+                                //if ever na kailangan e hide si button save
+//                                if (button.getToolTipText() != null) {
+//                                    if (button.getToolTipText().equals("Save")) {
+//                                        button.setEnabled(false);  // Disable instead of hiding
+//                                        button.setVisible(false);  // Hide it completely
+//                                    }
+//                                }
+                                if ("Print".equals(button.getToolTipText())) {
+                                    for (ActionListener al : button.getActionListeners()) {
+                                        button.removeActionListener(al);
+                                    }
+                                    button.addActionListener(e -> {
                                         try {
                                             boolean isPrinted = JasperPrintManager.printReport(jasperPrint, true);
                                             if (isPrinted) {
-                                                pbPrinted = true;
-                                                if (((String) poMaster.getValue("cTranStat")).equals(PurchaseOrderStatus.APPROVED)) {
-                                                    poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-                                                    if ("error".equals((String) poJSON.get("result"))) {
-                                                        poJSON.put("message", (String) poJSON.get("message"));
-
-                                                    }
-                                                    poJSON = UpdateTransaction();
-                                                    if ("error".equals((String) poJSON.get("result"))) {
-                                                        poJSON.put("message", (String) poJSON.get("message"));
-                                                    }
-                                                    poMaster.setValue("dModified", poGRider.getServerDate());
-                                                    poMaster.setValue("sModified", poGRider.getUserID());
-                                                    poMaster.setValue("cPrintxxx", Logical.YES);
-
-                                                    poJSON = SaveTransaction();
-                                                    if ("error".equals((String) poJSON.get("result"))) {
-                                                        poJSON.put("message", (String) poJSON.get("message"));
-                                                    }
-                                                }
+                                                PrintTransaction(true);
                                             } else {
-                                                pbPrinted = false;
+                                                Platform.runLater(() -> {
+                                                    ShowMessageFX.Warning("Printing was canceled by the user.", "Print Purchase Order", null);
+                                                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+
+                                                });
                                             }
                                         } catch (JRException ex) {
-                                            ShowMessageFX.Information(null, "Computerized Accounting System", "Print Failed: " + ex.getMessage());
+                                            Platform.runLater(() -> {
+                                                ShowMessageFX.Warning("Print Failed: " + ex.getMessage(), "Computerized Accounting System", null);
+                                                SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                                            });
                                         } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
                                             Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
                                         }
-                                    }
-                                });
-
-                                return;
+                                    });
+                                }
                             }
                         }
+
+                        // Force UI refresh after hiding the button
+                        toolbar.revalidate();
+                        toolbar.repaint();
                     }
                 }
             } catch (Exception e) {
                 System.out.println("Error customizing print button: " + e.getMessage());
+            }
+        }
+
+        private void PrintTransaction(boolean fbIsPrinted) throws SQLException, CloneNotSupportedException, GuanzonException {
+            poJSON = new JSONObject();
+            if (fbIsPrinted) {
+                if (((String) poMaster.getValue("cTranStat")).equals(PurchaseOrderStatus.APPROVED)) {
+                    poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+                    poJSON = UpdateTransaction();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+
+                    poMaster.setValue("dModified", poGRider.getServerDate());
+                    poMaster.setValue("sModified", poGRider.getUserID());
+                    poMaster.setValue("cPrintxxx", Logical.YES);
+
+                    poJSON = SaveTransaction();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+                }
+            }
+
+            if (fbIsPrinted) {
+                Platform.runLater(() -> {
+                    ShowMessageFX.Information("Transaction printed successfully.", "Print Purchase Order", null);
+                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                });
+            } else {
+                Platform.runLater(() -> {
+                    ShowMessageFX.Information("Transaction printed aborted.", "Print Purchase Order", null);
+                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                });
             }
         }
 
@@ -1296,6 +1305,6 @@ public class PurchaseOrder extends Transaction {
             }
             return null;
         }
-    }
 
+    }
 }
