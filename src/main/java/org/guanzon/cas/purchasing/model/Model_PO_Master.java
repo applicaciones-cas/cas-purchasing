@@ -14,7 +14,7 @@ import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
-import org.guanzon.cas.client.services.ClientModel;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
@@ -92,7 +92,7 @@ public class Model_PO_Master extends Model {
             InvModels invModel = new InvModels(poGRider);
             poInventory = invModel.Inventory();
 
-            ClientModel clientModel = new ClientModel(poGRider);
+            ClientModels clientModel = new ClientModels(poGRider);
             poSupplier = clientModel.ClientMaster();
             poSupplierAdress = clientModel.ClientAddress();
             poSupplierContactPerson = clientModel.ClientInstitutionContact();

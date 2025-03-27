@@ -66,6 +66,7 @@
             <groupId>org.guanzon</groupId>
             <artifactId>cas-parameter</artifactId>
             <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.guanzon</groupId>
