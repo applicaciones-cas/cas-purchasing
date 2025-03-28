@@ -28,7 +28,7 @@ import org.guanzon.cas.parameter.model.Model_Inv_Type;
 import org.guanzon.cas.parameter.model.Model_Measure;
 import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
-import org.guanzon.cas.parameter.model.Model_Variant;
+import org.guanzon.cas.parameter.model.Model_Model_Variant;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
@@ -51,7 +51,7 @@ public class Model_POR_Detail extends Model{
     Model_Category poCategory;
     Model_Inv_Type poInv_Type;
     Model_Measure poMeasure;
-    Model_Variant poModelVariant;
+    Model_Model_Variant poModelVariant;
     Model_Inv_Stock_Request_Master poInvStockMaster;
     Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
@@ -318,7 +318,7 @@ public class Model_POR_Detail extends Model{
         }
     }
     
-    public Model_Variant ModelVariant() throws GuanzonException, SQLException {
+    public Model_Model_Variant ModelVariant() throws GuanzonException, SQLException {
         if (!"".equals(getModelVariantId())) {
             if (poModelVariant.getEditMode() == EditMode.READY
                     && poModelVariant.getVariantId().equals(getModelVariantId())) {

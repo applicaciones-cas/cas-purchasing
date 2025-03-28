@@ -449,12 +449,14 @@ public class PurchaseOrderReceiving extends Transaction{
     }
     
     public JSONObject AddDetail() throws CloneNotSupportedException{
-        if(Detail(getDetailCount() - 1).getStockId() != null){
-            if (Detail(getDetailCount() - 1).getStockId().isEmpty()) {
-                poJSON = new JSONObject();
-                poJSON.put("result", "error");
-                poJSON.put("message", "Last row has empty item.");
-                return poJSON;
+        if(getDetailCount() > 0){
+            if(Detail(getDetailCount() - 1).getStockId() != null){
+                if (Detail(getDetailCount() - 1).getStockId().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Last row has empty item.");
+                    return poJSON;
+                }
             }
         }
 
