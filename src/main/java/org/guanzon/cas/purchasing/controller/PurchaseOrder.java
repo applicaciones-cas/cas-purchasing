@@ -407,14 +407,17 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcode(String value, boolean byCode, String stockId, int row)
+    public JSONObject SearchBarcode(String value, boolean byCode, String supplierId, int row)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
-//        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, stockId);
+        if (supplierId.isEmpty()) {
+            poJSON = object.searchRecord(value, false);
+        } else {
+            poJSON = object.searchRecord(value, byCode, supplierId);
+        }
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -437,18 +440,19 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeDescription(String value, boolean byCode, String stockId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchBarcodeDescription(String value, boolean byCode, String supplierId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
-//        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, stockId);
+        if (supplierId.isEmpty()) {
+            poJSON = object.searchRecord(value, false);
+        } else {
+            poJSON = object.searchRecord(value, byCode, supplierId);
+        }
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
         String scannedStockID = object.getModel().getStockId();
-
         for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             if (lnCtr != row) {
                 String existingStockID = (String) Detail(lnCtr).getStockID();
@@ -506,13 +510,17 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBrand(String value, boolean byCode, String stockId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchBrand(String value, boolean byCode, String supplierId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
-//        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, stockId);
+        if (supplierId.isEmpty()) {
+            poJSON = object.searchRecord(value, false);
+        } else {
+            poJSON = object.searchRecord(value, byCode, supplierId);
+        }
+
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -536,13 +544,16 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchModel(String value, boolean byCode, String stockId, int row) throws SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchModel(String value, boolean byCode, String supplierId, int row) throws SQLException, GuanzonException, CloneNotSupportedException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
 
-//        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, stockId);
+        if (supplierId.isEmpty()) {
+            poJSON = object.searchRecord(value, false);
+        } else {
+            poJSON = object.searchRecord(value, byCode, supplierId);
+        }
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -930,8 +941,8 @@ public class PurchaseOrder extends Transaction {
                     boolean lbExist = false;
 
                     for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
-                        if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo())
-                                && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
+//                        if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo()) &&
+                        if (Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
                             lbExist = true;
                             break;
                         }
