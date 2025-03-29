@@ -45,6 +45,7 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.Branch;
+import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.Term;
@@ -513,72 +514,118 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
+    
+    public JSONObject SearchBrand(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException{
+        Brand brand = new ParamControllers(poGRider, logwrapr).Brand();
+        brand.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
-    public JSONObject SearchBrand(String value, boolean byCode, String supplierId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
-        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
+        poJSON = brand.searchRecord(value, byCode, poGRider.getIndustry());
 
-        if (supplierId.isEmpty()) {
-            poJSON = object.searchRecord(value, false);
-        } else {
-            poJSON = object.searchRecord(value, byCode, supplierId);
+        if ("success".equals((String) poJSON.get("result"))){
+            Detail(row).setBrandId(brand.getModel().getBrandId());
         }
+        
 
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-        String scannedStockID = object.getModel().getStockId();
-        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            if (lnCtr != row) {
-                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "This barcode is already added in another row.");
-                    return poJSON;
-                }
-            }
-        }
-        Detail(row).setStockID(scannedStockID);
-        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
-        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-        AddDetail();
         return poJSON;
     }
-
-    public JSONObject SearchModel(String value, boolean byCode, String supplierId, int row) throws SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
-        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
-
-        if (supplierId.isEmpty()) {
-            poJSON = object.searchRecord(value, false);
-        } else {
-            poJSON = object.searchRecord(value, byCode, supplierId);
-        }
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-        String scannedStockID = object.getModel().getStockId();
-        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            if (lnCtr != row) {
-                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "This barcode is already added in another row.");
-                    return poJSON;
+//        object.getModel().setBrandId( Detail(row).Inventory().getBrandId());
+        System.out.println("brand = " + Detail(row).getBrandId());
+        System.out.println("supplier = " + Master().getSupplierID());
+        
+        poJSON = object.searchRecord(value, byCode ,Master().getSupplierID(),Detail(row).getBrandId());
+        if ("success".equals((String) poJSON.get("result"))){
+            for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+                if(lnRow != row ){
+                    if  ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null) &&
+                        (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Model: " + object.getModel().getDescription()+ " already exist in table at row " + (lnRow+1) + ".");
+                        return poJSON;
+                    } 
                 }
             }
+            
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        } else {
+            Detail(row).setStockID("");
+            Detail(row).setBrandId("");
+            Detail(row).setUnitPrice(0.00);
         }
-        Detail(row).setStockID(scannedStockID);
-        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
-        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-        AddDetail();
+        
         return poJSON;
     }
+    
+
+    
+//    public JSONObject SearchBrand(String value, boolean byCode, String supplierId, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+//        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+//        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+//        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
+//
+//        if (supplierId.isEmpty()) {
+//            poJSON = object.searchRecord(value, false);
+//        } else {
+//            poJSON = object.searchRecord(value, byCode, supplierId);
+//        }
+//
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
+//        String scannedStockID = object.getModel().getStockId();
+//        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+//            if (lnCtr != row) {
+//                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
+//                String existingStockID = (String) Detail(lnCtr).getStockID();
+//                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "This barcode is already added in another row.");
+//                    return poJSON;
+//                }
+//            }
+//        }
+//        Detail(row).setStockID(scannedStockID);
+//        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+//        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+//        AddDetail();
+//        return poJSON;
+//    }
+
+//    public JSONObject SearchModel(String value, boolean byCode, String supplierId, int row) throws SQLException, GuanzonException, CloneNotSupportedException {
+//        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+//        object.getModel().setRecordStatus(RecordStatus.ACTIVE);
+//        object.getModel().setBrandId(Detail(row).Inventory().getBrandId());
+//
+//        if (supplierId.isEmpty()) {
+//            poJSON = object.searchRecord(value, false);
+//        } else {
+//            poJSON = object.searchRecord(value, byCode, supplierId);
+//        }
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
+//
+//        String scannedStockID = object.getModel().getStockId();
+//        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+//            if (lnCtr != row) {
+//                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
+//                String existingStockID = (String) Detail(lnCtr).getStockID();
+//                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "This barcode is already added in another row.");
+//                    return poJSON;
+//                }
+//            }
+//        }
+//        Detail(row).setStockID(scannedStockID);
+//        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+//        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+//        AddDetail();
+//        return poJSON;
+//    }
 
 
     /*End - Search Master References*/

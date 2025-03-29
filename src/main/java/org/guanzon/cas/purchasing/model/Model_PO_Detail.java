@@ -224,6 +224,15 @@ public class Model_PO_Detail extends Model {
     public Date getModifiedDate() {
         return (Date) getValue("dModified");
     }
+    
+    
+    public JSONObject setBrandId(String brandId){          
+        return poBrand.setBrandId(brandId);
+    }
+    
+    public String getBrandId(){
+        return poBrand.getBrandId();
+    }
 
     //reference object models
     public Model_Branch Branch() throws GuanzonException, SQLException {
@@ -371,27 +380,46 @@ public class Model_PO_Detail extends Model {
             return poInventoryMaster;
         }
     }
-
     public Model_Brand Brand() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sBrandIDx"))) {
-            if (poBrand.getEditMode() == EditMode.READY
-                    && poBrand.getBrandId().equals((String) getValue("sBrandIDx"))) {
-                return poBrand;
-            } else {
-                poJSON = poBrand.openRecord((String) getValue("sBrandIDx"));
-
+        if (!"".equals(getBrandId())) {
+//            if (poBrand.getEditMode() == EditMode.READY
+//                    && poBrand.getBrandId().equals(getBrandId())) {
+//                return poBrand;
+//            } else {
+                poJSON = poBrand.openRecord(getBrandId());
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poBrand;
                 } else {
                     poBrand.initialize();
                     return poBrand;
                 }
-            }
+//            }
         } else {
             poBrand.initialize();
             return poBrand;
         }
     }
+
+//    public Model_Brand Brand() throws GuanzonException, SQLException {
+//        if (!"".equals((String) getValue("sBrandIDx"))) {
+//            if (poBrand.getEditMode() == EditMode.READY
+//                    && poBrand.getBrandId().equals((String) getValue("sBrandIDx"))) {
+//                return poBrand;
+//            } else {
+//                poJSON = poBrand.openRecord((String) getValue("sBrandIDx"));
+//
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    return poBrand;
+//                } else {
+//                    poBrand.initialize();
+//                    return poBrand;
+//                }
+//            }
+//        } else {
+//            poBrand.initialize();
+//            return poBrand;
+//        }
+//    }
 
     public Model_Color Color() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sColorIDx"))) {
