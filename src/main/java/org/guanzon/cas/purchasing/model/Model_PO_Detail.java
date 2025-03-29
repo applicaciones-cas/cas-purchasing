@@ -475,7 +475,6 @@ public class Model_PO_Detail extends Model {
         }
     }
 
-
     public Model_Inv_Stock_Request_Master InvStockRequestMaster() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sTransNox"))) {
             if (poInvStockMaster.getEditMode() == EditMode.READY
@@ -497,12 +496,12 @@ public class Model_PO_Detail extends Model {
     }
 
     public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sTransNox"))) {
+        if (!"".equals((String) getValue("sSourceNo"))) {
             if (poInvStockDetail.getEditMode() == EditMode.READY
-                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
                 return poInvStockDetail;
             } else {
-                poJSON = poInvStockDetail.openRecord((String) getValue("sTransNox"));
+                poJSON = poInvStockDetail.openRecord((String) getValue("sSourceNo"));
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poInvStockDetail;
                 } else {

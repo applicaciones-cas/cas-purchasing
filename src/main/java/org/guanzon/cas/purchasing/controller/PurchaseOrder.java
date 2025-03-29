@@ -425,8 +425,9 @@ public class PurchaseOrder extends Transaction {
         String scannedStockID = object.getModel().getStockId();
         for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
                 String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (scannedStockID.equals(existingStockID)) {
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "This barcode is already added in another row.");
                     return poJSON;
@@ -455,8 +456,9 @@ public class PurchaseOrder extends Transaction {
         String scannedStockID = object.getModel().getStockId();
         for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
                 String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (scannedStockID.equals(existingStockID)) {
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "This barcode is already added in another row.");
                     return poJSON;
@@ -465,6 +467,8 @@ public class PurchaseOrder extends Transaction {
         }
 
         Detail(row).setStockID(scannedStockID);
+        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         AddDetail();
         return poJSON;
     }
@@ -524,13 +528,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
         String scannedStockID = object.getModel().getStockId();
-
         for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
                 String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (scannedStockID.equals(existingStockID)) {
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "This barcode is already added in another row.");
                     return poJSON;
@@ -559,11 +562,11 @@ public class PurchaseOrder extends Transaction {
         }
 
         String scannedStockID = object.getModel().getStockId();
-
         for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
             if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
                 String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (scannedStockID.equals(existingStockID)) {
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "This barcode is already added in another row.");
                     return poJSON;
@@ -571,6 +574,8 @@ public class PurchaseOrder extends Transaction {
             }
         }
         Detail(row).setStockID(scannedStockID);
+        Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
+        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         AddDetail();
         return poJSON;
     }
@@ -941,8 +946,8 @@ public class PurchaseOrder extends Transaction {
                     boolean lbExist = false;
 
                     for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
-//                        if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo()) &&
-                        if (Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
+                        if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo())
+                                && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
                             lbExist = true;
                             break;
                         }
