@@ -5,7 +5,6 @@
  */
 package org.guanzon.cas.purchasing.model;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
@@ -30,7 +29,6 @@ import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.model.Model_Model_Variant;
 import org.guanzon.cas.parameter.services.ParamModels;
-import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.json.simple.JSONObject;
 
@@ -229,19 +227,12 @@ public class Model_POR_Detail extends Model{
         return (Date) getValue("dModified");
     }
     
-    //TODO
-    public JSONObject setBrandId(String brandId){
+    public void setBrandId(String brandId){
         psBrandId = brandId;
-        return new JSONObject();
     }
     
     public String getBrandId(){
         return psBrandId;
-//        if(poBrand.getBrandId() == null){
-//            return "";
-//        } else {
-//            return poBrand.getBrandId();
-//        }
     }
     
     @Override
@@ -291,7 +282,7 @@ public class Model_POR_Detail extends Model{
                 return poInventory;
             }
     }
-
+    
     public Model_Brand Brand() throws GuanzonException, SQLException {
         if (!"".equals(getBrandId())) {
             if (poBrand.getEditMode() == EditMode.READY
