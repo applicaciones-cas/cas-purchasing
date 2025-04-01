@@ -234,6 +234,8 @@ public class Model_PO_Detail extends Model {
         return poBrand.getBrandId();
     }
 
+    
+
     //reference object models
     public Model_Branch Branch() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sBranchCd"))) {

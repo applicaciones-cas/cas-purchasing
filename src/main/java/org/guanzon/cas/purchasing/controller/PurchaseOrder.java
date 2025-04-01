@@ -42,6 +42,7 @@ import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.inv.warehouse.StockRequest;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
@@ -54,6 +55,7 @@ import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderValidatorFactory;
 import org.json.simple.JSONArray;
@@ -64,13 +66,16 @@ public class PurchaseOrder extends Transaction {
 
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
+    List<StockRequest> poStockRequest;
     boolean pbPrinted = false;
+    private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
         SOURCE_CODE = "PO";
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
+        poStockRequest = new ArrayList<>();
 
         return initialize();
     }
@@ -120,6 +125,14 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+        
+        //Update Purchase Order
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        
         poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -173,7 +186,9 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
+        
         poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -334,6 +349,9 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+        
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) return poJSON;
 
         poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -719,9 +737,20 @@ public class PurchaseOrder extends Transaction {
     public JSONObject saveOthers() {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
-
+//        try {
+//            if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED)) {
+//                poJSON = updateStockRequest(Master().getTransactionStatus(), false);
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
+//            }
+//        
+//        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+//            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         poJSON.put("result", "success");
         return poJSON;
+
     }
 
     @Override
@@ -913,7 +942,8 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition + " AND a.cTranStat = '1'");
 
-        lsSQL = lsSQL + " GROUP BY a.sTransNox "
+        lsSQL = lsSQL + " AND b.nApproved <> (b.nIssueQty + b.nOrderQty) "
+                + " GROUP BY a.sTransNox "
                 + " ORDER BY a.dTransact DESC";
 
         System.out.println("Executing SQL: " + lsSQL);
@@ -1003,6 +1033,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
+    // Create SQL filter conditions
     String lsIndustryCondition = poGRider.getIndustry().isEmpty()
             ? "a.sIndstCdx LIKE '%'"
             : "a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry());
@@ -1013,9 +1044,9 @@ public class PurchaseOrder extends Transaction {
             ? "g.sSupplier LIKE '%'"
             : "g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID());
 
-    String lsFilterCondition = String.join(" AND ",
-            lsIndustryCondition, lsCompanyCondition, lsSupplier, "b.nApproved > 0");
+    String lsFilterCondition = String.join(" AND ", lsIndustryCondition, lsCompanyCondition, lsSupplier, "b.nApproved > 0");
 
+    // Build SQL Query
     String detailQuery = "SELECT b.sStockIDx " + 
                          "FROM inv_stock_request_master a " +
                          "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd " +
@@ -1026,6 +1057,7 @@ public class PurchaseOrder extends Transaction {
 
     System.out.println("Executing SQL: " + detailQuery);
 
+    // Fetch valid stock IDs
     Set<String> validStockIds = new HashSet<>();
     try (ResultSet rsDetail = poGRider.executeQuery(detailQuery)) {
         if (rsDetail == null) {
@@ -1038,12 +1070,20 @@ public class PurchaseOrder extends Transaction {
         }
     }
 
+    boolean allProcessed = true;
 
     for (int lnCtr = 0; lnCtr < loTrans.StockRequest().getDetailCount(); lnCtr++) {
         if (!validStockIds.contains(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
             continue; // Skip details that do not match the master conditions
         }
-
+        
+        // If at least one stock is not fully processed, set flag to false
+        if (loTrans.StockRequest().Detail(lnCtr).getApproved() != 
+            loTrans.StockRequest().Detail(lnCtr).getIssued() + 
+            loTrans.StockRequest().Detail(lnCtr).getPurchase()) {
+            allProcessed = false;
+        }
+        
         boolean exists = false;
         for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
             if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo()) &&
@@ -1054,23 +1094,31 @@ public class PurchaseOrder extends Transaction {
         }
 
         if (!exists) {
-                        if (loTrans.StockRequest().Detail(lnCtr).getApproved()
-                                - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase()) > 0) {
+            int remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved()
+                    - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase());
 
-                            AddDetail();
-                            int lnLastIndex = getDetailCount() - 1;
-                            Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-                            Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-                            Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
-                            Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
-                            Detail(lnLastIndex).setRecordOrder(0);
-                            Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
-                            Detail(lnLastIndex).setQuantity(0);
-                            Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
-                            Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
-                            Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
-                        }
-                    }
+            if (remainingStock > 0) {
+                AddDetail();
+                int lnLastIndex = getDetailCount() - 1;
+                Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
+                Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
+                Detail(lnLastIndex).setRecordOrder(0);
+                Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
+                Detail(lnLastIndex).setQuantity(0);
+                Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+                Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
+                Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
+            }
+        }
+    }
+
+    // ✅ Only check `allProcessed` **after** the loop
+    if (allProcessed) {
+        poJSON.put("result", "error");
+        poJSON.put("message", "All records are already processed!");
+        return poJSON;
     }
 
     poJSON.put("result", "success");
@@ -1078,39 +1126,92 @@ public class PurchaseOrder extends Transaction {
     return poJSON;
 }
 
-
-    
-    
-    
-
 //    public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
-//        poJSON = new JSONObject();
+//    poJSON = new JSONObject();
+//    InvWarehouseControllers loTrans = new InvWarehouseControllers(poGRider, logwrapr);
+//    poJSON = loTrans.StockRequest().InitTransaction();
 //
-//        InvWarehouseControllers loTrans = new InvWarehouseControllers(poGRider, logwrapr);
-//        poJSON = loTrans.StockRequest().InitTransaction();
+//    if (!"success".equals(poJSON.get("result"))) {
+//        poJSON.put("result", "error");
+//        poJSON.put("message", "No records found.");
+//        return poJSON;
+//    }
 //
-//        if ("success".equals(poJSON.get("result"))) {
-//            poJSON = loTrans.StockRequest().OpenTransaction(transactionNo);
+//    poJSON = loTrans.StockRequest().OpenTransaction(transactionNo);
+//    if (!"success".equals(poJSON.get("result"))) {
+//        poJSON.put("result", "error");
+//        poJSON.put("message", "No records found.");
+//        return poJSON;
+//    }
 //
-//            if ("success".equals(poJSON.get("result"))) {
-//                if (areAllStockRequestDetailsInPODetail(loTrans)) {
-//                    poJSON.put("result", "error");
-//                    poJSON.put("message", "All stock request details are already in purchase order detail.");
-//                    return poJSON;
-//                }
+//    if (areAllStockRequestDetailsInPODetail(loTrans)) {
+//        poJSON.put("result", "error");
+//        poJSON.put("message", "All stock request details are already in purchase order detail.");
+//        return poJSON;
+//    }
 //
-//                for (int lnCtr = 0; lnCtr < loTrans.StockRequest().getDetailCount(); lnCtr++) {
-//                    boolean lbExist = false;
+//    String lsIndustryCondition = poGRider.getIndustry().isEmpty()
+//            ? "a.sIndstCdx LIKE '%'"
+//            : "a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry());
+//    String lsCompanyCondition = Master().getCompanyID().isEmpty()
+//            ? "e.sCompnyID LIKE '%'"
+//            : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
+//    String lsSupplier = Master().getSupplierID().isEmpty()
+//            ? "g.sSupplier LIKE '%'"
+//            : "g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID());
 //
-//                    for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
-//                        if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo())
-//                                && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
-//                            lbExist = true;
-//                            break;
-//                        }
-//                    }
+//    String lsFilterCondition = String.join(" AND ",
+//            lsIndustryCondition, lsCompanyCondition, lsSupplier, "b.nApproved > 0");
 //
-//                    if (!lbExist) {
+//    String detailQuery = "SELECT b.sStockIDx " + 
+//                         "FROM inv_stock_request_master a " +
+//                         "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd " +
+//                         "LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox " +
+//                         "LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx " +
+//                         "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
+//    detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition + " AND a.cTranStat = '1'");
+//
+//    System.out.println("Executing SQL: " + detailQuery);
+//
+//    Set<String> validStockIds = new HashSet<>();
+//    try (ResultSet rsDetail = poGRider.executeQuery(detailQuery)) {
+//        if (rsDetail == null) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Query execution failed.");
+//            return poJSON;
+//        }
+//        while (rsDetail.next()) {
+//            validStockIds.add(rsDetail.getString("sStockIDx"));
+//        }
+//    }
+//
+//    boolean allProcessed = true;
+//    for (int lnCtr = 0; lnCtr < loTrans.StockRequest().getDetailCount(); lnCtr++) {
+//        if (!validStockIds.contains(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
+//            continue; // Skip details that do not match the master conditions
+//        }
+//        
+//        if (loTrans.StockRequest().Detail(lnCtr).getApproved() != 
+//        loTrans.StockRequest().Detail(lnCtr).getIssued() + 
+//        loTrans.StockRequest().Detail(lnCtr).getPurchase()) {
+//        
+//        allProcessed = false; // Found one that is NOT fully processed
+//        break; // No need to check further
+//        }
+//        
+//        
+//        boolean exists = false;
+//        for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
+//            if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo()) &&
+//                Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
+//                exists = true;
+//                break;
+//            }
+//        }
+//
+//        if (!exists) {
+//                        
+//                        
 //                        if (loTrans.StockRequest().Detail(lnCtr).getApproved()
 //                                - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase()) > 0) {
 //
@@ -1128,21 +1229,17 @@ public class PurchaseOrder extends Transaction {
 //                            Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
 //                        }
 //                    }
-//                }
-//                poJSON.put("result", "success");
-//                poJSON.put("message", "Record loaded successfully.");
-//                AddDetail();
-//            } else {
-//                poJSON.put("result", "error");
-//                poJSON.put("message", "No records found.");
-//            }
-//        } else {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "No records found.");
-//        }
-//
-//        return poJSON;
 //    }
+//    if (allProcessed) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "All records are already processed!");
+//            return poJSON;
+//    }
+//
+//    poJSON.put("result", "success");
+//    poJSON.put("message", "Record loaded successfully.");
+//    return poJSON;
+//}
 
     private Model_PO_Master POMasterList() {
         return new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
@@ -1155,6 +1252,136 @@ public class PurchaseOrder extends Transaction {
     public int getPOMasterCount() {
         return this.paPOMaster.size();
     }
+    
+    private StockRequest StockRequest(){
+        return new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
+    }
+
+
+private JSONObject updateStockRequest(String status, boolean isUpdateStatus) throws CloneNotSupportedException, SQLException, GuanzonException {
+    poJSON = new JSONObject();
+    int lnCtr, lnRow, lnList;
+    int lnRecQty = 0;
+    boolean lbExist = false;
+
+    // Update Stock Request
+    for (lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+        System.out.println("Detail(lnCtr).getOrderNo() : " + lnCtr + " : " + Detail(lnCtr).getSouceNo());
+        
+        if (Detail(lnCtr).getSouceNo() != null && !Detail(lnCtr).getSouceNo().isEmpty()) {
+            // Check for discrepancy
+            if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
+                if (!pbApproval && isUpdateStatus) {
+                    poJSON = ShowDialogFX.getUserApproval(poGRider);
+                    if (!"success".equals(poJSON.get("result"))) return poJSON;
+                    pbApproval = true; // User approval obtained
+                }
+            }
+            
+            // Check if order number exists in stock request list
+            lbExist = false;
+            lnList = -1;
+            for (lnRow = 0; lnRow < poStockRequest.size(); lnRow++) {
+                if (poStockRequest.get(lnRow).Master().getTransactionNo() != null &&
+                    poStockRequest.get(lnRow).Master().getTransactionNo().equals(Detail(lnCtr).getSouceNo())) {
+                    lbExist = true;
+                    lnList = lnRow;
+                    break;
+                }
+            }
+
+            if (!lbExist) {
+                StockRequest newRequest = StockRequest();
+                newRequest.InitTransaction();
+                newRequest.OpenTransaction(Detail(lnCtr).getSouceNo());
+                newRequest.UpdateTransaction();
+                poStockRequest.add(newRequest);
+                lnList = poStockRequest.size() - 1;
+            }
+
+            if (lnList >= 0) { // Ensure lnList is valid
+                for (lnRow = 0; lnRow < poStockRequest.get(lnList).getDetailCount(); lnRow++) {
+                    if (Detail(lnCtr).getStockID().equals(poStockRequest.get(lnList).Detail(lnRow).getStockId())) {
+                        // Get total received quantity
+                        lnRecQty = getReceivedQty(Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID());
+                        
+                        // Process different statuses
+                        switch (status) {
+                            case PurchaseOrderStatus.CONFIRMED:
+                            case PurchaseOrderStatus.APPROVED:
+                                break;
+                            case PurchaseOrderStatus.RETURNED:
+                                break;
+                        }
+                        
+                        // Update stock request with the correct quantity
+                        StockRequest stockRequest = new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
+                        stockRequest.InitTransaction();
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                        stockRequest.OpenTransaction(Detail(lnCtr).getSouceNo());
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                        stockRequest.UpdateTransaction();
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                        // Update the corresponding stock request detail with the correct quantity
+                        stockRequest.Detail(lnRow).setPurchase(lnRecQty);
+                        stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
+                        
+                        // Save the transaction
+                        stockRequest.SaveTransaction();
+                        if (!"success".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                    }
+                }
+            }
+        }
+    }
+    poJSON.put("result", "success");
+    return poJSON;
+}
+
+    
+    
+    private int getReceivedQty(String orderNo, String stockId) throws SQLException, GuanzonException {
+    poJSON = new JSONObject();
+    int lnRecQty = 0;
+    String lsSQL =    "SELECT b.nQuantity AS nQuantity " 
+                    + "FROM po_master a "
+                    + "LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox ";
+    
+    // Add conditions to SQL query
+    lsSQL = MiscUtil.addCondition(lsSQL, "a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo()) 
+                                        + " AND b.sSourceNo = " + SQLUtil.toSQL(orderNo) 
+                                        + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
+                                        + " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
+                                        + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) + ")");
+    
+    ResultSet loRS = poGRider.executeQuery(lsSQL);
+    try {
+        // Check if result set contains records
+        if (loRS != null && loRS.next()) {
+            // Iterate through result set and sum quantities
+            do {
+                lnRecQty = loRS.getInt("nQuantity");
+            } while (loRS.next()); // Continue to sum if there are multiple rows
+        }
+    } catch (SQLException e) {
+        // Handle exception: log or rethrow as appropriate
+        System.out.println("Error loading received quantities: " + e.getMessage());
+        lnRecQty = 0;
+    } finally {
+        // Always close ResultSet to avoid memory leak
+        MiscUtil.close(loRS);
+    }
+    return lnRecQty;
+}
+
 
     public JSONObject getPurchaseOrder(String fsIndustryID, String fsCompanyID, String fsSupplierID, String fsReferID) throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();

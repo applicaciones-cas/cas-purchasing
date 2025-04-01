@@ -101,7 +101,7 @@ public class PurchaseOrderReceiving extends Transaction{
         return newTransaction();
     }
     
-    public JSONObject SaveTransaction() throws SQLException, GuanzonException{
+    public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException{
         return saveTransaction();
     }
     
@@ -225,7 +225,7 @@ public class PurchaseOrderReceiving extends Transaction{
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
 
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbPosted);
+//        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbPosted);
 
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
 
@@ -350,7 +350,7 @@ public class PurchaseOrderReceiving extends Transaction{
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
 
         //change status
-        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbReturn);
+//        poJSON =  statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks,  lsStatus, !lbReturn);
 
         if (!"success".equals((String) poJSON.get("result"))) return poJSON;
 
@@ -559,10 +559,10 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = object.searchRecord(value, byCode,poGRider.getIndustry());
         if ("success".equals((String) poJSON.get("result"))){
             Detail(row).setBrandId(object.getModel().getBrandId());
-            Detail(row).setModelVariantId("");
+//            Detail(row).setModelVariantId("");
         } else {
             Detail(row).setBrandId("");
-            Detail(row).setModelVariantId("");
+//            Detail(row).setModelVariantId("");
         }
         
         return poJSON;
@@ -591,13 +591,13 @@ public class PurchaseOrderReceiving extends Transaction{
             
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).setModelVariantId(object.getModel().getVariantId());
+//            Detail(row).setModelVariantId(object.getModel().getVariantId());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         } else {
             Detail(row).setStockId("");
             Detail(row).setUnitType("");
             Detail(row).setBrandId("");
-            Detail(row).setModelVariantId("");
+//            Detail(row).setModelVariantId("");
             Detail(row).setUnitPrce(0.00);
         }
 
@@ -1646,7 +1646,7 @@ public class PurchaseOrderReceiving extends Transaction{
         return lnRecQty;
     }
     
-     private JSONObject updateOthers() {
+     private JSONObject updateOthers() throws CloneNotSupportedException {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
         int lnCtr, lnRow;
