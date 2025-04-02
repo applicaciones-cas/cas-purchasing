@@ -936,6 +936,7 @@ public class PurchaseOrder extends Transaction {
         }
         return true;
     }
+   
 
     public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
@@ -1030,14 +1031,14 @@ public class PurchaseOrder extends Transaction {
                     int lnLastIndex = getDetailCount() - 1;
                     Detail(lnLastIndex).setSouceNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
                     Detail(lnLastIndex).setTransactionNo(loTrans.StockRequest().Detail(lnCtr).getTransactionNo());
-                    Detail(lnLastIndex).setEntryNo(lnLastIndex + 1);
+                    Detail(lnLastIndex).setEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
                     Detail(lnLastIndex).setStockID(loTrans.StockRequest().Detail(lnCtr).getStockId());
                     Detail(lnLastIndex).setRecordOrder(0);
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
-                    Detail(lnLastIndex).setReqEntryNox(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
-                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
-                    Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
+//                    Detail(lnLastIndex).setReqEntryNox(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
+//                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
+//                    Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
                     Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
                 }
             }
@@ -1131,15 +1132,15 @@ public class PurchaseOrder extends Transaction {
 
                             // Update stock request with the correct quantity
                             StockRequest stockRequest = new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
-                            stockRequest.InitTransaction();
+                            poJSON = stockRequest.InitTransaction();
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
-                            stockRequest.OpenTransaction(Detail(lnCtr).getSouceNo());
+                            poJSON = stockRequest.OpenTransaction(Detail(lnCtr).getSouceNo());
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
-                            stockRequest.UpdateTransaction();
+                            poJSON = stockRequest.UpdateTransaction();
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
@@ -1148,7 +1149,7 @@ public class PurchaseOrder extends Transaction {
                             stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
 
                             // Save the transaction
-                            stockRequest.SaveTransaction();
+                            poJSON = stockRequest.SaveTransaction();
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
