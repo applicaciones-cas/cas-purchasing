@@ -234,6 +234,13 @@ public class Model_PO_Detail extends Model {
         return poBrand.getBrandId();
     }
 
+    public JSONObject setReqEntryNox(Integer brandId){          
+        return poInvStockDetail.setEntryNumber(brandId);
+    }
+    
+    public Integer getReqEntryNox(){
+        return poInvStockDetail.getEntryNumber();
+    }
     
 
     //reference object models
@@ -526,6 +533,26 @@ public class Model_PO_Detail extends Model {
     }
 
     public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sSourceNo"))) {
+            if (poInvStockDetail.getEditMode() == EditMode.READY
+                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
+                return poInvStockDetail;
+            } else {
+                poJSON = poInvStockDetail.openRecord((String) getValue("sSourceNo"), getReqEntryNox());
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockDetail;
+                } else {
+                    poInvStockDetail.initialize();
+                    return poInvStockDetail;
+                }
+            }
+        } else {
+            poInvStockDetail.initialize();
+            return poInvStockDetail;
+        }
+    }
+    
+    public Model_Inv_Stock_Request_Detail InvStockRequestDetailx() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sSourceNo"))) {
             if (poInvStockDetail.getEditMode() == EditMode.READY
                     && poInvStockDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
