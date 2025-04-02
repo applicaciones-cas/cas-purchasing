@@ -30,7 +30,6 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
-import org.guanzon.appdriver.agent.systables.Model_Transaction_Attachment;
 import org.guanzon.appdriver.agent.systables.SysTableContollers;
 import org.guanzon.appdriver.agent.systables.TransactionAttachment;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -88,6 +87,7 @@ public class PurchaseOrderReceiving extends Transaction{
         paOthers = new ArrayList<>();
         paDetail = new ArrayList<>();
         paDetailRemoved = new ArrayList<>();
+        paAttachments = new ArrayList<>();
         paPOMaster = new ArrayList<>();
         paPurchaseOrder = new ArrayList<>();
         paInventoryTransaction = new ArrayList<>();
@@ -570,16 +570,30 @@ public class PurchaseOrderReceiving extends Transaction{
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         
-        if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
-            poJSON = object.searchRecord(value, byCode, null,null, poGRider.getIndustry()); 
-        } else {
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, poGRider.getIndustry());
-        }
+//        if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+//            poJSON = object.searchRecord(value, byCode, null,null, poGRider.getIndustry()); 
+//        } else {
+//            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, poGRider.getIndustry());
+//        }
+        
+        poJSON = object.searchRecord(value, byCode);
+        System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))){
             poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row, false);
             if("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
+            
+//            for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+//                if(lnRow != row ){
+//                    if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
+//                        (Detail(lnRow).getStockId().equals(object.getModel().getStockId()))) {
+//                        poJSON.put("result", "error");
+//                        poJSON.put("message", "Barcode: " + object.getModel().getBarCode()+ " already exist in table at row " + (lnRow+1) + ".");
+//                        return poJSON;
+//                    } 
+//                }
+//            }
             
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
@@ -600,9 +614,20 @@ public class PurchaseOrderReceiving extends Transaction{
             poJSON = object.searchRecord(value, byCode, Master().getSupplierId(), null, poGRider.getIndustry());
         }
         if ("success".equals((String) poJSON.get("result"))){
-            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row, false);
-            if("error".equals((String) poJSON.get("result"))){
-                return poJSON;
+//            poJSON = checkExistingStock(object.getModel().getStockId(),  object.getModel().getBarCode(),"1900-01-01", row, false);
+//            if("error".equals((String) poJSON.get("result"))){
+//                return poJSON;
+//            }
+            
+            for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
+                if(lnRow != row ){
+                    if  ((Detail(lnRow).getOrderNo().equals("") || Detail(lnRow).getOrderNo() == null) &&
+                        (Detail(lnRow).getStockId().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Barcode: " + object.getModel().getBarCode()+ " already exist in table at row " + (lnRow+1) + ".");
+                        return poJSON;
+                    } 
+                }
             }
             
             Detail(row).setStockId(object.getModel().getStockId());
@@ -945,12 +970,20 @@ public class PurchaseOrderReceiving extends Transaction{
         return new SysTableContollers(poGRider, null).TransactionAttachment();
     }
     
+    private List<TransactionAttachment> TransactionAttachmentList() {
+        return paAttachments;
+    }
+    
     public TransactionAttachment TransactionAttachmentList(int row) {
         return (TransactionAttachment) paAttachments.get(row);
     }
     
     public int getTransactionAttachmentCount() {
-       return this.paAttachments.size();
+        if(paAttachments == null){
+            paAttachments = new ArrayList<>();
+        }
+        
+       return paAttachments.size();
     }
     
     public JSONObject addAttachment() throws SQLException, GuanzonException{
@@ -1248,40 +1281,41 @@ public class PurchaseOrderReceiving extends Transaction{
 
                     lnSerialCnt++;
                 }
-            } else {
-                //Remove row for excess por serial
-                while(lnSerialCnt > lnQuantity){
-                    //get total count of serial per entry no
-                    for (int lnCtr = getPurchaseOrderReceivingSerialCount() - 1; lnCtr >= 0; lnCtr--) {  // Iterate backward
-                        if(paOthers.get(lnCtr).getEntryNo() == entryNo ){
-                            //Priority to remove the empty serial01 || emptry serial02
-                            if((paOthers.get(lnCtr).getSerial01() == null || "".equals(paOthers.get(lnCtr).getSerial01())) ||
-                                    (paOthers.get(lnCtr).getSerial02() == null || "".equals(paOthers.get(lnCtr).getSerial02()))){
-                                paOthers.remove(lnCtr);
-                                lnSerialCnt--;
-                                break;
-                            } 
-                            
-                            if ((paOthers.get(lnCtr).getSerial01() != null && !"".equals(paOthers.get(lnCtr).getSerial01())) ||
-                                    (paOthers.get(lnCtr).getSerial02() != null && !"".equals(paOthers.get(lnCtr).getSerial02()))){
-                                if(!lbShowMessage){
-                                    if (ShowMessageFX.OkayCancel(null, "Purchase Order Receiving Serial", 
-                                            "The quantity has been reduced. Do you want to disregard the changes and delete the serial number? ") == true) {
-                                    } else {
-                                        poJSON.put("result", "error");
-                                        poJSON.put("message", "You have cancelled the operation. The serial number was not deleted.");
-                                        return poJSON; 
-                                    }
-                                    lbShowMessage = true; //set true to identify that prompt message is already called
-                                }
-                                paOthers.remove(lnCtr);
-                                lnSerialCnt--;
-                                break;
-                            } 
-                        } 
-                    }
-                }
-            }
+            } 
+//            else {
+//                //Remove row for excess por serial
+//                while(lnSerialCnt > lnQuantity){
+//                    //get total count of serial per entry no
+//                    for (int lnCtr = getPurchaseOrderReceivingSerialCount() - 1; lnCtr >= 0; lnCtr--) {  // Iterate backward
+//                        if(paOthers.get(lnCtr).getEntryNo() == entryNo ){
+//                            //Priority to remove the empty serial01 || emptry serial02
+//                            if((paOthers.get(lnCtr).getSerial01() == null || "".equals(paOthers.get(lnCtr).getSerial01())) ||
+//                                    (paOthers.get(lnCtr).getSerial02() == null || "".equals(paOthers.get(lnCtr).getSerial02()))){
+//                                paOthers.remove(lnCtr);
+//                                lnSerialCnt--;
+//                                break;
+//                            } 
+//                            
+//                            if ((paOthers.get(lnCtr).getSerial01() != null && !"".equals(paOthers.get(lnCtr).getSerial01())) ||
+//                                    (paOthers.get(lnCtr).getSerial02() != null && !"".equals(paOthers.get(lnCtr).getSerial02()))){
+//                                if(!lbShowMessage){
+//                                    if (ShowMessageFX.OkayCancel(null, "Purchase Order Receiving Serial", 
+//                                            "The quantity has been reduced. Do you want to disregard the changes and delete the serial number? ") == true) {
+//                                    } else {
+//                                        poJSON.put("result", "error");
+//                                        poJSON.put("message", "You have cancelled the operation. The serial number was not deleted.");
+//                                        return poJSON; 
+//                                    }
+//                                    lbShowMessage = true; //set true to identify that prompt message is already called
+//                                }
+//                                paOthers.remove(lnCtr);
+//                                lnSerialCnt--;
+//                                break;
+//                            } 
+//                        } 
+//                    }
+//                }
+//            }
         }
         
         poJSON.put("result", "success");
@@ -1372,6 +1406,87 @@ public class PurchaseOrderReceiving extends Transaction{
     
     public List<Model_POR_Serial> PurchaseOrderReceivingSerialList() {
         return paOthers;
+    }
+    
+    public JSONObject removePurchaseOrderReceivingSerial(int entryNo){
+        poJSON = new JSONObject();
+        int lnEntryNo = 0;
+        
+        Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
+        while (detail.hasNext()) {
+            Model_POR_Serial item = detail.next(); 
+
+            if (item.getEntryNo() == entryNo ) {
+                detail.remove();
+            } 
+            
+            lnEntryNo = item.getEntryNo() - entryNo;
+            if (lnEntryNo == 1) {
+                item.setEntryNo(entryNo);
+            } 
+            if (lnEntryNo > 1) {
+                item.setEntryNo(entryNo+(lnEntryNo-1));
+            }
+        }
+        
+        return poJSON;
+    }
+    
+    public JSONObject checkPurchaseOrderReceivingSerial(int entryNo, int quantity){
+        poJSON = new JSONObject();
+        int lnQty = Detail(entryNo-1).getQuantity().intValue();
+        boolean lbChecked = false;
+        Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
+        while (lnQty > quantity){
+            
+            //1. Priority to remove the empty fields
+            while (detail.hasNext()) {
+                Model_POR_Serial item = detail.next(); 
+                if (item.getEntryNo() == entryNo) {
+                    if(item.getSerialId() == null || "".equals(item.getSerialId())){
+                        if((item.getSerial01() == null || "".equals(item.getSerial01()))
+                                && (item.getSerial02() == null || "".equals(item.getSerial02()))){
+                            detail.remove();
+                            lnQty = lnQty - 1;
+                            break;
+                        }
+                    } 
+                } 
+            }
+            
+            //2. Remove serials with value
+            while (detail.hasNext()) {
+                Model_POR_Serial item = detail.next(); 
+                if (item.getEntryNo() == entryNo) {
+                    if(item.getSerialId() == null || "".equals(item.getSerialId())){
+                        if((item.getSerial01() != null || !"".equals(item.getSerial01()))
+                                || (item.getSerial02() != null || !"".equals(item.getSerial02()))){
+                            detail.remove();
+                            lnQty = lnQty - 1;
+                            break;
+                        }
+                    } 
+                } 
+            }
+            
+            //2. Check for serial Id: Do not allow to remove if exist
+            while (detail.hasNext()) {
+                Model_POR_Serial item = detail.next(); 
+                if (item.getEntryNo() == entryNo) {
+                    if(item.getSerialId() != null || !"".equals(item.getSerialId())){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Serial ID already exist, cannot be deleted.");
+                        return poJSON;
+                    }
+                } 
+            }
+            
+            if(getPurchaseOrderReceivingSerialCount() <= 0 || lbChecked){
+                break;
+            }
+        }
+        
+        return poJSON;
     }
     
     @Override
@@ -1504,6 +1619,17 @@ public class PurchaseOrderReceiving extends Transaction{
 //            PurchaseOrderReceivingSerialList(lnCtr).setModifiedDate(poGRider.getServerDate());
 //        }
 
+        if(getTransactionAttachmentCount() > 0){
+            Iterator<TransactionAttachment> attachment = TransactionAttachmentList().iterator();
+            while (attachment.hasNext()) {
+                TransactionAttachment item = attachment.next(); 
+
+                if ((String) item.getModel().getFileName() == null || "".equals(item.getModel().getFileName())) {
+                    attachment.remove(); 
+                }
+            }
+        }
+
         //Save Transaction Attachments
         for(int lnCtr = 0; lnCtr <= getTransactionAttachmentCount()-1; lnCtr++){
             TransactionAttachmentList(lnCtr).getModel().setSourceCode(SOURCE_CODE);
@@ -1585,6 +1711,15 @@ public class PurchaseOrderReceiving extends Transaction{
                 //5. Save Purchase Order Receiving Serial
                 paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
                 poJSON = paOthers.get(lnRow).saveRecord();
+                if("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                } 
+            }
+            
+            //Save Attachments
+            for(lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++){
+                paAttachments.get(lnCtr).setWithParentClass(true);
+                poJSON = paAttachments.get(lnCtr).saveRecord();
                 if("error".equals((String) poJSON.get("result"))){
                     return poJSON;
                 } 
