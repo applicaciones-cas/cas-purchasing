@@ -643,6 +643,11 @@ public class PurchaseOrderReceiving extends Transaction{
         poJSON = object.searchRecord(value, byCode,poGRider.getIndustry());
         if ("success".equals((String) poJSON.get("result"))){
             if(!object.getModel().getBrandId().equals(Detail(row).getBrandId())){
+                poJSON = checkExistingSerialId(row);
+                if("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                }
+                
                 //remove existing por serial
                 removePurchaseOrderReceivingSerial(row);
                 Detail(row).setStockId("");
@@ -673,6 +678,10 @@ public class PurchaseOrderReceiving extends Transaction{
             }
             
             if(!object.getModel().getStockId().equals(Detail(row).getStockId())){
+                poJSON = checkExistingSerialId(row);
+                if("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                }
                 //remove existing por serial
                 removePurchaseOrderReceivingSerial(row);
             }
@@ -789,7 +798,7 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
-    public JSONObject removePOinPORDetails(String searchBy){
+    public JSONObject xremovePOinPORDetails(String searchBy){
         poJSON = new JSONObject();
         boolean lbShow = true;
         Iterator<Model> detail = Detail().iterator();
@@ -1340,6 +1349,23 @@ public class PurchaseOrderReceiving extends Transaction{
         return paOthers;
     }
     
+    public JSONObject checkExistingSerialId(int entryNo){
+        poJSON = new JSONObject();
+    
+        //check when serial id already exist do not allow to change brand / model
+        for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1; lnCtr++){
+            if(paOthers.get(lnCtr).getEntryNo() == entryNo){
+                if(paOthers.get(lnCtr).getSerialId() != null && !"".equals(paOthers.get(lnCtr).getSerialId())){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Serial ID already exist. Changing of brand / model is not allowed.");
+                    return poJSON;
+                }
+            }
+        }
+        return poJSON;
+    }
+    
+    //Use when changing of brand / model : remove all existing serials
     public JSONObject removePurchaseOrderReceivingSerial(int entryNo){
         poJSON = new JSONObject();
         int lnEntryNo = 0;
@@ -1364,13 +1390,15 @@ public class PurchaseOrderReceiving extends Transaction{
         return poJSON;
     }
     
+    //Use for changing of quantity in por detail
     public JSONObject checkPurchaseOrderReceivingSerial(int entryNo, int quantity){
         poJSON = new JSONObject();
         int lnQty = Detail(entryNo-1).getQuantity().intValue();
+        int lnEntryNo = 0;
         boolean lbChecked = false;
         Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
+        
         while (lnQty > quantity){
-            
             //1. Priority to remove the empty fields
             while (detail.hasNext()) {
                 Model_POR_Serial item = detail.next(); 
@@ -1379,11 +1407,11 @@ public class PurchaseOrderReceiving extends Transaction{
                         if((item.getSerial01() == null || "".equals(item.getSerial01()))
                                 && (item.getSerial02() == null || "".equals(item.getSerial02()))){
                             detail.remove();
-                            lnQty = lnQty - 1;
+                            lnQty--;
                             break;
                         }
                     } 
-                } 
+                }
             }
             
             //2. Remove serials with value
@@ -1394,14 +1422,14 @@ public class PurchaseOrderReceiving extends Transaction{
                         if((item.getSerial01() != null || !"".equals(item.getSerial01()))
                                 || (item.getSerial02() != null || !"".equals(item.getSerial02()))){
                             detail.remove();
-                            lnQty = lnQty - 1;
+                            lnQty--;
                             break;
                         }
                     } 
                 } 
             }
             
-            //2. Check for serial Id: Do not allow to remove if exist
+            //3. Check for serial Id: Do not allow to remove if exist
             while (detail.hasNext()) {
                 Model_POR_Serial item = detail.next(); 
                 if (item.getEntryNo() == entryNo) {
@@ -1410,6 +1438,18 @@ public class PurchaseOrderReceiving extends Transaction{
                         poJSON.put("message", "Serial ID already exist, cannot be deleted.");
                         return poJSON;
                     }
+                } 
+            }
+            
+            //4. Update por serial entry no
+            while (detail.hasNext()) {
+                Model_POR_Serial item = detail.next(); 
+                lnEntryNo = item.getEntryNo() - entryNo;
+                if (lnEntryNo == 1) {
+                    item.setEntryNo(entryNo);
+                } 
+                if (lnEntryNo > 1) {
+                    item.setEntryNo(entryNo+(lnEntryNo-1));
                 } 
             }
             
@@ -1597,7 +1637,7 @@ public class PurchaseOrderReceiving extends Transaction{
                     } 
                     
                 } else {
-                    //1.2 Update Inventory Serial / Registration//Create New Inventory Serial
+                    //1.2 Update Inventory Serial / Registration
                     poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
                     if("error".equals((String) poJSON.get("result"))){
                         return poJSON; //TODO
