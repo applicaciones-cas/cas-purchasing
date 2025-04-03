@@ -41,11 +41,10 @@ public class testPurchaseOrderReceivingMaster {
         trans = new PurchaseOrderReceivingControllers(instance, null).PurchaseOrderReceiving();
     }
 
-//    @Test
+    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "02";
-        String categoryId = "0002";
         String remarks = "this is a test RSIE Class 3.";
         
         String stockId = "M00125000001";
@@ -67,31 +66,21 @@ public class testPurchaseOrderReceivingMaster {
             } 
             
             try {
-                trans.Master().setIndustryId(industryId); //direct assignment of value
-                System.out.println("Industry ID : " + instance.getIndustry());
-                System.out.println("Industry : " + trans.Master().Industry().getDescription());
-                System.out.println("TransNox : " + trans.Master().getTransactionNo());
                 
+                trans.Master().setIndustryId(industryId); //direct assignment of value
+                Assert.assertEquals(trans.Master().getIndustryId(), industryId);
                 trans.Master().setTransactionDate(instance.getServerDate()); //direct assignment of value
                 Assert.assertEquals(trans.Master().getTransactionDate(), instance.getServerDate());
+                trans.Master().setReferenceDate(instance.getServerDate()); //direct assignment of value
+                Assert.assertEquals(trans.Master().getReferenceDate(), instance.getServerDate());
+                trans.Master().setReferenceNo("01"); //direct assignment of value
+                Assert.assertEquals(trans.Master().getReferenceNo(), "01");
                 trans.Master().setCompanyId("0002"); //direct assignment of value
-                Assert.assertEquals(trans.Master().getTransactionDate(), instance.getServerDate());
-                
-//                trans.Master().setRefernceDate(instance.getServerDate()); //direct assignment of value
-//                Assert.assertEquals(trans.Master().getRefernceDate(), instance.getServerDate());
-//                
-//                trans.Master().setDueDate(instance.getServerDate()); //direct assignment of value
-//                Assert.assertEquals(trans.Master().getDueDate(), instance.getServerDate());
-//                
-//                trans.Master().setTermDueDate(instance.getServerDate()); //direct assignment of value
-//                Assert.assertEquals(trans.Master().getTermDueDate(), instance.getServerDate());
-            
-                //you can use trans.SearchBranch() when on UI 
-    //            loJSON = trans.SearchBranch("", false);
-    //            if (!"success".equals((String) loJSON.get("result"))){
-    //                System.err.println((String) loJSON.get("message"));
-    //                Assert.fail();
-    //            } 
+                Assert.assertEquals(trans.Master().getCompanyId(), "0002");
+                trans.Master().setTruckingId("C00124000010"); //direct assignment of value
+                Assert.assertEquals(trans.Master().getTruckingId(), "C00124000010");
+                trans.Master().setTermCode("0000003"); //direct assignment of value
+                Assert.assertEquals(trans.Master().getTermCode(), "0000003");
                 trans.Master().setBranchCode(branchCd); //direct assignment of value
                 Assert.assertEquals(trans.Master().getBranchCode(), branchCd);
 
@@ -101,18 +90,7 @@ public class testPurchaseOrderReceivingMaster {
     //                System.err.println((String) loJSON.get("message"));
     //                Assert.fail();
     //            } 
-                trans.Master().setIndustryId(industryId); //direct assignment of value
-                Assert.assertEquals(trans.Master().getIndustryId(), industryId);
-
-                //you can use trans.SearchCategory() when on UI 
-    //            loJSON = trans.SearchCategory("", false);
-    //            if (!"success".equals((String) loJSON.get("result"))){
-    //                System.err.println((String) loJSON.get("message"));
-    //                Assert.fail();
-    //            } 
-    //            trans.Master().setCategoryId(categoryId); //direct assignment of value
-    //            Assert.assertEquals(trans.Master().getCategoryId(), categoryId);
-
+                
                 trans.Master().setRemarks(remarks);
                 Assert.assertEquals(trans.Master().getRemarks(), remarks);
 
@@ -137,11 +115,12 @@ public class testPurchaseOrderReceivingMaster {
 
                 trans.AddDetail();
                 
-                System.out.println("unit price" + trans.Detail(trans.getDetailCount() - 1).getUnitPrce());
+                trans.computeFields();
                 
                 //populate POR Serial
-                loJSON = trans.getPurchaseOrderReceivingSerial(2);
+                loJSON = trans.getPurchaseOrderReceivingSerial(3);
                 if("success".equals((String) loJSON.get("result"))){
+                    System.out.println("inv serial cnt" + trans.getPurchaseOrderReceivingSerialCount());
                     trans.PurchaseOrderReceivingSerialList(0).setSerial01("0011");
                     trans.PurchaseOrderReceivingSerialList(0).setSerial02("0013");
                     trans.PurchaseOrderReceivingSerialList(0).setPlateNo("001sa1");
@@ -150,15 +129,17 @@ public class testPurchaseOrderReceivingMaster {
                     trans.PurchaseOrderReceivingSerialList(0).setStockId("333");
                 }
                 
+                System.out.println("Industry ID : " + instance.getIndustry());
+                System.out.println("Industry : " + trans.Master().Industry().getDescription());
+                System.out.println("TransNox : " + trans.Master().getTransactionNo());
+                
                 loJSON = trans.SaveTransaction();
                 if (!"success".equals((String) loJSON.get("result"))) {
                     System.err.println((String) loJSON.get("message"));
                     Assert.fail();
                 }
             
-            } catch (SQLException ex) {
-                Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (GuanzonException ex) {
+            } catch (SQLException | GuanzonException ex) {
                 Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
             }
         } catch (ExceptionInInitializerError e) {
@@ -204,9 +185,7 @@ public class testPurchaseOrderReceivingMaster {
                 System.out.println("PO Company ->> " + trans.PurchaseOrderList(lnCtr).Company().getCompanyName());
                 System.out.println("PO Supplier ->> " + trans.PurchaseOrderList(lnCtr).Supplier().getCompanyName());
                 System.out.println("----------------------------------------------------------------------------------");
-            } catch (GuanzonException ex) {
-                Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (SQLException ex) {
+            } catch (GuanzonException | SQLException ex) {
                 Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -246,9 +225,7 @@ public class testPurchaseOrderReceivingMaster {
         } catch (CloneNotSupportedException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
-        } catch (SQLException ex) {
-            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (GuanzonException ex) {
+        } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
         }
         
@@ -295,7 +272,7 @@ public class testPurchaseOrderReceivingMaster {
         
     }   
     
-    @Test
+//    @Test
     public void testConfirmTransaction() {
         JSONObject loJSON;
         
@@ -306,7 +283,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = trans.OpenTransaction("M00125000001");
+            loJSON = trans.OpenTransaction("M00125000048");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -337,9 +314,7 @@ public class testPurchaseOrderReceivingMaster {
         } catch (CloneNotSupportedException |ParseException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
-        } catch (SQLException ex) {
-            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (GuanzonException ex) {
+        } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
         }
         
