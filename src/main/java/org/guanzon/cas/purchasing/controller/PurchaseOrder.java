@@ -431,7 +431,7 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject SearchBarcode(String value, boolean byCode, int row)
-            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
@@ -443,26 +443,24 @@ public class PurchaseOrder extends Transaction {
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
 
         String scannedStockID = object.getModel().getStockId();
-        if (supplier != null) {
-            for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-                if (lnCtr != row) {
-                    String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                    String existingStockID = (String) Detail(lnCtr).getStockID();
-                    if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "This barcode is already added in another row.");
-                        return poJSON;
-                    }
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
                 }
             }
-
             Detail(row).setStockID(scannedStockID);
-            AddDetail();
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         }
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,
+            NullPointerException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
@@ -476,24 +474,20 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         String scannedStockID = object.getModel().getStockId();
-        if (supplier != null) {
-            for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-                if (lnCtr != row) {
-                    String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                    String existingStockID = (String) Detail(lnCtr).getStockID();
-                    if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "This barcode is already added in another row.");
-                        return poJSON;
-                    }
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+            if (lnCtr != row) {
+                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
+                String existingStockID = (String) Detail(lnCtr).getStockID();
+                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "This barcode is already added in another row.");
+                    return poJSON;
                 }
             }
-
-            Detail(row).setStockID(scannedStockID);
-            Detail(row).Inventory().setBrandId(object.getModel().getBrandId());
-            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-            AddDetail();
         }
+
+        Detail(row).setStockID(scannedStockID);
+        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
         return poJSON;
     }
 
@@ -551,10 +545,9 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException {
+    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException, NullPointerException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
-//        object.getModel().setBrandId( Detail(row).Inventory().getBrandId());
 
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
@@ -562,7 +555,6 @@ public class PurchaseOrder extends Transaction {
 
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
         if ("success".equals((String) poJSON.get("result"))) {
-            if (supplier != null){
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
                     if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
@@ -576,7 +568,6 @@ public class PurchaseOrder extends Transaction {
 
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-            }
         } else {
             Detail(row).setStockID("");
             Detail(row).setBrandId("");
@@ -924,7 +915,8 @@ public class PurchaseOrder extends Transaction {
 
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
                 if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo())
-                        && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId())) {
+                        && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId()
+                        )) {
                     found = true;
                     break;
                 }
@@ -936,7 +928,6 @@ public class PurchaseOrder extends Transaction {
         }
         return true;
     }
-   
 
     public JSONObject addStockRequestOrdersToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
@@ -1036,7 +1027,8 @@ public class PurchaseOrder extends Transaction {
                     Detail(lnLastIndex).setRecordOrder(0);
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
-//                    Detail(lnLastIndex).setReqEntryNox(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
+
+                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
 //                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
 //                    Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
                     Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
@@ -1144,8 +1136,9 @@ public class PurchaseOrder extends Transaction {
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
+                            int currentqty = stockRequest.Detail(lnRow).getPurchase();
                             // Update the corresponding stock request detail with the correct quantity
-                            stockRequest.Detail(lnRow).setPurchase(lnRecQty);
+                            stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
                             stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
 
                             // Save the transaction

@@ -224,17 +224,22 @@ public class Model_PO_Detail extends Model {
     public Date getModifiedDate() {
         return (Date) getValue("dModified");
     }
-    
-    
-    public JSONObject setBrandId(String brandId){          
+
+    public JSONObject setBrandId(String brandId) {
         return poBrand.setBrandId(brandId);
     }
-    
-    public String getBrandId(){
+
+    public String getBrandId() {
         return poBrand.getBrandId();
     }
 
-    
+    public JSONObject setSourceEntryNo(Number entryNo) {
+        return setValue("nSrEtryNo", entryNo);
+    }
+
+    public Number getSourceEntryNo() {
+        return (Number) getValue("nSrEtryNo");
+    }
 
     //reference object models
     public Model_Branch Branch() throws GuanzonException, SQLException {
@@ -382,19 +387,20 @@ public class Model_PO_Detail extends Model {
             return poInventoryMaster;
         }
     }
+
     public Model_Brand Brand() throws GuanzonException, SQLException {
         if (!"".equals(getBrandId())) {
 //            if (poBrand.getEditMode() == EditMode.READY
 //                    && poBrand.getBrandId().equals(getBrandId())) {
 //                return poBrand;
 //            } else {
-                poJSON = poBrand.openRecord(getBrandId());
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poBrand;
-                } else {
-                    poBrand.initialize();
-                    return poBrand;
-                }
+            poJSON = poBrand.openRecord(getBrandId());
+            if ("success".equals((String) poJSON.get("result"))) {
+                return poBrand;
+            } else {
+                poBrand.initialize();
+                return poBrand;
+            }
 //            }
         } else {
             poBrand.initialize();
@@ -422,7 +428,6 @@ public class Model_PO_Detail extends Model {
 //            return poBrand;
 //        }
 //    }
-
     public Model_Color Color() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sColorIDx"))) {
             if (poColor.getEditMode() == EditMode.READY
@@ -525,22 +530,17 @@ public class Model_PO_Detail extends Model {
         }
     }
 
-
-    
     public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sSourceNo"))) {
             if (poInvStockDetail.getEditMode() == EditMode.READY
                     && poInvStockDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
                 return poInvStockDetail;
             } else {
-                poJSON = poInvStockDetail.openRecord((String) getValue("sSourceNo"), getValue("nEntryNox"));
+                poJSON = poInvStockDetail.openRecordByReference((String) getValue("sSourceNo"), getValue("sStockIDx"));
                 if ("success".equals((String) poJSON.get("result"))) {
-                    System.out.println("trabsNox: " + poInvStockDetail.getTransactionNo());
-                    System.out.println("stockIDx: " + poInvStockDetail.getStockId());
-                    System.out.println("stockIDx: " + poInvStockDetail.getApproved());
                     return poInvStockDetail;
                 } else {
-                    poInvStockDetail.initialize();
+                    poInvStockMaster.initialize();
                     return poInvStockDetail;
                 }
             }
@@ -549,5 +549,4 @@ public class Model_PO_Detail extends Model {
             return poInvStockDetail;
         }
     }
-    //end - reference object models
 }
