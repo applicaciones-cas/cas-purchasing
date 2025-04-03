@@ -57,6 +57,7 @@ public class Model_PO_Master extends Model {
             //assign default values
             poEntity.updateObject("cProcessd", PurchaseOrderProcessedStatus.NO);
             poEntity.updateObject("cPreOwned", Logical.NO);
+            poEntity.updateObject("cWithAddx", Logical.NO);
             poEntity.updateObject("dExpected", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());

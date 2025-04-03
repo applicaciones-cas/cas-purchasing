@@ -1113,14 +1113,7 @@ public class PurchaseOrder extends Transaction {
                             // Get total received quantity
                             lnRecQty = getReceivedQty(Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID());
 
-                            // Process different statuses
-                            switch (status) {
-                                case PurchaseOrderStatus.CONFIRMED:
-                                case PurchaseOrderStatus.APPROVED:
-                                    break;
-                                case PurchaseOrderStatus.RETURNED:
-                                    break;
-                            }
+                            
 
                             // Update stock request with the correct quantity
                             StockRequest stockRequest = new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
@@ -1137,8 +1130,16 @@ public class PurchaseOrder extends Transaction {
                                 return poJSON;
                             }
                             int currentqty = stockRequest.Detail(lnRow).getPurchase();
-                            // Update the corresponding stock request detail with the correct quantity
-                            stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
+                            
+                            switch (status) {
+                                case PurchaseOrderStatus.CONFIRMED:
+                                case PurchaseOrderStatus.APPROVED:
+                                         stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
+                                    break;
+                                case PurchaseOrderStatus.RETURNED:
+                                        stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
+                                    break;
+                            }
                             stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
 
                             // Save the transaction
@@ -1515,5 +1516,19 @@ public class PurchaseOrder extends Transaction {
             return null;
         }
 
+    }
+    public String getInventoryTypeCode() throws SQLException {
+        String lsSQL = "SELECT sInvTypCd FROM category";
+        lsSQL = MiscUtil.addCondition(lsSQL, Master().getIndustryID());
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        String inventoryTypeCode = null;
+
+        if (loRS.next()) {
+            inventoryTypeCode = loRS.getString("sInvTypCd");
+        }
+
+        MiscUtil.close(loRS);
+        return inventoryTypeCode;
     }
 }
