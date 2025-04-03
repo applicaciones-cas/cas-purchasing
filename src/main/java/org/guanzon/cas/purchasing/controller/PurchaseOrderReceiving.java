@@ -699,10 +699,10 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = object.searchRecord(value, byCode, poGRider.getIndustry());
         if ("success".equals((String) poJSON.get("result"))) {
             if (!object.getModel().getBrandId().equals(Detail(row).getBrandId())) {
-                poJSON = checkExistingSerialId(row);
-                if ("error".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
+//                poJSON = checkExistingSerialId(row);
+//                if ("error".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
 
                 //remove existing por serial
                 removePurchaseOrderReceivingSerial(row);
@@ -734,10 +734,10 @@ public class PurchaseOrderReceiving extends Transaction {
             }
 
             if (!object.getModel().getStockId().equals(Detail(row).getStockId())) {
-                poJSON = checkExistingSerialId(row);
-                if ("error".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
+//                poJSON = checkExistingSerialId(row);
+//                if ("error".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
                 //remove existing por serial
                 removePurchaseOrderReceivingSerial(row);
             }
@@ -1453,73 +1453,91 @@ public class PurchaseOrderReceiving extends Transaction {
     }
 
     //Use for changing of quantity in por detail
-    public JSONObject checkPurchaseOrderReceivingSerial(int entryNo, int quantity) {
+    public JSONObject checkPurchaseOrderReceivingSerial(int entryNo, int quantity){
         poJSON = new JSONObject();
-        int lnQty = Detail(entryNo - 1).getQuantity().intValue();
+        int lnQty = Detail(entryNo-1).getQuantity().intValue();
         int lnEntryNo = 0;
         boolean lbChecked = false;
-        Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
-
-        while (lnQty > quantity) {
+        
+        if(getPurchaseOrderReceivingSerialCount() <= quantity){
+            return poJSON;
+        }
+        
+        while (lnQty > quantity){
+            lbChecked = false;
+            
             //1. Priority to remove the empty fields
+            Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
             while (detail.hasNext()) {
-                Model_POR_Serial item = detail.next();
+                Model_POR_Serial item = detail.next(); 
                 if (item.getEntryNo() == entryNo) {
-                    if (item.getSerialId() == null || "".equals(item.getSerialId())) {
-                        if ((item.getSerial01() == null || "".equals(item.getSerial01()))
-                                && (item.getSerial02() == null || "".equals(item.getSerial02()))) {
+                    if(item.getSerialId() == null || "".equals(item.getSerialId())){
+                        if((item.getSerial01() == null || "".equals(item.getSerial01()))
+                                && (item.getSerial02() == null || "".equals(item.getSerial02()))){
                             detail.remove();
                             lnQty--;
+                            lbChecked = true;
                             break;
                         }
-                    }
+                    } 
                 }
             }
-
+            
+            if(lbChecked){
+                continue;
+            }
+            
             //2. Remove serials with value
+            detail = PurchaseOrderReceivingSerialList().iterator();
             while (detail.hasNext()) {
-                Model_POR_Serial item = detail.next();
+                Model_POR_Serial item = detail.next(); 
                 if (item.getEntryNo() == entryNo) {
-                    if (item.getSerialId() == null || "".equals(item.getSerialId())) {
-                        if ((item.getSerial01() != null || !"".equals(item.getSerial01()))
-                                || (item.getSerial02() != null || !"".equals(item.getSerial02()))) {
+                    if(item.getSerialId() == null || "".equals(item.getSerialId())){
+                        if((item.getSerial01() != null || !"".equals(item.getSerial01()))
+                                || (item.getSerial02() != null || !"".equals(item.getSerial02()))){
                             detail.remove();
                             lnQty--;
+                            lbChecked = true;
                             break;
                         }
-                    }
-                }
+                    } 
+                } 
             }
-
+            
+            if(lbChecked){
+                continue;
+            }
+            
             //3. Check for serial Id: Do not allow to remove if exist
+            detail = PurchaseOrderReceivingSerialList().iterator();
             while (detail.hasNext()) {
-                Model_POR_Serial item = detail.next();
+                Model_POR_Serial item = detail.next(); 
                 if (item.getEntryNo() == entryNo) {
-                    if (item.getSerialId() != null && !"".equals(item.getSerialId())) {
+                    if(item.getSerialId() != null && !"".equals(item.getSerialId())){
                         poJSON.put("result", "error");
                         poJSON.put("message", "Serial ID already exist, cannot be deleted.");
                         return poJSON;
                     }
-                }
+                } 
             }
-
+            
             //4. Update por serial entry no
-            while (detail.hasNext()) {
-                Model_POR_Serial item = detail.next();
-                lnEntryNo = item.getEntryNo() - entryNo;
-                if (lnEntryNo == 1) {
-                    item.setEntryNo(entryNo);
-                }
-                if (lnEntryNo > 1) {
-                    item.setEntryNo(entryNo + (lnEntryNo - 1));
-                }
-            }
-
-            if (getPurchaseOrderReceivingSerialCount() <= 0 || lbChecked) {
+//            detail = PurchaseOrderReceivingSerialList().iterator();
+//            while (detail.hasNext()) {
+//                Model_POR_Serial item = detail.next(); 
+//                lnEntryNo = item.getEntryNo() - entryNo;
+//                if (lnEntryNo == 1) {
+//                    item.setEntryNo(entryNo);
+//                } 
+//                if (lnEntryNo > 1) {
+//                    item.setEntryNo(entryNo+(lnEntryNo-1));
+//                } 
+//            }
+            
+            if(getPurchaseOrderReceivingSerialCount() <= 0){
                 break;
             }
         }
-
         return poJSON;
     }
 
