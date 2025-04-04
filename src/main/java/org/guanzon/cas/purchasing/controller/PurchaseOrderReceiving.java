@@ -1744,6 +1744,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
                         System.out.println("inv serial" + (String) poJSON.get("message"));
+                        return poJSON;
                     }
                 }
 
@@ -1753,6 +1754,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
 
                 //5. Save Purchase Order Receiving Serial
+                System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
+                System.out.println("Entry No : " + paOthers.get(lnRow).getEntryNo());
+                System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
+                System.out.println("Edit Mode : " + paOthers.get(lnRow).getEditMode());
+                System.out.println("---------------------------------------------------------------------- ");
                 paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
                 poJSON = paOthers.get(lnRow).saveRecord();
                 if ("error".equals((String) poJSON.get("result"))) {
@@ -2042,11 +2048,40 @@ public class PurchaseOrderReceiving extends Transaction {
 
     @Override
     public JSONObject initFields() {
-        /*Put initial model values here*/
-        poJSON = new JSONObject();
-
+        try {
+            /*Put initial model values here*/
+            poJSON = new JSONObject();
+            
+            Master().setBranchCode(poGRider.getBranchCode());
+            Master().setIndustryId(poGRider.getIndustry());
+            Master().setDepartmentId(poGRider.getDepartment());
+            Master().setTransactionDate(poGRider.getServerDate());
+            Master().setInventoryTypeCode(getInventoryTypeCode());
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+            return poJSON;
+        }
+        
         poJSON.put("result", "success");
         return poJSON;
+    }
+    
+    public String getInventoryTypeCode() throws SQLException {
+        String lsSQL = "SELECT sInvTypCd FROM category ";
+        lsSQL = MiscUtil.addCondition(lsSQL, Master().getIndustryId());
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        String inventoryTypeCode = null;
+
+        if (loRS.next()) {
+            inventoryTypeCode = loRS.getString("sInvTypCd");
+        }
+
+        MiscUtil.close(loRS);
+        return inventoryTypeCode;
     }
 
     @Override
@@ -2199,7 +2234,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
 
-    public class CustomJasperViewer extends JasperViewer {
+    private class CustomJasperViewer extends JasperViewer {
 
         public CustomJasperViewer(JasperPrint jasperPrint) {
             super(jasperPrint, false);
@@ -2241,14 +2276,14 @@ public class PurchaseOrderReceiving extends Transaction {
                                                 PrintTransaction(true);
                                             } else {
                                                 Platform.runLater(() -> {
-                                                    ShowMessageFX.Warning("Printing was canceled by the user.", "Print Purchase Order", null);
+                                                    ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing was canceled by the user.");
                                                     SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
 
                                                 });
                                             }
                                         } catch (JRException ex) {
                                             Platform.runLater(() -> {
-                                                ShowMessageFX.Warning("Print Failed: " + ex.getMessage(), "Computerized Accounting System", null);
+                                                ShowMessageFX.Warning(null, "Computerized Accounting System", "Print Failed: " + ex.getMessage());
                                                 SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                                             });
                                         } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
@@ -2275,7 +2310,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
@@ -2283,7 +2318,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = UpdateTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
@@ -2296,7 +2331,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = SaveTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
@@ -2306,12 +2341,12 @@ public class PurchaseOrderReceiving extends Transaction {
 
             if (fbIsPrinted) {
                 Platform.runLater(() -> {
-                    ShowMessageFX.Information("Transaction printed successfully.", "Print Purchase Order", null);
+                    ShowMessageFX.Information("Transaction printed successfully.", "Print Purchase Order Receiving", null);
                     SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                 });
             } else {
                 Platform.runLater(() -> {
-                    ShowMessageFX.Information("Transaction printed aborted.", "Print Purchase Order", null);
+                    ShowMessageFX.Information("Transaction printed aborted.", "Print Purchase Order Receiving", null);
                     SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                 });
             }
