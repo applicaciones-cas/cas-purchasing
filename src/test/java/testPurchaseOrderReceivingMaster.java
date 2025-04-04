@@ -263,6 +263,13 @@ public class testPurchaseOrderReceivingMaster {
 //            poPurchaseReceivingController.Detail(1).setQuantity(0);
 //            poPurchaseReceivingController.AddDetail();
 
+            for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
+                System.out.println("DATA before save Transation");
+                System.out.println("OrderNo : " + lnCtr + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
+                System.out.println("StockId : " + lnCtr + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
+                System.out.println("---------------------------------------------------------------------");
+            }
+
             loJSON = poPurchaseReceivingController.SaveTransaction();
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
@@ -272,7 +279,7 @@ public class testPurchaseOrderReceivingMaster {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         } catch (GuanzonException ex) {
-            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
         }
         
     }   
