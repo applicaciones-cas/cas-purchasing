@@ -68,6 +68,7 @@ public class Model_POR_Master extends Model {
             poEntity.updateObject("nAmtPaidx", 0.00);
             poEntity.updateObject("nFreightx", 0.00);
             poEntity.updateString("cPrintxxx", Logical.NO);
+            poEntity.updateString("cProcessd", Logical.NO);
             poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
             //end - assign default values
 
