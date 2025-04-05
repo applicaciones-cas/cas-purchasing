@@ -1707,8 +1707,9 @@ public class PurchaseOrderReceiving extends Transaction {
         
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
             System.out.println("DATA at will save");
-            System.out.println("OrderNo : " + lnCtr + " : " + Detail(lnCtr).getOrderNo());
-            System.out.println("StockId : " + lnCtr + " : " + Detail(lnCtr).getStockId());
+            System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
+            System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
+            System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
             System.out.println("---------------------------------------------------------------------");
         }
 
@@ -1726,10 +1727,16 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject saveOthers() {
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
             System.out.println("DATA at saveOthers");
-            System.out.println("OrderNo : " + lnCtr + " : " + Detail(lnCtr).getOrderNo());
-            System.out.println("StockId : " + lnCtr + " : " + Detail(lnCtr).getStockId());
+            System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
+            System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
+            System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
             System.out.println("---------------------------------------------------------------------");
         }
+        
+        System.out.println("");
+        System.out.println("");
+        System.out.println("");
+        System.out.println("--------------------------END OF SAVE OTHERS CHECKING-------------------------------------------");
         
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
@@ -1750,14 +1757,14 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = loInvSerial.newRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
                         System.out.println("inv serial " + (String) poJSON.get("message"));
-                        return poJSON; //TODO
+                        return poJSON;
                     }
 
                 } else {
                     //1.2 Update Inventory Serial / Registration
-                    poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
+                    poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId(), poGRider.getBranchCode());
                     if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON; //TODO
+                        return poJSON; 
                     }
                 }
 
@@ -1819,11 +1826,11 @@ public class PurchaseOrderReceiving extends Transaction {
             
             //Allow the user to edit details but seek an approval from the approving officer
             if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }  
-                
+//                poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }  
+//                
                 poJSON = setValueToOthers(Master().getTransactionStatus());
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
