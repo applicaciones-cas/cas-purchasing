@@ -1867,8 +1867,10 @@ public class PurchaseOrderReceiving extends Transaction {
 
         //Update Purchase Order exist in PO Receiving Detail
         for (lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            System.out.println("OrderNo : " + lnCtr + " : " + Detail(lnCtr).getOrderNo());
-            System.out.println("StockId : " + lnCtr + " : " + Detail(lnCtr).getStockId());
+//            System.out.println("----------------------PURCHASE ORDER DETAIL---------------------- ");
+//            System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
+//            System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
+//            System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())) {
 
                 //1. Check for discrepancy
