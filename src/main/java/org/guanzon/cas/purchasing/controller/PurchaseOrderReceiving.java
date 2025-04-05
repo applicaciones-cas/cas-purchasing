@@ -1706,10 +1706,12 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
-            System.out.println("DATA at will save");
+            System.out.println("DATA at WILL SAVE Method");
+            System.out.println("");
             System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
             System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
             System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
+            System.out.println("");
             System.out.println("---------------------------------------------------------------------");
         }
 
@@ -1726,17 +1728,17 @@ public class PurchaseOrderReceiving extends Transaction {
     @Override
     public JSONObject saveOthers() {
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
-            System.out.println("DATA at saveOthers");
+            System.out.println("DATA at SAVE OTHERS Method");
+            System.out.println("");
             System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
             System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
             System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
+            System.out.println("");
             System.out.println("---------------------------------------------------------------------");
         }
         
         System.out.println("");
-        System.out.println("");
-        System.out.println("");
-        System.out.println("--------------------------END OF SAVE OTHERS CHECKING-------------------------------------------");
+        System.out.println("--------------------------END OF SAVE OTHERS CHECKING-------------------------------------");
         
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
@@ -1801,6 +1803,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
 
                 //5. Save Purchase Order Receiving Serial
+                System.out.println("----------------------PURCHASE ORDER DETAILS-------------------------- ");
                 System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
                 System.out.println("Entry No : " + paOthers.get(lnRow).getEntryNo());
                 System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
