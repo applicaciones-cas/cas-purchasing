@@ -1088,6 +1088,8 @@ public class PurchaseOrderReceiving extends Transaction {
 
     public JSONObject getApprovedPurchaseOrder() {
         try {
+            paPOMaster = new ArrayList<>();
+            
             String lsSQL = " SELECT "
                     + "   a.sTransNox "
                     + " , a.dTransact "
@@ -1109,8 +1111,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
             int lnctr = 0;
 
-            if (MiscUtil.RecordCount(loRS) >= 0) {
-                paPOMaster = new ArrayList<>();
+            if (MiscUtil.RecordCount(loRS) > 0) {
                 while (loRS.next()) {
                     // Print the result set
                     System.out.println("sTransNox: " + loRS.getString("sTransNox"));
@@ -1127,19 +1128,19 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("result", "success");
                 poJSON.put("message", "Record loaded successfully.");
             } else {
-                paPOMaster = new ArrayList<>();
-                paPOMaster.add(PurchaseOrderMaster());
                 poJSON.put("result", "error");
                 poJSON.put("continue", true);
-                poJSON.put("message", "No record found .");
+                poJSON.put("message", "No approved purchase order found .");
             }
             MiscUtil.close(loRS);
         } catch (SQLException ex) {
             poJSON.put("result", "error");
+            poJSON.put("continue", false);
             poJSON.put("message", ex.getMessage());
         } catch (GuanzonException ex) {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
+            poJSON.put("continue", false);
             poJSON.put("message", MiscUtil.getException(ex));
         }
         return poJSON;
