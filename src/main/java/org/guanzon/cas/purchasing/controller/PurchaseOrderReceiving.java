@@ -1799,7 +1799,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
 
                 //5. Save Purchase Order Receiving Serial
-                System.out.println("----------------------PURCHASE ORDER DETAILS-------------------------- ");
+                System.out.println("----------------------PURCHASE ORDER RECEIVING SERIAL---------------------- ");
                 System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
                 System.out.println("Entry No : " + paOthers.get(lnRow).getEntryNo());
                 System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
