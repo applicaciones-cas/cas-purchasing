@@ -265,11 +265,9 @@ public class testPurchaseOrderReceivingMaster {
 
             for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
                 System.out.println("DATA Before SAVE TRANSACTION Method");
-                System.out.println("");
                 System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
                 System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
                 System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
-                System.out.println("");
                 System.out.println("---------------------------------------------------------------------");
             }
 

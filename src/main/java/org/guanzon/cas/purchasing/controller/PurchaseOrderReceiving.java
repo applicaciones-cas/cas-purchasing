@@ -1707,11 +1707,9 @@ public class PurchaseOrderReceiving extends Transaction {
         
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
             System.out.println("DATA at WILL SAVE Method");
-            System.out.println("");
             System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
             System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
             System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
-            System.out.println("");
             System.out.println("---------------------------------------------------------------------");
         }
 
@@ -1729,11 +1727,9 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject saveOthers() {
         for(int lnCtr = 0;lnCtr <= getDetailCount()-1; lnCtr++){
             System.out.println("DATA at SAVE OTHERS Method");
-            System.out.println("");
             System.out.println("TransNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getTransactionNo());
             System.out.println("OrderNo : " + (lnCtr+1) + " : " + Detail(lnCtr).getOrderNo());
             System.out.println("StockId : " + (lnCtr+1) + " : " + Detail(lnCtr).getStockId());
-            System.out.println("");
             System.out.println("---------------------------------------------------------------------");
         }
         
