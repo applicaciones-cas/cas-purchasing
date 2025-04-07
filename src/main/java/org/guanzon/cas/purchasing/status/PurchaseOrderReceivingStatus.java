@@ -15,6 +15,6 @@ public class PurchaseOrderReceivingStatus {
     public static final  String APPROVED = "2";
     public static final  String CANCELLED = "3";
     public static final  String VOID = "4";
-    public static final  String POSTED = "6";
-    public static final  String RETURNED = "7";
+    public static final  String POSTED = "5";
+    public static final  String RETURNED = "6";
 }

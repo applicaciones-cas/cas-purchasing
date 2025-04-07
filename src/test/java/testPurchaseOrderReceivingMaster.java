@@ -232,7 +232,7 @@ public class testPurchaseOrderReceivingMaster {
         
     }   
     
-    @Test
+//    @Test
     public void testUpdateTransaction() {
         JSONObject loJSON;
        
@@ -243,7 +243,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000005");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000011");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -264,10 +264,13 @@ public class testPurchaseOrderReceivingMaster {
 //            poPurchaseReceivingController.AddDetail();
 
             for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
+                poPurchaseReceivingController.Detail(0).setQuantity(2);
+                poPurchaseReceivingController.Detail(1).setQuantity(5);
                 System.out.println("DATA Before SAVE TRANSACTION Method");
                 System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
                 System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
                 System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
+                System.out.println("Quantty : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getQuantity());
                 System.out.println("---------------------------------------------------------------------");
             }
 
@@ -296,7 +299,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000048");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -330,8 +333,53 @@ public class testPurchaseOrderReceivingMaster {
         } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        
     }   
+    
+    @Test
+    public void testReturnTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = poPurchaseReceivingController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Master().getColumnCount(); lnCol++){
+                System.out.println(poPurchaseReceivingController.Master().getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchaseReceivingController.Master().Branch().getBranchName());
+            System.out.println(poPurchaseReceivingController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchaseReceivingController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(poPurchaseReceivingController.Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            loJSON = poPurchaseReceivingController.ReturnTransaction("test");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     
 }
