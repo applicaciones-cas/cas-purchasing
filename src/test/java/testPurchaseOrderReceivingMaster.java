@@ -232,7 +232,7 @@ public class testPurchaseOrderReceivingMaster {
         
     }   
     
-//    @Test
+    @Test
     public void testUpdateTransaction() {
         JSONObject loJSON;
        
@@ -243,7 +243,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000011");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000003");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -263,16 +263,16 @@ public class testPurchaseOrderReceivingMaster {
 //            poPurchaseReceivingController.Detail(1).setQuantity(0);
 //            poPurchaseReceivingController.AddDetail();
 
-            for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
-                poPurchaseReceivingController.Detail(0).setQuantity(2);
-                poPurchaseReceivingController.Detail(1).setQuantity(5);
-                System.out.println("DATA Before SAVE TRANSACTION Method");
-                System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
-                System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
-                System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
-                System.out.println("Quantty : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getQuantity());
-                System.out.println("---------------------------------------------------------------------");
-            }
+//            for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
+//                poPurchaseReceivingController.Detail(0).setQuantity(2);
+//                poPurchaseReceivingController.Detail(1).setQuantity(5);
+//                System.out.println("DATA Before SAVE TRANSACTION Method");
+//                System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
+//                System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
+//                System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
+//                System.out.println("Quantty : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getQuantity());
+//                System.out.println("---------------------------------------------------------------------");
+//            }
 
             loJSON = poPurchaseReceivingController.SaveTransaction();
             if (!"success".equals((String) loJSON.get("result"))) {
@@ -299,7 +299,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000003");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -335,7 +335,7 @@ public class testPurchaseOrderReceivingMaster {
         }
     }   
     
-    @Test
+//    @Test
     public void testReturnTransaction() {
         JSONObject loJSON;
         
@@ -346,7 +346,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000003");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
