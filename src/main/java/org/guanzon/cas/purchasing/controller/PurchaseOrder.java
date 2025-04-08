@@ -154,6 +154,65 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
+    
+    public JSONObject ApproveTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        String lsStatus = PurchaseOrderStatus.APPROVED;
+        boolean lbConfirm = true;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (lsStatus.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", (String) poJSON.get("message"));
+            return poJSON;
+        }
+        //validator
+        poJSON = isEntryOkay(PurchaseOrderStatus.APPROVED);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        //Update Purchase Order
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
+
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+
+        if (lbConfirm) {
+            poJSON.put("message", "Transaction confirmed successfully.");
+        } else {
+            poJSON.put("message", "Transaction confirmation request submitted successfully.");
+        }
+
+        return poJSON;
+    }
 
     public JSONObject PostTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
@@ -455,6 +514,8 @@ public class PurchaseOrder extends Transaction {
             }
             Detail(row).setStockID(scannedStockID);
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+
         }
         return poJSON;
     }
@@ -488,6 +549,7 @@ public class PurchaseOrder extends Transaction {
 
         Detail(row).setStockID(scannedStockID);
         Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+        Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
         return poJSON;
     }
 
@@ -515,7 +577,6 @@ public class PurchaseOrder extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setCompanyID(object.getModel().getCompanyId());
         }
-
         return poJSON;
     }
 
@@ -528,7 +589,6 @@ public class PurchaseOrder extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setDestinationID(object.getModel().getBranchCode());
         }
-
         return poJSON;
     }
 
@@ -568,10 +628,12 @@ public class PurchaseOrder extends Transaction {
 
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
         } else {
             Detail(row).setStockID("");
             Detail(row).setBrandId("");
-            Detail(row).setUnitPrice(0.00);
+            Detail(row).setUnitPrice(0.00);            
+            Detail(row).setOldPrice(0.00);
         }
 
         return poJSON;
@@ -1072,8 +1134,10 @@ public class PurchaseOrder extends Transaction {
 
         // Update Stock Request
         for (lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            System.out.println("Detail(lnCtr).getOrderNo() : " + lnCtr + " : " + Detail(lnCtr).getSouceNo());
-
+            System.out.println("PO DETAIL STOCK ID");
+            System.out.println("sourceno : " + lnCtr + " : " + Detail(lnCtr).getSouceNo());
+            System.out.println("stockid : " + lnCtr + " : " + Detail(lnCtr).getStockID());
+            System.out.println("---------------------------------------------------------------------------");
             if (Detail(lnCtr).getSouceNo() != null && !Detail(lnCtr).getSouceNo().isEmpty()) {
                 // Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
@@ -1108,13 +1172,11 @@ public class PurchaseOrder extends Transaction {
                 }
 
                 if (lnList >= 0) { // Ensure lnList is valid
-                    for (lnRow = 0; lnRow < poStockRequest.get(lnList).getDetailCount(); lnRow++) {
+                    for (lnRow = 0; lnRow < poStockRequest.get(lnList).getDetailCount(); lnRow++) {                       
+                        
                         if (Detail(lnCtr).getStockID().equals(poStockRequest.get(lnList).Detail(lnRow).getStockId())) {
                             // Get total received quantity
                             lnRecQty = getReceivedQty(Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID());
-
-                            
-
                             // Update stock request with the correct quantity
                             StockRequest stockRequest = new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
                             poJSON = stockRequest.InitTransaction();
@@ -1130,23 +1192,42 @@ public class PurchaseOrder extends Transaction {
                                 return poJSON;
                             }
                             int currentqty = stockRequest.Detail(lnRow).getPurchase();
-                            
+//                            System.out.println("lnRow ng inv >> " + lnRow + " getPurchase >> " + currentqty + " order >> " + Detail(lnCtr).getQuantity() );
+//                            System.out.println("--------------");
                             switch (status) {
                                 case PurchaseOrderStatus.CONFIRMED:
+                                        stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
+                                    break;
                                 case PurchaseOrderStatus.APPROVED:
-                                         stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
+                                        stockRequest.Master().setProcessed(true);
                                     break;
                                 case PurchaseOrderStatus.RETURNED:
+//                                        stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
+                                    if (currentqty >= lnRecQty) {
                                         stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
+                                    } else {
+                                        // Handle the case where returned quantity exceeds the current quantity
+                                        System.out.println("Warning: Returned quantity exceeds available stock. Adjusting to zero.");
+                                        stockRequest.Detail(lnRow).setPurchase(0);
+                                    }
                                     break;
                             }
+                            
+                            System.out.println("lnRowx ng inv>> " + lnRow + " getPurchasex >> " +  stockRequest.Detail(lnRow).getPurchase()  +  " order >> " + Detail(lnCtr).getQuantity()  );
                             stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
-
+                             System.out.println("--------------");
+//                            stockRequest.AddDetail();
                             // Save the transaction
+                            StockRequest().setWithParent(true);
                             poJSON = stockRequest.SaveTransaction();
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
+//                            System.out.println("************************SAVE*******************************");
+//                            System.out.println("sourceno : " + lnCtr + " : " + stockRequest.Detail(lnRow).getTransactionNo());
+//                            System.out.println("stockid : " + lnCtr + " : " + stockRequest.Detail(lnRow).getStockId());
+//                            System.out.println("lnRow as >> " + lnRow + " getPurchase as >> " +  stockRequest.Detail(lnRow).getPurchase() +  " order as >> " + Detail(lnCtr).getQuantity()  );
+//                            System.out.println("*********************END SAVE*****************************");
                         }
                     }
                 }
@@ -1164,12 +1245,18 @@ public class PurchaseOrder extends Transaction {
                 + "LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox ";
 
         // Add conditions to SQL query
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo())
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())
                 + " AND b.sSourceNo = " + SQLUtil.toSQL(orderNo)
-                + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
-                + " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
-                + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) + ")");
-
+                + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId));
+                
+        if(Master().getTransactionStatus().equals(PurchaseOrderStatus.OPEN)){
+            lsSQL = lsSQL + "AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.OPEN);
+        }else  {
+            lsSQL = lsSQL +  " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
+                + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) + ")";
+        }
+                
+        System.out.println("executeQuery: >>>> " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             // Check if result set contains records
@@ -1519,7 +1606,7 @@ public class PurchaseOrder extends Transaction {
     }
     public String getInventoryTypeCode() throws SQLException {
         String lsSQL = "SELECT sInvTypCd FROM category";
-        lsSQL = MiscUtil.addCondition(lsSQL, Master().getIndustryID());
+       lsSQL = MiscUtil.addCondition(lsSQL, " sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()));
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         String inventoryTypeCode = null;
