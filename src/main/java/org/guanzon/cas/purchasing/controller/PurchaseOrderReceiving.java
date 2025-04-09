@@ -60,6 +60,7 @@ import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.InvLocation;
 import org.guanzon.cas.parameter.Term;
+import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
@@ -1691,6 +1692,37 @@ public class PurchaseOrderReceiving extends Transaction {
 //            } 
         }
 
+        Master().setModifiedDate(poGRider.getServerDate());
+
+        Iterator<Model> detail = Detail().iterator();
+        while (detail.hasNext()) {
+            Model item = detail.next();
+
+            if ("".equals((String) item.getValue("sStockIDx"))
+                    || (int) item.getValue("nQuantity") <= 0) {
+                detail.remove();
+
+                if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
+                    paDetailRemoved.add(item);
+                }
+            }
+        }
+
+        if (getDetailCount() <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No Purchase order receiving detail to be save.");
+            return poJSON;
+        }
+
+        if (getDetailCount() == 1) {
+            //do not allow a single item detail with no quantity order
+            if (Detail(0).getQuantity().intValue() == 0) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Your Purchase order receiving has zero quantity.");
+                return poJSON;
+            }
+        }
+        
         if (PurchaseOrderReceivingStatus.RETURNED.equals(Master().getTransactionStatus())) {
             PurchaseOrderReceiving loRecord = new PurchaseOrderReceivingControllers(poGRider, null).PurchaseOrderReceiving();
             loRecord.InitTransaction();
@@ -1698,7 +1730,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
             lbUpdated = loRecord.getDetailCount() == getDetailCount();
             if (lbUpdated) {
-                lbUpdated = loRecord.Master().getTransactionTotal().equals(Master().getTransactionTotal());
+                lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
             }
             if (lbUpdated) {
                 lbUpdated = loRecord.Master().getReferenceNo().equals(Master().getReferenceNo());
@@ -1729,37 +1761,6 @@ public class PurchaseOrderReceiving extends Transaction {
             }
 
             Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN); //If edited update trasaction status into open
-        }
-
-        Master().setModifiedDate(poGRider.getServerDate());
-
-        Iterator<Model> detail = Detail().iterator();
-        while (detail.hasNext()) {
-            Model item = detail.next();
-
-            if ("".equals((String) item.getValue("sStockIDx"))
-                    || (int) item.getValue("nQuantity") <= 0) {
-                detail.remove();
-
-                if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
-                    paDetailRemoved.add(item);
-                }
-            }
-        }
-
-        if (getDetailCount() <= 0) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No Purchase order receiving detail to be save.");
-            return poJSON;
-        }
-
-        if (getDetailCount() == 1) {
-            //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantity().intValue() == 0) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Your Purchase order receiving has zero quantity.");
-                return poJSON;
-            }
         }
 
         //assign other info on detail
@@ -2310,7 +2311,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
         return lsCompanyId;
     }
-
+    
     @Override
     public void initSQL() {
         SQL_BROWSE = " SELECT "

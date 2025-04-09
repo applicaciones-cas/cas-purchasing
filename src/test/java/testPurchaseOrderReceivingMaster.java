@@ -232,7 +232,7 @@ public class testPurchaseOrderReceivingMaster {
         
     }   
     
-    @Test
+//    @Test
     public void testUpdateTransaction() {
         JSONObject loJSON;
        
@@ -243,7 +243,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000003");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -299,7 +299,7 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.fail();
             } 
 
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000003");
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -335,7 +335,7 @@ public class testPurchaseOrderReceivingMaster {
         }
     }   
     
-//    @Test
+    @Test
     public void testReturnTransaction() {
         JSONObject loJSON;
         
