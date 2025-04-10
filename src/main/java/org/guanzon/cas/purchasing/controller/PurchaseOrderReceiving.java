@@ -546,9 +546,60 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         initSQL();
-        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
-                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId())
-                + " AND a.sCompnyID LIKE " + SQLUtil.toSQL("%" + psCompanyId));
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyId())
+                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Industry»Company»Supplier",
+                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
+                "dTransact»sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject searchTransaction(String industryId, String companyId, String supplierId, String sReferenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        if(supplierId == null){
+            supplierId = "";
+        }
+        if(sReferenceNo == null){
+            sReferenceNo = "";
+        }
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
+                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1031,8 +1082,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 referenceNo = "";
             }
             initSQL();
-            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
-                    + " AND a.sCompnyID LIKE " + SQLUtil.toSQL("%" + companyId))
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
+                    + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId))
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo);
             switch (formName) {

@@ -24,6 +24,8 @@ public class PurchaseOrderReceivingValidatorFactory {
                 return new PurchaseOrderReceiving_Hospitality();
             case "05": //Los Pedritos
                 return new PurchaseOrderReceiving_LP();
+            case "06": //Main Office
+                return new PurchaseOrderReceiving_General();
             default:
                 return null;
         }
