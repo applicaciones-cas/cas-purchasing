@@ -415,10 +415,10 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = ShowDialogFX.getUserApproval(poGRider);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+//        poJSON = ShowDialogFX.getUserApproval(poGRider);
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
 
@@ -1090,7 +1090,7 @@ public class PurchaseOrder extends Transaction {
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
 
-                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
+//                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
 //                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
 //                    Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
                     Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
@@ -1142,10 +1142,10 @@ public class PurchaseOrder extends Transaction {
                 // Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     if (!pbApproval && isUpdateStatus) {
-                        poJSON = ShowDialogFX.getUserApproval(poGRider);
-                        if (!"success".equals(poJSON.get("result"))) {
-                            return poJSON;
-                        }
+//                        poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                        if (!"success".equals(poJSON.get("result"))) {
+//                            return poJSON;
+//                        }
                         pbApproval = true; // User approval obtained
                     }
                 }
@@ -1202,14 +1202,15 @@ public class PurchaseOrder extends Transaction {
                                         stockRequest.Master().setProcessed(true);
                                     break;
                                 case PurchaseOrderStatus.RETURNED:
-//                                        stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
-                                    if (currentqty >= lnRecQty) {
                                         stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
-                                    } else {
-                                        // Handle the case where returned quantity exceeds the current quantity
-                                        System.out.println("Warning: Returned quantity exceeds available stock. Adjusting to zero.");
-                                        stockRequest.Detail(lnRow).setPurchase(0);
-                                    }
+                                    
+//                                    if (currentqty >= lnRecQty) {
+//                                        stockRequest.Detail(lnRow).setPurchase((int)(currentqty - lnRecQty));
+//                                    } else {
+//                                        // Handle the case where returned quantity exceeds the current quantity
+//                                        System.out.println("Warning: Returned quantity exceeds available stock. Adjusting to zero.");
+//                                        stockRequest.Detail(lnRow).setPurchase(0);
+//                                    }
                                     break;
                             }
                             
