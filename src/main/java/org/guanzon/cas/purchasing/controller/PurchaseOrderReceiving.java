@@ -546,8 +546,8 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         initSQL();
-        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
-                + " AND a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyId())
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -703,7 +703,6 @@ public class PurchaseOrderReceiving extends Transaction {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
         object.Master().setRecordStatus(RecordStatus.ACTIVE);
         object.Master().setClientType("1");
-
         poJSON = object.Master().searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setTruckingId(object.Master().getModel().getClientId());
@@ -789,11 +788,13 @@ public class PurchaseOrderReceiving extends Transaction {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
-        if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
-            poJSON = object.searchRecord(value, byCode, null);
-        } else {
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId());
-        }
+//        if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
+//            poJSON = object.searchRecord(value, byCode, null);
+//        } else {
+//            poJSON = object.searchRecord(value, byCode, Master().getSupplierId());
+//        }
+        
+        poJSON = object.searchRecord(value, byCode); //TODO
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setReplaceId(object.getModel().getStockId());
         }
@@ -1744,7 +1745,20 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         Master().setModifiedDate(poGRider.getServerDate());
-
+        boolean lbHasQty = false;
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            if (Detail(lnCtr).getQuantity().intValue() > 0) {
+                lbHasQty = true;
+                break;
+            }
+        }
+        
+        if(!lbHasQty){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Your Purchase order receiving has zero quantity.");
+            return poJSON;
+        }
+        
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
@@ -1758,7 +1772,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
         }
-
+        
+        //Validate detail after removing all zero qty and empty stock Id
         if (getDetailCount() <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "No Purchase order receiving detail to be save.");
@@ -1773,7 +1788,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
         }
-        
+
         if (PurchaseOrderReceivingStatus.RETURNED.equals(Master().getTransactionStatus())) {
             PurchaseOrderReceiving loRecord = new PurchaseOrderReceivingControllers(poGRider, null).PurchaseOrderReceiving();
             loRecord.InitTransaction();
@@ -2139,6 +2154,9 @@ public class PurchaseOrderReceiving extends Transaction {
                         break;
                 }
                 //set Receive qty in Purchase Order detail
+                if(lnRecQty < 0){
+                    lnRecQty = 0;
+                }
                 paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(lnRecQty);
                 paPurchaseOrder.get(lnList).Detail(lnRow).setModifiedDate(poGRider.getServerDate());
                 break;
@@ -2309,8 +2327,8 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON = new JSONObject();
 
             Master().setBranchCode(poGRider.getBranchCode());
-            Master().setIndustryId(poGRider.getIndustry());
-            Master().setCompanyId(getCompanyId());
+            Master().setIndustryId(psIndustryId);
+            Master().setCompanyId(psCompanyId);
             Master().setDepartmentId(poGRider.getDepartment());
             Master().setTransactionDate(poGRider.getServerDate());
             Master().setReferenceDate(poGRider.getServerDate());
@@ -2330,7 +2348,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public String getInventoryTypeCode()
             throws SQLException {
         String lsSQL = "SELECT sInvTypCd FROM category ";
-        lsSQL = MiscUtil.addCondition(lsSQL, " sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry()));
+        lsSQL = MiscUtil.addCondition(lsSQL, " sIndstCdx = " + SQLUtil.toSQL(psIndustryId));
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         String lsInventoryTypeCode = "";
@@ -2402,7 +2420,7 @@ public class PurchaseOrderReceiving extends Transaction {
         try {
             // 1. Prepare parameters
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("sBranchNm", poGRider.getBranchName());
+            parameters.put("sBranchNm", poGRider.getBranchName()); //TODO
             parameters.put("sAddressx", poGRider.getAddress());
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
@@ -2432,9 +2450,11 @@ public class PurchaseOrderReceiving extends Transaction {
             List<OrderDetail> orderDetails = new ArrayList<>();
 
             double lnTotal = 0.0;
+            int lnRow = 1;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
-                orderDetails.add(new OrderDetail(lnCtr, String.valueOf(Detail(lnCtr).getOrderNo()), Detail(lnCtr).Inventory().getBarCode(), Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), Detail(lnCtr).Inventory().getBarCode(), Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                lnRow++;
             }
 
             // 3. Create data source
