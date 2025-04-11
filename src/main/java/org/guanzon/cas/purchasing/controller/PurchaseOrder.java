@@ -66,7 +66,6 @@ public class PurchaseOrder extends Transaction {
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
     List<StockRequest> poStockRequest;
-    boolean pbPrinted = false;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -560,8 +559,8 @@ public class PurchaseOrder extends Transaction {
 
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setSupplierID(object.Master().getModel().getClientId());
-            Master().setAddressID(object.ClientAddress().getModel().getAddressId()); //TODO
-            Master().setContactID(object.ClientInstitutionContact().getModel().getClientId()); //TODO
+            Master().setAddressID(object.ClientAddress().getModel().getAddressId());
+            Master().setContactID(object.ClientInstitutionContact().getModel().getClientId());
         }
 
         return poJSON;
@@ -612,7 +611,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
 
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);        
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -756,62 +755,6 @@ public class PurchaseOrder extends Transaction {
                 + "LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier "
                 + "LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
 
-    }
-
-    public JSONObject SearchTransaction(String fsValue) throws CloneNotSupportedException, SQLException, GuanzonException {
-        poJSON = new JSONObject();
-        String lsTransStat = "";
-        if (psTranStat.length() > 1) {
-            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
-                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
-            }
-            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
-        } else {
-            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
-        }
-        initSQL();
-        String lsIndustryCondition = !poGRider.getIndustry().isEmpty()
-                ? " a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry())
-                : " a.sIndstCdx LIKE '%'";
-        String lsCompanyCondition = !Master().getCompanyID().isEmpty()
-                ? " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
-                : " a.sCompnyID LIKE '%'";
-        String lsSupplier = !Master().getSupplierID().isEmpty()
-                ? " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID())
-                : " a.sSupplier LIKE '%'";
-        String lsReferNo = !Master().getReference().isEmpty()
-                ? " a.sReferNox = " + SQLUtil.toSQL(Master().getReference())
-                : " a.sReferNox LIKE '%'";
-        String lsFilterCondition = lsIndustryCondition
-                + " AND "
-                + lsCompanyCondition
-                + " AND "
-                + lsSupplier
-                + " AND "
-                + lsReferNo;
-        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
-        if (!psTranStat.isEmpty()) {
-            lsSQL = lsSQL + lsTransStat;
-        }
-        lsSQL = lsSQL + " GROUP BY a.sTransNox";
-
-        System.out.println("SQL EXECUTED: " + lsSQL);
-        poJSON = ShowDialogFX.Browse(poGRider,
-                lsSQL,
-                fsValue,
-                "Transaction Date»Transaction No»Company»Supplier",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
-                1);
-
-        if (poJSON != null) {
-            return OpenTransaction((String) poJSON.get("sTransNox"));
-        } else {
-            poJSON = new JSONObject();
-            poJSON.put("result", "error");
-            poJSON.put("message", "No record loaded.");
-            return poJSON;
-        }
     }
 
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
