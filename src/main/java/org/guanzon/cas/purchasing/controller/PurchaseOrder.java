@@ -55,7 +55,6 @@ import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
-import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderValidatorFactory;
 import org.json.simple.JSONArray;
@@ -840,7 +839,7 @@ public class PurchaseOrder extends Transaction {
                 : " a.sReferNox LIKE '%'";
         String lsFilterCondition = " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
                 + " AND "
-                + "a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
+                + " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
                 + " AND "
                 + lsSupplier
                 + " AND "
