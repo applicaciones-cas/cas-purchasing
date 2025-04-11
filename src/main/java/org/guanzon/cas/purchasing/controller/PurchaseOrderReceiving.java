@@ -85,6 +85,7 @@ public class PurchaseOrderReceiving extends Transaction {
     private boolean pbApproval = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
+    private String psCategorId = "";
 
     List<Model_PO_Master> paPOMaster;
     List<Model_POR_Master> paPORMaster;
@@ -528,6 +529,10 @@ public class PurchaseOrderReceiving extends Transaction {
         psCompanyId = companyId;
     }
 
+    public void setCategoryId(String categoryId) {
+        psCategorId = categoryId;
+    }
+
     public JSONObject searchTransaction()
             throws CloneNotSupportedException,
             SQLException,
@@ -796,6 +801,11 @@ public class PurchaseOrderReceiving extends Transaction {
         
         poJSON = object.searchRecord(value, byCode); //TODO
         if ("success".equals((String) poJSON.get("result"))) {
+            if(Detail(row).getStockId().equals(object.getModel().getStockId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Selected supersede must not be equal to the current stock ID.");
+                return poJSON;
+            }
             Detail(row).setReplaceId(object.getModel().getStockId());
         }
         return poJSON;
@@ -819,7 +829,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //                }
 
                 //remove existing por serial
-                removePurchaseOrderReceivingSerial(row);
+                removePurchaseOrderReceivingSerial(row+1);
                 Detail(row).setStockId("");
             }
 
@@ -855,7 +865,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //                    return poJSON;
 //                }
                 //remove existing por serial
-                removePurchaseOrderReceivingSerial(row);
+                removePurchaseOrderReceivingSerial(row+1);
             }
 
             Detail(row).setStockId(object.getModel().getStockId());
@@ -1500,6 +1510,16 @@ public class PurchaseOrderReceiving extends Transaction {
                     lnSerialCnt++;
                 }
             }
+            
+            for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1;lnCtr++){
+                System.out.println("CLASS START POR SERIAL LIST");
+                System.out.println(" getEntryNo : " + PurchaseOrderReceivingSerialList(lnCtr).getEntryNo());
+                System.out.println(" getStockId : " + PurchaseOrderReceivingSerialList(lnCtr).getStockId());
+                System.out.println(" getSerial01 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial01());
+                System.out.println(" getSerial02 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial02());
+                System.out.println(" getLocationId : " + PurchaseOrderReceivingSerialList(lnCtr).getLocationId());
+                System.out.println("CLASS END POR SERIAL LIST");
+            }
 //            else {
 //                //Remove row for excess por serial
 //                while(lnSerialCnt > lnQuantity){
@@ -1599,21 +1619,30 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject removePurchaseOrderReceivingSerial(int entryNo) {
         poJSON = new JSONObject();
         int lnEntryNo = 0;
+        boolean lbRemoved = false;
 
+        System.out.println("remove por serial " + entryNo);
         Iterator<Model_POR_Serial> detail = PurchaseOrderReceivingSerialList().iterator();
         while (detail.hasNext()) {
             Model_POR_Serial item = detail.next();
-
             if (item.getEntryNo() == entryNo) {
+                System.out.println("remove por serial getEntryNo " + item.getEntryNo());
                 detail.remove();
+                lbRemoved = true;
             }
-
-            lnEntryNo = item.getEntryNo() - entryNo;
-            if (lnEntryNo == 1) {
-                item.setEntryNo(entryNo);
-            }
-            if (lnEntryNo > 1) {
-                item.setEntryNo(entryNo + (lnEntryNo - 1));
+        }
+        
+        for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1; lnCtr++){
+            if(lbRemoved){
+                if(PurchaseOrderReceivingSerialList(lnCtr).getEntryNo() > entryNo){
+                    lnEntryNo = PurchaseOrderReceivingSerialList(lnCtr).getEntryNo() - entryNo;
+                    if (lnEntryNo == 1) {
+                        PurchaseOrderReceivingSerialList(lnCtr).setEntryNo(entryNo);
+                    }
+                    if (lnEntryNo > 1) {
+                        PurchaseOrderReceivingSerialList(lnCtr).setEntryNo(entryNo + (lnEntryNo - 1));
+                    }
+                }
             }
         }
 
@@ -1846,44 +1875,47 @@ public class PurchaseOrderReceiving extends Transaction {
             //POR Serial
             //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
             if ("01".equals(Master().getIndustryId()) || "02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
-                //check serial list must be equal to por detail receive qty
-                for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
-                    if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
-                        //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
-                        if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
-                                || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
-                            poJSON.put("result", "error");
-                            poJSON.put("message", "Serial cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
-                            return poJSON;
-                        }
-
-                        if ("02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
-                            if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
+                //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
+                if ("0001".equals(psCategorId) || "0010".equals(psCategorId) || "0015".equals(psCategorId)) {
+                    //check serial list must be equal to por detail receive qty
+                    for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
+                        if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
+                            //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
+                            if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
+                                    || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
                                 poJSON.put("result", "error");
-                                poJSON.put("message", "Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                poJSON.put("message", "Serial cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
                                 return poJSON;
                             }
-                        }
 
-                        if ("03".equals(Master().getIndustryId())) {
-                            if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
-                                    && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
-                                poJSON.put("result", "error");
-                                poJSON.put("message", "CS / Plate No cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
-                                return poJSON;
+                            if ("02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
+                                if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                    return poJSON;
+                                }
                             }
-                        }
 
-                        PurchaseOrderReceivingSerialList(lnList).setTransactionNo(Master().getTransactionNo());
-                        PurchaseOrderReceivingSerialList(lnList).setModifiedDate(poGRider.getServerDate());
-                        lnSerialCnt++;
+                            if ("03".equals(Master().getIndustryId())) {
+                                if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
+                                        && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "CS / Plate No cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                    return poJSON;
+                                }
+                            }
+
+                            PurchaseOrderReceivingSerialList(lnList).setTransactionNo(Master().getTransactionNo());
+                            PurchaseOrderReceivingSerialList(lnList).setModifiedDate(poGRider.getServerDate());
+                            lnSerialCnt++;
+                        }
                     }
-                }
 
-                if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Descrepancy found in POR Serial. Quantity must be equal to POR Serial list for Entry No. " + (lnCtr + 1) + ".");
-                    return poJSON;
+                    if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Descrepancy found in POR Serial. Quantity must be equal to POR Serial list for Entry No. " + (lnCtr + 1) + ".");
+                        return poJSON;
+                    }
                 }
             }
 
