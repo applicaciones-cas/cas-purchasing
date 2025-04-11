@@ -612,7 +612,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
 
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);        
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -628,11 +628,6 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-        } else {
-            Detail(row).setStockID("");
-            Detail(row).setBrandId("");
-            Detail(row).setUnitPrice(0.00);
-            Detail(row).setOldPrice(0.00);
         }
 
         return poJSON;
