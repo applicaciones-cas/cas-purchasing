@@ -45,7 +45,7 @@ import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.warehouse.StockRequest;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
-import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
+import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
@@ -124,13 +124,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        //Update Purchase Order
-        poJSON = updateStockRequest(lsStatus, true);
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        //Update Purchase Order
+        poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -182,18 +181,15 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         //Update Purchase Order
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        poJSON = ShowDialogFX.getUserApproval(poGRider);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
 
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -242,16 +238,15 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
 
         poJSON = ShowDialogFX.getUserApproval(poGRider);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
 
@@ -408,15 +403,15 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        poJSON = ShowDialogFX.getUserApproval(poGRider);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
-//        poJSON = ShowDialogFX.getUserApproval(poGRider);
-//        if (!"success".equals((String) poJSON.get("result"))) {
-//            return poJSON;
-//        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
 
@@ -769,19 +764,10 @@ public class PurchaseOrder extends Transaction {
             lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
         initSQL();
-        String lsSupplier = !fsSupplierID.isEmpty()
-                ? " a.sSupplier = " + SQLUtil.toSQL(fsSupplierID)
-                : " a.sSupplier LIKE '%'";
-        String lsReferNo = !fsReferID.isEmpty()
-                ? " a.sReferNox = " + SQLUtil.toSQL(fsReferID)
-                : " a.sReferNox LIKE '%'";
-        String lsFilterCondition = " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
-                + " AND "
-                + " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
-                + " AND "
-                + lsSupplier
-                + " AND "
-                + lsReferNo;
+        String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
+                " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
@@ -806,10 +792,6 @@ public class PurchaseOrder extends Transaction {
         }
     }
 
-    private Model_Inv_Stock_Request_Master InvStockRequestList() {
-        return new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-    }
-
     public Model_Inv_Stock_Request_Master InvStockRequestMaster(int row) {
         return (Model_Inv_Stock_Request_Master) paStockRequest.get(row);
     }
@@ -819,22 +801,13 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsIndustryCondition = poGRider.getIndustry().isEmpty()
-                ? "a.sIndstCdx LIKE '%'"
-                : "a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry());
-        String lsCompanyCondition = Master().getCompanyID().isEmpty()
-                ? "e.sCompnyID LIKE '%'"
-                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
-        String lsSupplier = Master().getSupplierID().isEmpty()
-                ? "g.sSupplier LIKE '%'"
-                : "g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID());
-
-        String lsFilterCondition = lsIndustryCondition
-                + " AND "
-                + lsCompanyCondition
-                + " AND "
-                + lsSupplier
-                + " AND b.nApproved > 0 ";
+        String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
+                " b.nApproved > 0 ",
+                "a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
+                " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
+                " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
         String lsSQL = "SELECT"
                 + "  a.sTransNox,"
                 + "  e.sBranchNm,"
@@ -851,12 +824,10 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
                 + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
-        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition + " AND a.cTranStat = '1'");
-
-        lsSQL = lsSQL + " AND b.nApproved <> (b.nIssueQty + b.nOrderQty) "
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+        lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " ORDER BY a.dTransact DESC";
-
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONArray dataArray = new JSONArray();
@@ -945,31 +916,22 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("message", "All stock request details are already in purchase order detail.");
             return poJSON;
         }
-
-        // Create SQL filter conditions
-        String lsIndustryCondition = poGRider.getIndustry().isEmpty()
-                ? "a.sIndstCdx LIKE '%'"
-                : "a.sIndstCdx = " + SQLUtil.toSQL(poGRider.getIndustry());
-        String lsCompanyCondition = Master().getCompanyID().isEmpty()
-                ? "e.sCompnyID LIKE '%'"
-                : "e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID());
-        String lsSupplier = Master().getSupplierID().isEmpty()
-                ? "g.sSupplier LIKE '%'"
-                : "g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID());
-
-        String lsFilterCondition = String.join(" AND ", lsIndustryCondition, lsCompanyCondition, lsSupplier, "b.nApproved > 0");
-
-        // Build SQL Query
         String detailQuery = "SELECT b.sStockIDx "
                 + "FROM inv_stock_request_master a "
                 + "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd "
                 + "LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox "
                 + "LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx "
                 + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
-        detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition + " AND a.cTranStat = '1'");
 
+        String lsFilterCondition = String.join(" AND ",
+                " a.sIndstCdx LIKE " + SQLUtil.toSQL("%" + Master().getIndustryID()),
+                " e.sCompnyID LIKE " + SQLUtil.toSQL("%" + Master().getCompanyID()),
+                " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
+                " b.nApproved > 0",
+                " a.cTranStat = " + SQLUtil.toSQL(Logical.YES));
+
+        detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition);
         System.out.println("Executing SQL: " + detailQuery);
-
         // Fetch valid stock IDs
         Set<String> validStockIds = new HashSet<>();
         try (ResultSet rsDetail = poGRider.executeQuery(detailQuery)) {
@@ -1009,7 +971,6 @@ public class PurchaseOrder extends Transaction {
             if (!exists) {
                 int remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved()
                         - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase());
-
                 if (remainingStock > 0) {
                     AddDetail();
                     int lnLastIndex = getDetailCount() - 1;
@@ -1128,12 +1089,16 @@ public class PurchaseOrder extends Transaction {
                             switch (status) {
                                 case PurchaseOrderStatus.CONFIRMED:
                                     stockRequest.Detail(lnRow).setPurchase(currentqty + lnRecQty);
+                                    stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
                                     break;
                                 case PurchaseOrderStatus.APPROVED:
                                     stockRequest.Master().setProcessed(true);
+                                    stockRequest.Master().setModifyingId(poGRider.getUserID());
+                                    stockRequest.Master().setModifiedDate(poGRider.getServerDate());
                                     break;
                                 case PurchaseOrderStatus.RETURNED:
                                     stockRequest.Detail(lnRow).setPurchase(currentqty - lnRecQty);
+                                    stockRequest.Detail(lnRow).setModifiedDate(poGRider.getServerDate());
 
 //                                    if (currentqty >= lnRecQty) {
 //                                        stockRequest.Detail(lnRow).setPurchase((int)(currentqty - lnRecQty));
@@ -1232,20 +1197,11 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox"
                 + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
                 + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
-
-        String lsSupplier = !fsSupplierID.isEmpty()
-                ? " a.sSupplier = " + SQLUtil.toSQL(fsSupplierID)
-                : " a.sSupplier LIKE '%'";
-        String lsReferNo = !fsReferID.isEmpty()
-                ? " a.sReferNox = " + SQLUtil.toSQL(fsReferID)
-                : " a.sReferNox LIKE '%'";
-        String lsFilterCondition = " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID())
-                + " AND "
-                + "a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID())
-                + " AND "
-                + lsSupplier
-                + " AND "
-                + lsReferNo;
+        String lsFilterCondition = String.join(" AND ",
+                " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
+                " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
