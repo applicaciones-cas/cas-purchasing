@@ -112,12 +112,6 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.CONFIRMED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -128,14 +122,13 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        //Update Purchase Order
-        poJSON = updateStockRequest(lsStatus, true);
+
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
-
+        //Update Purchase Order
+        poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -156,7 +149,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.APPROVED;
-        boolean lbConfirm = true;
+        boolean lbApprove = true;
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
@@ -169,13 +162,6 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("message", "Transaction was already confirmed.");
             return poJSON;
         }
-
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.APPROVED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -185,24 +171,23 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        //Update Purchase Order
+
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+//      Update Purchase Stock Request
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
-
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
-        if (lbConfirm) {
-            poJSON.put("message", "Transaction confirmed successfully.");
+        if (lbApprove) {
+            poJSON.put("message", "Transaction approved successfully.");
         } else {
-            poJSON.put("message", "Transaction confirmation request submitted successfully.");
+            poJSON.put("message", "Transaction approving request submitted successfully.");
         }
 
         return poJSON;
@@ -212,7 +197,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.APPROVED;
-        boolean lbConfirm = true;
+        boolean lbPost = true;
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
@@ -226,13 +211,6 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
-
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.APPROVED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -243,21 +221,20 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+
+        //change status
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPost);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
-
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
-        if (lbConfirm) {
+        if (lbPost) {
             poJSON.put("message", "Transaction posted successfully.");
         } else {
             poJSON.put("message", "Transaction posting request submitted successfully.");
@@ -270,7 +247,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.CANCELLED;
-        boolean lbConfirm = true;
+        boolean lnCancel = true;
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
@@ -284,12 +261,6 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.CANCELLED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -302,7 +273,7 @@ public class PurchaseOrder extends Transaction {
         }
 
         //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -310,7 +281,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
-        if (lbConfirm) {
+        if (lnCancel) {
             poJSON.put("message", "Transaction cancelled successfully.");
         } else {
             poJSON.put("message", "Transaction cancellation request submitted successfully.");
@@ -323,7 +294,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.VOID;
-        boolean lbConfirm = true;
+        boolean lbVoid = true;
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
@@ -337,12 +308,6 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.VOID);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -355,8 +320,7 @@ public class PurchaseOrder extends Transaction {
         }
 
         //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
-
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbVoid);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -364,7 +328,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
-        if (lbConfirm) {
+        if (lbVoid) {
             poJSON.put("message", "Transaction voided successfully.");
         } else {
             poJSON.put("message", "Transaction voiding request submitted successfully.");
@@ -391,12 +355,6 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", (String) poJSON.get("message"));
-            return poJSON;
-        }
         //validator
         poJSON = isEntryOkay(PurchaseOrderStatus.RETURNED);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -407,14 +365,13 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
 
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
-
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -425,7 +382,7 @@ public class PurchaseOrder extends Transaction {
         if (lbReturn) {
             poJSON.put("message", "Transaction returned successfully.");
         } else {
-            poJSON.put("message", "Transaction returned request submitted successfully.");
+            poJSON.put("message", "Transaction return request submitted successfully.");
         }
 
         return poJSON;
@@ -1034,10 +991,6 @@ public class PurchaseOrder extends Transaction {
                 // Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     if (!pbApproval && isUpdateStatus) {
-//                        poJSON = ShowDialogFX.getUserApproval(poGRider);
-//                        if (!"success".equals(poJSON.get("result"))) {
-//                            return poJSON;
-//                        }
                         pbApproval = true; // User approval obtained
                     }
                 }

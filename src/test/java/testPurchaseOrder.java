@@ -35,42 +35,6 @@ public class testPurchaseOrder {
         poPurchasingController = new PurchaseOrderControllers(poApp, null);
     }
 
-//    @Test
-//    public void testGetApprovedStockRequests() {
-//        try {
-//            JSONObject response = (JSONObject) poPurchasingController.PurchaseOrder().getApprovedStockRequests();  // Direct JSONObject response
-//
-//            // Ensure the response is not null
-//            Assert.assertNotNull("Response should not be null", response);
-//
-//            // Extract the list of approved stock requests from the JSON response
-//            if (!"success".equals(response.get("result"))) {
-//                System.err.println("Failed to fetch approved stock requests: " + response.get("message"));
-//                Assert.fail();
-//            }
-//
-//            // Assuming "data" holds the list of approved stock requests
-//            JSONArray approvedRequests = (JSONArray) response.get("data");
-//
-//            // Validate that the list is not null or empty
-//            Assert.assertNotNull("Approved stock requests should not be null", approvedRequests);
-//            Assert.assertFalse("Approved stock requests should not be empty", approvedRequests.isEmpty());
-//
-//            System.out.println("Total Approved Stock Requests: " + approvedRequests.size());
-//
-//            // Iterate through the list and validate each request
-//            for (Object obj : approvedRequests) {
-//                JSONObject request = (JSONObject) obj;
-//                Assert.assertEquals("Status should be 'approved'", null, request.get("sApproved"));
-//                System.out.println("Approved Stock Request: " + request.toJSONString());
-//            }
-//
-//        } catch (Exception e) {
-//            System.err.println("Exception occurred while fetching approved stock requests: " + e.getMessage());
-//            e.printStackTrace();
-//            Assert.fail("Exception thrown during test execution.");
-//        }
-//    }
     @Test
     public void testGetApprovedRequest() {
         JSONObject loJSON;
@@ -376,6 +340,146 @@ public class testPurchaseOrder {
             Assert.fail();
         }
 
+    }
+
+    @Test
+    public void testReturnTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000003");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Master().getColumnCount(); lnCol++) {
+                System.out.println(poPurchasingController.PurchaseOrder().Master().getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchasingController.PurchaseOrder().Detail().size() - 1; lnCtr++) {
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                    System.out.println(poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                }
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().ReturnTransaction("Returned Test");
+
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
+    @Test
+    public void testApproveTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000003");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Master().getColumnCount(); lnCol++) {
+                System.out.println(poPurchasingController.PurchaseOrder().Master().getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchasingController.PurchaseOrder().Detail().size() - 1; lnCtr++) {
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                    System.out.println(poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                }
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().ApproveTransaction("Approved Test");
+
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
+    @Test
+    public void testVoidTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000003");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Master().getColumnCount(); lnCol++) {
+                System.out.println(poPurchasingController.PurchaseOrder().Master().getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println(poPurchasingController.PurchaseOrder().Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchasingController.PurchaseOrder().Detail().size() - 1; lnCtr++) {
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                    System.out.println(poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                }
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().VoidTransaction("Void Test");
+
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
     }
 
     @AfterClass
