@@ -269,6 +269,11 @@ public class PurchaseOrder extends Transaction {
         }
         poGRider.beginTrans("UPDATE STATUS", "Confirm Transaction", SOURCE_CODE, Master().getTransactionNo());
 
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
         //check  the user level again then if he/she allow to approve
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -276,12 +281,6 @@ public class PurchaseOrder extends Transaction {
         }
 
         //Update Stock Request
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
         poGRider.commitTrans();
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -327,15 +326,15 @@ public class PurchaseOrder extends Transaction {
 
         poGRider.beginTrans("UPDATE STATUS", "Approve Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-        //check  the user level again then if he/she allow to approve
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
 //      Update Purchase Stock Request
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
+            return poJSON;
+        }
+        //check  the user level again then if he/she allow to approve
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove);
+        if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
@@ -385,17 +384,18 @@ public class PurchaseOrder extends Transaction {
 
         poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo());
 
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
         //check  the user level again then if he/she allow to approve
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPost);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
+
         poGRider.commitTrans();
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -442,16 +442,18 @@ public class PurchaseOrder extends Transaction {
 
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
-        //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+
         poJSON = updateStockRequest(lsStatus, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        //change status
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
         poGRider.commitTrans();
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -497,17 +499,18 @@ public class PurchaseOrder extends Transaction {
         }
         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
 
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
         //check  the user level again then if he/she allow to approve
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbVoid);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
+
         poGRider.commitTrans();
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -553,16 +556,17 @@ public class PurchaseOrder extends Transaction {
         }
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Return Transaction", SOURCE_CODE, Master().getTransactionNo());
+        poJSON = updateStockRequest(lsStatus, true);
+        if (!"error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = updateStockRequest(lsStatus, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
+
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
@@ -627,18 +631,19 @@ public class PurchaseOrder extends Transaction {
                         if (Detail(lnCtr).getStockID().equals(poStockRequest.get(lnList).Detail(lnRow).getStockId())) {
                             lnRecQty = getPurchaseOrderQty(Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID());
                             StockRequest stockRequest = new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
-                            int request = stockRequest.Detail(lnRow).getApproved() - (stockRequest.Detail(lnRow).getIssued() + stockRequest.Detail(lnRow).getPurchase());
-                            if (request == 0) {
-                                poJSON.put("result", "error");
-                                poJSON.put("message", "Stock Request Descrepancy.");
-                                return poJSON;
-                            }
+
                             poJSON = stockRequest.InitTransaction();
                             if (!"success".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
                             poJSON = stockRequest.OpenTransaction(Detail(lnCtr).getSouceNo());
                             if (!"success".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                            int request = stockRequest.Detail(lnRow).getApproved() - (stockRequest.Detail(lnRow).getIssued() + stockRequest.Detail(lnRow).getPurchase());
+                            if (request == 0) {
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "Stock Request Descrepancy.");
                                 return poJSON;
                             }
                             poJSON = stockRequest.UpdateTransaction();
