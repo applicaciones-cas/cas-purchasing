@@ -147,10 +147,11 @@ public class PurchaseOrderReceiving_LP implements GValidator{
             return poJSON;
         }
         //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
-//        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
-//            poJSON.put("message", "Supplier is not set.");
-//            return poJSON;
-//        }
+        //Need to validate supplier : based on meeting 04142025
+        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
         if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
             poJSON.put("message", "Trucking is not set.");
             return poJSON;
