@@ -224,7 +224,9 @@ public class PurchaseOrder extends Transaction {
             if (lbUpdated) {
                 lbUpdated = loRecord.Master().getTranTotal().doubleValue() == Master().getTranTotal().doubleValue();
             }
-
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+            }
             if (lbUpdated) {
                 for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
                     lbUpdated = loRecord.Detail(lnCtr).getStockID().equals(Detail(lnCtr).getStockID());
@@ -1056,6 +1058,7 @@ public class PurchaseOrder extends Transaction {
                             && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
                         return poJSON;
                     }
                 }
