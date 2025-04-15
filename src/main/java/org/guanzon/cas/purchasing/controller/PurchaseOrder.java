@@ -142,7 +142,7 @@ public class PurchaseOrder extends Transaction {
         
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
         
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm);
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm,true);
 
         if (!"success".equals((String) poJSON.get("result"))) {            
             poGRider.rollbackTrans();      
