@@ -54,6 +54,7 @@ import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderValidatorFactory;
@@ -146,14 +147,10 @@ public class PurchaseOrder extends Transaction {
     }
 
     @Override
-    public JSONObject willSave() throws SQLException, CloneNotSupportedException {
+    public JSONObject willSave() throws SQLException, CloneNotSupportedException, GuanzonException {
         /* Put system validations and other assignments here */
         poJSON = new JSONObject();
-
-        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
-            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); // If edited, update transaction status to OPEN
-        }
-
+        boolean lbUpdated = false;
         boolean allZeroQuantity = true;  // Assume all items have zero quantity initially
         boolean hasValidItem = false;    // Flag for at least one valid item
 
@@ -188,6 +185,66 @@ public class PurchaseOrder extends Transaction {
                     detail.remove();
                 }
             }
+        }
+        if (PurchaseOrderStatus.RETURNED.equals(Master().getTransactionStatus())) {
+            PurchaseOrder loRecord = new PurchaseOrderControllers(poGRider, null).PurchaseOrder();
+            loRecord.InitTransaction();
+            loRecord.OpenTransaction(Master().getTransactionNo());
+
+            lbUpdated = loRecord.getDetailCount() == getDetailCount();
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getTransactionDate().equals(Master().getTransactionDate());
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getSupplierID().equals(Master().getSupplierID());
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getDestinationID().equals(Master().getDestinationID());
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getTermCode().equals(Master().getTermCode());
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getDiscount().doubleValue() == Master().getDiscount().doubleValue();
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getAdditionalDiscount().doubleValue() == Master().getAdditionalDiscount().doubleValue();
+            }
+
+            if (loRecord.Master().getWithAdvPaym() == true) {
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getDownPaymentRatesPercentage().doubleValue() == Master().getDownPaymentRatesPercentage().doubleValue();
+                }
+            }
+            if (loRecord.Master().getWithAdvPaym() == true) {
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getDownPaymentRatesAmount().doubleValue() == Master().getDownPaymentRatesAmount().doubleValue();
+                }
+            }
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getTranTotal().doubleValue() == Master().getTranTotal().doubleValue();
+            }
+
+            if (lbUpdated) {
+                for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
+                    lbUpdated = loRecord.Detail(lnCtr).getStockID().equals(Detail(lnCtr).getStockID());
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                    }
+
+                    if (!lbUpdated) {
+                        break;
+                    }
+                }
+            }
+
+            if (lbUpdated) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No update has been made.");
+                return poJSON;
+            }
+
+            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
         }
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
@@ -1037,9 +1094,9 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
                 + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
-        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition + " AND a.cTranStat = '1'");
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
 
-        lsSQL = lsSQL + " AND b.nApproved <> (b.nIssueQty + b.nOrderQty) "
+        lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
                 + " ORDER BY a.dTransact DESC";

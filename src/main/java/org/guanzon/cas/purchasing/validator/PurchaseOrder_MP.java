@@ -1,11 +1,8 @@
 package org.guanzon.cas.purchasing.validator;
 
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -87,6 +84,10 @@ public class PurchaseOrder_MP implements GValidator {
         LocalDate serverDate = new java.sql.Date(poGrider.getServerDate().getTime()).toLocalDate();
         LocalDate oneYearAgo = serverDate.minusYears(1);
 
+        if (poMaster.getSupplierID() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Suuplier.");
+            return poJSON;
+        }
         if (transactionDate == null) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
@@ -166,12 +167,6 @@ public class PurchaseOrder_MP implements GValidator {
         }
         poJSON.put("result", "success");
         return poJSON;
-    }
-
-    private static String xsDateShort(Date fdValue) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String date = sdf.format(fdValue);
-        return date;
     }
 
     private JSONObject validateConfirmed() {
