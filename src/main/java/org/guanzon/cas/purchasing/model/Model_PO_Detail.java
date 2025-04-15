@@ -64,6 +64,7 @@ public class Model_PO_Detail extends Model {
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nReceived", 0);
+            poEntity.updateObject("cSerialze", false);
             poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.insertRow();
@@ -111,6 +112,22 @@ public class Model_PO_Detail extends Model {
     @Override
     public String getNextCode() {
         return "";
+    }
+
+    public JSONObject setCategoryCode(String categoryCode) {
+        return setValue("sCategrCd", categoryCode);
+    }
+
+    public String getCategoryCode() {
+        return (String) getValue("sCategrCd");
+    }
+
+    public JSONObject isSerialized(boolean isSerialized) {
+        return setValue("cSerialze", isSerialized ? "1" : "0");
+    }
+
+    public boolean isSerialized() {
+        return ((String) getValue("cSerialze")).equals("1");
     }
 
     public JSONObject setTransactionNo(String transactionNo) {
