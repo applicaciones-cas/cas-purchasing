@@ -46,7 +46,7 @@ public class testPurchaseOrderReturn {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000001");
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000054");
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -84,7 +84,7 @@ public class testPurchaseOrderReturn {
                 */
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().ReturnTransaction("");
+            loJSON = poPurchasingController.PurchaseOrder().ReturnTransaction("return");
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
