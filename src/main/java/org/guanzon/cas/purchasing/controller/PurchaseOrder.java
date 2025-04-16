@@ -67,6 +67,7 @@ public class PurchaseOrder extends Transaction {
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
     List<StockRequest> poStockRequest;
+    List<Model> paDetailRemoved;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -125,6 +126,18 @@ public class PurchaseOrder extends Transaction {
     @Override
     public Model_PO_Detail Detail(int row) {
         return (Model_PO_Detail) paDetail.get(row);
+    }
+    
+    public int getDetailRemovedCount() {
+        if (paDetailRemoved == null) {
+            paDetailRemoved = new ArrayList<>();
+        }
+
+        return paDetailRemoved.size();
+    }
+
+    public Model_PO_Detail DetailRemove(int row) {
+        return (Model_PO_Detail) paDetailRemoved.get(row);
     }
 
     public JSONObject AddDetail() throws CloneNotSupportedException {
@@ -248,6 +261,15 @@ public class PurchaseOrder extends Transaction {
 
             Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
         }
+        
+        //Allow the user to edit details but seek an approval from the approving officer
+        if (PurchaseOrderStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+            poJSON = setValueToOthers(Master().getTransactionStatus());
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }  
+        
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
             Detail(lnCtr).setEntryNo(lnCtr + 1);
@@ -276,11 +298,22 @@ public class PurchaseOrder extends Transaction {
 
     @Override
     public JSONObject saveOthers() {
-        /*Only modify this if there are other tables to modify except the master and detail tables*/
-        poJSON = new JSONObject();
+        JSONObject poJSON = new JSONObject();
+        try {
+            poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+        } catch (CloneNotSupportedException | SQLException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", ex.getMessage());
+            return poJSON;
+        }
+
         poJSON.put("result", "success");
         return poJSON;
-
     }
 
     @Override
@@ -697,7 +730,7 @@ public class PurchaseOrder extends Transaction {
                     }
                 }
 
-                updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID());
+                updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), (int) Detail(lnCtr).getQuantity());
 
             } else {
                 //Require approve for all po receiving without po
@@ -705,16 +738,21 @@ public class PurchaseOrder extends Transaction {
                 pbApproval = true;
             }
         }
+         //Update stock request removed in purchase order
+        for (lnCtr = 0; lnCtr <= getDetailRemovedCount() - 1; lnCtr++) {
+            //Purchase Order
+            updateInvStockRequest(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(),(int) DetailRemove(lnCtr).getQuantity());
+        }
         poJSON.put("result", "success");
         return poJSON;
     }
 
-    private void updateInvStockRequest(String status, String orderNo, String stockId)
+    private void updateInvStockRequest(String status, String orderNo, String stockId,int quantity)
             throws GuanzonException,
             SQLException,
             CloneNotSupportedException {
-        int lnRow, lnList;
-        int lnRequestQty = 0;
+        int lnRow, lnList;        
+        int lnRecQty = 0;
         boolean lbExist = false;
         //2.check if order no is already exist in purchase order array list
         for (lnRow = 0; lnRow <= poStockRequest.size() - 1; lnRow++) {
@@ -726,7 +764,6 @@ public class PurchaseOrder extends Transaction {
             }
         }
 
-        //3. If order no is not exist add it on puchase order array list then open the transaction
         if (!lbExist) {
             poStockRequest.add(StockRequest());
             poStockRequest.get(poStockRequest.size() - 1).InitTransaction();
@@ -740,65 +777,63 @@ public class PurchaseOrder extends Transaction {
 
         for (lnRow = 0; lnRow <= poStockRequest.get(lnList).getDetailCount() - 1; lnRow++) {
             if (stockId.equals(poStockRequest.get(lnList).Detail(lnRow).getStockId())) {
-
-                int currentqty = poStockRequest.get(lnList).Detail(lnRow).getPurchase();
-                lnRequestQty = getRequestQty(orderNo, stockId);
+               
                 switch (status) {
                     case PurchaseOrderStatus.CONFIRMED:
-                        lnRequestQty = currentqty + lnRequestQty;
+                        lnRecQty =  getRequestQty(orderNo, stockId, true);
+                        lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
-                        //Get total received qty from other po receiving entry
                         poStockRequest.get(lnList).Master().setProcessed(true);
                         poStockRequest.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
                         poStockRequest.get(lnList).Master().setModifyingId(poGRider.getUserID());
                         break;
                     case PurchaseOrderStatus.VOID:
                     case PurchaseOrderStatus.RETURNED:
-                        lnRequestQty = currentqty - lnRequestQty;
+                        lnRecQty = getRequestQty(orderNo, stockId, false);
+                        lnRecQty =   lnRecQty - quantity;
                         break;
                 }
-                //set Receive qty in Purchase Order detail
-                if (lnRequestQty < 0) {
-                    lnRequestQty = 0;
+                if(lnRecQty < 0){
+                    lnRecQty = 0;
                 }
-                poStockRequest.get(lnList).Detail(lnRow).setPurchase(lnRequestQty);
+                poStockRequest.get(lnList).Detail(lnRow).setPurchase(lnRecQty);
                 poStockRequest.get(lnList).Detail(lnRow).setModifiedDate(poGRider.getServerDate());
                 break;
             }
         }
     }
 
-    private int getRequestQty(String orderNo, String stockId) throws SQLException, GuanzonException {
+    private int getRequestQty(String orderNo, String stockId,boolean isAdd) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
-        int lnRequestQty = 0;
+        int lnRecQty = 0;
         String lsSQL = "SELECT b.nQuantity AS nQuantity "
                 + "FROM po_master a "
                 + "LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox ";
-        String lsCondition = String.join(" AND ",
-                " a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo()),
-                " b.sSourceNo = " + SQLUtil.toSQL(orderNo),
-                " b.sStockIDx = " + SQLUtil.toSQL(stockId));
-
-        lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
-
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-        try {
-            // Check if result set contains records
-            if (loRS != null && loRS.next()) {
-                // Iterate through result set and sum quantities
-                do {
-                    lnRequestQty = loRS.getInt("nQuantity");
-                } while (loRS.next());
+        
+         lsSQL = MiscUtil.addCondition(lsSQL, " b.sSourceNo = " + SQLUtil.toSQL(orderNo)
+                + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
+                + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
+                + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED)
+                + " ) ");
+         if (isAdd) {
+                lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
             }
-        } catch (SQLException e) {
-            System.out.println("Error loading received quantities: " + e.getMessage());
-            lnRequestQty = 0;
-        } finally {
-            // Always close ResultSet to avoid memory leak
+
+        System.out.println("executeQuery: >>>> " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+         try {
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                while (loRS.next()) {
+                    lnRecQty = lnRecQty + loRS.getInt("nQuantity");
+                }
+            }
             MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            System.out.println("No record loaded.");
+            lnRecQty = 0;
         }
-        return lnRequestQty;
+        return lnRecQty;
     }
 
     private JSONObject saveUpdates(String status)
@@ -806,7 +841,6 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         int lnCtr;
         try {
-
             for (lnCtr = 0; lnCtr <= poStockRequest.size() - 1; lnCtr++) {
                 if (PurchaseOrderStatus.APPROVED.equals(status)) {
                     poStockRequest.get(lnCtr).Master().setProcessed(true);
