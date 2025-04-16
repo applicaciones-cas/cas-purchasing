@@ -935,24 +935,26 @@ public class PurchaseOrder extends Transaction {
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
-
+        String category = (Detail(row).Inventory().getCategoryFirstLevelId() != null
+                && !Detail(row).Inventory().getCategoryFirstLevelId().isEmpty()) ? Detail(row).Inventory().getCategoryFirstLevelId() : null;
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
-
-        String scannedStockID = object.getModel().getStockId();
-        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            if (lnCtr != row) {
-                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "This barcode is already added in another row.");
-                    return poJSON;
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
                 }
             }
-            Detail(row).setStockID(scannedStockID);
+            Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-
+            Detail(row).isSerialized(object.getModel().isSerialized());
+            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
@@ -967,26 +969,24 @@ public class PurchaseOrder extends Transaction {
         String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
 
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-        String scannedStockID = object.getModel().getStockId();
-        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
-            if (lnCtr != row) {
-                String existingSourceID = (String) Detail(lnCtr).getSouceNo();
-                String existingStockID = (String) Detail(lnCtr).getStockID();
-                if (existingSourceID.isEmpty() && scannedStockID.equals(existingStockID)) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "This barcode is already added in another row.");
-                    return poJSON;
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Barcode: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
                 }
             }
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+            Detail(row).isSerialized(object.getModel().isSerialized());
+            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
-
-        Detail(row).setStockID(scannedStockID);
-        Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-        Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
         return poJSON;
     }
 
@@ -1057,18 +1057,18 @@ public class PurchaseOrder extends Transaction {
                     if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
                             && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
                         poJSON.put("result", "error");
-                        poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("message", "Barcode: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
                         poJSON.put("tableRow", lnRow);
                         return poJSON;
                     }
                 }
             }
-
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+            Detail(row).isSerialized(object.getModel().isSerialized());
+            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
-
         return poJSON;
     }
 
@@ -1236,6 +1236,8 @@ public class PurchaseOrder extends Transaction {
                     Detail(lnLastIndex).setRecordOrder(0);
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
+                    Detail(lnLastIndex).setCategoryCode(loTrans.StockRequest().Detail(lnCtr).Inventory().getCategoryFirstLevelId());
+                    Detail(lnLastIndex).isSerialized(loTrans.StockRequest().Detail(lnCtr).Inventory().isSerialized());
 
 //                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
 //                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
