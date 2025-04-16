@@ -16,5 +16,6 @@ public class PurchaseOrderReceivingStatus {
     public static final  String CANCELLED = "3";
     public static final  String VOID = "4";
     public static final  String POSTED = "5"; //paid
+    public static final  String PAID = "50"; 
     public static final  String RETURNED = "6";
 }

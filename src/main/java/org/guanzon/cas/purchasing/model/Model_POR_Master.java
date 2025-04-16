@@ -331,12 +331,12 @@ public class Model_POR_Master extends Model {
         return (String) getValue("sInvTypCd");
     }
     
-    public String getProcessed(){
-        return (String) getValue("cProcessd");
+    public JSONObject isProcessed(boolean isProcessed){
+        return setValue("cProcessd", isProcessed ? "1" : "0");
     }
     
-    public JSONObject setProcessed(String processed){
-        return setValue("cProcessd", processed);
+    public boolean isProcessed(){
+        return ((String) getValue("cProcessd")).equals("1");
     }
     
     public JSONObject setTransactionStatus(String transactionStatus){

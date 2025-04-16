@@ -115,6 +115,24 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
+            poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
+        //Need to validate supplier : based on meeting 04142025
+        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
+        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
+            poJSON.put("message", "Trucking is not set.");
+            return poJSON;
+        }
         if (loReferenceDate == null) {
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;
@@ -137,7 +155,41 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
             poJSON.put("message", "Reference is not set.");
             return poJSON;
         }
+        if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Term.");
+            return poJSON;
+        }
         
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject validateConfirmed()throws SQLException{
+        poJSON = new JSONObject();
+        Date loTransactionDate = poMaster.getTransactionDate();
+        Date loReferenceDate = poMaster.getReferenceDate();
+        LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
+        LocalDate oneYearAgo = serverDate.minusYears(1);
+        
+        if (loTransactionDate == null) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+        LocalDate transactionDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
+        if (transactionDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future transaction dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (transactionDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
+            return poJSON;
+        }
         if (poMaster.getIndustryId() == null) {
             poJSON.put("message", "Industry is not set.");
             return poJSON;
@@ -156,18 +208,33 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
             poJSON.put("message", "Trucking is not set.");
             return poJSON;
         }
+        if (loReferenceDate == null) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        if ("1900-01-01".equals(xsDateShort(loReferenceDate))) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        LocalDate referenceDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
+        if (referenceDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future reference dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (referenceDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated reference dates beyond 1 year are not allowed.");
+            return poJSON;
+        }
+        if (poMaster.getReferenceNo()== null || poMaster.getReferenceNo().isEmpty()) {
+            poJSON.put("message", "Reference is not set.");
+            return poJSON;
+        }
         if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
             poJSON.put("message", "Invalid Term.");
             return poJSON;
         }
         
-        poJSON.put("result", "success");
-        return poJSON;
-    }
-    
-    private JSONObject validateConfirmed(){
-        poJSON = new JSONObject();
-                
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -207,9 +274,77 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateReturned(){
+    private JSONObject validateReturned()throws SQLException{
         poJSON = new JSONObject();
-                
+        Date loTransactionDate = poMaster.getTransactionDate();
+        Date loReferenceDate = poMaster.getReferenceDate();
+        LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
+        LocalDate oneYearAgo = serverDate.minusYears(1);
+        
+        if (loTransactionDate == null) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+        LocalDate transactionDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
+        if (transactionDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future transaction dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (transactionDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
+            return poJSON;
+        }
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
+            poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
+        //Need to validate supplier : based on meeting 04142025
+        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
+            poJSON.put("message", "Supplier is not set.");
+            return poJSON;
+        }
+        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
+            poJSON.put("message", "Trucking is not set.");
+            return poJSON;
+        }
+        if (loReferenceDate == null) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        if ("1900-01-01".equals(xsDateShort(loReferenceDate))) {
+            poJSON.put("message", "Invalid Reference Date.");
+            return poJSON;
+        }
+        LocalDate referenceDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
+        if (referenceDate.isAfter(serverDate)) {
+            poJSON.put("message", "Future reference dates are not allowed.");
+            return poJSON;
+        }
+        // Backdated beyond 1 year validation
+        if (referenceDate.isBefore(oneYearAgo)) {
+            poJSON.put("message", "Backdated reference dates beyond 1 year are not allowed.");
+            return poJSON;
+        }
+        if (poMaster.getReferenceNo()== null || poMaster.getReferenceNo().isEmpty()) {
+            poJSON.put("message", "Reference is not set.");
+            return poJSON;
+        }
+        if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Term.");
+            return poJSON;
+        }
+        
         poJSON.put("result", "success");
         return poJSON;
     }

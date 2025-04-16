@@ -219,6 +219,22 @@ public class Model_POR_Detail extends Model{
         return (String) getValue("cWithVATx");
     }
     
+    public JSONObject setCategoryCode(String categoryCode){
+        return setValue("sCategrCd", categoryCode);
+    }
+    
+    public String getCategoryCode(){
+        return (String) getValue("sCategrCd");
+    }
+    
+    public JSONObject isSerialize(boolean isSerialize){
+        return setValue("cSerialze", isSerialize ? "1" : "0");
+    } 
+    
+    public boolean isSerialize(){
+        return ((String) getValue("cSerialze")).equals("1");
+    }
+    
     public JSONObject setModifiedDate(Date modifiedDate){
         return setValue("dModified", modifiedDate);
     }
