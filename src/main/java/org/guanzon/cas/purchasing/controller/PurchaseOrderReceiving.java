@@ -754,7 +754,7 @@ public class PurchaseOrderReceiving extends Transaction {
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
-
+        poJSON.put("row", row);
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
         
@@ -765,6 +765,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId());
 //        }
         poJSON = object.searchRecord(value, byCode);
+        poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
@@ -783,6 +784,7 @@ public class PurchaseOrderReceiving extends Transaction {
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
+        poJSON.put("row", row);
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
@@ -792,6 +794,8 @@ public class PurchaseOrderReceiving extends Transaction {
         } else {
             poJSON = object.searchRecord(value, byCode, Master().getSupplierId(), null, Master().getIndustryId());
         }
+        
+        poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
@@ -863,6 +867,7 @@ public class PurchaseOrderReceiving extends Transaction {
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
+        poJSON.put("row", row);
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
@@ -874,6 +879,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         // poJSON = object.searchRecordOfVariants(value, byCode);
+        poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
@@ -1046,6 +1052,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON.put("result", "error");
                     poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
                     poJSON.put("row", lnRow);
+                    System.out.println("json row : " + poJSON.get("row"));
                     return poJSON;
                 } 
             }
