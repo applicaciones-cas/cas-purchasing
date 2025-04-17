@@ -697,7 +697,67 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
+    
+//    public JSONObject isDetailHasZeroQty() {
+//    /* Put system validations and other assignments here */
+//    poJSON = new JSONObject();
+//    boolean allZeroQuantity = true;
+//    int tblRow = 0;
+//
+//    // Step 1: Scan all items first
+//    for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
+//        int quantity = Detail(lnRow).getQuantity().intValue();
+//        String stockID = (String) Detail(lnRow).getValue("sStockIDx");
+//        if (!stockID.isEmpty()){
+//            if (quantity != 0) {
+//                tblRow = lnRow;
+//                allZeroQuantity = false; 
+//                // Found at least one item with non-zero quantity
+//                break;
+//            }
+//        }
+//    } 
+//    if (allZeroQuantity) {
+//        poJSON.put("result", "success");
+//    } else {
+//        poJSON.put("result", "error");
+//        poJSON.put("message", "Some items have non-zero quantity. Do you want to proceed anyway?");        
+//        poJSON.put("tableRow", tblRow);
+//    }
+//
+//    return poJSON;
+//}
 
+    public JSONObject isDetailHasZeroQty() {
+    poJSON = new JSONObject();
+    boolean allZeroQuantity = true;
+    int tblRow = -1;
+
+    for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
+        int quantity = Detail(lnRow).getQuantity().intValue();
+        String stockID = (String) Detail(lnRow).getValue("sStockIDx");
+
+        if (!stockID.isEmpty()) {
+            if (quantity != 0) {
+                allZeroQuantity = false;  // Found at least one item with non-zero quantity
+            } else if (tblRow == -1) {
+                tblRow = lnRow;  // Capture the first row with zero quantity
+            }
+        }
+    }
+
+    if (allZeroQuantity) {
+        poJSON.put("result", "success");
+    } else {
+        poJSON.put("result", "error");
+        poJSON.put("message", "Some items have non-zero quantity. Do you want to proceed anyway?");
+        poJSON.put("tableRow", tblRow);
+    }
+
+    return poJSON;
+}
+
+    
     private JSONObject setValueToOthers(String status)
             throws CloneNotSupportedException,
             SQLException,
