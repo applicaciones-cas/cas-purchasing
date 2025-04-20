@@ -71,13 +71,15 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
                 case PurchaseOrderReceivingStatus.CONFIRMED:
                     return validateConfirmed();
                 case PurchaseOrderReceivingStatus.POSTED:
-                    return validateProcessed();
+                    return validatePosted();
+                case PurchaseOrderReceivingStatus.PAID:
+                    return validatePaid();
                 case PurchaseOrderReceivingStatus.CANCELLED:
                     return validateCancelled();
                 case PurchaseOrderReceivingStatus.VOID:
                     return validateVoid();
                 case PurchaseOrderReceivingStatus.RETURNED:
-                    return validateProcessed();
+                    return validateReturned();
                 default:
                     poJSON = new JSONObject();
                     poJSON.put("result", "success");
@@ -254,6 +256,13 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
     }
     
     private JSONObject validatePosted(){
+        poJSON = new JSONObject();
+                
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject validatePaid(){
         poJSON = new JSONObject();
                 
         poJSON.put("result", "success");
