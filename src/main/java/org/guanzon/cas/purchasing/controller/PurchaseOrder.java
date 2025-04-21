@@ -683,39 +683,44 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
-
     public JSONObject isDetailHasZeroQty() {
-        poJSON = new JSONObject();
-        boolean allZeroQuantity = true;
-        int tblRow = -1;
+    poJSON = new JSONObject();
+    boolean allZeroQuantity = true;
+    int tblRow = -1;
 
-        for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
+    for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
+        String stockID = (String) Detail(lnRow).getValue("sStockIDx");
+        if (!stockID.isEmpty()) {
             int quantity = Detail(lnRow).getQuantity().intValue();
-            String stockID = (String) Detail(lnRow).getValue("sStockIDx");
-
-            if (!stockID.isEmpty()) {
-                if (quantity != 0) {
-                    allZeroQuantity = false;  // Found at least one item with non-zero quantity
-                } else if (tblRow == -1) {
-                    tblRow = lnRow;  // Capture the first row with zero quantity
-                }
+            if (quantity != 0) {
+                allZeroQuantity = false;
+            } else if (tblRow == -1) {
+                tblRow = lnRow; // first item with 0 quantity
             }
         }
-
-        if (allZeroQuantity) {
-            poJSON.put("result", "error");
-            poJSON.put("warning", "true");
-            poJSON.put("message", "All items have zero quantity. Please enter a valid quantity.");
-            poJSON.put("tableRow", tblRow);
-        } else {
-            poJSON.put("result", "error");
-            poJSON.put("warning", "false");
-            poJSON.put("message", "Some items have non-zero quantity. Do you want to proceed anyway?");
-            poJSON.put("tableRow", tblRow);
-        }
-
-        return poJSON;
     }
+
+    // If allZeroQuantity is true and tblRow is still -1, find the first valid row
+    if (allZeroQuantity && tblRow == -1) {
+        for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
+            String stockID = (String) Detail(lnRow).getValue("sStockIDx");
+            if (!stockID.isEmpty()) {
+                tblRow = lnRow;
+                break;
+            }
+        }
+    }
+
+    poJSON.put("result", "error");
+    poJSON.put("warning", String.valueOf(allZeroQuantity));
+    poJSON.put("message", allZeroQuantity
+        ? "All items have zero quantity. Please enter a valid quantity."
+        : "Some items have non-zero quantity. Do you want to proceed anyway?");
+    poJSON.put("tableRow", tblRow);
+
+    return poJSON;
+}
+
 
     private JSONObject setValueToOthers(String status)
             throws CloneNotSupportedException,
