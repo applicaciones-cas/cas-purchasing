@@ -227,11 +227,11 @@ public class Model_POR_Detail extends Model{
         return (String) getValue("sCategrCd");
     }
     
-    public JSONObject isSerialize(boolean isSerialize){
+    public JSONObject isSerialized(boolean isSerialize){
         return setValue("cSerialze", isSerialize ? "1" : "0");
     } 
     
-    public boolean isSerialize(){
+    public boolean isSerialized(){
         return ((String) getValue("cSerialze")).equals("1");
     }
     

@@ -851,7 +851,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
-            Detail(row).isSerialize(object.getModel().isSerialized());
+            Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
         return poJSON;
@@ -888,7 +888,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
-            Detail(row).isSerialize(object.getModel().isSerialized());
+            Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
 
@@ -1001,7 +1001,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
-            Detail(row).isSerialize(object.getModel().isSerialized());
+            Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
 
@@ -1494,7 +1494,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity());
                             Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
                             Detail(getDetailCount() - 1).setCategoryCode(loTrans.PurchaseOrder().Detail(lnCtr).getCategoryCode());
-                            Detail(getDetailCount() - 1).isSerialize(loTrans.PurchaseOrder().Detail(lnCtr).isSerialize());
+                            Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrder().Detail(lnCtr).isSerialized());
 
                             AddDetail();
                         }
