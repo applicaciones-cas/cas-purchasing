@@ -83,6 +83,7 @@ import org.json.simple.parser.ParseException;
 public class PurchaseOrderReceiving extends Transaction {
 
     private boolean pbApproval = false;
+    private boolean pbIsPrint = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorId = "";
@@ -2118,12 +2119,14 @@ public class PurchaseOrderReceiving extends Transaction {
         if (paDetailRemoved == null) {
             paDetailRemoved = new ArrayList<>();
         }
-
-        if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } 
+        
+        if(!pbIsPrint){
+            if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                } 
+            }
         }
 
         Master().setModifyingId(poGRider.getUserID());
@@ -3084,7 +3087,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poMaster.setValue("dModified", poGRider.getServerDate());
                     poMaster.setValue("sModified", poGRider.getUserID());
                     poMaster.setValue("cPrintxxx", Logical.YES);
-
+                    pbIsPrint = fbIsPrinted;
                     poJSON = SaveTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
@@ -3093,6 +3096,8 @@ public class PurchaseOrderReceiving extends Transaction {
                         });
                         fbIsPrinted = false;
                     }
+                    
+                    pbIsPrint = false;
                 }
             }
 
