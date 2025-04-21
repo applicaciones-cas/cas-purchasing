@@ -164,29 +164,7 @@ public class PurchaseOrder extends Transaction {
         /* Put system validations and other assignments here */
         poJSON = new JSONObject();
         boolean lbUpdated = false;
-        boolean allZeroQuantity = true;  // Assume all items have zero quantity initially
-        boolean hasValidItem = false;    // Flag for at least one valid item
-
-        // Step 1: Scan all items first
-        for (int lnCntr = 0; lnCntr < getDetailCount(); lnCntr++) {
-            int quantity = Detail(lnCntr).getQuantity().intValue();
-            String stockID = (String) Detail(lnCntr).getValue("sStockIDx");
-
-            if (quantity > 0 && !stockID.isEmpty()) {
-                allZeroQuantity = false;  // Found at least one valid item
-                hasValidItem = true;
-            }
-        }
-
-        // Step 2: If all items have zero quantity, return an error and stop
-        if (allZeroQuantity) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "All items have zero quantity. Please enter a valid quantity.");
-            return poJSON;
-        }
-
-        // Step 3: If there is at least one valid item, proceed to remove invalid rows
-        if (hasValidItem) {
+       
             Iterator<Model> detail = Detail().iterator();
             while (detail.hasNext()) {
                 Model item = detail.next();
@@ -198,7 +176,6 @@ public class PurchaseOrder extends Transaction {
                     detail.remove();
                 }
             }
-        }
         if (PurchaseOrderStatus.RETURNED.equals(Master().getTransactionStatus())) {
             PurchaseOrder loRecord = new PurchaseOrderControllers(poGRider, null).PurchaseOrder();
             loRecord.InitTransaction();
@@ -355,10 +332,10 @@ public class PurchaseOrder extends Transaction {
         }
 
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -415,10 +392,10 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -477,10 +454,10 @@ public class PurchaseOrder extends Transaction {
         }
 
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -538,10 +515,10 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -599,10 +576,10 @@ public class PurchaseOrder extends Transaction {
         }
 
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -661,10 +638,10 @@ public class PurchaseOrder extends Transaction {
         }
 
         if (poGRider.getUserLevel() == 16) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -698,35 +675,6 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
     
-//    public JSONObject isDetailHasZeroQty() {
-//    /* Put system validations and other assignments here */
-//    poJSON = new JSONObject();
-//    boolean allZeroQuantity = true;
-//    int tblRow = 0;
-//
-//    // Step 1: Scan all items first
-//    for (int lnRow = 0; lnRow < getDetailCount() - 1; lnRow++) {
-//        int quantity = Detail(lnRow).getQuantity().intValue();
-//        String stockID = (String) Detail(lnRow).getValue("sStockIDx");
-//        if (!stockID.isEmpty()){
-//            if (quantity != 0) {
-//                tblRow = lnRow;
-//                allZeroQuantity = false; 
-//                // Found at least one item with non-zero quantity
-//                break;
-//            }
-//        }
-//    } 
-//    if (allZeroQuantity) {
-//        poJSON.put("result", "success");
-//    } else {
-//        poJSON.put("result", "error");
-//        poJSON.put("message", "Some items have non-zero quantity. Do you want to proceed anyway?");        
-//        poJSON.put("tableRow", tblRow);
-//    }
-//
-//    return poJSON;
-//}
 
     public JSONObject isDetailHasZeroQty() {
     poJSON = new JSONObject();
@@ -747,9 +695,13 @@ public class PurchaseOrder extends Transaction {
     }
 
     if (allZeroQuantity) {
-        poJSON.put("result", "success");
+        poJSON.put("result", "error");
+        poJSON.put("warning", "true");
+        poJSON.put("message", "All items have zero quantity. Please enter a valid quantity.");
+        poJSON.put("tableRow", tblRow);
     } else {
         poJSON.put("result", "error");
+        poJSON.put("warning", "false");
         poJSON.put("message", "Some items have non-zero quantity. Do you want to proceed anyway?");
         poJSON.put("tableRow", tblRow);
     }
