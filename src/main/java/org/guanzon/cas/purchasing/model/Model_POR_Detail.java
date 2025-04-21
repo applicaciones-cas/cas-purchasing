@@ -300,7 +300,7 @@ public class Model_POR_Detail extends Model{
     }
     
     public Model_Brand Brand() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sStockIDx"))) {
+        if (!"".equals((String) getValue("sStockIDx")) && (String) getValue("sStockIDx") != null) {
             setBrandId(Inventory().getBrandId());
         }
         
