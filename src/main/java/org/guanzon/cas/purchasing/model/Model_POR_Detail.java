@@ -279,27 +279,31 @@ public class Model_POR_Detail extends Model{
     }
     
     public Model_Inventory Supersede() throws SQLException, GuanzonException {
-            if (!"".equals((String) getValue("sReplacID"))) {
-                if (poInventory.getEditMode() == EditMode.READY
-                        && poInventory.getStockId().equals((String) getValue("sReplacID"))) {
+        if (!"".equals((String) getValue("sReplacID"))) {
+            if (poInventory.getEditMode() == EditMode.READY
+                    && poInventory.getStockId().equals((String) getValue("sReplacID"))) {
+                return poInventory;
+            } else {
+                poJSON = poInventory.openRecord((String) getValue("sReplacID"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
                     return poInventory;
                 } else {
-                    poJSON = poInventory.openRecord((String) getValue("sReplacID"));
-
-                    if ("success".equals((String) poJSON.get("result"))) {
-                        return poInventory;
-                    } else {
-                        poInventory.initialize();
-                        return poInventory;
-                    }
+                    poInventory.initialize();
+                    return poInventory;
                 }
-            } else {
-                poInventory.initialize();
-                return poInventory;
             }
+        } else {
+            poInventory.initialize();
+            return poInventory;
+        }
     }
     
     public Model_Brand Brand() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sStockIDx"))) {
+            setBrandId(Inventory().getBrandId());
+        }
+        
         if (!"".equals(getBrandId())) {
             if (poBrand.getEditMode() == EditMode.READY
                     && poBrand.getBrandId().equals(getBrandId())) {

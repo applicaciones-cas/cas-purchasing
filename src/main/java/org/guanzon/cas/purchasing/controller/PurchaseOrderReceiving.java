@@ -1797,7 +1797,7 @@ public class PurchaseOrderReceiving extends Transaction {
         int lnSerialRow = 0;
         String lsColName = "Serial";
         if(value == null || "".equals(value)){
-            poJSON.put("set", true);
+            poJSON.put("set", false);
             return poJSON;
         }
         
@@ -2376,7 +2376,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             lsColumnName = getColumnName("serial01");
                             if("success".equals((String) loJSON.get("result"))){
                                 poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName + " already exist in database see Serial ID: < " + (String) loJSON.get("sSerialID") + ">");
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
                                 return poJSON;
                             } 
 
@@ -2385,7 +2385,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             lsColumnName = getColumnName("serial02");
                             if("error".equals((String) loJSON.get("result"))){
                                 poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName + " already exist in database see Serial ID: < " + (String) loJSON.get("sSerialID") + ">");
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
                                 return poJSON;
                             }
 
@@ -2396,7 +2396,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                 lsColumnName = getColumnName("csno");
                                 if("error".equals((String) loJSON.get("result"))){
                                     poJSON.put("result", "error");
-                                    poJSON.put("message", lsColumnName + " at Entry No. " +PurchaseOrderReceivingSerialList(lnList).getEntryNo()+ " already exist in database see Serial ID: < " + (String) loJSON.get("sSerialID") + ">");
+                                    poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
                                     return poJSON;
                                 }
                             }
@@ -2408,7 +2408,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                 lsColumnName = getColumnName("plateno");
                                 if("error".equals((String) loJSON.get("result"))){
                                     poJSON.put("result", "error");
-                                    poJSON.put("message", lsColumnName + " already exist in database see Serial ID: < " + (String) loJSON.get("sSerialID") + ">");
+                                    poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
                                     return poJSON;
                                 }
                             }
