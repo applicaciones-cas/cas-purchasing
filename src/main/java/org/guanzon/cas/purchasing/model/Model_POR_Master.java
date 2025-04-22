@@ -347,6 +347,14 @@ public class Model_POR_Master extends Model {
         return (String) getValue("cTranStat");
     }
     
+    public JSONObject setCategoryCode(String categoryCode){
+        return setValue("sCategrCd", categoryCode);
+    }
+    
+    public String getCategoryCode(){
+        return (String) getValue("sCategrCd");
+    }
+    
     public JSONObject setModifyingId(String modifyingId){
         return setValue("sModified", modifyingId);
     }

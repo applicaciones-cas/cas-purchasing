@@ -219,14 +219,6 @@ public class Model_POR_Detail extends Model{
         return (String) getValue("cWithVATx");
     }
     
-    public JSONObject setCategoryCode(String categoryCode){
-        return setValue("sCategrCd", categoryCode);
-    }
-    
-    public String getCategoryCode(){
-        return (String) getValue("sCategrCd");
-    }
-    
     public JSONObject isSerialized(boolean isSerialize){
         return setValue("cSerialze", isSerialize ? "1" : "0");
     } 

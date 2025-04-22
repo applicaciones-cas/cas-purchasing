@@ -125,6 +125,14 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
+        if (poMaster.getDepartmentId()== null || poMaster.getDepartmentId().isEmpty()) {
+            poJSON.put("message", "Department is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCategoryCode()== null || poMaster.getCategoryCode().isEmpty()) {
+            poJSON.put("message", "Category is not set.");
+            return poJSON;
+        }
         //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
         //Need to validate supplier : based on meeting 04142025
         if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
@@ -198,6 +206,14 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
         }
         if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
             poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        if (poMaster.getDepartmentId()== null || poMaster.getDepartmentId().isEmpty()) {
+            poJSON.put("message", "Department is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCategoryCode()== null || poMaster.getCategoryCode().isEmpty()) {
+            poJSON.put("message", "Category is not set.");
             return poJSON;
         }
         //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
@@ -315,6 +331,14 @@ public class PurchaseOrderReceiving_Hospitality implements GValidator{
         }
         if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
             poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        if (poMaster.getDepartmentId()== null || poMaster.getDepartmentId().isEmpty()) {
+            poJSON.put("message", "Department is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCategoryCode()== null || poMaster.getCategoryCode().isEmpty()) {
+            poJSON.put("message", "Category is not set.");
             return poJSON;
         }
         //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
