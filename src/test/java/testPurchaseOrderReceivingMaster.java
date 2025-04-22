@@ -44,7 +44,7 @@ public class testPurchaseOrderReceivingMaster {
 //    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
-        String industryId = "02";
+        String industryId = "01";
         String remarks = "this is a test RSIE Class 3.";
         
         String stockId = "M00125000001";
@@ -66,6 +66,9 @@ public class testPurchaseOrderReceivingMaster {
             } 
             
             try {
+                poPurchaseReceivingController.setIndustryId(industryId);
+                poPurchaseReceivingController.setCompanyId("0002");
+                poPurchaseReceivingController.setCategoryId("0001");
                 
                 poPurchaseReceivingController.Master().setIndustryId(industryId); //direct assignment of value
                 Assert.assertEquals(poPurchaseReceivingController.Master().getIndustryId(), industryId);
@@ -77,56 +80,39 @@ public class testPurchaseOrderReceivingMaster {
                 Assert.assertEquals(poPurchaseReceivingController.Master().getReferenceNo(), "01");
                 poPurchaseReceivingController.Master().setCompanyId("0002"); //direct assignment of value
                 Assert.assertEquals(poPurchaseReceivingController.Master().getCompanyId(), "0002");
+                poPurchaseReceivingController.Master().setDepartmentId("026"); //direct assignment of value
+                Assert.assertEquals(poPurchaseReceivingController.Master().getDepartmentId(), "026");
+                poPurchaseReceivingController.Master().setSupplierId("C00124000020"); //direct assignment of value
+                Assert.assertEquals(poPurchaseReceivingController.Master().getSupplierId(), "C00124000020");
                 poPurchaseReceivingController.Master().setTruckingId("C00124000010"); //direct assignment of value
                 Assert.assertEquals(poPurchaseReceivingController.Master().getTruckingId(), "C00124000010");
                 poPurchaseReceivingController.Master().setTermCode("0000003"); //direct assignment of value
                 Assert.assertEquals(poPurchaseReceivingController.Master().getTermCode(), "0000003");
                 poPurchaseReceivingController.Master().setBranchCode(branchCd); //direct assignment of value
                 Assert.assertEquals(poPurchaseReceivingController.Master().getBranchCode(), branchCd);
-
-                //you can use poPurchaseReceivingController.SearchIndustry() when on UI 
-    //            loJSON = poPurchaseReceivingController.SearchIndustry("", false);
-    //            if (!"success".equals((String) loJSON.get("result"))){
-    //                System.err.println((String) loJSON.get("message"));
-    //                Assert.fail();
-    //            } 
                 
                 poPurchaseReceivingController.Master().setRemarks(remarks);
                 Assert.assertEquals(poPurchaseReceivingController.Master().getRemarks(), remarks);
 
                 poPurchaseReceivingController.Detail(0).setStockId(stockId);
                 poPurchaseReceivingController.Detail(0).setQuantity(quantity);
-//                poPurchaseReceivingController.Detail(0).setExpiryDate(instance.getServerDate()); //direct assignment of value
-
-                poPurchaseReceivingController.AddDetail();
-                poPurchaseReceivingController.Detail(1).setStockId("M00225000111");
-                poPurchaseReceivingController.Detail(1).setQuantity(0);
-//                poPurchaseReceivingController.Detail(1).setExpiryDate(instance.getServerDate()); //direct assignment of value
-
-                poPurchaseReceivingController.AddDetail();
-                poPurchaseReceivingController.Detail(2).setStockId("M00225000222");
-                poPurchaseReceivingController.Detail(2).setQuantity(1);
-//                poPurchaseReceivingController.Detail(2).setExpiryDate(instance.getServerDate()); //direct assignment of value
-
-                poPurchaseReceivingController.AddDetail();
-                poPurchaseReceivingController.Detail(3).setStockId("M00225000333");
-                poPurchaseReceivingController.Detail(3).setQuantity(5);
-//                poPurchaseReceivingController.Detail(3).setExpiryDate(instance.getServerDate()); //direct assignment of value
-
+                poPurchaseReceivingController.Detail(0).setCategoryCode("0001");
+                poPurchaseReceivingController.Detail(0).isSerialized(true);
+                poPurchaseReceivingController.Detail(0).setQuantity(1);
                 poPurchaseReceivingController.AddDetail();
                 
                 poPurchaseReceivingController.computeFields();
                 
                 //populate POR Serial
-                loJSON = poPurchaseReceivingController.getPurchaseOrderReceivingSerial(3);
+                loJSON = poPurchaseReceivingController.getPurchaseOrderReceivingSerial(1);
                 if("success".equals((String) loJSON.get("result"))){
-                    System.out.println("inv serial cnt" + poPurchaseReceivingController.getPurchaseOrderReceivingSerialCount());
+                    System.out.println("inv serial cnt : " + poPurchaseReceivingController.getPurchaseOrderReceivingSerialCount());
+                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setLocationId("333");
+                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setStockId(stockId);
                     poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setSerial01("0011");
                     poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setSerial02("0013");
-                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setPlateNo("001sa1");
-                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setConductionStickerNo("333");
-                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setLocationId("333");
-                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setStockId("333");
+//                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setPlateNo("001sa1");
+//                    poPurchaseReceivingController.PurchaseOrderReceivingSerialList(0).setConductionStickerNo("333");
                 }
                 
                 System.out.println("Industry ID : " + instance.getIndustry());
@@ -149,6 +135,62 @@ public class testPurchaseOrderReceivingMaster {
             Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    @Test
+    public void testUpdateTransaction() {
+        JSONObject loJSON;
+       
+        try {
+            loJSON = poPurchaseReceivingController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000006");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poPurchaseReceivingController.UpdateTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            //Populate purhcase receiving serials
+            for(int lnCtr = 0; lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
+                poPurchaseReceivingController.getPurchaseOrderReceivingSerial(poPurchaseReceivingController.Detail(lnCtr).getEntryNo());
+            }
+
+//            poPurchaseReceivingController.Detail(1).setQuantity(0);
+//            poPurchaseReceivingController.AddDetail();
+
+//            for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
+//                poPurchaseReceivingController.Detail(0).setQuantity(2);
+//                poPurchaseReceivingController.Detail(1).setQuantity(5);
+//                System.out.println("DATA Before SAVE TRANSACTION Method");
+//                System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
+//                System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
+//                System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
+//                System.out.println("Quantty : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getQuantity());
+//                System.out.println("---------------------------------------------------------------------");
+//            }
+
+            loJSON = poPurchaseReceivingController.SaveTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+        } catch (CloneNotSupportedException | SQLException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        }
+        
+    }   
     
 //    @Test
     public void testgetPurchaseOrderList() {
@@ -229,62 +271,6 @@ public class testPurchaseOrderReceivingMaster {
             Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        
-    }   
-    
-//    @Test
-    public void testUpdateTransaction() {
-        JSONObject loJSON;
-       
-        try {
-            loJSON = poPurchaseReceivingController.InitTransaction();
-            if (!"success".equals((String) loJSON.get("result"))){
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            } 
-
-            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000001");
-            if (!"success".equals((String) loJSON.get("result"))){
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            } 
-
-            loJSON = poPurchaseReceivingController.UpdateTransaction();
-            if (!"success".equals((String) loJSON.get("result"))){
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            } 
-            
-            //Populate purhcase receiving serials
-            for(int lnCtr = 0; lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
-                poPurchaseReceivingController.getPurchaseOrderReceivingSerial(poPurchaseReceivingController.Detail(lnCtr).getEntryNo());
-            }
-
-//            poPurchaseReceivingController.Detail(1).setQuantity(0);
-//            poPurchaseReceivingController.AddDetail();
-
-//            for(int lnCtr = 0;lnCtr <= poPurchaseReceivingController.getDetailCount()-1; lnCtr++){
-//                poPurchaseReceivingController.Detail(0).setQuantity(2);
-//                poPurchaseReceivingController.Detail(1).setQuantity(5);
-//                System.out.println("DATA Before SAVE TRANSACTION Method");
-//                System.out.println("TransNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getTransactionNo());
-//                System.out.println("OrderNo : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getOrderNo());
-//                System.out.println("StockId : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getStockId());
-//                System.out.println("Quantty : " + (lnCtr+1) + " : " + poPurchaseReceivingController.Detail(lnCtr).getQuantity());
-//                System.out.println("---------------------------------------------------------------------");
-//            }
-
-            loJSON = poPurchaseReceivingController.SaveTransaction();
-            if (!"success".equals((String) loJSON.get("result"))) {
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            }
-        } catch (CloneNotSupportedException | SQLException e) {
-            System.err.println(MiscUtil.getException(e));
-            Assert.fail();
-        } catch (GuanzonException ex) {
-            Logger.getLogger(testPurchaseOrderReceivingMaster.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
-        }
         
     }   
     

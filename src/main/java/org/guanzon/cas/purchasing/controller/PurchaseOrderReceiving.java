@@ -60,7 +60,6 @@ import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.InvLocation;
 import org.guanzon.cas.parameter.Term;
-import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
@@ -655,7 +654,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 "",
                 "Transaction Date»Transaction No»Industry»Company»Supplier",
                 "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
-                "dTransact»sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
                 1);
 
         if (poJSON != null) {
@@ -706,7 +705,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 "",
                 "Transaction Date»Transaction No»Industry»Company»Supplier",
                 "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
-                "dTransact»sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
                 1);
 
         if (poJSON != null) {
@@ -1219,7 +1218,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
                     + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
-                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo));
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + " AND e.sCategrCd IN ( " + getCategory() + " ) "
+            );
             switch (formName) {
 //                case "approval":
 //                    lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED);
@@ -1352,6 +1353,50 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return poJSON;
     }
+    
+    private String getCategory(){
+        switch(psIndustryId){
+            case "01": //Mobile Phone
+                if("0001".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId);
+                } else {
+                    return SQLUtil.toSQL("0005") + ", " +  SQLUtil.toSQL("0006");
+                }
+            case "02": //Motorcycle
+                if("0010".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId);
+                }
+                //Spare Parts, Accessories , Giveaways
+                if("0011".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId) + ", " + SQLUtil.toSQL("0012") + ", " +  SQLUtil.toSQL("0013");
+                } else {
+                    return SQLUtil.toSQL("0017") + ", " +  SQLUtil.toSQL("0018");
+                }
+            case "03": //Vehicle
+                if("0015".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId);
+                }
+                //Spare Parts
+                if("0016".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId);
+                } else { //Accessories , Giveaways
+                    return SQLUtil.toSQL("0017") + ", " +  SQLUtil.toSQL("0018");
+                }
+            case "04": //Hospitality
+                if("0023".equals(psCategorId)){
+                    return SQLUtil.toSQL(psCategorId);
+                } else { // Food Service, Baked Goods TODO GENERAL
+                    return SQLUtil.toSQL("0021") + ", " +  SQLUtil.toSQL("0022");
+                }
+            case "05": //Los Pedritos
+                // Food Service, Baked Goods TODO GENERAL
+                return SQLUtil.toSQL("0019") + ", " +  SQLUtil.toSQL("0020");
+            case "06": //Main Office
+                return SQLUtil.toSQL(psCategorId);
+        }
+        
+        return psCategorId;
+    }
 
     public JSONObject getApprovedPurchaseOrder() {
         try {
@@ -1373,6 +1418,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%"+ Master().getSupplierId())
                     + " AND a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED)
+                    + " AND b.sCategrCd IN ( " + getCategory() + " ) "
                     + " AND b.nQuantity > b.nReceived "
 //                    + " AND a.cProcessd = '0'" //get po that is approve but not yet processed
             )       + " GROUP BY a.sTransNox "
@@ -1664,15 +1710,15 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
             
-            for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1;lnCtr++){
-                System.out.println("CLASS START POR SERIAL LIST");
-                System.out.println(" getEntryNo : " + PurchaseOrderReceivingSerialList(lnCtr).getEntryNo());
-                System.out.println(" getStockId : " + PurchaseOrderReceivingSerialList(lnCtr).getStockId());
-                System.out.println(" getSerial01 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial01());
-                System.out.println(" getSerial02 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial02());
-                System.out.println(" getLocationId : " + PurchaseOrderReceivingSerialList(lnCtr).getLocationId());
-                System.out.println("CLASS END POR SERIAL LIST");
-            }
+//            for(int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1;lnCtr++){
+//                System.out.println("CLASS START POR SERIAL LIST");
+//                System.out.println(" getEntryNo : " + PurchaseOrderReceivingSerialList(lnCtr).getEntryNo());
+//                System.out.println(" getStockId : " + PurchaseOrderReceivingSerialList(lnCtr).getStockId());
+//                System.out.println(" getSerial01 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial01());
+//                System.out.println(" getSerial02 : " + PurchaseOrderReceivingSerialList(lnCtr).getSerial02());
+//                System.out.println(" getLocationId : " + PurchaseOrderReceivingSerialList(lnCtr).getLocationId());
+//                System.out.println("CLASS END POR SERIAL LIST");
+//            }
 //            else {
 //                //Remove row for excess por serial
 //                while(lnSerialCnt > lnQuantity){
@@ -2313,7 +2359,9 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
 
+            Master().setPrint("0"); 
             Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN); //If edited update trasaction status into open
+            
         }
 
         //assign other info on detail
@@ -2412,11 +2460,11 @@ public class PurchaseOrderReceiving extends Transaction {
                                     return poJSON;
                                 }
                             }
-                            
-                            PurchaseOrderReceivingSerialList(lnList).setTransactionNo(Master().getTransactionNo());
-                            PurchaseOrderReceivingSerialList(lnList).setModifiedDate(poGRider.getServerDate());
                             lnSerialCnt++;
                         }
+                        
+                        PurchaseOrderReceivingSerialList(lnList).setTransactionNo(Master().getTransactionNo());
+                        PurchaseOrderReceivingSerialList(lnList).setModifiedDate(poGRider.getServerDate());
                     }
 
                     if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
@@ -2525,11 +2573,18 @@ public class PurchaseOrderReceiving extends Transaction {
                     //3. Validation Serial
                     poJSON = loInvSerial.isEntryOkay();
                     if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial validation" + (String) poJSON.get("message"));
+                        System.out.println("inv serial validation : " + (String) poJSON.get("message"));
                         return poJSON;
                     }
 
                     //4. Save Inventory Serial
+                    System.out.println("----------------------SAVE INV SERIAL---------------------- ");
+                    System.out.println("Serial ID  : " + loInvSerial.getModel().getSerialId());
+                    System.out.println("Serial 01  : " + loInvSerial.getModel().getSerial01());
+                    System.out.println("Serial 02  : " + loInvSerial.getModel().getSerial02());
+                    System.out.println("Location   : " + loInvSerial.getModel().getLocation());
+                    System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
+                    System.out.println("---------------------------------------------------------------------- ");
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
                         System.out.println("inv serial saving" + (String) poJSON.get("message"));
@@ -2541,10 +2596,11 @@ public class PurchaseOrderReceiving extends Transaction {
                     paOthers.get(lnRow).setSerialId(loInvSerial.getModel().getSerialId());
                 }
                 //6. Save Purchase Order Receiving Serial
-                System.out.println("----------------------PURCHASE ORDER RECEIVING SERIAL---------------------- ");
+                System.out.println("----------------------SAVE PURCHASE ORDER RECEIVING SERIAL---------------------- ");
                 System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
-                System.out.println("Entry No : " + paOthers.get(lnRow).getEntryNo());
+                System.out.println("Entry No  : " + paOthers.get(lnRow).getEntryNo());
                 System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
+                System.out.println("Location  : " + paOthers.get(lnRow).getLocationId());
                 System.out.println("Edit Mode : " + paOthers.get(lnRow).getEditMode());
                 System.out.println("---------------------------------------------------------------------- ");
                 paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
@@ -2958,11 +3014,28 @@ public class PurchaseOrderReceiving extends Transaction {
         return lsCompanyId;
     }
     
+//    @Override
+//    public void initSQL() {
+//        SQL_BROWSE = " SELECT "
+//                + "   a.dTransact  "
+//                + " , a.sTransNox  "
+//                + " , a.sIndstCdx  "
+//                + " , a.sCompnyID  "
+//                + " , a.sSupplier  "
+//                + " , b.sCompnyNm  AS sSupplrNm"
+//                + " , c.sCompnyNm  AS sCompnyNm"
+//                + " , d.sDescript  AS sIndustry"
+//                + " FROM po_receiving_master a "
+//                + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
+//                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
+//                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx ";
+//    }
+    
     @Override
     public void initSQL() {
         SQL_BROWSE = " SELECT "
-                + "   a.dTransact  "
-                + " , a.sTransNox  "
+                + " DISTINCT a.sTransNox  "
+                + " , a.dTransact  "
                 + " , a.sIndstCdx  "
                 + " , a.sCompnyID  "
                 + " , a.sSupplier  "
@@ -2972,7 +3045,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " FROM po_receiving_master a "
                 + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx ";
+                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx "
+                + " LEFT JOIN po_receiving_detail e ON e.sTransNox = a.sTransNox ";
     }
 
     @Override
