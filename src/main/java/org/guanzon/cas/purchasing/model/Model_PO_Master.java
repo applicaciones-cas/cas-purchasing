@@ -3,8 +3,6 @@ package org.guanzon.cas.purchasing.model;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -136,6 +134,14 @@ public class Model_PO_Master extends Model {
 
     public String getIndustryID() {
         return (String) getValue("sIndstCdx");
+    }
+    
+    public JSONObject setCategoryCode(String categoryCode) {
+        return setValue("sCategrCd", categoryCode);
+    }
+
+    public String getCategoryCode() {
+        return (String) getValue("sCategrCd");
     }
 
     public JSONObject setTransactionDate(Date transactionDate) {
@@ -273,31 +279,7 @@ public class Model_PO_Master extends Model {
     public String getRemarks() {
         return (String) getValue("sRemarksx");
     }
-
-    public JSONObject setVatable(String vatable) {
-        return setValue("cVATaxabl", vatable);
-    }
-
-    public String getVatable() {
-        return (String) getValue("cVATaxabl");
-    }
-
-    public JSONObject setVatRate(Number vatRate) {
-        return setValue("nVatRatex", vatRate);
-    }
-
-    public Number getVatRate() {
-        return (Number) getValue("nVatRatex");
-    }
-
-    public JSONObject setWithHoldingTax(Number withHoldingTax) {
-        return setValue("nTWithHld", withHoldingTax);
-    }
-
-    public Number getWithHoldingTax() {
-        return (Number) getValue("nTWithHld");
-    }
-
+    
     public JSONObject setExpectedDate(Date expectedDate) {
         return setValue("dExpected", expectedDate);
     }
@@ -321,7 +303,7 @@ public class Model_PO_Master extends Model {
     public Number getNoEmailSent() {
         return (Number) getValue("nEmailSnt");
     }
-
+    
     public JSONObject setPrint(String print) {
         return setValue("cPrintxxx", print);
     }
@@ -345,6 +327,22 @@ public class Model_PO_Master extends Model {
     public String getInventoryTypeCode() {
         return (String) getValue("sInvTypCd");
     }
+    
+    public JSONObject setPreOwned(boolean isWithAdvPaym) {
+        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
+    }
+
+    public boolean getPreOwned() {
+        return ((String) getValue("cPreOwned")).equals("1");
+    }
+
+    public JSONObject setProcessed(boolean isProcessed) {
+        return setValue("cProcessd", isProcessed ? "1" : "0");
+    }
+
+    public boolean getProcessed() {
+        return ((String) getValue("cProcessd")).equals("1");
+    }
 
     public JSONObject setTransactionStatus(String transactionStatus) {
         return setValue("cTranStat", transactionStatus);
@@ -352,22 +350,6 @@ public class Model_PO_Master extends Model {
 
     public String getTransactionStatus() {
         return (String) getValue("cTranStat");
-    }
-
-    public JSONObject setSourceCode(String sourceCode) {
-        return setValue("sSourceCd", sourceCode);
-    }
-
-    public String getSourceCode() {
-        return (String) getValue("sSourceCd");
-    }
-
-    public JSONObject setSourceNo(String sourceNo) {
-        return setValue("sSourceNo", sourceNo);
-    }
-
-    public String getSourceNo() {
-        return (String) getValue("sSourceNo");
     }
 
     public JSONObject setModifyingId(String modifyingId) {
@@ -386,21 +368,7 @@ public class Model_PO_Master extends Model {
         return (Date) getValue("dModified");
     }
 
-    public JSONObject setPreOwned(boolean isWithAdvPaym) {
-        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
-    }
-
-    public boolean getPreOwned() {
-        return ((String) getValue("cPreOwned")).equals("1");
-    }
-
-    public JSONObject setProcessed(boolean isProcessed) {
-        return setValue("cProcessd", isProcessed ? "1" : "0");
-    }
-
-    public boolean getProcessed() {
-        return ((String) getValue("cProcessd")).equals("1");
-    }
+    
 
     @Override
     public String getNextCode() {

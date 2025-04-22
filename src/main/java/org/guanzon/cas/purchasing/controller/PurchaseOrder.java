@@ -1017,8 +1017,8 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
+//            Detail(row).isSerialized(object.getModel().isSerialized());
+//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
@@ -1048,8 +1048,8 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
+//            Detail(row).isSerialized(object.getModel().isSerialized());
+//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
@@ -1130,8 +1130,8 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
+//            Detail(row).isSerialized(object.getModel().isSerialized());
+//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
@@ -1300,8 +1300,8 @@ public class PurchaseOrder extends Transaction {
                     Detail(lnLastIndex).setRecordOrder(0);
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
-                    Detail(lnLastIndex).setCategoryCode(loTrans.StockRequest().Detail(lnCtr).Inventory().getCategoryFirstLevelId());
-                    Detail(lnLastIndex).isSerialized(loTrans.StockRequest().Detail(lnCtr).Inventory().isSerialized());
+//                    Detail(lnLastIndex).setCategoryCode(loTrans.StockRequest().Detail(lnCtr).Inventory().getCategoryFirstLevelId());
+//                    Detail(lnLastIndex).isSerialized(loTrans.StockRequest().Detail(lnCtr).Inventory().isSerialized());
 
 //                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
 //                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
