@@ -41,6 +41,7 @@ import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.Inventory;
+//import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.warehouse.StockRequest;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
@@ -902,11 +903,13 @@ public class PurchaseOrder extends Transaction {
                 + "  a.dTransact,"
                 + "  b.sDescript,"
                 + "  c.sCompnyNm,"
-                + "  e.sCompnyNm "
+                + "  e.sCompnyNm, "
+                + "  f.sDescript  Category"
                 + " FROM po_master a "
                 + "LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + "LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
                 + "LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier "
+                + "category f "
                 + "LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
 
     }
@@ -926,6 +929,7 @@ public class PurchaseOrder extends Transaction {
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
+                " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
@@ -936,9 +940,9 @@ public class PurchaseOrder extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
-                "Transaction Date»Transaction No»Company»Supplier",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                "Transaction Date»Transaction No»Company»Supplier»Category",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm»f.sDescript",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm»f.sDescript",
                 1);
 
         if (poJSON != null) {
@@ -999,8 +1003,7 @@ public class PurchaseOrder extends Transaction {
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
-        String category = (Detail(row).Inventory().getCategoryFirstLevelId() != null
-                && !Detail(row).Inventory().getCategoryFirstLevelId().isEmpty()) ? Detail(row).Inventory().getCategoryFirstLevelId() : null;
+        String category = Master().getCategoryCode();
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
@@ -1143,6 +1146,7 @@ public class PurchaseOrder extends Transaction {
                 " b.nApproved > 0 ",
                 "a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
                 " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
+                " c.sCategCd1 = " +  SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
         String lsSQL = "SELECT"
                 + "  a.sTransNox,"
@@ -1160,7 +1164,8 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
                 + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
                 + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
-                + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
+                + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
 
         lsSQL = lsSQL
@@ -1240,11 +1245,13 @@ public class PurchaseOrder extends Transaction {
                 + "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd "
                 + "LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox "
                 + "LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx "
-                + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx";
+                + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
+                + "LEFT JOIN category h ON h.sCategrCd = c.sCategCd1";
 
         String lsFilterCondition = String.join(" AND ",
                 " a.sIndstCdx LIKE " + SQLUtil.toSQL("%" + Master().getIndustryID()),
                 " e.sCompnyID LIKE " + SQLUtil.toSQL("%" + Master().getCompanyID()),
+                " h.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
                 " b.nApproved > 0",
                 " a.cTranStat = " + SQLUtil.toSQL(Logical.YES));
@@ -1300,12 +1307,6 @@ public class PurchaseOrder extends Transaction {
                     Detail(lnLastIndex).setRecordOrder(0);
                     Detail(lnLastIndex).setUnitPrice(loTrans.StockRequest().Detail(lnCtr).Inventory().getCost().doubleValue());
                     Detail(lnLastIndex).setQuantity(0);
-//                    Detail(lnLastIndex).setCategoryCode(loTrans.StockRequest().Detail(lnCtr).Inventory().getCategoryFirstLevelId());
-//                    Detail(lnLastIndex).isSerialized(loTrans.StockRequest().Detail(lnCtr).Inventory().isSerialized());
-
-//                    Detail(lnLastIndex).setSourceEntryNo(loTrans.StockRequest().Detail(lnCtr).getEntryNumber());
-//                    Detail(lnLastIndex).setReceivedQuantity(loTrans.StockRequest().Detail(lnCtr).getReceived());
-//                    Detail(lnLastIndex).setCancelledQuantity(loTrans.StockRequest().Detail(lnCtr).getCancelled());
                     Detail(lnLastIndex).setSouceCode(SOURCE_CODE);
                 }
             }

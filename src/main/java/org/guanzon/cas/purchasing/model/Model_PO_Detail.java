@@ -64,7 +64,6 @@ public class Model_PO_Detail extends Model {
             poEntity.updateObject("nRecOrder", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nReceived", 0);
-            poEntity.updateObject("cSerialze", false);
             poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.insertRow();
