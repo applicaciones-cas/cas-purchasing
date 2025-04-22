@@ -1002,9 +1002,9 @@ public class PurchaseOrder extends Transaction {
 
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1033,9 +1033,9 @@ public class PurchaseOrder extends Transaction {
 
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
-
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+        String category = Master().getCategoryCode();
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1100,7 +1100,7 @@ public class PurchaseOrder extends Transaction {
         Brand brand = new ParamControllers(poGRider, logwrapr).Brand();
         brand.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
-        poJSON = brand.searchRecord(value, byCode, poGRider.getIndustry());
+        poJSON = brand.searchRecord(value, byCode, Master().getIndustryID());
 
         if ("success".equals((String) poJSON.get("result"))) {
             Detail(row).setBrandId(brand.getModel().getBrandId());
@@ -1115,9 +1115,9 @@ public class PurchaseOrder extends Transaction {
 
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String industry = poGRider.getIndustry().isEmpty() ? null : poGRider.getIndustry();
-
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry);
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+         String category = Master().getCategoryCode();
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {

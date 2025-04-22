@@ -721,9 +721,9 @@ public class PurchaseOrderReceiving extends Transaction {
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
         if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
-            poJSON = object.searchRecordOfVariants(value, byCode, null, Detail(row).getBrandId(), poGRider.getIndustry());
+            poJSON = object.searchRecordOfVariants(value, byCode, null, Detail(row).getBrandId(), poGRider.getIndustry(),"");
         } else {
-            poJSON = object.searchRecordOfVariants(value, byCode, Master().getSupplierId(), Detail(row).getBrandId(), poGRider.getIndustry());
+            poJSON = object.searchRecordOfVariants(value, byCode, Master().getSupplierId(), Detail(row).getBrandId(), poGRider.getIndustry(),"");
         }
 
         // poJSON = object.searchRecordOfVariants(value, byCode);
