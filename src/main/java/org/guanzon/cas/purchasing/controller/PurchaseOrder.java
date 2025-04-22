@@ -1059,7 +1059,7 @@ public class PurchaseOrder extends Transaction {
     public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
         object.Master().setRecordStatus(RecordStatus.ACTIVE);
-
+        object.Master().setClientType("1");
         poJSON = object.Master().searchRecord(value, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
