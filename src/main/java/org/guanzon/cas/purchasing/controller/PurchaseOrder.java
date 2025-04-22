@@ -904,14 +904,13 @@ public class PurchaseOrder extends Transaction {
                 + "  b.sDescript,"
                 + "  c.sCompnyNm,"
                 + "  e.sCompnyNm, "
-                + "  f.sDescript  Category"
+                + "  f.sDescript"
                 + " FROM po_master a "
-                + "LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
-                + "LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + "LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier "
-                + "category f "
-                + "LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
-
+                + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
+                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
+                + " LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier"
+                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID"
+                + ", category f ";
     }
 
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -940,9 +939,9 @@ public class PurchaseOrder extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
-                "Transaction Date»Transaction No»Company»Supplier»Category",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm»f.sDescript",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm»f.sDescript",
+                "Transaction Date»Transaction No»Company»Supplier",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
+                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
                 1);
 
         if (poJSON != null) {
