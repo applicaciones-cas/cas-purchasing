@@ -72,6 +72,7 @@ public class Model_POR_Detail extends Model{
             //assign default values
             poEntity.updateObject("dExpiryDt", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("cSerialze", "0");
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nQuantity", 0);
             poEntity.updateObject("nWHCountx", 0);

@@ -2457,53 +2457,50 @@ public class PurchaseOrderReceiving extends Transaction {
                                 return poJSON;
                             }
                         }
-
+                        //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
                         //Check for existing serial 01
-                        JSONObject loJSON = checkExistingSerialinDB(lnList, "serial01");
-                        lsColumnName = getColumnName("serial01");
-                        if("error".equals((String) loJSON.get("result"))){
-                            poJSON.put("result", "error");
-                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-                            return poJSON;
-                        } 
-
-                        //Check for existing serial 02
-                        loJSON = checkExistingSerialinDB(lnList, "serial02");
-                        lsColumnName = getColumnName("serial02");
-                        if("error".equals((String) loJSON.get("result"))){
-                            poJSON.put("result", "error");
-                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-                            return poJSON;
-                        }
-
-                        //Check for existing CS No
-                        if (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()!= null 
-                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo())){
-                            loJSON = checkExistingSerialinDB(lnList, "csno");
-                            lsColumnName = getColumnName("csno");
-                            if("error".equals((String) loJSON.get("result"))){
-                                poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-                                return poJSON;
-                            }
-                        }
-
-                        //Check for existing Plate No
-                        if (PurchaseOrderReceivingSerialList(lnList).getPlateNo() != null 
-                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo())){
-                            loJSON = checkExistingSerialinDB(lnList, "plateno");
-                            lsColumnName = getColumnName("plateno");
-                            if("error".equals((String) loJSON.get("result"))){
-                                poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-                                return poJSON;
-                            }
-                        }
+//                        JSONObject loJSON = checkExistingSerialinDB(lnList, "serial01");
+//                        lsColumnName = getColumnName("serial01");
+//                        if("error".equals((String) loJSON.get("result"))){
+//                            poJSON.put("result", "error");
+//                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+//                            return poJSON;
+//                        } 
+//
+//                        //Check for existing serial 02
+//                        loJSON = checkExistingSerialinDB(lnList, "serial02");
+//                        lsColumnName = getColumnName("serial02");
+//                        if("error".equals((String) loJSON.get("result"))){
+//                            poJSON.put("result", "error");
+//                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+//                            return poJSON;
+//                        }
+//
+//                        //Check for existing CS No
+//                        if (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()!= null 
+//                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo())){
+//                            loJSON = checkExistingSerialinDB(lnList, "csno");
+//                            lsColumnName = getColumnName("csno");
+//                            if("error".equals((String) loJSON.get("result"))){
+//                                poJSON.put("result", "error");
+//                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+//                                return poJSON;
+//                            }
+//                        }
+//
+//                        //Check for existing Plate No
+//                        if (PurchaseOrderReceivingSerialList(lnList).getPlateNo() != null 
+//                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo())){
+//                            loJSON = checkExistingSerialinDB(lnList, "plateno");
+//                            lsColumnName = getColumnName("plateno");
+//                            if("error".equals((String) loJSON.get("result"))){
+//                                poJSON.put("result", "error");
+//                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+//                                return poJSON;
+//                            }
+//                        }
                         lnSerialCnt++;
                     }
-
-//                    PurchaseOrderReceivingSerialList(lnList).setTransactionNo(Master().getTransactionNo());
-//                    PurchaseOrderReceivingSerialList(lnList).setModifiedDate(poGRider.getServerDate());
                 }
 
                 if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
