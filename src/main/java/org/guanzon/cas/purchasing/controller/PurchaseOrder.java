@@ -1003,7 +1003,43 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
+        
         poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
+        
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
+                }
+            }
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+//            Detail(row).isSerialized(object.getModel().isSerialized());
+//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
+        }
+        return poJSON;
+    }
+    
+    public JSONObject SearchBarcodeGerneral(String value, boolean byCode, int row)
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
+
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
+        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+        String category = Master().getCategoryCode();
+        
+        poJSON = object.searchRecord(value, byCode, supplier, brand, null, category);
+        
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1143,7 +1179,7 @@ public class PurchaseOrder extends Transaction {
                 " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
                 " b.nApproved > 0 ",
-                "a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
+                " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
                 " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
                 " c.sCategCd1 = " +  SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
@@ -1244,7 +1280,7 @@ public class PurchaseOrder extends Transaction {
                 + "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd "
                 + "LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox "
                 + "LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx "
-                + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
+                + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx "
                 + "LEFT JOIN category h ON h.sCategrCd = c.sCategCd1";
 
         String lsFilterCondition = String.join(" AND ",
