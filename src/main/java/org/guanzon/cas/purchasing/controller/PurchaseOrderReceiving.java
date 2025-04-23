@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -839,12 +840,8 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
-            poJSON = object.searchRecord(value, byCode, null,null, Master().getIndustryId()); 
-        } else {
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId());
-        }
 //        poJSON = object.searchRecord(value, byCode);
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
@@ -858,6 +855,9 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
+        
+        System.out.println("StockID : " + Detail(row).Inventory().getStockId());
+        System.out.println("Model  : " + Detail(row).Inventory().Model().getDescription());
         return poJSON;
     }
 
@@ -876,12 +876,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
-        if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
-            poJSON = object.searchRecord(value, byCode, null, null, Master().getIndustryId());
-        } else {
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(), null, Master().getIndustryId());
-        }
-        
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
@@ -894,6 +889,10 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
         }
+        
+        
+        System.out.println("StockID : " + Detail(row).Inventory().getStockId());
+        System.out.println("Model  : " + Detail(row).Inventory().Model().getDescription());
 
         return poJSON;
     }
@@ -912,13 +911,8 @@ public class PurchaseOrderReceiving extends Transaction {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
-        if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
-            poJSON = object.searchRecord(value, byCode, null, null, Master().getIndustryId());
-        } else {
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(), null, Master().getIndustryId());
-        }
-        
 //        poJSON = object.searchRecord(value, byCode); //TODO
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
         if ("success".equals((String) poJSON.get("result"))) {
             if(Detail(row).getStockId().equals(object.getModel().getStockId())){
                 poJSON.put("result", "error");
@@ -977,14 +971,9 @@ public class PurchaseOrderReceiving extends Transaction {
         
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
-
-//        if (Master().getSupplierId() == null || "".equals(Master().getSupplierId())) {
-//            poJSON = object.searchRecordOfVariants(value, byCode, null, Detail(row).getBrandId(), Master().getIndustryId());
-//        } else {
-//            poJSON = object.searchRecordOfVariants(value, byCode, Master().getSupplierId(), Detail(row).getBrandId(), Master().getIndustryId());
-//        }
-
-         poJSON = object.searchRecordOfVariants(value, byCode);
+        System.out.println("Brand ID : "  + Detail(row).getBrandId());
+        poJSON = object.searchRecordOfVariants(value, byCode, Master().getSupplierId(),Detail(row).getBrandId(), Master().getIndustryId(),  Master().getCategoryCode());
+//        poJSON = object.searchRecordOfVariants(value, byCode);
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
@@ -1005,6 +994,9 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(row).setUnitType(object.getModel().getUnitType());
             Detail(row).isSerialized(object.getModel().isSerialized());
             Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+            
+            System.out.println("StockID : " + Detail(row).Inventory().getStockId());
+            System.out.println("Model  : " + Detail(row).Inventory().Model().getDescription());
         }
 
         return poJSON;
@@ -1589,6 +1581,11 @@ public class PurchaseOrderReceiving extends Transaction {
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
+        
+        if(!Detail(entryNo-1).isSerialized()){
+            poJSON.put("result", "success");
+            return poJSON;
+        }
 
         if (paOthers == null) {
             paOthers = new ArrayList<>();
@@ -2254,36 +2251,45 @@ public class PurchaseOrderReceiving extends Transaction {
         
         boolean lbHasQty = false;
         int lnEntryNo = 0;
-        int lnPrevRow = -1;
+        int lnNewEntryNo = 1;
+        int lnPrevEntryNo = -1;
+        boolean lbMatch = false;
+        
+        paOthers.sort(Comparator.comparingInt(item -> item.getEntryNo()));
+        
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-//            if(Detail(lnCtr).getQuantity().intValue() <= 0){ // this row will be removed soon
-//                
-//                for(int lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount()-1; lnRow++){
-//                    if(lnPrevRow < 0){
-//                        lnPrevRow = PurchaseOrderReceivingSerialList(lnRow).getEntryNo();
-//                    }
-//                    
-//                    // if current row is greater than the row that will remove soon align the entry no to next row with qty
-//                    lnEntryNo = PurchaseOrderReceivingSerialList(lnRow).getEntryNo() - (lnCtr+1);
-//                    if(lnEntryNo > 0){
-//                    
-//                    
-//                    }
-//                    if(PurchaseOrderReceivingSerialList(lnRow).getEntryNo() > (lnCtr+1)){
-//                        
-//                        if (lnEntryNo == 1) {
-//                            PurchaseOrderReceivingSerialList(lnRow).setEntryNo((lnCtr+1));
-//                        }
-//                        if (lnEntryNo == (lnCtr+1)) {
-//                            PurchaseOrderReceivingSerialList(lnRow).setEntryNo((lnCtr+1));
-//                        }
-//                        if (lnEntryNo > 1) {
-//                            PurchaseOrderReceivingSerialList(lnRow).setEntryNo(lnCtr + (lnEntryNo));
-//                        }
-//                    } 
-//                    lnEntryNo = 0;
-//                }
-//            }
+            if(Detail(lnCtr).getQuantity().intValue() > 0){ 
+                lnEntryNo = lnEntryNo + 1;
+            }
+            
+            if(Detail(lnCtr).getQuantity().intValue() <= 0){ 
+                lnNewEntryNo = lnEntryNo + 1;
+                
+                for(int lnRow = 0; lnRow <= paOthers.size()-1; lnRow++){
+                    if(paOthers.get(lnRow).getEntryNo() == lnNewEntryNo){
+                        lbMatch = true;
+                        break;
+                    }
+                }
+                
+                if(!lbMatch){
+                    for(int lnRow = 0; lnRow <= paOthers.size()-1; lnRow++){
+                        lnPrevEntryNo = paOthers.get(lnRow).getEntryNo();
+
+                        if(paOthers.get(lnRow).getEntryNo() > (lnCtr+1)){
+                            paOthers.get(lnRow).setEntryNo(lnNewEntryNo);
+
+                            if((lnRow+1) <= paOthers.size()-1){
+                                if(lnPrevEntryNo <  paOthers.get(lnRow+1).getEntryNo()){
+                                    lnNewEntryNo = lnNewEntryNo + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            lbMatch = false;
             
             if (Detail(lnCtr).getQuantity().intValue() > 0) {
                 lbHasQty = true;
@@ -3234,7 +3240,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
 
-    private class CustomJasperViewer extends JasperViewer {
+        private class CustomJasperViewer extends JasperViewer {
 
         private final Runnable onPrintedCallback;
 
@@ -3289,7 +3295,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                                 PrintTransaction(true);
                                             } else {
                                                 Platform.runLater(() -> {
-                                                    ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing was canceled by the user.");
+                                                    ShowMessageFX.Warning(null, "Computerized Accounting System", "Printing was canceled by the user.");
                                                     SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
 
                                                 });
@@ -3326,7 +3332,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
@@ -3334,12 +3340,11 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = UpdateTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
                     }
-
                     poMaster.setValue("dModified", poGRider.getServerDate());
                     poMaster.setValue("sModified", poGRider.getUserID());
                     poMaster.setValue("cPrintxxx", Logical.YES);
@@ -3347,33 +3352,28 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON = SaveTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
-                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", (String) poJSON.get("message"));
+                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
                             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
                         });
                         fbIsPrinted = false;
                     }
-                    
+
                     pbIsPrint = false;
                 }
             }
 
             if (fbIsPrinted) {
                 Platform.runLater(() -> {
-                    ShowMessageFX.Information("Transaction printed successfully.", "Print Purchase Order Receiving", null);
-                    if (onPrintedCallback != null) {
-                        poViewer = null;
-                        this.dispose();
-                        onPrintedCallback.run();  // <- triggers controller method!
-                    }
-                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-                });
-            } else {
-                Platform.runLater(() -> {
-                    ShowMessageFX.Information("Transaction printed aborted.", "Print Purchase Order Receiving", null);
-                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                    ShowMessageFX.Information(null, "Print Purchase Order Receiving", "Transaction printed successfully.");
                 });
             }
 
+            if (onPrintedCallback != null) {
+                poViewer = null;
+                this.dispose();
+                onPrintedCallback.run();  // <- triggers controller method!
+            }
+            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
         }
 
         private JRViewer findJRViewer(Component parent) {
