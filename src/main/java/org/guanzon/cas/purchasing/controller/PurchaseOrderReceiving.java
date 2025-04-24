@@ -1222,7 +1222,8 @@ public class PurchaseOrderReceiving extends Transaction {
 //                    break;
                 case "confirmation":
                     lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.OPEN)
-                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) ";
+                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) "
+                                  + " AND a.cProcessd = " + SQLUtil.toSQL("0");
                     break;
                 case "history":
                     //load all purchase order receiving
@@ -3006,6 +3007,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Master().setReferenceDate(poGRider.getServerDate());
             Master().setInventoryTypeCode(getInventoryTypeCode());
             Master().setTermCode("0000004");
+            Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN);
 
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
