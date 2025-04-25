@@ -1341,6 +1341,9 @@ public class PurchaseOrderReceiving extends Transaction {
             paAttachments.add(TransactionAttachment());
             poJSON = paAttachments.get(getTransactionAttachmentCount() - 1).openRecord((String) loList.get(lnCtr));
             if ("success".equals((String) poJSON.get("result"))) {
+                if(Master().getEditMode() == EditMode.UPDATE){
+                   poJSON = paAttachments.get(getTransactionAttachmentCount() - 1).updateRecord();
+                }
                 System.out.println(paAttachments.get(getTransactionAttachmentCount() - 1).getModel().getTransactionNo());
                 System.out.println(paAttachments.get(getTransactionAttachmentCount() - 1).getModel().getSourceNo());
                 System.out.println(paAttachments.get(getTransactionAttachmentCount() - 1).getModel().getSourceCode());
@@ -2654,6 +2657,8 @@ public class PurchaseOrderReceiving extends Transaction {
             //Save Attachments
             for (lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
                 if (paAttachments.get(lnCtr).getEditMode() == EditMode.ADDNEW || paAttachments.get(lnCtr).getEditMode() == EditMode.UPDATE) {
+                    paAttachments.get(lnCtr).getModel().setModifyingId(poGRider.getUserID());
+                    paAttachments.get(lnCtr).getModel().setModifiedDate(poGRider.getServerDate());
                     paAttachments.get(lnCtr).setWithParentClass(true);
                     poJSON = paAttachments.get(lnCtr).saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
