@@ -1092,6 +1092,36 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
+    public JSONObject SearchBarcodeDescriptionGeneral(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,
+            NullPointerException {
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
+        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+        String category = Master().getCategoryCode();
+        poJSON = object.searchRecord(value, byCode, supplier, brand, null,category);
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Barcode: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
+                }
+            }
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+//            Detail(row).isSerialized(object.getModel().isSerialized());
+//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
+        }
+        return poJSON;
+    }
     public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
         object.Master().setRecordStatus(RecordStatus.ACTIVE);
