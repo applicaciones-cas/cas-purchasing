@@ -1,639 +1,54 @@
 package org.guanzon.cas.purchasing.model;
 
-import java.lang.reflect.Method;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import javax.sql.rowset.CachedRowSet;
-import org.guanzon.appdriver.base.GRider;
+import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.TransactionStatus;
-
-import org.guanzon.appdriver.iface.GEntity;
+import org.guanzon.cas.inv.model.Model_Inv_Master;
+import org.guanzon.cas.inv.model.Model_Inventory;
+import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
+import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
+import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.model.Model_Brand;
+import org.guanzon.cas.parameter.model.Model_Category;
+import org.guanzon.cas.parameter.model.Model_Color;
+import org.guanzon.cas.parameter.model.Model_Company;
+import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.model.Model_Inv_Type;
+import org.guanzon.cas.parameter.model.Model_Measure;
+import org.guanzon.cas.parameter.model.Model_Model;
+import org.guanzon.cas.parameter.model.Model_Term;
+import org.guanzon.cas.parameter.model.Model_Variant;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 
-/**
- *
- * @author Maynard
- */
-public class Model_PO_Detail implements GEntity {
+public class Model_PO_Detail extends Model {
 
-    final String XML = "Model_PO_Detail.xml";
+    //reference objects
+    Model_Branch poBranch;
+    Model_Industry poIndustry;
+    Model_Company poCompany;
+    Model_Term poTerm;
+    Model_Brand poBrand;
+    Model_Model poModel;
+    Model_Color poColor;
+    Model_Category poCategory;
+    Model_Inv_Type poInv_Type;
+    Model_Measure poMeasure;
+    Model_Variant poModelVariant;
+    Model_Inv_Stock_Request_Master poInvStockMaster;
+    Model_Inv_Stock_Request_Detail poInvStockDetail;
+    Model_Inventory poInventory;
+    Model_Inv_Master poInventoryMaster;
 
-    GRider poGRider;                //application driver
-    CachedRowSet poEntity;          //rowset
-    JSONObject poJSON;              //json container
-    int pnEditMode;                 //edit mode
-    private String fsExclude = "xBranchNm»xCompnyNm»xDestinat»xSupplier»"
-            + "xAddressx»xCPerson1»xCPPosit1»xCPMobil1»xTermName»"
-            + "xCategrNm»xInvTypNm»sAddrssID»sContctID»nVatRatex"
-            + "nVatAmtxx»cVATAdded»nTWithHld»nDiscount»nAddDiscx"
-            + "nAmtPaidx»nNetTotal»sCategrCd»cPOTypexx";
-
-    /**
-     * Entity constructor
-     *
-     * @param foValue - GhostRider Application Driver
-     */
-    public Model_PO_Detail(GRider foValue) {
-        if (foValue == null) {
-            System.err.println("Application Driver is not set.");
-            System.exit(1);
-        }
-
-        poGRider = foValue;
-
-        initialize();
-    }
-
-    /**
-     * Gets edit mode of the record
-     *
-     * @return edit mode
-     */
     @Override
-    public int getEditMode() {
-        return pnEditMode;
-    }
-
-    /**
-     * Gets the column index name.
-     *
-     * @param fnValue - column index number
-     * @return column index name
-     */
-    @Override
-    public String getColumn(int fnValue) {
-        try {
-            return poEntity.getMetaData().getColumnLabel(fnValue);
-        } catch (SQLException e) {
-        }
-        return "";
-    }
-
-    /**
-     * Gets the column index number.
-     *
-     * @param fsValue - column index name
-     * @return column index number
-     */
-    @Override
-    public int getColumn(String fsValue) {
-        try {
-            return MiscUtil.getColumnIndex(poEntity, fsValue);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
-    /**
-     * Gets the total number of column.
-     *
-     * @return total number of column
-     */
-    @Override
-    public int getColumnCount() {
-        try {
-            return poEntity.getMetaData().getColumnCount();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return -1;
-    }
-
-    /**
-     * Gets the table name.
-     *
-     * @return table name
-     */
-    @Override
-    public String getTable() {
-        return "PO_Detail";
-    }
-
-    /**
-     * Gets the value of a column index number.
-     *
-     * @param fnColumn - column index number
-     * @return object value
-     */
-    @Override
-    public Object getValue(int fnColumn) {
-        try {
-            return poEntity.getObject(fnColumn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Gets the value of a column index name.
-     *
-     * @param fsColumn - column index name
-     * @return object value
-     */
-    @Override
-    public Object getValue(String fsColumn) {
-        try {
-            return poEntity.getObject(MiscUtil.getColumnIndex(poEntity, fsColumn));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Sets column value.
-     *
-     * @param fnColumn - column index number
-     * @param foValue - value
-     * @return result as success/failed
-     */
-    @Override
-    public JSONObject setValue(int fnColumn, Object foValue) {
-        try {
-            poJSON = MiscUtil.validateColumnValue(System.getProperty("sys.default.path.metadata") + XML, MiscUtil.getColumnLabel(poEntity, fnColumn), foValue);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
-
-            poEntity.updateObject(fnColumn, foValue);
-            poEntity.updateRow();
-
-            poJSON = new JSONObject();
-            poJSON.put("result", "success");
-            poJSON.put("value", getValue(fnColumn));
-        } catch (SQLException e) {
-            e.printStackTrace();
-            poJSON.put("result", "error");
-            poJSON.put("message", e.getMessage());
-        }
-
-        return poJSON;
-    }
-
-    /**
-     * Sets column value.
-     *
-     * @param fsColumn - column index name
-     * @param foValue - value
-     * @return result as success/failed
-     */
-    @Override
-    public JSONObject setValue(String fsColumn, Object foValue) {
-        poJSON = new JSONObject();
-
-        try {
-            return setValue(MiscUtil.getColumnIndex(poEntity, fsColumn), foValue);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            poJSON.put("result", "error");
-            poJSON.put("message", e.getMessage());
-        }
-        return poJSON;
-    }
-
-    /**
-     * Set the edit mode of the entity to new.
-     *
-     * @return result as success/failed
-     */
-    @Override
-    public JSONObject newRecord() {
-        pnEditMode = EditMode.ADDNEW;
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        return poJSON;
-    }
-
-    /**
-     * Opens a record by single condition. Not supported yet on detail model.
-     *
-     * @param fsCondition - filter values
-     * @return result as success/failed
-     */
-    @Override
-    public JSONObject openRecord(String fsCondition) {
-        poJSON = new JSONObject();
-        poJSON.put("result", "information");
-        poJSON.put("message", "Not supported yet.");
-
-        return poJSON;
-    }
-
-    /**
-     * Opens a record.
-     *
-     * @param fsCondition - filter values
-     * @return result as success/failed
-     */
-    public JSONObject openRecord(String lsFilter, String fsCondition) {
-        poJSON = new JSONObject();
-
-        String lsSQL = getSQL();
-        //go detail
-        //replace the condition based on the primary key column of the record
-        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(lsFilter)
-                + " AND a.nEntryNox = " + SQLUtil.toSQL(fsCondition));
-        System.out.println(lsSQL);
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-
-        try {
-            if (loRS.next()) {
-                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
-                    setValue(lnCtr, loRS.getObject(lnCtr));
-                }
-
-                pnEditMode = EditMode.UPDATE;
-
-                poJSON.put("result", "success");
-                poJSON.put("message", "Record loaded successfully.");
-            } else {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record to load.");
-            }
-        } catch (SQLException e) {
-            poJSON.put("result", "error");
-            poJSON.put("message", e.getMessage());
-        }
-
-        return poJSON;
-    }
-
-
-    /**
-     * Save the entity.
-     *
-     * @return result as success/failed
-     */
-    @Override
-    public JSONObject saveRecord() {
-
-        poJSON = new JSONObject();
-        if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
-            String lsSQL;
-            Model_PO_Detail loOldEntity = new Model_PO_Detail(poGRider);
-            JSONObject loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
-
-            if ("success".equals((String) loJSON.get("result"))) {
-                pnEditMode= EditMode.UPDATE;
-            }else{
-                pnEditMode= EditMode.ADDNEW;
-            }
-            if (pnEditMode == EditMode.ADDNEW) {
-                lsSQL = makeSQL();
-
-                if (!lsSQL.isEmpty()) {
-                    if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
-                        poJSON.put("result", "success");
-                        poJSON.put("message", "Record saved successfully.");
-                    } else {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", poGRider.getErrMsg());
-                    }
-                } else {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "No record to save.");
-                }
-            } else {
-                loOldEntity = new Model_PO_Detail(poGRider);
-                loJSON = loOldEntity.openRecord(this.getTransactionNo(), String.valueOf(this.getEntryNo()));
-
-
-                if ("success".equals((String) loJSON.get("result"))) {
-
-                    lsSQL = MiscUtil.makeSQL(this, loOldEntity, " sTransNox = " + SQLUtil.toSQL(this.getTransactionNo())
-                            + " AND nEntryNox = " + SQLUtil.toSQL(this.getEntryNo()), fsExclude);
-                    System.out.println(lsSQL);
-
-                    if (!lsSQL.isEmpty()) {
-                        if (poGRider.executeQuery(lsSQL, getTable(), poGRider.getBranchCode(), "") > 0) {
-                            poJSON.put("result", "success");
-                            poJSON.put("message", "Record saved successfully.");
-                        } else {
-                            poJSON.put("result", "error");
-                            poJSON.put("message", poGRider.getErrMsg());
-                        }
-                    } else {
-                        poJSON.put("result", "success");
-                        poJSON.put("message", "No updates has been made.");
-                    }
-                } else {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Record discrepancy. Unable to save record.");
-                }
-            }
-        } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Invalid update mode. Unable to save record.");
-            return poJSON;
-        }
-
-        return poJSON;
-    }
-
-    /**
-     * Prints all the public methods used<br>
-     * and prints the column names of this entity.
-     */
-    @Override
-    public void list() {
-        Method[] methods = this.getClass().getMethods();
-
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("LIST OF PUBLIC METHODS FOR " + this.getClass().getName() + ":");
-        System.out.println("--------------------------------------------------------------------");
-        for (Method method : methods) {
-            System.out.println(method.getName());
-        }
-
-        try {
-            int lnRow = poEntity.getMetaData().getColumnCount();
-
-            System.out.println("--------------------------------------------------------------------");
-            System.out.println("ENTITY COLUMN INFO");
-            System.out.println("--------------------------------------------------------------------");
-            System.out.println("Total number of columns: " + lnRow);
-            System.out.println("--------------------------------------------------------------------");
-
-            for (int lnCtr = 1; lnCtr <= lnRow; lnCtr++) {
-                System.out.println("Column index: " + (lnCtr) + " --> Label: " + poEntity.getMetaData().getColumnLabel(lnCtr));
-                if (poEntity.getMetaData().getColumnType(lnCtr) == Types.CHAR
-                        || poEntity.getMetaData().getColumnType(lnCtr) == Types.VARCHAR) {
-
-                    System.out.println("Column index: " + (lnCtr) + " --> Size: " + poEntity.getMetaData().getColumnDisplaySize(lnCtr));
-                }
-            }
-        } catch (SQLException e) {
-        }
-
-    }
-
-    /**
-     * Description: Sets the sTransNox of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setTransactionNo(String fsValue) {
-        return setValue("sTransNox", fsValue);
-    }
-
-    /**
-     * @return The sTransNox of this record.
-     */
-    public String getTransactionNo() {
-        return (String) getValue("sTransNox");
-    }
-
-    /**
-     * Description: Sets the nEntryNox of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setEntryNo(int fsValue) {
-        return setValue("nEntryNox", fsValue);
-    }
-
-    /**
-     * @return The nEntryNox of this record.
-     */
-    public int getEntryNo() {
-        return (Integer) getValue("nEntryNox");
-    }
-
-    /**
-     * Description: Sets the sStockIDx of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setStockID(String fsValue) {
-        return setValue("sStockIDx", fsValue);
-    }
-
-    /**
-     * @return The sStockIDx of this record.
-     */
-    public String getStockID() {
-        return (String) getValue("sStockIDx");
-    }
-
-    /**
-     * Description: Sets the sDescript of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setDescription(String fsValue) {
-        return setValue("sDescript", fsValue);
-    }
-
-    /**
-     * @return The sDescript of this record.
-     */
-    public String getDescription() {
-        return (String) getValue("sDescript");
-    }
-
-    /**
-     * Description: Sets the nQtyOnHnd of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setQtyOnHand(int fnValue) {
-        return setValue("nQtyOnHnd", fnValue);
-    }
-
-    /**
-     * @return The nQtyOnHnd of this record.
-     */
-    public int getQtyOnHand() {
-        return (Integer) getValue("nQtyOnHnd");
-    }
-
-    /**
-     * Description: Sets the nRecrOrder of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setRecOrder(int fnValue) {
-        return setValue("nRecOrder", fnValue);
-    }
-
-    /**
-     * @return The nRecrOrder of this record.
-     */
-    public int getRecOrder() {
-        return (Integer) getValue("nRecOrder");
-    }
-
-    /**
-     * Description: Sets the nQuantity of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setQuantity(int fnValue) {
-        return setValue("nQuantity", fnValue);
-    }
-
-    /**
-     * @return The nQuantity of this record.
-     */
-    public int getQuantity() {
-        return (Integer) getValue("nQuantity");
-    }
-
-    /**
-     * Description: Sets the nQuantity of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setOriginalCost(Number fnValue) {
-        return setValue("nOrigCost", fnValue);
-    }
-
-    /**
-     * @return The nQuantity of this record.
-     */
-    public Number getOriginalCost() {
-        return (Number) getValue("nOrigCost");
-    }
-
-    /**
-     * Description: Sets the nUnitPrce of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setUnitPrice(Number fnValue) {
-        return setValue("nUnitPrce", fnValue);
-    }
-
-    /**
-     * @return The nUnitPrce of this record.
-     */
-    public Number getUnitPrice() {
-        return (Number) getValue("nUnitPrce");
-    }
-
-    /**
-     * Description: Sets the nReceived of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setReceiveNo(int fnValue) {
-        return setValue("nReceived", fnValue);
-    }
-
-    /**
-     * @return The nReceived of this record.
-     */
-    public int getReceiveNo() {
-        return (Integer) getValue("nReceived");
-    }
-
-    /**
-     * Description: Sets the nCancelld of this record.
-     *
-     * @param fnValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setCancelledNo(int fnValue) {
-        return setValue("nCancelld", fnValue);
-    }
-
-    /**
-     * @return The nCancelld of this record.
-     */
-    public int getCancelledNo() {
-        return (Integer) getValue("nCancelld");
-    }
-
-    /**
-     * Description: Sets the xCategrNm of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setCategoryName(String fsValue) {
-        return setValue("xCategrNm", fsValue);
-    }
-
-    /**
-     * @return The xCategrNm of this record.
-     */
-    public String getCategoryName() {
-        return (String) getValue("xCategrNm");
-    }
-
-    /**
-     * Description: Sets the xInvTypNm of this record.
-     *
-     * @param fsValue
-     * @return True if the record assignment is successful.
-     */
-    public JSONObject setInvTypeName(String fsValue) {
-        return setValue("xInvTypNm", fsValue);
-    }
-
-    /**
-     * @return The xInvTypNm of this record.
-     */
-    public String getInvTypeName() {
-        return (String) getValue("xInvTypNm");
-    }
-
-    /**
-     * Gets the SQL statement for this entity.
-     *
-     * @return SQL Statement
-     */
-    public String makeSQL() {
-        return MiscUtil.makeSQL(this, fsExclude);
-    }
-
-    public String makeSelectSQL() {
-        return MiscUtil.makeSelect(this, fsExclude);
-    }
-
-    private String getSQL() {
-        String lsSQL = " SELECT "
-                + " a.sTransNox sTransNox "
-                + ", a.nEntryNox nEntryNox "
-                + ", a.sStockIDx sStockIDx "
-                + ", a.sDescript sDescript "
-                + ", a.nOrigCost nOrigCost "
-                + ", a.nQtyOnHnd nQtyOnHnd "
-                + ", a.nRecOrder nRecOrder "
-                + ", a.nQuantity nQuantity "
-                + ", a.nUnitPrce nUnitPrce "
-                + ", a.nReceived nReceived "
-                + ", a.nCancelld nCancelld "
-                + ", c.sDescript xCategrNm "
-                + ", d.sDescript xInvTypNm "
-                + " FROM " + getTable() + " a "
-                + " LEFT JOIN Inventory b ON  a.sStockIDx =  b.sStockIDx "
-                + " LEFT JOIN Category_Level2 c ON b.sCategCd1 = c.sCategrCd "
-                + " LEFT JOIN Category d ON b.sCategCd1 = d.sCategrCd ";
-
-        return lsSQL;
-    }
-
-    private void initialize() {
+    public void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
 
@@ -642,33 +57,484 @@ public class Model_PO_Detail implements GEntity {
 
             MiscUtil.initRowSet(poEntity);
 
+            //assign default values
+            poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateObject("nCancelld", 0);
+            poEntity.updateObject("nUnitPrce", 0.0);
+            poEntity.updateObject("nOldPrice", 0.0);
+            poEntity.updateObject("nQtyOnHnd", 0);
+            poEntity.updateObject("nRecOrder", 0);
+            poEntity.updateObject("nQuantity", 0);
+            poEntity.updateObject("nReceived", 0);
+            poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
+
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
-            
-            poEntity.updateDouble("nUnitPrce", 0.0);
-            poEntity.updateInt("nQuantity", 0);
-            poEntity.updateInt("nQtyOnHnd", 0);
-            poEntity.updateInt("nCancelld", 0);
-            poEntity.updateInt("nReceived", 0);
-            poEntity.updateInt("nRecOrder", 0);
-            poEntity.updateDouble("nOrigCost", 0.0);
-            
-            setUnitPrice(0.0);
-            setQuantity(0);
-            setQtyOnHand(0);
-            setCancelledNo(0);
-            setReceiveNo(0);
-            setRecOrder(0);
-            setOriginalCost(0.0);
 
-            newRecord();
+            ID = "sTransNox";
+            ID2 = "nEntryNox";
 
+            //initialize reference objects
+            ParamModels model = new ParamModels(poGRider);
+            poBranch = model.Branch();
+            poIndustry = model.Industry();
+            poCategory = model.Category();
+            poCompany = model.Company();
+            poTerm = model.Term();
+            poBrand = model.Brand();
+            poColor = model.Color();
+            poModel = model.Model();
+            poInv_Type = model.InventoryType();
+            poMeasure = model.Measurement();
+
+            InvModels invModel = new InvModels(poGRider);
+            poInventory = invModel.Inventory();
+            poInventoryMaster = invModel.InventoryMaster();
+
+            InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
+            poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
+            poInvStockDetail = invWarehouseModel.InventoryStockRequestDetail();
+            //end - initialize reference objects
+            pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logwrapr.severe(e.getMessage());
             System.exit(1);
         }
     }
 
+    private static String xsDateShort(Date fdValue) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String date = sdf.format(fdValue);
+        return date;
+    }
+
+    @Override
+    public String getNextCode() {
+        return "";
+    }
+
+    public JSONObject setTransactionNo(String transactionNo) {
+        return setValue("sTransNox", transactionNo);
+    }
+
+    public String getTransactionNo() {
+        return (String) getValue("sTransNox");
+    }
+
+    public JSONObject setEntryNo(Number entryNo) {
+        return setValue("nEntryNox", entryNo);
+    }
+
+    public Number getEntryNo() {
+        return (Number) getValue("nEntryNox");
+    }
+
+    public JSONObject setStockID(String stockID) {
+        return setValue("sStockIDx", stockID);
+    }
+
+    public String getStockID() {
+        return (String) getValue("sStockIDx");
+    }
+
+    public JSONObject setDescription(String description) {
+        return setValue("sDescript", description);
+    }
+
+    public String getDescription() {
+        return (String) getValue("sDescript");
+    }
+
+    public JSONObject setOldPrice(Number oldPrice) {
+        return setValue("nOldPrice", oldPrice);
+    }
+
+    public Number getOldPrice() {
+        return (Number) getValue("nOldPrice");
+    }
+
+    public JSONObject setUnitPrice(Number unitPrice) {
+        return setValue("nUnitPrce", unitPrice);
+    }
+
+    public Number getUnitPrice() {
+        return (Number) getValue("nUnitPrce");
+    }
+
+    public JSONObject setQuantityOnHand(Number quantityOnHand) {
+        return setValue("nQtyOnHnd", quantityOnHand);
+    }
+
+    public Number getQuantityOnHand() {
+        return (Number) getValue("nQtyOnHnd");
+    }
+
+    public JSONObject setRecordOrder(Number recordOrder) {
+        return setValue("nRecOrder", recordOrder);
+    }
+
+    public Number getRecordOrder() {
+        return (Number) getValue("nRecOrder");
+    }
+
+    public JSONObject setQuantity(Number quantity) {
+        return setValue("nQuantity", quantity);
+    }
+
+    public Number getQuantity() {
+        return (Number) getValue("nQuantity");
+    }
+
+    public JSONObject setReceivedQuantity(Number receivedQuantity) {
+        return setValue("nReceived", receivedQuantity);
+    }
+
+    public Number getReceivedQuantity() {
+        return (Number) getValue("nReceived");
+    }
+
+    public JSONObject setCancelledQuantity(Number cancelledQuantity) {
+        return setValue("nCancelld", cancelledQuantity);
+    }
+
+    public Number getCancelledQuantity() {
+        return (Number) getValue("nCancelld");
+    }
+
+    public JSONObject setSouceCode(String sourceCode) {
+        return setValue("sSourceCd", sourceCode);
+    }
+
+    public String getSouceCode() {
+        return (String) getValue("sSourceCd");
+    }
+
+    public JSONObject setSouceNo(String sourceNo) {
+        return setValue("sSourceNo", sourceNo);
+    }
+
+    public String getSouceNo() {
+        return (String) getValue("sSourceNo");
+    }
+
+    public JSONObject setModifiedDate(Date modifiedDate) {
+        return setValue("dModified", modifiedDate);
+    }
+
+    public Date getModifiedDate() {
+        return (Date) getValue("dModified");
+    }
+
+    //reference object models
+    public Model_Branch Branch() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sBranchCd"))) {
+            if (poBranch.getEditMode() == EditMode.READY
+                    && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
+                return poBranch;
+            } else {
+                poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBranch;
+                } else {
+                    poBranch.initialize();
+                    return poBranch;
+                }
+            }
+        } else {
+            poBranch.initialize();
+            return poBranch;
+        }
+    }
+
+    public Model_Industry Industry() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sIndstCdx"))) {
+            if (poIndustry.getEditMode() == EditMode.READY
+                    && poIndustry.getIndustryId().equals((String) getValue("sIndstCdx"))) {
+                return poIndustry;
+            } else {
+                poJSON = poIndustry.openRecord((String) getValue("sIndstCdx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poIndustry;
+                } else {
+                    poIndustry.initialize();
+                    return poIndustry;
+                }
+            }
+        } else {
+            poIndustry.initialize();
+            return poIndustry;
+        }
+    }
+
+    public Model_Category Category() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sCategrCd"))) {
+            if (poCategory.getEditMode() == EditMode.READY
+                    && poCategory.getCategoryId().equals((String) getValue("sCategrCd"))) {
+                return poCategory;
+            } else {
+                poJSON = poCategory.openRecord((String) getValue("sCategrCd"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poCategory;
+                } else {
+                    poCategory.initialize();
+                    return poCategory;
+                }
+            }
+        } else {
+            poCategory.initialize();
+            return poCategory;
+        }
+    }
+
+    public Model_Company Company() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sCompanyID"))) {
+            if (poCompany.getEditMode() == EditMode.READY
+                    && poCompany.getCompanyId().equals((String) getValue("sCompanyID"))) {
+                return poCompany;
+            } else {
+
+                poJSON = poCompany.openRecord((String) getValue("sCompanyID"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poCompany;
+                } else {
+                    poCompany.initialize();
+                    return poCompany;
+                }
+            }
+        } else {
+            poCompany.initialize();
+            return poCompany;
+        }
+    }
+
+    public Model_Term Term() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTermCode"))) {
+            if (poTerm.getEditMode() == EditMode.READY
+                    && poTerm.getTermId().equals((String) getValue("sTermCode"))) {
+                return poTerm;
+            } else {
+
+                poJSON = poTerm.openRecord((String) getValue("sTermCode"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poTerm;
+                } else {
+                    poTerm.initialize();
+                    return poTerm;
+                }
+            }
+        } else {
+            poTerm.initialize();
+            return poTerm;
+        }
+    }
+
+    public Model_Inventory Inventory() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sStockIDx"))) {
+            if (poInventory.getEditMode() == EditMode.READY
+                    && poInventory.getStockId().equals((String) getValue("sStockIDx"))) {
+                return poInventory;
+            } else {
+
+                poJSON = poInventory.openRecord((String) getValue("sStockIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInventory;
+                } else {
+                    poInventory.initialize();
+                    return poInventory;
+                }
+
+            }
+        } else {
+            poInventory.initialize();
+            return poInventory;
+        }
+    }
+
+    public Model_Inv_Master InventoryMaster() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sStockIDx"))) {
+            if (poInventoryMaster.getEditMode() == EditMode.READY
+                    && poInventoryMaster.getStockId().equals((String) getValue("sStockIDx"))) {
+                return poInventoryMaster;
+            } else {
+                poJSON = poInventoryMaster.openRecord((String) getValue("sStockIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInventoryMaster;
+                } else {
+                    poInventoryMaster.initialize();
+                    return poInventoryMaster;
+                }
+            }
+        } else {
+            poInventoryMaster.initialize();
+            return poInventoryMaster;
+        }
+    }
+
+    public Model_Brand Brand() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sBrandIDx"))) {
+            if (poBrand.getEditMode() == EditMode.READY
+                    && poBrand.getBrandId().equals((String) getValue("sBrandIDx"))) {
+                return poBrand;
+            } else {
+                poJSON = poBrand.openRecord((String) getValue("sBrandIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBrand;
+                } else {
+                    poBrand.initialize();
+                    return poBrand;
+                }
+            }
+        } else {
+            poBrand.initialize();
+            return poBrand;
+        }
+    }
+
+    public Model_Color Color() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sColorIDx"))) {
+            if (poColor.getEditMode() == EditMode.READY
+                    && poColor.getColorId().equals((String) getValue("sColorIDx"))) {
+                return poColor;
+            } else {
+                poJSON = poColor.openRecord((String) getValue("sColorIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poColor;
+                } else {
+                    poColor.initialize();
+                    return poColor;
+                }
+            }
+        } else {
+            poColor.initialize();
+            return poColor;
+        }
+    }
+
+    public Model_Inv_Type InventoryType() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sInvTypCd"))) {
+            if (poInv_Type.getEditMode() == EditMode.READY
+                    && poInv_Type.getInventoryTypeId().equals((String) getValue("sInvTypCd"))) {
+                return poInv_Type;
+            } else {
+                poJSON = poInv_Type.openRecord((String) getValue("sInvTypCd"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInv_Type;
+                } else {
+                    poInv_Type.initialize();
+                    return poInv_Type;
+                }
+            }
+        } else {
+            poInv_Type.initialize();
+            return poInv_Type;
+        }
+    }
+
+    public Model_Measure Measure() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sMeasurID"))) {
+            if (poMeasure.getEditMode() == EditMode.READY
+                    && poMeasure.getMeasureId().equals((String) getValue("sMeasurID"))) {
+                return poMeasure;
+            } else {
+                poJSON = poMeasure.openRecord((String) getValue("sMeasurID"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poMeasure;
+                } else {
+                    poMeasure.initialize();
+                    return poMeasure;
+                }
+            }
+        } else {
+            poMeasure.initialize();
+            return poMeasure;
+        }
+    }
+
+    public Model_Model Model() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sModelIDx"))) {
+            if (poModel.getEditMode() == EditMode.READY
+                    && poModel.getModelId().equals((String) getValue("sModelIDx"))) {
+                return poModel;
+            } else {
+                poJSON = poModel.openRecord((String) getValue("sModelIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poModel;
+                } else {
+                    poModel.initialize();
+                    return poModel;
+                }
+            }
+        } else {
+            poModel.initialize();
+            return poModel;
+        }
+    }
+
+    public Model_Variant ModelVariant() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sVrntIDxx"))) {
+            if (poModelVariant.getEditMode() == EditMode.READY
+                    && poModelVariant.getVariantId().equals((String) getValue("sVrntIDxx"))) {
+                return poModelVariant;
+            } else {
+                poJSON = poModelVariant.openRecord((String) getValue("sVrntIDxx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poModelVariant;
+                } else {
+                    poModelVariant.initialize();
+                    return poModelVariant;
+                }
+            }
+        } else {
+            poModelVariant.initialize();
+            return poModelVariant;
+        }
+    }
+
+    public Model_Inv_Stock_Request_Master InvStockRequestMaster() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTransNox"))) {
+            if (poInvStockMaster.getEditMode() == EditMode.READY
+                    && poInvStockMaster.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                return poInvStockMaster;
+            } else {
+                poJSON = poInvStockMaster.openRecord((String) getValue("sTransNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockMaster;
+                } else {
+                    poInvStockMaster.initialize();
+                    return poInvStockMaster;
+                }
+            }
+        } else {
+            poInvStockMaster.initialize();
+            return poInvStockMaster;
+        }
+    }
+
+    public Model_Inv_Stock_Request_Detail InvStockRequestDetail() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sTransNox"))) {
+            if (poInvStockDetail.getEditMode() == EditMode.READY
+                    && poInvStockDetail.getTransactionNo().equals((String) getValue("sTransNox"))) {
+                return poInvStockDetail;
+            } else {
+                poJSON = poInvStockDetail.openRecord((String) getValue("sTransNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvStockDetail;
+                } else {
+                    poInvStockDetail.initialize();
+                    return poInvStockDetail;
+                }
+            }
+        } else {
+            poInvStockDetail.initialize();
+            return poInvStockDetail;
+        }
+    }
+    //end - reference object models
 }
