@@ -3,8 +3,6 @@ package org.guanzon.cas.purchasing.model;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -14,7 +12,7 @@ import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.cas.client.model.Model_Client_Address;
 import org.guanzon.cas.client.model.Model_Client_Institution_Contact;
 import org.guanzon.cas.client.model.Model_Client_Master;
-import org.guanzon.cas.client.services.ClientModel;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
@@ -57,6 +55,7 @@ public class Model_PO_Master extends Model {
             //assign default values
             poEntity.updateObject("cProcessd", PurchaseOrderProcessedStatus.NO);
             poEntity.updateObject("cPreOwned", Logical.NO);
+            poEntity.updateObject("cWithAddx", Logical.NO);
             poEntity.updateObject("dExpected", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
@@ -92,7 +91,7 @@ public class Model_PO_Master extends Model {
             InvModels invModel = new InvModels(poGRider);
             poInventory = invModel.Inventory();
 
-            ClientModel clientModel = new ClientModel(poGRider);
+            ClientModels clientModel = new ClientModels(poGRider);
             poSupplier = clientModel.ClientMaster();
             poSupplierAdress = clientModel.ClientAddress();
             poSupplierContactPerson = clientModel.ClientInstitutionContact();
@@ -135,6 +134,14 @@ public class Model_PO_Master extends Model {
 
     public String getIndustryID() {
         return (String) getValue("sIndstCdx");
+    }
+    
+    public JSONObject setCategoryCode(String categoryCode) {
+        return setValue("sCategrCd", categoryCode);
+    }
+
+    public String getCategoryCode() {
+        return (String) getValue("sCategrCd");
     }
 
     public JSONObject setTransactionDate(Date transactionDate) {
@@ -272,31 +279,7 @@ public class Model_PO_Master extends Model {
     public String getRemarks() {
         return (String) getValue("sRemarksx");
     }
-
-    public JSONObject setVatable(String vatable) {
-        return setValue("cVATaxabl", vatable);
-    }
-
-    public String getVatable() {
-        return (String) getValue("cVATaxabl");
-    }
-
-    public JSONObject setVatRate(Number vatRate) {
-        return setValue("nVatRatex", vatRate);
-    }
-
-    public Number getVatRate() {
-        return (Number) getValue("nVatRatex");
-    }
-
-    public JSONObject setWithHoldingTax(Number withHoldingTax) {
-        return setValue("nTWithHld", withHoldingTax);
-    }
-
-    public Number getWithHoldingTax() {
-        return (Number) getValue("nTWithHld");
-    }
-
+    
     public JSONObject setExpectedDate(Date expectedDate) {
         return setValue("dExpected", expectedDate);
     }
@@ -320,7 +303,7 @@ public class Model_PO_Master extends Model {
     public Number getNoEmailSent() {
         return (Number) getValue("nEmailSnt");
     }
-
+    
     public JSONObject setPrint(String print) {
         return setValue("cPrintxxx", print);
     }
@@ -344,6 +327,22 @@ public class Model_PO_Master extends Model {
     public String getInventoryTypeCode() {
         return (String) getValue("sInvTypCd");
     }
+    
+    public JSONObject setPreOwned(boolean isWithAdvPaym) {
+        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
+    }
+
+    public boolean getPreOwned() {
+        return ((String) getValue("cPreOwned")).equals("1");
+    }
+
+    public JSONObject setProcessed(boolean isProcessed) {
+        return setValue("cProcessd", isProcessed ? "1" : "0");
+    }
+
+    public boolean getProcessed() {
+        return ((String) getValue("cProcessd")).equals("1");
+    }
 
     public JSONObject setTransactionStatus(String transactionStatus) {
         return setValue("cTranStat", transactionStatus);
@@ -351,22 +350,6 @@ public class Model_PO_Master extends Model {
 
     public String getTransactionStatus() {
         return (String) getValue("cTranStat");
-    }
-
-    public JSONObject setSourceCode(String sourceCode) {
-        return setValue("sSourceCd", sourceCode);
-    }
-
-    public String getSourceCode() {
-        return (String) getValue("sSourceCd");
-    }
-
-    public JSONObject setSourceNo(String sourceNo) {
-        return setValue("sSourceNo", sourceNo);
-    }
-
-    public String getSourceNo() {
-        return (String) getValue("sSourceNo");
     }
 
     public JSONObject setModifyingId(String modifyingId) {
@@ -385,21 +368,7 @@ public class Model_PO_Master extends Model {
         return (Date) getValue("dModified");
     }
 
-    public JSONObject setPreOwned(boolean isWithAdvPaym) {
-        return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
-    }
-
-    public boolean getPreOwned() {
-        return ((String) getValue("cPreOwned")).equals("1");
-    }
-
-    public JSONObject setProcessed(boolean isProcessed) {
-        return setValue("cPreOwned", isProcessed ? "1" : "0");
-    }
-
-    public boolean getProcessed() {
-        return ((String) getValue("cPreOwned")).equals("1");
-    }
+    
 
     @Override
     public String getNextCode() {

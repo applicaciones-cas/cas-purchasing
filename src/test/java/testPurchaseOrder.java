@@ -1,16 +1,11 @@
 
-import com.lowagie.text.pdf.PdfName;
-import java.awt.print.PrinterException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.sf.jasperreports.engine.JRException;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
-import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.junit.AfterClass;
@@ -35,42 +30,6 @@ public class testPurchaseOrder {
         poPurchasingController = new PurchaseOrderControllers(poApp, null);
     }
 
-//    @Test
-//    public void testGetApprovedStockRequests() {
-//        try {
-//            JSONObject response = (JSONObject) poPurchasingController.PurchaseOrder().getApprovedStockRequests();  // Direct JSONObject response
-//
-//            // Ensure the response is not null
-//            Assert.assertNotNull("Response should not be null", response);
-//
-//            // Extract the list of approved stock requests from the JSON response
-//            if (!"success".equals(response.get("result"))) {
-//                System.err.println("Failed to fetch approved stock requests: " + response.get("message"));
-//                Assert.fail();
-//            }
-//
-//            // Assuming "data" holds the list of approved stock requests
-//            JSONArray approvedRequests = (JSONArray) response.get("data");
-//
-//            // Validate that the list is not null or empty
-//            Assert.assertNotNull("Approved stock requests should not be null", approvedRequests);
-//            Assert.assertFalse("Approved stock requests should not be empty", approvedRequests.isEmpty());
-//
-//            System.out.println("Total Approved Stock Requests: " + approvedRequests.size());
-//
-//            // Iterate through the list and validate each request
-//            for (Object obj : approvedRequests) {
-//                JSONObject request = (JSONObject) obj;
-//                Assert.assertEquals("Status should be 'approved'", null, request.get("sApproved"));
-//                System.out.println("Approved Stock Request: " + request.toJSONString());
-//            }
-//
-//        } catch (Exception e) {
-//            System.err.println("Exception occurred while fetching approved stock requests: " + e.getMessage());
-//            e.printStackTrace();
-//            Assert.fail("Exception thrown during test execution.");
-//        }
-//    }
     @Test
     public void testGetApprovedRequest() {
         JSONObject loJSON;
@@ -81,11 +40,8 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            try {
-                loJSON = poPurchasingController.PurchaseOrder().getApprovedStockRequests();
-            } catch (SQLException | GuanzonException ex) {
-                Logger.getLogger(testPurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            loJSON = poPurchasingController.PurchaseOrder().getApprovedStockRequests();
+
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
                 for (int lnCntr = 0; lnCntr <= poPurchasingController.PurchaseOrder().getInvStockRequestCount() - 1; lnCntr++) {
@@ -93,7 +49,7 @@ public class testPurchaseOrder {
                     System.out.println("Entry no:" + poPurchasingController.PurchaseOrder().InvStockRequestMaster(lnCntr).getEntryNo());
                 }
             }
-        } catch (ExceptionInInitializerError e) {
+        } catch (ExceptionInInitializerError | SQLException | GuanzonException e) {
             System.err.println(MiscUtil.getException(e));
             Assert.fail();
         }
@@ -101,7 +57,7 @@ public class testPurchaseOrder {
     }
 
     @Test
-    public void testPOMaster() {
+    public void testGetPurchaseOrder() {
         JSONObject loJSON;
         try {
             loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
@@ -110,7 +66,7 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().getPurchaseOrder("", "", "", "");
+            loJSON = poPurchasingController.PurchaseOrder().getPurchaseOrder("", "");
 
             if ("success".equals((String) loJSON.get("result"))) {
                 System.out.println("RESULT" + (String) loJSON.get("message"));
@@ -230,30 +186,6 @@ public class testPurchaseOrder {
     }
 
     @Test
-    public void testPrintTransaction() {
-        JSONObject loJSON = new JSONObject();
-        try {
-            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
-            if (!"success".equals((String) loJSON.get("result"))) {
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            }
-
-            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000007");
-
-            if (!"success".equals((String) loJSON.get("result"))) {
-                System.err.println((String) loJSON.get("message"));
-                Assert.fail();
-            }
-            loJSON = poPurchasingController.PurchaseOrder().printTransaction();
-
-        } catch (CloneNotSupportedException | SQLException | GuanzonException e) {
-            System.err.println(MiscUtil.getException(e));
-            Assert.fail();
-        }
-    }
-
-    @Test
     public void testOpenTransaction() {
         JSONObject loJSON;
         try {
@@ -263,26 +195,38 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000002");
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
 
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
             }
 
-            //retreiving using column index
-            for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Master().getColumnCount(); lnCol++) {
-                System.out.println(poPurchasingController.PurchaseOrder().Master().getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Master().getValue(lnCol));
-            }
-            //retreiving using field descriptions
-            System.out.println(poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
-            System.out.println(poPurchasingController.PurchaseOrder().Master().Category().getDescription());
-
-            //retreiving using column index
-            for (int lnCtr = 0; lnCtr <= poPurchasingController.PurchaseOrder().Detail().size() - 1; lnCtr++) {
-                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
-                    System.out.println(poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
                 }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
             }
         } catch (CloneNotSupportedException | SQLException | GuanzonException e) {
             System.err.println(MiscUtil.getException(e));
@@ -342,28 +286,159 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000003");
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
             }
 
-            //retreiving using column index
-            for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Master().getColumnCount(); lnCol++) {
-                System.out.println(poPurchasingController.PurchaseOrder().Master().getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Master().getValue(lnCol));
-            }
-            //retreiving using field descriptions
-            System.out.println(poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
-            System.out.println(poPurchasingController.PurchaseOrder().Master().Category().getDescription());
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
 
-            //retreiving using column index
-            for (int lnCtr = 0; lnCtr <= poPurchasingController.PurchaseOrder().Detail().size() - 1; lnCtr++) {
-                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
-                    System.out.println(poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
                 }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
             }
 
             loJSON = poPurchasingController.PurchaseOrder().ConfirmTransaction("");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
+    @Test
+    public void testApproveTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
+
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
+                }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().ApproveTransaction("Approved Test");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+
+    }
+
+    @Test
+    public void testReturnTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
+
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
+                }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().ReturnTransaction("Returned Test");
 
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
@@ -376,6 +451,123 @@ public class testPurchaseOrder {
             Assert.fail();
         }
 
+    }
+
+    @Test
+    public void testVoidTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
+
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
+                }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().VoidTransaction("Void Test");
+
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testPostTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchasingController.PurchaseOrder().InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println("Transaction No: " + poPurchasingController.PurchaseOrder().Master().getTransactionNo());
+            System.out.println("Industry : " + poPurchasingController.PurchaseOrder().Master().Industry().getDescription());
+            System.out.println("Company: " + poPurchasingController.PurchaseOrder().Master().Company().getCompanyName());
+            System.out.println("Supplier: " + poPurchasingController.PurchaseOrder().Master().Supplier().getCompanyName());
+            System.out.println("Destination: " + poPurchasingController.PurchaseOrder().Master().Branch().getBranchName());
+            System.out.println("ReferNo: " + poPurchasingController.PurchaseOrder().Master().getReference());
+            System.out.println("Term: " + poPurchasingController.PurchaseOrder().Master().Term().getTermValue());
+
+            System.out.println("==== DETAIL TABLE ====");
+            int detailSize = poPurchasingController.PurchaseOrder().Detail().size();
+            if (detailSize > 0) {
+                // Print column headers using the first detail row
+                for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(0).getColumnCount(); lnCol++) {
+                    System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(0).getColumn(lnCol));
+                }
+                System.out.println();
+
+                // Print detail row data
+                for (int lnCtr = 0; lnCtr < detailSize; lnCtr++) {
+                    for (int lnCol = 1; lnCol <= poPurchasingController.PurchaseOrder().Detail(lnCtr).getColumnCount(); lnCol++) {
+                        System.out.printf("%-20s", poPurchasingController.PurchaseOrder().Detail(lnCtr).getValue(lnCol));
+                    }
+                    System.out.println();
+                }
+            } else {
+                System.out.println("No detail rows found.");
+            }
+
+            loJSON = poPurchasingController.PurchaseOrder().PostTransaction("Post Test");
+            if (!"success".equals((String) loJSON.get("result"))) {
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            }
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException | ParseException | SQLException | GuanzonException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        }
     }
 
     @AfterClass

@@ -1,5 +1,7 @@
 
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -89,7 +91,11 @@ public class testInventory {
                 Assert.fail((String) loJSON.get("message"));
             }     
 
-            loJSON = record.saveRecord();
+            try {
+                loJSON = record.saveRecord();
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(testInventory.class.getName()).log(Level.SEVERE, null, ex);
+            }
             if ("error".equals((String) loJSON.get("result"))) {
                 Assert.fail((String) loJSON.get("message"));
             }  

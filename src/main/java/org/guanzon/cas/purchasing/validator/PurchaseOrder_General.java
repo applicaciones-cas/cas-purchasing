@@ -1,11 +1,8 @@
 package org.guanzon.cas.purchasing.validator;
 
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -85,8 +82,12 @@ public class PurchaseOrder_General implements GValidator {
         LocalDate transactionDate = new java.sql.Date(poMaster.getTransactionDate().getTime()).toLocalDate();
         LocalDate expectedDate = new java.sql.Date(poMaster.getExpectedDate().getTime()).toLocalDate();
         LocalDate serverDate = new java.sql.Date(poGrider.getServerDate().getTime()).toLocalDate();
-            LocalDate oneYearAgo = serverDate.minusYears(1);
+        LocalDate oneYearAgo = serverDate.minusYears(1);
 
+        if (poMaster.getSupplierID() == null || poMaster.getTermCode().isEmpty()) {
+            poJSON.put("message", "Invalid Suuplier.");
+            return poJSON;
+        }
         if (transactionDate == null) {
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
@@ -107,20 +108,7 @@ public class PurchaseOrder_General implements GValidator {
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
-        
 
-        if (poMaster.getIndustryID() == null) {
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
-        if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
-            poJSON.put("message", "Company is not set.");
-            return poJSON;
-        }
-        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
-            poJSON.put("message", "Supplier is not set.");
-            return poJSON;
-        }
         if (poMaster.getDestinationID() == null || poMaster.getDestinationID().isEmpty()) {
             poJSON.put("message", "Destination is not set.");
             return poJSON;
@@ -180,12 +168,6 @@ public class PurchaseOrder_General implements GValidator {
         }
         poJSON.put("result", "success");
         return poJSON;
-    }
-
-    private static String xsDateShort(Date fdValue) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String date = sdf.format(fdValue);
-        return date;
     }
 
     private JSONObject validateConfirmed() {
