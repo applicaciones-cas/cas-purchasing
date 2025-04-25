@@ -3344,6 +3344,10 @@ public class PurchaseOrderReceiving extends Transaction {
                         });
                         fbIsPrinted = false;
                     }
+                     //Populate purchase receiving serials
+                    for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                        getPurchaseOrderReceivingSerial(Detail(lnCtr).getEntryNo());
+                    }
                     poMaster.setValue("dModified", poGRider.getServerDate());
                     poMaster.setValue("sModified", poGRider.getUserID());
                     poMaster.setValue("cPrintxxx", Logical.YES);
