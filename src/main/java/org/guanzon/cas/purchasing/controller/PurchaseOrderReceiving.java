@@ -28,6 +28,7 @@ import javafx.application.Platform;
 import javafx.stage.WindowEvent;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -3177,9 +3178,24 @@ public class PurchaseOrderReceiving extends Transaction {
 
             }
             poViewer = new CustomJasperViewer(jasperPrint, onPrintedCallback);
+            poViewer.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE); 
             poViewer.setVisible(true);
             poViewer.toFront();
+            
+            poViewer.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent e) {
+                    poViewer = null;
+                    System.out.println("Jasper viewer is closing...");
+                }
 
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent e) {
+                    System.out.println("Jasper viewer closed.");
+                    onPrintedCallback.run(); 
+                }
+            });
+            
         } catch (JRException e) {
             System.err.println("Error generating report: " + e.getMessage());
             e.printStackTrace();
@@ -3244,7 +3260,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
 
-        private class CustomJasperViewer extends JasperViewer {
+    private class CustomJasperViewer extends JasperViewer {
 
         private final Runnable onPrintedCallback;
 
@@ -3253,15 +3269,7 @@ public class PurchaseOrderReceiving extends Transaction {
             this.onPrintedCallback = onPrintedCallback;
             customizePrintButton(jasperPrint);
 
-            this.addWindowListener(new WindowAdapter() {
-                public void windowClosed(WindowEvent e) {
-                    poViewer = null;
-                }
-
-                public void windowClosing(WindowEvent e) {
-                    poViewer = null;
-                }
-            });
+            
         }
 
         private void customizePrintButton(JasperPrint jasperPrint) {
