@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.stage.WindowEvent;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
@@ -88,7 +87,9 @@ public class PurchaseOrderReceiving extends Transaction {
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
-
+    
+    private Model_POR_Serial poSerial;
+    
     List<Model_PO_Master> paPOMaster;
     List<Model_POR_Master> paPORMaster;
     List<Model_POR_Serial> paOthers;
@@ -102,6 +103,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
+        poSerial = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingSerial();
 
         paPORMaster = new ArrayList<>();
         paOthers = new ArrayList<>();
@@ -714,6 +716,63 @@ public class PurchaseOrderReceiving extends Transaction {
                 "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
                 "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
                 1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject searchTransaction(String industryId, String companyId, String supplierId, String transactionNo, String referenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        boolean lbByCode = false;
+        if(supplierId == null){
+            supplierId = "";
+        }
+        if(referenceNo == null){
+            referenceNo = "";
+            lbByCode = true;
+        }
+        if(transactionNo == null){
+            transactionNo = "";
+        }
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
+                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + transactionNo)
+                + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Reference No»Industry»Company»Supplier",
+                "dTransact»sTransNox»sReferNox»sIndustry»sCompnyNm»sSupplrNm",
+                "a.dTransact»a.sTransNox»a.sReferNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                lbByCode ? 1 : 2);
 
         if (poJSON != null) {
             return OpenTransaction((String) poJSON.get("sTransNox"));
@@ -2226,6 +2285,14 @@ public class PurchaseOrderReceiving extends Transaction {
     public Model_POR_Detail Detail(int row) {
         return (Model_POR_Detail) paDetail.get(row);
     }
+    
+    public Model_POR_Detail getDetail() {
+        return (Model_POR_Detail) poDetail;
+    }
+    
+    public Model_POR_Serial getSerial() {
+        return (Model_POR_Serial) poSerial;
+    }
 
     @Override
     public JSONObject willSave()
@@ -3071,6 +3138,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sIndstCdx  "
                 + " , a.sCompnyID  "
                 + " , a.sSupplier  "
+                + " , a.sReferNox  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
@@ -3407,6 +3475,201 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             return null;
         }
+    }
+    
+    public JSONObject searchBarcodePORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"barcode");
+    }
+    
+    public JSONObject searchDescriptionPORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"description");
+    }
+    
+    public JSONObject searchImeiPORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"description");
+    }
+    
+    public JSONObject searchEnginePORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"engine");
+    }
+    
+    public JSONObject searchFramePORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"frame");
+    }
+    
+    public JSONObject searchPlatePORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"plateno");
+    }
+    
+    public JSONObject searchConductionStickerNoPORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
+        return searchPORDetail(value,transactionNo,"csno");
+    }
+    
+    private JSONObject searchPORDetail(String value, String transactionNo, String searchType) throws SQLException, GuanzonException{
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+        
+        boolean lbIsSerialize = false;
+        int lnSort = 0;
+        String lsSQL = getSQ_BrowseInv();
+        String lsHeader = "Barcode»Description";
+        String lsColName = "sBarCodex»sDescript";
+        String lsColCriteria = "a.sBarCodex»a.sDescript";
+        
+        switch(searchType){
+            case "imei":
+                lsSQL = getSQ_BrowseInvSerial();
+                lsHeader = "IMEI 1»IMEI 2»Description";
+                lsColName = "sSerial01»sSerial02»sDescript";
+                lsColCriteria = "j.sSerial01»j.sSerial02»b.sDescript";
+                lnSort = 0;
+                lbIsSerialize = true;
+            break;
+            case "engine":
+            case "frame":
+            case "csno":
+            case "plateno":
+                lsSQL = getSQ_BrowseInvSerial();
+                lsHeader = "Engine No»Frame No»CS No»Plate No»Description";
+                lsColName = "sSerial01»sSerial02»sPlateNoP»sCStckrNo»sDescript";
+                lsColCriteria = "j.sSerial01»j.sSerial02»k.sPlateNoP»k.sCStckrNo»sDescript";
+                lbIsSerialize = true;
+                
+                switch(searchType){
+                    case "frame":
+                        lnSort = 1;
+                    break;
+                    case "csno":
+                        lnSort = 2;
+                    break;
+                    case "plateno":
+                        lnSort = 3;
+                    break;
+                    default:
+                        lnSort = 0;
+                    break;
+                }
+            break;
+            case "description":
+                lsSQL = getSQ_BrowseInv();
+                lsHeader = "Barcode»Description";
+                lsColName = "sBarCodex»sDescript";
+                lsColCriteria = "a.sBarCodex»a.sDescript";
+                lnSort = 1;
+            break;
+            default:
+                lsSQL = getSQ_BrowseInv();
+                lsHeader = "Barcode»Description";
+                lsColName = "sBarCodex»sDescript";
+                lsColCriteria = "a.sBarCodex»a.sDescript";
+                lnSort = 0;
+            break;
+        }
+        
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(transactionNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
 
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                value,
+                lsHeader,
+                lsColName,
+                lsColCriteria,
+                lnSort);
+
+        if (poJSON != null) {
+            if(lbIsSerialize){
+                return getSerial().openRecord(transactionNo, (String) poJSON.get("sSerialID"));
+            } else {
+                return getDetail().openRecord(transactionNo, (String) poJSON.get("sStockIDx"));
+            }
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+        
+    }
+    
+    private String getSQ_BrowseInv(){
+        return    " SELECT DISTINCT "                                                                  
+                + "   a.sStockIDx, "                                                                   
+                + "   b.sBarCodex, "                                                                   
+                + "   b.sDescript, "                                                                   
+                + "   IFNULL(c.sDescript, '') xBrandNme, "                                             
+                + "   IFNULL(d.sDescript, '') xModelNme, "                                             
+                + "   IFNULL(e.sDescript, '') xColorNme, "                                             
+                + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
+                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
+                + "   IFNULL(d.sModelCde, '') xModelCde "                                              
+                + " FROM po_receiving_detail a "                                                       
+                + " LEFT JOIN Inventory b            "                                                 
+                + "     ON b.sStockIDx = a.sStockIDx "                                                 
+                + " LEFT JOIN Brand c                "                                                 
+                + "     ON b.sBrandIDx = c.sBrandIDx "                                                 
+                + " LEFT JOIN Model d                "                                                 
+                + "     ON b.sModelIDx = d.sModelIDx "                                                 
+                + " LEFT JOIN Color e                "                                                 
+                + "     ON b.sColorIDx = e.sColorIDx "                                                 
+                + " LEFT JOIN Measure f              "                                                 
+                + "     ON b.sMeasurID = f.sMeasurID "                                                 
+                + " LEFT JOIN Model_Variant g        "                                                 
+                + "     ON b.sVrntIDxx = g.sVrntIDxx "                                                 
+                + " LEFT JOIN Inv_Supplier h         "                                                 
+                + "     ON b.sStockIDx = h.sStockIDx "  ;                                               
+    }
+    
+    private String getSQ_BrowseInvSerial(){
+        return    " SELECT DISTINCT "                                                                  
+                + "   i.sSerialID,  "                                                                  
+                + "   j.sSerial01,  "                                                                  
+                + "   j.sSerial02,  "                                                                  
+                + "   k.sPlateNoP,  "                                                                  
+                + "   k.sCStckrNo,  "                                                                  
+                + "   a.sStockIDx,  "                                                                  
+                + "   b.sBarCodex,  "                                                                  
+                + "   b.sDescript,  "                                                                  
+                + "   b.sCategCd1,  "                                                                  
+                + "   IFNULL(c.sDescript, '') xBrandNme, "                                             
+                + "   IFNULL(d.sDescript, '') xModelNme, "                                             
+                + "   IFNULL(e.sDescript, '') xColorNme, "                                             
+                + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
+                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
+                + "   IFNULL(d.sModelCde, '') xModelCde "                                              
+                + " FROM po_receiving_detail a  "                                                      
+                + " LEFT JOIN Inventory b       "                                                      
+                + "     ON b.sStockIDx = a.sStockIDx    "                                              
+                + " LEFT JOIN Brand c                   "                                              
+                + "     ON b.sBrandIDx = c.sBrandIDx    "                                              
+                + " LEFT JOIN Model d                   "                                              
+                + "     ON b.sModelIDx = d.sModelIDx    "                                              
+                + " LEFT JOIN Color e                   "                                              
+                + "     ON b.sColorIDx = e.sColorIDx    "                                              
+                + " LEFT JOIN Measure f                 "                                              
+                + "     ON b.sMeasurID = f.sMeasurID    "                                              
+                + " LEFT JOIN Model_Variant g           "                                              
+                + "     ON b.sVrntIDxx = g.sVrntIDxx    "                                              
+                + " LEFT JOIN Inv_Supplier h            "                                              
+                + "     ON b.sStockIDx = h.sStockIDx    "                                              
+                + " INNER JOIN po_receiving_serial i     "                                              
+                + "     ON i.sStockIDx = a.sStockIDx    "                                              
+                + " INNER JOIN inv_serial j              "                                              
+                + "     ON j.sSerialID = i.sSerialID    "                                              
+                + " LEFT JOIN inv_serial_registration k "                                              
+                + "    ON k.sSerialID = i.sSerialID     "   ;
     }
 }

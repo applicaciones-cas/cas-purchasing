@@ -20,6 +20,7 @@ import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.model.Model_Inv_Location;
 import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -34,6 +35,7 @@ public class Model_POR_Serial extends Model {
     Model_Inv_Serial poInvSerial; 
     Model_Inv_Serial_Registration poInvSerialRegistration; 
     Model_Inv_Serial_Ledger poInvSerialLedger;    
+    Model_POR_Detail poPorDetail;
     
     @Override
     public void initialize() {
@@ -68,6 +70,10 @@ public class Model_POR_Serial extends Model {
             
             InvModels invModel = new InvModels(poGRider); 
             poInventory = invModel.Inventory();
+            
+            PurchaseOrderReceivingModels porDetail = new PurchaseOrderReceivingModels(poGRider); 
+            poPorDetail = porDetail.PurchaseOrderReceivingDetails();
+            
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -162,36 +168,6 @@ public class Model_POR_Serial extends Model {
         return "";
 //        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
-    
-//    public JSONObject openRecord(String transactionNo, int entryNo, String serialId) throws SQLException, GuanzonException {
-//        poJSON = new JSONObject();
-//        String lsSQL = MiscUtil.makeSelect(this);
-//        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(transactionNo) 
-//                                    + " AND nEntryNox = " + SQLUtil.toSQL(entryNo) 
-//                                    + " AND sSerialID = " + SQLUtil.toSQL(serialId));
-//        ResultSet loRS = poGRider.executeQuery(lsSQL);
-//        try {
-//            if (loRS.next()) {
-//                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++){
-//                  setValue(lnCtr, loRS.getObject(lnCtr)); 
-//                }
-//                MiscUtil.close(loRS);
-//                pnEditMode = 1;
-//                poJSON = new JSONObject();
-//                poJSON.put("result", "success");
-//                poJSON.put("message", "Record loaded successfully.");
-//            } else {
-//                poJSON = new JSONObject();
-//                poJSON.put("result", "error");
-//                poJSON.put("message", "No record to load.");
-//            } 
-//        } catch (SQLException e) {
-//          poJSON = new JSONObject();
-//          poJSON.put("result", "error");
-//          poJSON.put("message", e.getMessage());
-//        } 
-//        return this.poJSON;
-//    }
     
     //reference object models
     public Model_Inventory Inventory() throws SQLException, GuanzonException {
@@ -296,6 +272,56 @@ public class Model_POR_Serial extends Model {
         } else {
             poInvSerialLedger.initialize();
             return poInvSerialLedger;
+        }
+    }
+    
+    public JSONObject openRecord(String transactionNo, String serialId) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        String lsSQL = MiscUtil.makeSelect(this);
+        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(transactionNo) 
+                                        + "sSerialID = " + SQLUtil.toSQL(serialId));
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+            if (loRS.next()) {
+                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++){
+                    setValue(lnCtr, loRS.getObject(lnCtr)); 
+                }
+                MiscUtil.close(loRS);
+                pnEditMode = EditMode.READY;
+                poJSON = new JSONObject();
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record to load.");
+            } 
+        } catch (SQLException e) {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        } 
+        return poJSON;
+    }
+    
+    public Model_POR_Detail PurchaseOrderReceivingDetails() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sStockIDx"))) {
+            if (poPorDetail.getEditMode() == EditMode.READY
+                    && (poPorDetail.getEntryNo() == (int) getValue("nEntryNox"))) {
+                return poPorDetail;
+            } else {
+                poJSON = poPorDetail.openRecord((String) getValue("sTransNox"), (int) getValue("nEntryNox"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poPorDetail;
+                } else {
+                    poPorDetail.initialize();
+                    return poPorDetail;
+                }
+            }
+        } else {
+            poPorDetail.initialize();
+            return poPorDetail;
         }
     }
     
