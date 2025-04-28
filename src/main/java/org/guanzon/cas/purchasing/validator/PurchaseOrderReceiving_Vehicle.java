@@ -150,7 +150,7 @@ public class PurchaseOrderReceiving_Vehicle implements GValidator{
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;
         }
-        LocalDate referenceDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
+        LocalDate referenceDate = strToDate(xsDateShort(poMaster.getReferenceDate()));
         if (referenceDate.isAfter(serverDate)) {
             poJSON.put("message", "Future reference dates are not allowed.");
             return poJSON;
