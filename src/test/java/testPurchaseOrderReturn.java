@@ -179,7 +179,7 @@ public class testPurchaseOrderReturn {
                     System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
                 }
                 
-                System.out.println("Receive Qty : " + PurchaseReturnController.getReceiveQty(PurchaseReturnController.Detail(lnCtr).getStockId()));
+                System.out.println("Receive Qty : " + PurchaseReturnController.getReceiveQty(lnCtr));
        
             }
             

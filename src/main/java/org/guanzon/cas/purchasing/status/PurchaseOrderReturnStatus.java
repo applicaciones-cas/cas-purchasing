@@ -12,9 +12,9 @@ package org.guanzon.cas.purchasing.status;
 public class PurchaseOrderReturnStatus {
     public static final String OPEN = "0";
     public static final  String CONFIRMED = "1";
-    public static final  String POSTED = "2"; // approve > posted 
+    public static final  String PAID = "2";  //Approved / Paid
     public static final  String CANCELLED = "3";
     public static final  String VOID = "4";
-    public static final  String PAID = "5"; //posted > paid
-    public static final  String RETURNED = "6";
+    public static final  String POSTED = "6"; 
+    public static final  String RETURNED = "7";
 }

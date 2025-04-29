@@ -32,7 +32,6 @@ import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReturnControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReturnModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
-import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderReturnValidatorFactory;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -653,10 +652,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getDetail().getStockId(), object.getDetail().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getDetail().getStockId(), "",object.getDetail().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setStockId(object.getDetail().getStockId());
             Detail(row).setUnitPrce(object.getDetail().getUnitPrce().doubleValue());
@@ -683,10 +682,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getDetail().getStockId(), "",object.getDetail().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setStockId(object.getDetail().getStockId());
             Detail(row).setUnitPrce(object.getDetail().getUnitPrce().doubleValue());
@@ -713,10 +712,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getSerial().getStockId(), object.getSerial().getSerialId(),object.getSerial().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setSerialId(object.getSerial().getSerialId());
             Detail(row).setStockId(object.getSerial().getStockId());
@@ -744,10 +743,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getSerial().getStockId(), object.getSerial().getSerialId(),object.getSerial().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setSerialId(object.getSerial().getSerialId());
             Detail(row).setStockId(object.getSerial().getStockId());
@@ -775,10 +774,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getSerial().getStockId(), object.getSerial().getSerialId(),object.getSerial().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setSerialId(object.getSerial().getSerialId());
             Detail(row).setStockId(object.getSerial().getStockId());
@@ -806,10 +805,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getSerial().getStockId(), object.getSerial().getSerialId(),object.getSerial().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setSerialId(object.getSerial().getSerialId());
             Detail(row).setStockId(object.getSerial().getStockId());
@@ -837,10 +836,10 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
-//            if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            poJSON = checkExistingStock(object.getSerial().getStockId(), object.getSerial().getSerialId(),object.getSerial().Inventory().getDescription(), row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setSerialId(object.getSerial().getSerialId());
             Detail(row).setStockId(object.getSerial().getStockId());
@@ -850,19 +849,25 @@ public class PurchaseOrderReturn extends Transaction{
         return poJSON;
     }
     
-    public int getReceiveQty(String stockId) {
+    public int getReceiveQty(int row) {
         poJSON = new JSONObject();
         int lnRecQty = 0;
         try {
             
-            if(Master().getSourceNo() == null || "".equals(Master().getSourceNo())){
+            if(Master().getSourceNo() == null || "".equals(Master().getSourceNo())
+             || Detail(row).getStockId() == null || "".equals(Detail(row).getStockId())){
                 return 0;
+            }
+            
+            if(Detail(row).getSerialId() != null || !"".equals(Detail(row).getSerialId())){
+                return 1;
             }
             
             String lsSQL = " SELECT "
                     + " a.nQuantity AS nQuantity "
                     + " FROM po_receiving_detail a " ;
-            lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getSourceNo()));
+            lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getSourceNo())
+                                                    + " AND a.sStockIDx = " + SQLUtil.toSQL(Detail(row).getStockId()));
             
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -886,12 +891,16 @@ public class PurchaseOrderReturn extends Transaction{
         return lnRecQty;
     }
     
-    public JSONObject checkExistingStock(String stockId, String description, String expiryDate, int row, boolean isSave) {
+    public JSONObject checkExistingStock(String stockId, String serialId, String description, int row, boolean isSave) throws SQLException, GuanzonException {
         for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
             if(lnRow != row ){
-                if  (stockId.equals(Detail(lnRow).getStockId())) {
+                if (stockId.equals(Detail(lnRow).getStockId()) && serialId.equals(Detail(lnRow).getSerialId())) {
+                    if(!"".equals(serialId)){
+                        poJSON.put("message", Detail(lnRow).InventorySerial().getSerial01() + " " + description+ " already exist in table at row " + (lnRow+1) + ".");
+                    } else {
+                        poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
+                    }
                     poJSON.put("result", "error");
-                    poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
                     poJSON.put("row", lnRow);
                     System.out.println("json row : " + poJSON.get("row"));
                     return poJSON;
@@ -1063,7 +1072,6 @@ public class PurchaseOrderReturn extends Transaction{
             CloneNotSupportedException {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
-        int lnSerialCnt = 0;
         boolean lbUpdated = false;
         
         if (paDetailRemoved == null) {
@@ -1278,7 +1286,7 @@ public class PurchaseOrderReturn extends Transaction{
 //                paInventoryTransaction.get(lnCtr).setWithParent(true);
 //                poJSON = paInventoryTransaction.get(lnCtr).SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
-                    System.out.println("Purchase Order Saving " + (String) poJSON.get("message"));
+                    System.out.println("Inventory Transaction Saving " + (String) poJSON.get("message"));
                     return poJSON;
                 }
             }
