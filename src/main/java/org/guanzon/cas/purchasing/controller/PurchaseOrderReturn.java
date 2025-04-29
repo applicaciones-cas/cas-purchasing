@@ -1166,7 +1166,7 @@ public class PurchaseOrderReturn extends Transaction{
 
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            if(getReceiveQty(Detail(lnCtr).getStockId()) < Detail(lnCtr).getQuantity().intValue()){
+            if(getReceiveQty(lnCtr) < Detail(lnCtr).getQuantity().intValue()){
                 poJSON.put("result", "error");
                 poJSON.put("message", "Return quantity cannot be greater than the receive quantity.");
                 return poJSON;
@@ -1243,7 +1243,7 @@ public class PurchaseOrderReturn extends Transaction{
             System.out.println("StockId : " + (lnCtr + 1) + " : " + Detail(lnCtr).getStockId());
             System.out.println("------------------------------------------------------------------ ");
             
-            lnRecQty = getReceiveQty( Detail(lnCtr).getStockId());
+            lnRecQty = getReceiveQty(lnCtr);
             switch (status) {
                 case PurchaseOrderReturnStatus.CONFIRMED:
                 case PurchaseOrderReturnStatus.PAID:
