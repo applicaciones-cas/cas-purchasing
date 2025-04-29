@@ -279,7 +279,7 @@ public class Model_POR_Serial extends Model {
         poJSON = new JSONObject();
         String lsSQL = MiscUtil.makeSelect(this);
         lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(transactionNo) 
-                                        + "sSerialID = " + SQLUtil.toSQL(serialId));
+                                        + " AND sSerialID = " + SQLUtil.toSQL(serialId));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (loRS.next()) {

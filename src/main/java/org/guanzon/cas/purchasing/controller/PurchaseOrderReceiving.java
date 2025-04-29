@@ -727,7 +727,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
     
-    public JSONObject searchTransaction(String industryId, String companyId, String supplierId, String transactionNo, String referenceNo)
+    public JSONObject searchTransaction(String industryId, String companyId, String categoryId, String supplierId, String transactionNo, String referenceNo)
             throws CloneNotSupportedException,
             SQLException,
             GuanzonException {
@@ -758,6 +758,7 @@ public class PurchaseOrderReceiving extends Transaction {
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(categoryId)
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + transactionNo)
                 + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo));
@@ -775,7 +776,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lbByCode ? 1 : 2);
 
         if (poJSON != null) {
-            return OpenTransaction((String) poJSON.get("sTransNox"));
+            return Master().openRecord((String) poJSON.get("sTransNox"));
         } else {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
@@ -2918,13 +2919,16 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " b.nQuantity AS nQuantity "
                 + " FROM po_receiving_master a "
                 + " LEFT JOIN po_receiving_detail b ON b.sTransNox = a.sTransNox ";
-        lsSQL = MiscUtil.addCondition(lsSQL, " b.sOrderNox = " + SQLUtil.toSQL(orderNo)
-                + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
+        lsSQL = MiscUtil.addCondition(lsSQL, " b.sStockIDx = " + SQLUtil.toSQL(stockId)
                 + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
                 + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
                 + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
                 + " ) ");
-
+        
+        if(orderNo != null && !"".equals(orderNo)){
+            lsSQL = lsSQL + " AND b.sOrderNox = " + SQLUtil.toSQL(orderNo);
+        }
+        
         if (isAdd) {
             lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
         }
@@ -3039,18 +3043,19 @@ public class PurchaseOrderReceiving extends Transaction {
 //        if(stockId.equals(paInventoryTransaction.get(lnList).Master().getStockID())){
 //            switch(status){
 //                case PurchaseOrderReceivingStatus.CONFIRMED:
-//                case PurchaseOrderReceivingStatus.APPROVED: 
+//                case PurchaseOrderReceivingStatus.PAID:
+//                case PurchaseOrderReceivingStatus.POSTED:
 //                    //Get total received qty from other po receiving entry
-//                    lnRecQty = getReceivedQty("", stockId, true);
+//                    //lnRecQty = getReceivedQty("", stockId, true);
 //                    //Add received qty in po receiving
-//                    lnRecQty = lnRecQty + quantity;
+//                    lnRecQty = paInventoryTransaction.get(lnList).Master().getQuantityOnHand() + quantity;
 //                    break;
 //                case PurchaseOrderReceivingStatus.VOID:
 //                case PurchaseOrderReceivingStatus.RETURNED: 
 //                    //Get total received qty from other po receiving entry
-//                    lnRecQty = getReceivedQty("", stockId, false);
+//                    //lnRecQty = getReceivedQty("", stockId, false);
 //                    //Deduct received qty in po receiving
-//                    lnRecQty = lnRecQty - quantity;
+//                    lnRecQty = paInventoryTransaction.get(lnList).Master().getQuantityOnHand() - quantity;
 //                    break;
 //            }
 //            //set Receive qty in Purchase Order detail

@@ -24,7 +24,7 @@ import org.json.simple.JSONObject;
  *
  * @author Arsiela 04-28-2025
  */
-public class PurchaseOrderReturn_General implements GValidator{
+public class PurchaseOrderReturn_Hospitality implements GValidator{
     GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
@@ -83,7 +83,7 @@ public class PurchaseOrderReturn_General implements GValidator{
                     poJSON.put("result", "success");
             }
         } catch (SQLException ex) {
-            Logger.getLogger(PurchaseOrderReturn_General.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PurchaseOrderReturn_Hospitality.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;

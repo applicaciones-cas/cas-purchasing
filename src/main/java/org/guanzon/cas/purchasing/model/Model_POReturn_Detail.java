@@ -12,6 +12,8 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.inv.model.Model_Inv_Serial;
+import org.guanzon.cas.inv.model.Model_Inv_Serial_Registration;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.json.simple.JSONObject;
@@ -26,6 +28,8 @@ public class Model_POReturn_Detail extends Model{
     
     //reference objects
     Model_Inventory poInventory;
+    Model_Inv_Serial poInvSerial;
+    Model_Inv_Serial_Registration poInvSerialRegistration;
     
     @Override
     public void initialize() {
@@ -55,6 +59,8 @@ public class Model_POReturn_Detail extends Model{
             //initialize reference objects
             InvModels invModel = new InvModels(poGRider); 
             poInventory = invModel.Inventory();
+            poInvSerial = invModel.InventorySerial();
+            poInvSerialRegistration = invModel.InventorySerialRegistration();
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -128,6 +134,22 @@ public class Model_POReturn_Detail extends Model{
         return (Number) getValue("nFreightx");
     }
     
+    public JSONObject setSourceNo(String sourceNo){
+        return setValue("sSourceNo", sourceNo);
+    }
+    
+    public String getSourceNo(){
+        return (String) getValue("sSourceNo");
+    }
+    
+    public JSONObject setBatchNo(String batchNo){
+        return setValue("sBatchNox", batchNo);
+    }
+    
+    public String getBatchNo(){
+        return (String) getValue("sBatchNox");
+    }
+    
     public JSONObject setModifiedDate(Date modifiedDate){
         return setValue("dModified", modifiedDate);
     }
@@ -160,6 +182,48 @@ public class Model_POReturn_Detail extends Model{
         } else {
             poInventory.initialize();
             return poInventory;
+        }
+    }
+    
+    public Model_Inv_Serial InventorySerial() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sSerialID"))) {
+            if (poInvSerial.getEditMode() == EditMode.READY
+                    && poInvSerial.getSerialId().equals((String) getValue("sSerialID"))) {
+                return poInvSerial;
+            } else {
+                poJSON = poInvSerial.openRecord((String) getValue("sSerialID"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvSerial;
+                } else {
+                    poInvSerial.initialize();
+                    return poInvSerial;
+                }
+            }
+        } else {
+            poInvSerial.initialize();
+            return poInvSerial;
+        }
+    }
+    
+    public Model_Inv_Serial_Registration InventorySerialRegistration() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sSerialID"))) {
+            if (poInvSerialRegistration.getEditMode() == EditMode.READY
+                    && poInvSerialRegistration.getSerialId().equals((String) getValue("sSerialID"))) {
+                return poInvSerialRegistration;
+            } else {
+                poJSON = poInvSerialRegistration.openRecord((String) getValue("sSerialID"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poInvSerialRegistration;
+                } else {
+                    poInvSerialRegistration.initialize();
+                    return poInvSerialRegistration;
+                }
+            }
+        } else {
+            poInvSerialRegistration.initialize();
+            return poInvSerialRegistration;
         }
     }
     

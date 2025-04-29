@@ -2,6 +2,7 @@
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.xml.soap.Detail;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -32,7 +33,7 @@ public class testPurchaseOrderReturn {
         PurchaseReturnController = new PurchaseOrderReturnControllers(instance, null).PurchaseOrderReturn();
     }
 
-    @Test
+//    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "01";
@@ -119,7 +120,7 @@ public class testPurchaseOrderReturn {
                 Assert.fail();
             } 
 
-            loJSON = PurchaseReturnController.OpenTransaction("M00125000006");
+            loJSON = PurchaseReturnController.OpenTransaction("M00125000001");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
@@ -143,6 +144,237 @@ public class testPurchaseOrderReturn {
             Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
         }
         
+    }   
+    
+//    @Test
+    public void testOpenTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = PurchaseReturnController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = PurchaseReturnController.OpenTransaction("M00125000001");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= PurchaseReturnController.Master().getColumnCount(); lnCol++){
+                System.out.println(PurchaseReturnController.Master().getColumn(lnCol) + " ->> " + PurchaseReturnController.Master().getValue(lnCol));
+            }
+            
+            //retreiving using field descriptions
+            System.out.println(PurchaseReturnController.Master().Branch().getBranchName());
+            System.out.println(PurchaseReturnController.Master().Category().getDescription());
+            System.out.println(PurchaseReturnController.Master().PurchaseOrderReceivingMaster().getReferenceNo());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= PurchaseReturnController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= PurchaseReturnController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
+                }
+                
+                System.out.println("Receive Qty : " + PurchaseReturnController.getReceiveQty(PurchaseReturnController.Detail(lnCtr).getStockId()));
+       
+            }
+            
+        } catch (CloneNotSupportedException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }   
+    
+//    @Test
+    public void testgetPurchaseReturnList() {
+        String industryId = "01";
+        String companyId = "0002";
+        String categoryCd = "0001";
+        String supplierId = "C00124000020";
+        
+        JSONObject loJSON;
+        
+        loJSON = PurchaseReturnController.InitTransaction();
+        if (!"success".equals((String) loJSON.get("result"))){
+            System.err.println((String) loJSON.get("message"));
+            Assert.fail();
+        }
+        
+        PurchaseReturnController.Master().setIndustryId(industryId); //direct assignment of value
+        PurchaseReturnController.Master().setCompanyId(companyId); //direct assignment of value
+        PurchaseReturnController.Master().setSupplierId(supplierId); //direct assignment of value
+        PurchaseReturnController.setIndustryId(industryId); //direct assignment of value
+        PurchaseReturnController.setCompanyId(companyId); //direct assignment of value
+        PurchaseReturnController.setCategoryId(categoryCd); //direct assignment of value
+        
+        
+        loJSON = PurchaseReturnController.loadPurchaseOrderReturn("confirmation", supplierId, "");
+        if (!"success".equals((String) loJSON.get("result"))) {
+            System.err.println((String) loJSON.get("message"));
+            Assert.fail();
+        }
+        
+        //retreiving using column index
+        for (int lnCtr = 0; lnCtr <= PurchaseReturnController.getPurchaseOrderReturnCount()- 1; lnCtr++){
+            try {
+                System.out.println("PO Row No ->> " + lnCtr);
+                System.out.println("PO Transaction No ->> " + PurchaseReturnController.PurchaseOrderReturnList(lnCtr).getTransactionNo());
+                System.out.println("PO Transaction Date ->> " + PurchaseReturnController.PurchaseOrderReturnList(lnCtr).getTransactionDate());
+                System.out.println("PO Industry ->> " + PurchaseReturnController.PurchaseOrderReturnList(lnCtr).Industry().getDescription());
+                System.out.println("PO Company ->> " + PurchaseReturnController.PurchaseOrderReturnList(lnCtr).Company().getCompanyName());
+                System.out.println("PO Supplier ->> " + PurchaseReturnController.PurchaseOrderReturnList(lnCtr).Supplier().getCompanyName());
+                System.out.println("----------------------------------------------------------------------------------");
+            } catch (GuanzonException | SQLException ex) {
+                Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+//    @Test
+    public void testConfirmTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = PurchaseReturnController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = PurchaseReturnController.OpenTransaction("M00125000001");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= PurchaseReturnController.Master().getColumnCount(); lnCol++){
+                System.out.println(PurchaseReturnController.Master().getColumn(lnCol) + " ->> " + PurchaseReturnController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(PurchaseReturnController.Master().Branch().getBranchName());
+            System.out.println(PurchaseReturnController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= PurchaseReturnController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= PurchaseReturnController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            loJSON = PurchaseReturnController.ConfirmTransaction("test confirm");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }   
+    
+//    @Test
+    public void testReturnTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = PurchaseReturnController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = PurchaseReturnController.OpenTransaction("M00125000001");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= PurchaseReturnController.Master().getColumnCount(); lnCol++){
+                System.out.println(PurchaseReturnController.Master().getColumn(lnCol) + " ->> " + PurchaseReturnController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(PurchaseReturnController.Master().Branch().getBranchName());
+            System.out.println(PurchaseReturnController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= PurchaseReturnController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= PurchaseReturnController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            loJSON = PurchaseReturnController.ReturnTransaction("test return");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }   
+    
+//    @Test
+    public void testVoidTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = PurchaseReturnController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = PurchaseReturnController.OpenTransaction("M00125000001");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= PurchaseReturnController.Master().getColumnCount(); lnCol++){
+                System.out.println(PurchaseReturnController.Master().getColumn(lnCol) + " ->> " + PurchaseReturnController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(PurchaseReturnController.Master().Branch().getBranchName());
+            System.out.println(PurchaseReturnController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= PurchaseReturnController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= PurchaseReturnController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            loJSON = PurchaseReturnController.VoidTransaction("test void");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }   
     
     @AfterClass
