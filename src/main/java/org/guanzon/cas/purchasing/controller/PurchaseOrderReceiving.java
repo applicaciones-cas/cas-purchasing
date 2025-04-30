@@ -57,6 +57,7 @@ import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.InvLocation;
@@ -676,16 +677,25 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
     
-    public JSONObject searchTransaction(String industryId, String companyId, String supplierId, String sReferenceNo)
+    public JSONObject searchTransaction(String industryId, String companyId, String supplier, String sReferenceNo)
             throws CloneNotSupportedException,
             SQLException,
             GuanzonException {
-        if(supplierId == null){
-            supplierId = "";
+        if(supplier == null){
+            supplier = "";
         }
         if(sReferenceNo == null){
             sReferenceNo = "";
         }
+        
+        if(industryId == null || "".equals(industryId)){
+            industryId = psIndustryId;
+        }
+        
+        if(companyId == null || "".equals(companyId)){
+            companyId = psCompanyId;
+        }
+        
         poJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat != null) {
@@ -702,7 +712,8 @@ public class PurchaseOrderReceiving extends Transaction {
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
-                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
+                + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -1272,8 +1283,8 @@ public class PurchaseOrderReceiving extends Transaction {
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
-                    + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                    + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
             );
@@ -3144,6 +3155,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sCompnyID  "
                 + " , a.sSupplier  "
                 + " , a.sReferNox  "
+                + " , a.sCategrCd  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
@@ -3491,7 +3503,7 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     public JSONObject searchImeiPORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
-        return searchPORDetail(value,transactionNo,"description");
+        return searchPORDetail(value,transactionNo,"imei");
     }
     
     public JSONObject searchEnginePORDetail(String value, String transactionNo) throws SQLException, GuanzonException{
@@ -3547,7 +3559,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = getSQ_BrowseInvSerial();
                 lsHeader = "Engine No»Frame No»CS No»Plate No»Description";
                 lsColName = "sSerial01»sSerial02»sPlateNoP»sCStckrNo»sDescript";
-                lsColCriteria = "j.sSerial01»j.sSerial02»k.sPlateNoP»k.sCStckrNo»sDescript";
+                lsColCriteria = "j.sSerial01»j.sSerial02»k.sPlateNoP»k.sCStckrNo»b.sDescript";
                 lbIsSerialize = true;
                 
                 switch(searchType){
@@ -3569,19 +3581,23 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = getSQ_BrowseInv();
                 lsHeader = "Barcode»Description";
                 lsColName = "sBarCodex»sDescript";
-                lsColCriteria = "a.sBarCodex»a.sDescript";
+                lsColCriteria = "b.sBarCodex»b.sDescript";
                 lnSort = 1;
             break;
             default:
                 lsSQL = getSQ_BrowseInv();
                 lsHeader = "Barcode»Description";
                 lsColName = "sBarCodex»sDescript";
-                lsColCriteria = "a.sBarCodex»a.sDescript";
+                lsColCriteria = "b.sBarCodex»b.sDescript";
                 lnSort = 0;
             break;
         }
         
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(transactionNo));
+        if(!lbIsSerialize){
+            lsSQL = lsSQL + " AND a.cSerialze = '0' ";
+        }
+        
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -3640,7 +3656,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private String getSQ_BrowseInvSerial(){
         return    " SELECT DISTINCT "                                                                  
-                + "   i.sSerialID,  "                                                                  
+                + "   a.sSerialID,  "                                                                  
                 + "   j.sSerial01,  "                                                                  
                 + "   j.sSerial02,  "                                                                  
                 + "   k.sPlateNoP,  "                                                                  
@@ -3655,7 +3671,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
                 + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
                 + "   IFNULL(d.sModelCde, '') xModelCde "                                              
-                + " FROM po_receiving_detail a  "                                                      
+                + " FROM po_receiving_serial a  "                                                      
                 + " LEFT JOIN Inventory b       "                                                      
                 + "     ON b.sStockIDx = a.sStockIDx    "                                              
                 + " LEFT JOIN Brand c                   "                                              
@@ -3670,11 +3686,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "     ON b.sVrntIDxx = g.sVrntIDxx    "                                              
                 + " LEFT JOIN Inv_Supplier h            "                                              
                 + "     ON b.sStockIDx = h.sStockIDx    "                                              
-                + " INNER JOIN po_receiving_serial i     "                                              
+                + " INNER JOIN po_receiving_detail i     "                                              
                 + "     ON i.sStockIDx = a.sStockIDx    "                                              
                 + " INNER JOIN inv_serial j              "                                              
-                + "     ON j.sSerialID = i.sSerialID    "                                              
+                + "     ON j.sSerialID = a.sSerialID    "                                              
                 + " LEFT JOIN inv_serial_registration k "                                              
-                + "    ON k.sSerialID = i.sSerialID     "   ;
+                + "    ON k.sSerialID = a.sSerialID     "   ;
     }
 }

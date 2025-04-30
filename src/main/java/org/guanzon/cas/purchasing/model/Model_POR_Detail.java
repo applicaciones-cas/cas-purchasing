@@ -310,8 +310,9 @@ public class Model_POR_Detail extends Model{
     public JSONObject openRecord(String transactionNo, String stockId) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         String lsSQL = MiscUtil.makeSelect(this);
-        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(transactionNo) 
-                                        + "sStockIDx = " + SQLUtil.toSQL(stockId));
+        lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(transactionNo) 
+                                        + " AND sStockIDx = " + SQLUtil.toSQL(stockId));
+        System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
             if (loRS.next()) {

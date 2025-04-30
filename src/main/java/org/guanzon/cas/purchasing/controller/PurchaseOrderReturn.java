@@ -470,16 +470,29 @@ public class PurchaseOrderReturn extends Transaction{
         }
     }
     
-    public JSONObject searchTransaction(String industryId, String companyId, String supplierId, String sReferenceNo)
+    public JSONObject searchTransaction(String industryId, String companyId, String categoryId, String supplier, String sReferenceNo)
             throws CloneNotSupportedException,
             SQLException,
             GuanzonException {
-        if(supplierId == null){
-            supplierId = "";
+        if(supplier == null){
+            supplier = "";
         }
         if(sReferenceNo == null){
             sReferenceNo = "";
         }
+        
+        if(industryId == null || "".equals(industryId)){
+            industryId = psIndustryId;
+        }
+        
+        if(companyId == null || "".equals(companyId)){
+            companyId = psCompanyId;
+        }
+        
+        if(categoryId == null || "".equals(categoryId)){
+            categoryId = psCategorCd;
+        }
+        
         poJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat != null) {
@@ -496,7 +509,8 @@ public class PurchaseOrderReturn extends Transaction{
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
-                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(categoryId)
+                + " AND b.sCompnyNm  LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -849,7 +863,7 @@ public class PurchaseOrderReturn extends Transaction{
         return poJSON;
     }
     
-    public int getReceiveQty(int row) {
+    public Number getReceiveQty(int row) {
         poJSON = new JSONObject();
         int lnRecQty = 0;
         try {
@@ -953,8 +967,8 @@ public class PurchaseOrderReturn extends Transaction{
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
-                    + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                    + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
             );
@@ -1039,10 +1053,6 @@ public class PurchaseOrderReturn extends Transaction{
                 + " LEFT JOIN po_return_detail b ON b.sTransNox = a.sTransNox " ;
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                                 + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getSourceNo()));
-        
-//        if(!isInvTrans){
-//            lsSQL = lsSQL + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getSourceNo());
-//        } 
         
         if (isAdd) {
             lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
@@ -1166,7 +1176,7 @@ public class PurchaseOrderReturn extends Transaction{
 
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            if(getReceiveQty(lnCtr) < Detail(lnCtr).getQuantity().intValue()){
+            if(getReceiveQty(lnCtr).intValue() < Detail(lnCtr).getQuantity().intValue()){
                 poJSON.put("result", "error");
                 poJSON.put("message", "Return quantity cannot be greater than the receive quantity.");
                 return poJSON;
@@ -1243,7 +1253,7 @@ public class PurchaseOrderReturn extends Transaction{
             System.out.println("StockId : " + (lnCtr + 1) + " : " + Detail(lnCtr).getStockId());
             System.out.println("------------------------------------------------------------------ ");
             
-            lnRecQty = getReceiveQty(lnCtr);
+            lnRecQty = getReceiveQty(lnCtr).intValue();
             switch (status) {
                 case PurchaseOrderReturnStatus.CONFIRMED:
                 case PurchaseOrderReturnStatus.PAID:
