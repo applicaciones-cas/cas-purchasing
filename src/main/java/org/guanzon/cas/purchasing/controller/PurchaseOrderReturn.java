@@ -633,9 +633,9 @@ public class PurchaseOrderReturn extends Transaction{
         object.setTransactionStatus(PurchaseOrderReturnStatus.CONFIRMED + "" + PurchaseOrderReturnStatus.PAID + "" + PurchaseOrderReturnStatus.POSTED);
         
         if(byCode){
-            poJSON = object.searchTransaction(psIndustryId, psCompanyId, psCategorCd, Master().getSupplierId(), null, value);
-        } else {
             poJSON = object.searchTransaction(psIndustryId, psCompanyId, psCategorCd, Master().getSupplierId(), value, null);
+        } else {
+            poJSON = object.searchTransaction(psIndustryId, psCompanyId, psCategorCd, Master().getSupplierId(), null, value);
         }
         
         if ("success".equals((String) poJSON.get("result"))) {
