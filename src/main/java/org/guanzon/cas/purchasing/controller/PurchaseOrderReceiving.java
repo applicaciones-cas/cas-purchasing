@@ -2434,6 +2434,11 @@ public class PurchaseOrderReceiving extends Transaction {
             if (lbUpdated) {
                 lbUpdated = loRecord.Master().getTermCode().equals(Master().getTermCode());
             }
+            
+            if (lbUpdated) {
+                lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+            }
+            
             if (lbUpdated) {
                 for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
                     lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
@@ -3524,7 +3529,13 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private JSONObject searchPORDetail(String value, String transactionNo, String searchType) throws SQLException, GuanzonException{
         poJSON = new JSONObject();
+        int lnSort = 0;
+        String lsHeader = "Barcode»Description";
+        String lsColName = "sBarCodex»sDescript";
+        String lsColCriteria = "a.sBarCodex»a.sDescript";
         String lsTransStat = "";
+        String lsSQL = getSQ_BrowseInvSerial();
+        
         if (psTranStat != null) {
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
@@ -3536,31 +3547,21 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
         
-        boolean lbIsSerialize = false;
-        int lnSort = 0;
-        String lsSQL = getSQ_BrowseInv();
-        String lsHeader = "Barcode»Description";
-        String lsColName = "sBarCodex»sDescript";
-        String lsColCriteria = "a.sBarCodex»a.sDescript";
+        
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(transactionNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+        lsSQL = lsSQL + " GROUP BY a.sStockIDx, i.sSerialID ";
         
         switch(searchType){
-            case "imei":
-                lsSQL = getSQ_BrowseInvSerial();
-                lsHeader = "IMEI 1»IMEI 2»Description";
-                lsColName = "sSerial01»sSerial02»sDescript";
-                lsColCriteria = "j.sSerial01»j.sSerial02»b.sDescript";
-                lnSort = 0;
-                lbIsSerialize = true;
-            break;
             case "engine":
             case "frame":
             case "csno":
             case "plateno":
-                lsSQL = getSQ_BrowseInvSerial();
                 lsHeader = "Engine No»Frame No»CS No»Plate No»Description";
                 lsColName = "sSerial01»sSerial02»sPlateNoP»sCStckrNo»sDescript";
-                lsColCriteria = "j.sSerial01»j.sSerial02»k.sPlateNoP»k.sCStckrNo»b.sDescript";
-                lbIsSerialize = true;
+                lsColCriteria = "j.sSerial01»j.sSerial02»IFNULL(k.sPlateNoP, '')»IFNULL(k.sCStckrNo, '')»b.sDescript";
                 
                 switch(searchType){
                     case "frame":
@@ -3577,31 +3578,40 @@ public class PurchaseOrderReceiving extends Transaction {
                     break;
                 }
             break;
-            case "description":
-                lsSQL = getSQ_BrowseInv();
-                lsHeader = "Barcode»Description";
-                lsColName = "sBarCodex»sDescript";
-                lsColCriteria = "b.sBarCodex»b.sDescript";
-                lnSort = 1;
-            break;
-            default:
-                lsSQL = getSQ_BrowseInv();
-                lsHeader = "Barcode»Description";
-                lsColName = "sBarCodex»sDescript";
-                lsColCriteria = "b.sBarCodex»b.sDescript";
+            case "imei":
+                lsHeader = "IMEI 1»IMEI 2»Barcode»Brand»Description";
+                lsColName = "sSerial01»sSerial02»sBarCodex»xBrandNme»sDescript";
+                lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
                 lnSort = 0;
             break;
-        }
+            case "description":
+                if("01".equals(psIndustryId)){ //Mobile Phone / Appliances
+                    lsHeader = "IMEI 1»IMEI 2»Barcode»Brand»Description";
+                    lsColName = "sSerial01»sSerial02»sBarCodex»xBrandNme»sDescript";
+                    lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
+                    lnSort = 4;
+                } else {
+                    lsHeader = "Barcode»Description";
+                    lsColName = "sBarCodex»sDescript";
+                    lsColCriteria = "b.sBarCodex»b.sDescript";
+                    lnSort = 1;
+                }
+            break;
+            case "barcode":
+                if("01".equals(psIndustryId)){ //Mobile Phone / Appliances
+                    lsHeader = "IMEI 1»IMEI 2»Barcode»Brand»Description";
+                    lsColName = "sSerial01»sSerial02»sBarCodex»xBrandNme»sDescript";
+                    lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
+                    lnSort = 2;
+                } else {
+                    lsHeader = "Barcode»Description";
+                    lsColName = "sBarCodex»sDescript";
+                    lsColCriteria = "b.sBarCodex»b.sDescript";
+                    lnSort = 0;
+                }
+            break;
+        }    
         
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(transactionNo));
-        if(!lbIsSerialize){
-            lsSQL = lsSQL + " AND a.cSerialze = '0' ";
-        }
-        
-        if (psTranStat != null && !"".equals(psTranStat)) {
-            lsSQL = lsSQL + lsTransStat;
-        }
-
         System.out.println("Executing SQL: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
@@ -3612,17 +3622,21 @@ public class PurchaseOrderReceiving extends Transaction {
                 lnSort);
 
         if (poJSON != null) {
-            if(lbIsSerialize){
-                return getSerial().openRecord(transactionNo, (String) poJSON.get("sSerialID"));
-            } else {
-                return getDetail().openRecord(transactionNo, (String) poJSON.get("sStockIDx"));
-            }
+//            if((String) poJSON.get("sSerialID") != null && !"".equals((String) poJSON.get("sSerialID"))){
+//                return getSerial().openRecord(transactionNo, (String) poJSON.get("sSerialID"));
+//            } else {
+//                return getDetail().openRecord(transactionNo, (String) poJSON.get("sStockIDx"));
+//            }
         } else {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", "No record loaded.");
             return poJSON;
         }
+        
+        System.out.println(poJSON.clone());
+        poJSON.put("result", "success");
+        return poJSON;
         
     }
     
@@ -3655,42 +3669,84 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     private String getSQ_BrowseInvSerial(){
-        return    " SELECT DISTINCT "                                                                  
-                + "   a.sSerialID,  "                                                                  
-                + "   j.sSerial01,  "                                                                  
-                + "   j.sSerial02,  "                                                                  
-                + "   k.sPlateNoP,  "                                                                  
-                + "   k.sCStckrNo,  "                                                                  
-                + "   a.sStockIDx,  "                                                                  
-                + "   b.sBarCodex,  "                                                                  
-                + "   b.sDescript,  "                                                                  
-                + "   b.sCategCd1,  "                                                                  
-                + "   IFNULL(c.sDescript, '') xBrandNme, "                                             
-                + "   IFNULL(d.sDescript, '') xModelNme, "                                             
-                + "   IFNULL(e.sDescript, '') xColorNme, "                                             
-                + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
-                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
-                + "   IFNULL(d.sModelCde, '') xModelCde "                                              
-                + " FROM po_receiving_serial a  "                                                      
-                + " LEFT JOIN Inventory b       "                                                      
-                + "     ON b.sStockIDx = a.sStockIDx    "                                              
-                + " LEFT JOIN Brand c                   "                                              
-                + "     ON b.sBrandIDx = c.sBrandIDx    "                                              
-                + " LEFT JOIN Model d                   "                                              
-                + "     ON b.sModelIDx = d.sModelIDx    "                                              
-                + " LEFT JOIN Color e                   "                                              
-                + "     ON b.sColorIDx = e.sColorIDx    "                                              
-                + " LEFT JOIN Measure f                 "                                              
-                + "     ON b.sMeasurID = f.sMeasurID    "                                              
-                + " LEFT JOIN Model_Variant g           "                                              
-                + "     ON b.sVrntIDxx = g.sVrntIDxx    "                                              
-                + " LEFT JOIN Inv_Supplier h            "                                              
-                + "     ON b.sStockIDx = h.sStockIDx    "                                              
-                + " INNER JOIN po_receiving_detail i     "                                              
-                + "     ON i.sStockIDx = a.sStockIDx    "                                              
-                + " INNER JOIN inv_serial j              "                                              
-                + "     ON j.sSerialID = a.sSerialID    "                                              
-                + " LEFT JOIN inv_serial_registration k "                                              
-                + "    ON k.sSerialID = a.sSerialID     "   ;
+        return    " SELECT "                                                                             
+                + "   a.sStockIDx, "                                                                     
+                + "   i.sSerialID, "                                                                     
+                + "   j.sSerial01, "                                                                     
+                + "   j.sSerial02, "                                                                     
+                + "   k.sPlateNoP, "                                                                     
+                + "   k.sCStckrNo, "                                                                     
+                + "   b.sBarCodex, "                                                                     
+                + "   b.sDescript, "                                                                     
+                + "   b.sCategCd1, "                                                                     
+                + "   IFNULL(c.sDescript, '')    xBrandNme, "                                            
+                + "   IFNULL(d.sDescript, '')    xModelNme, "                                            
+                + "   IFNULL(e.sDescript, '')    xColorNme, "                                            
+                + "   IFNULL(f.sDescript, '')    xMeasurNm, "                                            
+                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, '')))    xVrntName, "
+                + "   IFNULL(d.sModelCde, '')    xModelCde "                                              
+                + "   FROM po_receiving_detail a "                                                         
+                + "   LEFT JOIN Inventory b    "                                                         
+                + "     ON b.sStockIDx = a.sStockIDx  "                                                  
+                + "   LEFT JOIN Brand c               "                                                  
+                + "     ON b.sBrandIDx = c.sBrandIDx  "                                                  
+                + "   LEFT JOIN Model d               "                                                  
+                + "     ON b.sModelIDx = d.sModelIDx  "                                                  
+                + "   LEFT JOIN Color e               "                                                  
+                + "     ON b.sColorIDx = e.sColorIDx  "                                                  
+                + "   LEFT JOIN Measure f             "                                                  
+                + "     ON b.sMeasurID = f.sMeasurID  "                                                  
+                + "   LEFT JOIN Model_Variant g       "                                                  
+                + "     ON b.sVrntIDxx = g.sVrntIDxx  "                                                  
+                + "   LEFT JOIN Inv_Supplier h        "                                                  
+                + "     ON b.sStockIDx = h.sStockIDx  "                                                  
+                + "   LEFT JOIN po_receiving_serial i "                                                  
+                + "     ON i.sStockIDx = a.sStockIDx AND i.sTransNox = a.sTransNox "                     
+                + "   LEFT JOIN inv_serial j "                                                           
+                + "     ON j.sSerialID = i.sSerialID "                                                   
+                + "   LEFT JOIN inv_serial_registration k "                                              
+                + "     ON k.sSerialID = i.sSerialID "                                                   
+   ;
     }
+    
+//    private String getSQ_BrowseInvSerial(){
+//        return    " SELECT DISTINCT "                                                                  
+//                + "   a.sSerialID,  "                                                                  
+//                + "   j.sSerial01,  "                                                                  
+//                + "   j.sSerial02,  "                                                                  
+//                + "   k.sPlateNoP,  "                                                                  
+//                + "   k.sCStckrNo,  "                                                                  
+//                + "   a.sStockIDx,  "                                                                  
+//                + "   b.sBarCodex,  "                                                                  
+//                + "   b.sDescript,  "                                                                  
+//                + "   b.sCategCd1,  "                                                                  
+//                + "   IFNULL(c.sDescript, '') xBrandNme, "                                             
+//                + "   IFNULL(d.sDescript, '') xModelNme, "                                             
+//                + "   IFNULL(e.sDescript, '') xColorNme, "                                             
+//                + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
+//                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
+//                + "   IFNULL(d.sModelCde, '') xModelCde "                                              
+//                + " FROM po_receiving_serial a  "                                                      
+//                + " LEFT JOIN Inventory b       "                                                      
+//                + "     ON b.sStockIDx = a.sStockIDx    "                                              
+//                + " LEFT JOIN Brand c                   "                                              
+//                + "     ON b.sBrandIDx = c.sBrandIDx    "                                              
+//                + " LEFT JOIN Model d                   "                                              
+//                + "     ON b.sModelIDx = d.sModelIDx    "                                              
+//                + " LEFT JOIN Color e                   "                                              
+//                + "     ON b.sColorIDx = e.sColorIDx    "                                              
+//                + " LEFT JOIN Measure f                 "                                              
+//                + "     ON b.sMeasurID = f.sMeasurID    "                                              
+//                + " LEFT JOIN Model_Variant g           "                                              
+//                + "     ON b.sVrntIDxx = g.sVrntIDxx    "                                              
+//                + " LEFT JOIN Inv_Supplier h            "                                              
+//                + "     ON b.sStockIDx = h.sStockIDx    "                                              
+//                + " INNER JOIN po_receiving_detail i     "                                              
+//                + "     ON i.sStockIDx = a.sStockIDx AND i.sTransNox = a.sTransNox   "                                              
+//                + " INNER JOIN inv_serial j              "                                              
+//                + "     ON j.sSerialID = a.sSerialID    "                                              
+//                + " LEFT JOIN inv_serial_registration k "                                              
+//                + "    ON k.sSerialID = a.sSerialID     "   ;
+//    }
+    
 }

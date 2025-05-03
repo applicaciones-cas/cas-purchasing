@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
@@ -84,12 +85,14 @@ public class PurchaseOrderReturn_General implements GValidator{
             }
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrderReturn_General.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReturn_General.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;
     }
     
-    private JSONObject validateNew() throws SQLException{
+    private JSONObject validateNew() throws SQLException, GuanzonException{
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
@@ -140,6 +143,12 @@ public class PurchaseOrderReturn_General implements GValidator{
         }
         if (poMaster.getSourceCode()== null || poMaster.getSourceCode().isEmpty()) {
             poJSON.put("message", "Source Code is not set.");
+            return poJSON;
+        }
+        
+        LocalDate loPOReceivingDate = strToDate(xsDateShort(poMaster.PurchaseOrderReceivingMaster().getTransactionDate()));
+        if (transactionDate.isBefore(loPOReceivingDate)) {
+            poJSON.put("message", "Transaction date cannot be before the receiving date.");
             return poJSON;
         }
         
@@ -147,7 +156,7 @@ public class PurchaseOrderReturn_General implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateConfirmed() throws SQLException{
+    private JSONObject validateConfirmed() throws SQLException, GuanzonException{
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
@@ -198,6 +207,12 @@ public class PurchaseOrderReturn_General implements GValidator{
         }
         if (poMaster.getSourceCode()== null || poMaster.getSourceCode().isEmpty()) {
             poJSON.put("message", "Source Code is not set.");
+            return poJSON;
+        }
+        
+        LocalDate loPOReceivingDate = strToDate(xsDateShort(poMaster.PurchaseOrderReceivingMaster().getTransactionDate()));
+        if (transactionDate.isBefore(loPOReceivingDate)) {
+            poJSON.put("message", "Transaction date cannot be before the receiving date.");
             return poJSON;
         }
         poJSON.put("result", "success");
@@ -246,7 +261,7 @@ public class PurchaseOrderReturn_General implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateReturned() throws SQLException{
+    private JSONObject validateReturned() throws SQLException, GuanzonException{
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
@@ -297,6 +312,12 @@ public class PurchaseOrderReturn_General implements GValidator{
         }
         if (poMaster.getSourceCode()== null || poMaster.getSourceCode().isEmpty()) {
             poJSON.put("message", "Source Code is not set.");
+            return poJSON;
+        }
+        
+        LocalDate loPOReceivingDate = strToDate(xsDateShort(poMaster.PurchaseOrderReceivingMaster().getTransactionDate()));
+        if (transactionDate.isBefore(loPOReceivingDate)) {
+            poJSON.put("message", "Transaction date cannot be before the receiving date.");
             return poJSON;
         }
         
