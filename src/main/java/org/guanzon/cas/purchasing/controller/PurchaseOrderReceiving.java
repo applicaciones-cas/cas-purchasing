@@ -2416,81 +2416,91 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
 
-        if (PurchaseOrderReceivingStatus.RETURNED.equals(Master().getTransactionStatus())) {
+        if (getEditMode() == EditMode.UPDATE) {
             PurchaseOrderReceiving loRecord = new PurchaseOrderReceivingControllers(poGRider, null).PurchaseOrderReceiving();
             loRecord.InitTransaction();
             loRecord.OpenTransaction(Master().getTransactionNo());
+            
+            //Set original supplier Id
+            if(!Master().getSupplierId().equals(loRecord.Master().getSupplierId())){
+                Master().setSupplierId(loRecord.Master().getSupplierId());
+                Master().setAddressId(loRecord.Master().getAddressId()); 
+                Master().setContactId(loRecord.Master().getContactId()); 
+            }
+            
+            if (PurchaseOrderReceivingStatus.RETURNED.equals(Master().getTransactionStatus())) {
 
-            lbUpdated = loRecord.getDetailCount() == getDetailCount();
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
-            }
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getReferenceNo().equals(Master().getReferenceNo());
-            }
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getReferenceDate().equals(Master().getReferenceDate());
-            }
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getTermCode().equals(Master().getTermCode());
-            }
-            
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
-            }
-            
-            if (lbUpdated) {
-                for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
-                    lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
-                    } 
-                    
-                    if (!lbUpdated) {
-                        break;
-                    }
-                    
-                    loRecord.getPurchaseOrderReceivingSerial(lnCtr+1);
-                    
+                lbUpdated = loRecord.getDetailCount() == getDetailCount();
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
                 }
-            }
-            
-            if (lbUpdated) {
-                lbUpdated = loRecord.getPurchaseOrderReceivingSerialCount() == getPurchaseOrderReceivingSerialCount();
-            }
-            
-            if (lbUpdated) {
-                for (int lnCtr = 0; lnCtr <= loRecord.getPurchaseOrderReceivingSerialCount()- 1; lnCtr++) {
-                    lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getSerial01().equals(PurchaseOrderReceivingSerialList(lnCtr).getSerial01());
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getSerial02().equals(PurchaseOrderReceivingSerialList(lnCtr).getSerial02());
-                    }
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getConductionStickerNo().equals(PurchaseOrderReceivingSerialList(lnCtr).getConductionStickerNo());
-                    }
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getPlateNo().equals(PurchaseOrderReceivingSerialList(lnCtr).getPlateNo());
-                    }
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getLocationId().equals(PurchaseOrderReceivingSerialList(lnCtr).getLocationId());
-                    }
-                    
-                    if (!lbUpdated) {
-                        break;
-                    }
-                    
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getReferenceNo().equals(Master().getReferenceNo());
                 }
-            }
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getReferenceDate().equals(Master().getReferenceDate());
+                }
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getTermCode().equals(Master().getTermCode());
+                }
 
-            if (lbUpdated) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No update has been made.");
-                return poJSON;
-            }
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+                }
 
-            Master().setPrint("0"); 
-            Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN); //If edited update trasaction status into open
-            
+                if (lbUpdated) {
+                    for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
+                        lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                        } 
+
+                        if (!lbUpdated) {
+                            break;
+                        }
+
+                        loRecord.getPurchaseOrderReceivingSerial(lnCtr+1);
+
+                    }
+                }
+
+                if (lbUpdated) {
+                    lbUpdated = loRecord.getPurchaseOrderReceivingSerialCount() == getPurchaseOrderReceivingSerialCount();
+                }
+
+                if (lbUpdated) {
+                    for (int lnCtr = 0; lnCtr <= loRecord.getPurchaseOrderReceivingSerialCount()- 1; lnCtr++) {
+                        lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getSerial01().equals(PurchaseOrderReceivingSerialList(lnCtr).getSerial01());
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getSerial02().equals(PurchaseOrderReceivingSerialList(lnCtr).getSerial02());
+                        }
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getConductionStickerNo().equals(PurchaseOrderReceivingSerialList(lnCtr).getConductionStickerNo());
+                        }
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getPlateNo().equals(PurchaseOrderReceivingSerialList(lnCtr).getPlateNo());
+                        }
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.PurchaseOrderReceivingSerialList(lnCtr).getLocationId().equals(PurchaseOrderReceivingSerialList(lnCtr).getLocationId());
+                        }
+
+                        if (!lbUpdated) {
+                            break;
+                        }
+
+                    }
+                }
+
+                if (lbUpdated) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "No update has been made.");
+                    return poJSON;
+                }
+
+                Master().setPrint("0"); 
+                Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN); //If edited update trasaction status into open
+
+            }
         }
 
         //assign other info on detail
@@ -3208,6 +3218,14 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
         try {
+            
+            //Reopen Transaction to get the accurate data
+            poJSON = OpenTransaction(Master().getTransactionNo());
+            if ("error".equals((String) poJSON.get("result"))) {
+                System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+                return poJSON;
+            }
+            
             // 1. Prepare parameters
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sBranchNm", poGRider.getBranchName()); //TODO
@@ -3295,6 +3313,8 @@ public class PurchaseOrderReceiving extends Transaction {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
@@ -3591,9 +3611,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
                     lnSort = 4;
                 } else {
-                    lsHeader = "Barcode»Description";
-                    lsColName = "sBarCodex»sDescript";
-                    lsColCriteria = "b.sBarCodex»b.sDescript";
+                    lsHeader = "Barcode»Description»Supersede";
+                    lsColName = "sBarCodex»sDescript»xSupersde";
+                    lsColCriteria = "b.sBarCodex»b.sDescript»bb.sBarCodex";
                     lnSort = 1;
                 }
             break;
@@ -3604,9 +3624,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
                     lnSort = 2;
                 } else {
-                    lsHeader = "Barcode»Description";
-                    lsColName = "sBarCodex»sDescript";
-                    lsColCriteria = "b.sBarCodex»b.sDescript";
+                    lsHeader = "Barcode»Description»Supersede";
+                    lsColName = "sBarCodex»sDescript»xSupersde";
+                    lsColCriteria = "b.sBarCodex»b.sDescript»bb.sBarCodex";
                     lnSort = 0;
                 }
             break;
@@ -3622,6 +3642,12 @@ public class PurchaseOrderReceiving extends Transaction {
                 lnSort);
 
         if (poJSON != null) {
+            System.out.println("Stock ID : " + (String) poJSON.get("sStockIDx"));
+            System.out.println("Spersede ID : " + (String) poJSON.get("sReplacID"));
+//            if((String) poJSON.get("sReplacID") != null && !"".equals((String) poJSON.get("sReplacID"))){
+//                poJSON.put("sStockIDx", (String) poJSON.get("sReplacID"));
+//            }
+            
 //            if((String) poJSON.get("sSerialID") != null && !"".equals((String) poJSON.get("sSerialID"))){
 //                return getSerial().openRecord(transactionNo, (String) poJSON.get("sSerialID"));
 //            } else {
@@ -3671,12 +3697,14 @@ public class PurchaseOrderReceiving extends Transaction {
     private String getSQ_BrowseInvSerial(){
         return    " SELECT "                                                                             
                 + "   a.sStockIDx, "                                                                     
+                + "   a.sReplacID, "                                                                     
                 + "   i.sSerialID, "                                                                     
                 + "   j.sSerial01, "                                                                     
                 + "   j.sSerial02, "                                                                     
                 + "   k.sPlateNoP, "                                                                     
                 + "   k.sCStckrNo, "                                                                     
                 + "   b.sBarCodex, "                                                                     
+                + "   bb.sBarCodex as xSupersde, "                                                                     
                 + "   b.sDescript, "                                                                     
                 + "   b.sCategCd1, "                                                                     
                 + "   IFNULL(c.sDescript, '')    xBrandNme, "                                            
@@ -3687,7 +3715,9 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "   IFNULL(d.sModelCde, '')    xModelCde "                                              
                 + "   FROM po_receiving_detail a "                                                         
                 + "   LEFT JOIN Inventory b    "                                                         
-                + "     ON b.sStockIDx = a.sStockIDx  "                                                  
+                + "     ON b.sStockIDx = a.sStockIDx  "                                                      
+                + "   LEFT JOIN Inventory bb    "                                                         
+                + "     ON bb.sStockIDx = a.sReplacID  "                                                 
                 + "   LEFT JOIN Brand c               "                                                  
                 + "     ON b.sBrandIDx = c.sBrandIDx  "                                                  
                 + "   LEFT JOIN Model d               "                                                  

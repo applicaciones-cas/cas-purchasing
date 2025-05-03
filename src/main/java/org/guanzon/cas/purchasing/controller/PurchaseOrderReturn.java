@@ -216,10 +216,10 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+//            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//            if (!"success".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
             
             //Set receive qty to Purchase Order
             poJSON = setValueToOthers(lsStatus);
@@ -907,8 +907,13 @@ public class PurchaseOrderReturn extends Transaction{
                 poJSON.put("row", row);
                 return poJSON;
             }
-
-            lsStockId = object.getDetail().getStockId();
+            
+            if(object.getDetail().getReplaceId() != null && !"".equals(object.getDetail().getReplaceId())){
+                lsStockId = object.getDetail().getReplaceId();
+            } else {
+                lsStockId = object.getDetail().getStockId();
+            }
+            
             lsUnitType = object.getDetail().getUnitType();
             lsDescription = object.getDetail().Inventory().getDescription();
             ldblUnitPrice = object.getDetail().getUnitPrce().doubleValue();
@@ -946,7 +951,9 @@ public class PurchaseOrderReturn extends Transaction{
                     + " a.nQuantity AS nQuantity "
                     + " FROM po_receiving_detail a " ;
             lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getSourceNo())
-                                                    + " AND a.sStockIDx = " + SQLUtil.toSQL(Detail(row).getStockId()));
+                                                    + " AND (a.sStockIDx = " + SQLUtil.toSQL(Detail(row).getStockId())
+                                                    + " OR a.sReplacID = " + SQLUtil.toSQL(Detail(row).getStockId()) + " ) "
+                                                    );
             
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -1158,7 +1165,7 @@ public class PurchaseOrderReturn extends Transaction{
         
         if(!pbIsPrint){
             if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                || !xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))
+                || (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW )
                     ) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
@@ -1210,42 +1217,51 @@ public class PurchaseOrderReturn extends Transaction{
                 return poJSON;
             }
         }
-
-        if (PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())) {
+        
+        if (getEditMode() == EditMode.UPDATE) {
             PurchaseOrderReturn loRecord = new PurchaseOrderReturnControllers(poGRider, null).PurchaseOrderReturn();
             loRecord.InitTransaction();
             loRecord.OpenTransaction(Master().getTransactionNo());
+            
+            //Set original supplier Id
+            if(!Master().getSupplierId().equals(loRecord.Master().getSupplierId())){
+                Master().setSupplierId(loRecord.Master().getSupplierId());
+                Master().setAddressId(loRecord.Master().getAddressId()); 
+                Master().setContactId(loRecord.Master().getContactId()); 
+            }
+            
+            if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
+                lbUpdated = loRecord.getDetailCount() == getDetailCount();
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
+                }
 
-            lbUpdated = loRecord.getDetailCount() == getDetailCount();
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
-            }
-            
-            if (lbUpdated) {
-                lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
-            }
-            
-            if (lbUpdated) {
-                for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
-                    lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
-                    if (lbUpdated) {
-                        lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
-                    } 
-                    
-                    if (!lbUpdated) {
-                        break;
+                if (lbUpdated) {
+                    lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+                }
+
+                if (lbUpdated) {
+                    for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
+                        lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
+                        if (lbUpdated) {
+                            lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                        } 
+
+                        if (!lbUpdated) {
+                            break;
+                        }
                     }
                 }
-            }
-            
-            if (lbUpdated) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No update has been made.");
-                return poJSON;
-            }
 
-            Master().setPrint("0"); 
-            Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+                if (lbUpdated) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "No update has been made.");
+                    return poJSON;
+                }
+
+                Master().setPrint("0"); 
+                Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+            }
             
         }
 
@@ -1528,6 +1544,16 @@ public class PurchaseOrderReturn extends Transaction{
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
         try {
+            System.out.println("Edit Mode : " + getEditMode());
+            System.out.println("TransactionNo : " + Master().getTransactionNo());
+            //Reopen Transaction to get the accurate data
+            poJSON = OpenTransaction(Master().getTransactionNo());
+            if ("error".equals((String) poJSON.get("result"))) {
+                System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+                poJSON.put("message", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
+                return poJSON;
+            }
+            
             // 1. Prepare parameters
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sBranchNm", poGRider.getBranchName());
@@ -1617,6 +1643,8 @@ public class PurchaseOrderReturn extends Transaction{
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return poJSON;
