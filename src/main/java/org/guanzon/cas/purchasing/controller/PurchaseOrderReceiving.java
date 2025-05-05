@@ -183,9 +183,11 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (pbApproval) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
         }
 
@@ -247,9 +249,11 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
             
             //Set receive qty to Purchase Order
@@ -325,9 +329,11 @@ public class PurchaseOrderReceiving extends Transaction {
 //        }
 //
 //        if (pbApproval) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
+//            if (poGRider.getUserLevel() == 16) {
+//                poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
 //            }
 //        }
 //
@@ -395,9 +401,11 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (pbApproval) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
         }
 
@@ -505,9 +513,11 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
             
             //update Purchase Order
@@ -577,9 +587,11 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
             
             //update Purchase Order
@@ -2323,10 +2335,12 @@ public class PurchaseOrderReceiving extends Transaction {
         
         if(!pbIsPrint){
             if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                } 
+                if (poGRider.getUserLevel() == 16) {
+                    poJSON = ShowDialogFX.getUserApproval(poGRider);
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                }
             }
         }
 

@@ -152,9 +152,11 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (pbApproval) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
         }
 
@@ -216,10 +218,12 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
+            }
             
             //Set receive qty to Purchase Order
             poJSON = setValueToOthers(lsStatus);
@@ -334,9 +338,11 @@ public class PurchaseOrderReturn extends Transaction{
         }
         
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
             
             //update Purchase Order
@@ -406,9 +412,11 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
+            if (poGRider.getUserLevel() == 16) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
             
             //update Purchase Order
@@ -1167,10 +1175,12 @@ public class PurchaseOrderReturn extends Transaction{
             if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
                 || (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW )
                     ) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                } 
+                if (poGRider.getUserLevel() == 16) {
+                    poJSON = ShowDialogFX.getUserApproval(poGRider);
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                }
             }
         }
 
