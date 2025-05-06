@@ -44,6 +44,7 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
+import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
@@ -152,7 +153,7 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (pbApproval) {
-            if (poGRider.getUserLevel() == 16) {
+            if (poGRider.getUserLevel() == UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
@@ -218,7 +219,7 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == 16) {
+            if (poGRider.getUserLevel() == UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
@@ -338,7 +339,7 @@ public class PurchaseOrderReturn extends Transaction{
         }
         
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == 16) {
+            if (poGRider.getUserLevel() == UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
@@ -412,7 +413,7 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == 16) {
+            if (poGRider.getUserLevel() == UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
@@ -1175,7 +1176,7 @@ public class PurchaseOrderReturn extends Transaction{
             if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
                 || (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW )
                     ) {
-                if (poGRider.getUserLevel() == 16) {
+                if (poGRider.getUserLevel() == UserRight.ENCODER) {
                     poJSON = ShowDialogFX.getUserApproval(poGRider);
                     if (!"success".equals((String) poJSON.get("result"))) {
                         return poJSON;
