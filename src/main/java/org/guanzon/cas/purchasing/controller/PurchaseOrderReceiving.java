@@ -3620,7 +3620,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lnSort = 0;
             break;
             case "description":
-                if("01".equals(psIndustryId)){ //Mobile Phone / Appliances
+                if("01".equals(psIndustryId) || "07".equals(psIndustryId)){ //Mobile Phone / Appliances
                     lsHeader = "IMEI 1»IMEI 2»Barcode»Brand»Description";
                     lsColName = "sSerial01»sSerial02»sBarCodex»xBrandNme»sDescript";
                     lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
@@ -3633,7 +3633,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             break;
             case "barcode":
-                if("01".equals(psIndustryId)){ //Mobile Phone / Appliances
+                if("01".equals(psIndustryId) || "07".equals(psIndustryId)){ //Mobile Phone / Appliances
                     lsHeader = "IMEI 1»IMEI 2»Barcode»Brand»Description";
                     lsColName = "sSerial01»sSerial02»sBarCodex»xBrandNme»sDescript";
                     lsColCriteria = "j.sSerial01»j.sSerial02»b.sBarCodex»IFNULL(c.sDescript, '')»b.sDescript";
