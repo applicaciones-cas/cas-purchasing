@@ -135,7 +135,7 @@ public class Model_PO_Master extends Model {
     public String getIndustryID() {
         return (String) getValue("sIndstCdx");
     }
-    
+
     public JSONObject setCategoryCode(String categoryCode) {
         return setValue("sCategrCd", categoryCode);
     }
@@ -279,7 +279,7 @@ public class Model_PO_Master extends Model {
     public String getRemarks() {
         return (String) getValue("sRemarksx");
     }
-    
+
     public JSONObject setExpectedDate(Date expectedDate) {
         return setValue("dExpected", expectedDate);
     }
@@ -303,7 +303,7 @@ public class Model_PO_Master extends Model {
     public Number getNoEmailSent() {
         return (Number) getValue("nEmailSnt");
     }
-    
+
     public JSONObject setPrint(String print) {
         return setValue("cPrintxxx", print);
     }
@@ -327,7 +327,7 @@ public class Model_PO_Master extends Model {
     public String getInventoryTypeCode() {
         return (String) getValue("sInvTypCd");
     }
-    
+
     public JSONObject setPreOwned(boolean isWithAdvPaym) {
         return setValue("cPreOwned", isWithAdvPaym ? "1" : "0");
     }
@@ -367,8 +367,6 @@ public class Model_PO_Master extends Model {
     public Date getModifiedDate() {
         return (Date) getValue("dModified");
     }
-
-    
 
     @Override
     public String getNextCode() {

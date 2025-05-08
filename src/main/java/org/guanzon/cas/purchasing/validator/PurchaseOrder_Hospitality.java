@@ -152,19 +152,9 @@ public class PurchaseOrder_Hospitality implements GValidator {
                 return poJSON;
             }
         }
-        if (poMaster.getEditMode() == EditMode.ADDNEW) {
-            if (transactionDate.isBefore(serverDate)) {
-                String referenceNo = poMaster.getReference();
-                if (referenceNo == null || referenceNo.trim().isEmpty()) {
-                    poJSON.put("message", "A reference number is required for backdated transactions.");
-                    return poJSON;
-                }
-                poJSON = ShowDialogFX.getUserApproval(poGrider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    poJSON.put("message", (String) poJSON.get("message"));
-                    return poJSON;
-                }
-            }
+        if (transactionDate.isBefore(serverDate) && poMaster.getReference().trim().isEmpty()) {
+            poJSON.put("message", "A reference number is required for backdated transactions.");
+            return poJSON;
         }
         poJSON.put("result", "success");
         return poJSON;
