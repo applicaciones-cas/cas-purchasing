@@ -175,7 +175,18 @@ public class PurchaseOrder extends Transaction {
                 }
             }
         }
-
+        int lnRequestQuantity = 0;
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            lnRequestQuantity = Detail(lnCtr).InvStockRequestDetail().getApproved() - (Detail(lnCtr).InvStockRequestDetail().getPurchase() + Detail(lnCtr).InvStockRequestDetail().getIssued());
+            if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+                if (Detail(lnCtr).getQuantity().intValue() > lnRequestQuantity) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Invalid order quantity entered. The item is from a stock request, "
+                            + " and the order quantity must not be greater than the requested quantity.");
+                    return poJSON;
+                }
+            }
+        }
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
@@ -743,15 +754,25 @@ public class PurchaseOrder extends Transaction {
             System.out.println("StockId : " + (lnCtr + 1) + " : " + Detail(lnCtr).getStockID());
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
+                int totalRequest = 0;
+                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved()
+                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
+                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+
+                //1. Check discrepancy if the order quantity is not greater than request
+                if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
+                    return poJSON;
+                }
                 //1. Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
+
                 if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
-                    int totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved()
-                            - (Detail(lnCtr).InvStockRequestDetail().getIssued()
-                            + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+
                     if (totalRequest == 0) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "All stock requests related to this order number have already been processed.");
@@ -1500,7 +1521,7 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             Master().setDiscount(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
         double lnDiscountAmount = Double.parseDouble(fsValue.replace(",", ""));
@@ -1509,7 +1530,7 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             Master().setDiscount(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
 
@@ -1517,7 +1538,7 @@ public class PurchaseOrder extends Transaction {
         Master().setDiscount(lnDiscountRate);
         Master().setAdditionalDiscount(lnDiscountAmount);
 
-        poJSON = computeNetTotal();
+        computeNetTotal();
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -1529,11 +1550,11 @@ public class PurchaseOrder extends Transaction {
         }
         double lnTotalAmount = Master().getTranTotal().doubleValue();
         if (lnTotalAmount == 0.00) {
-            poJSON.put("message", "You're not allowed to enter discount rate, no amount entered.");
+            poJSON.put("message", "You're not allowed to enter discount rate, no detail amount entered.");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             Master().setDiscount(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
         double lnDiscountRate = Double.parseDouble(fsValue);
@@ -1542,15 +1563,14 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             Master().setDiscount(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
 
         double lnDiscountAmount = lnDiscountRate * lnTotalAmount;
         Master().setDiscount(lnDiscountRate);
         Master().setAdditionalDiscount(lnDiscountAmount);
-
-        poJSON = computeNetTotal();
+        computeNetTotal();
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -1560,13 +1580,17 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double lnNetAmount = Master().getNetTotal().doubleValue();
+// base always from calculation not getNetTotal
+        double lnNetAmount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue()
+                - Master().getDownPaymentRatesAmount().doubleValue();
+
         if (lnNetAmount == 0.00) {
             poJSON.put("message", "You're not allowed to enter advance payment rate, no net amount.");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesAmount(0.00);
             Master().setDownPaymentRatesPercentage(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
         double lnAdvanceRate = Double.parseDouble(fsValue);
@@ -1575,7 +1599,7 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             Master().setDownPaymentRatesAmount(0.00);
             Master().setDownPaymentRatesPercentage(0.00);
-            poJSON = computeNetTotal();
+            computeNetTotal();
             return poJSON;
         }
 
@@ -1583,7 +1607,7 @@ public class PurchaseOrder extends Transaction {
         Master().setDownPaymentRatesPercentage(lnAdvanceRate);
         Master().setDownPaymentRatesAmount(lnDiscountAmount);
 
-        poJSON = computeNetTotal();
+        computeNetTotal();
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -1593,12 +1617,16 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double lnNetAmount = Master().getNetTotal().doubleValue();
+        // base always from calculation not getNetTotal
+        double lnNetAmount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue()
+                - Master().getDownPaymentRatesAmount().doubleValue();
         if (lnNetAmount == 0.00) {
             poJSON.put("message", "You're not allowed to enter Advance Payment Amount, net amount.");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(0.00);
             Master().setDownPaymentRatesAmount(0.00);
+            computeNetTotal();
             return poJSON;
         }
         double lnAdvanceAmount = Double.parseDouble(fsValue.replace(",", ""));
@@ -1607,6 +1635,7 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(0.00);
             Master().setDownPaymentRatesAmount(0.00);
+            computeNetTotal();
             return poJSON;
         }
 
@@ -1614,13 +1643,12 @@ public class PurchaseOrder extends Transaction {
         Master().setDownPaymentRatesPercentage(lnDiscountRate);
         Master().setDownPaymentRatesAmount(lnAdvanceAmount);
 
-        poJSON = computeNetTotal();
+        computeNetTotal();
         poJSON.put("result", "success");
         return poJSON;
     }
 
-    public JSONObject computeNetTotal() {
-        poJSON = new JSONObject();
+    public void computeNetTotal() {
         double detailNetAmount = 0.00;
         double totalAmount = Master().getTranTotal().doubleValue();
         double totalDiscountAmount = Master().getAdditionalDiscount().doubleValue();
@@ -1628,7 +1656,6 @@ public class PurchaseOrder extends Transaction {
 
         detailNetAmount = totalAmount - totalDiscountAmount - advancePayment;
         Master().setNetTotal(detailNetAmount);
-        return poJSON;
     }
 
     public JSONObject printTransaction() {
