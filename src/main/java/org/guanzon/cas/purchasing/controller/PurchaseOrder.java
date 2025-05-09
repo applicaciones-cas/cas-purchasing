@@ -1672,8 +1672,15 @@ public class PurchaseOrder extends Transaction {
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
 
-            if (Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)) {
-                watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+            switch (Master().getTransactionStatus()) {
+                case PurchaseOrderStatus.POSTED:
+                case PurchaseOrderStatus.APPROVED:
+                    if ("1".equals(Master().getPrint())) {
+                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approvedreprint.png";
+                    } else {
+                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+                    }
+                    break;
             }
             parameters.put("watermarkImagePath", watermarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();
