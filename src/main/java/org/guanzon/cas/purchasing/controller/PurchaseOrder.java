@@ -1580,19 +1580,18 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-// base always from calculation not getNetTotal
-        double lnNetAmount = Master().getTranTotal().doubleValue()
-                - Master().getAdditionalDiscount().doubleValue()
-                - Master().getDownPaymentRatesAmount().doubleValue();
+        // base always from calculation not getNetTotal
+        double lnTotalAndDiscount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue();
 
-        if (lnNetAmount == 0.00) {
-            poJSON.put("message", "You're not allowed to enter advance payment rate, no net amount.");
-            poJSON.put("result", "error");
-            Master().setDownPaymentRatesAmount(0.00);
-            Master().setDownPaymentRatesPercentage(0.00);
-            computeNetTotal();
-            return poJSON;
-        }
+//        if (lnTotalAndDiscount == 0.00) {
+//            poJSON.put("message", "You're not allowed to enter advance payment rate, no net amount.");
+//            poJSON.put("result", "error");
+//            Master().setDownPaymentRatesAmount(0.00);
+//            Master().setDownPaymentRatesPercentage(0.00);
+//            computeNetTotal();
+//            return poJSON;
+//        }
         double lnAdvanceRate = Double.parseDouble(fsValue);
         if (lnAdvanceRate < 0.00 || lnAdvanceRate > 1.00) {
             poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.00 and 1.00 (1.00 = 100%)");
@@ -1603,7 +1602,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        double lnDiscountAmount = lnAdvanceRate * lnNetAmount;
+        double lnDiscountAmount = lnAdvanceRate * lnTotalAndDiscount;
         Master().setDownPaymentRatesPercentage(lnAdvanceRate);
         Master().setDownPaymentRatesAmount(lnDiscountAmount);
 
@@ -1618,19 +1617,18 @@ public class PurchaseOrder extends Transaction {
             fsValue = "0.00";
         }
         // base always from calculation not getNetTotal
-        double lnNetAmount = Master().getTranTotal().doubleValue()
-                - Master().getAdditionalDiscount().doubleValue()
-                - Master().getDownPaymentRatesAmount().doubleValue();
-        if (lnNetAmount == 0.00) {
-            poJSON.put("message", "You're not allowed to enter Advance Payment Amount, net amount.");
-            poJSON.put("result", "error");
-            Master().setDownPaymentRatesPercentage(0.00);
-            Master().setDownPaymentRatesAmount(0.00);
-            computeNetTotal();
-            return poJSON;
-        }
+        double lnTotalAndDiscount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue();
+//        if (lnTotalAndDiscount == 0.00) {
+//            poJSON.put("message", "You're not allowed to enter Advance Payment Amount, net amount.");
+//            poJSON.put("result", "error");
+//            Master().setDownPaymentRatesPercentage(0.00);
+//            Master().setDownPaymentRatesAmount(0.00);
+//            computeNetTotal();
+//            return poJSON;
+//        }
         double lnAdvanceAmount = Double.parseDouble(fsValue.replace(",", ""));
-        if (lnAdvanceAmount < 0.0 || lnAdvanceAmount > lnNetAmount) {
+        if (lnAdvanceAmount < 0.0 || lnAdvanceAmount > lnTotalAndDiscount) {
             poJSON.put("message", "Invalid Advance Payment Amount");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(0.00);
@@ -1639,7 +1637,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        double lnDiscountRate = lnAdvanceAmount / lnNetAmount;
+        double lnDiscountRate = lnAdvanceAmount / lnTotalAndDiscount;
         Master().setDownPaymentRatesPercentage(lnDiscountRate);
         Master().setDownPaymentRatesAmount(lnAdvanceAmount);
 
