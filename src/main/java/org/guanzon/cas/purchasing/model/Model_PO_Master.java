@@ -375,12 +375,12 @@ public class Model_PO_Master extends Model {
 
     //reference object models
     public Model_Branch Branch() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sBranchCd"))) {
+        if (!"".equals((String) getValue("sDestinat"))) {
             if (poBranch.getEditMode() == EditMode.READY
-                    && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
+                    && poBranch.getBranchCode().equals((String) getValue("sDestinat"))) {
                 return poBranch;
             } else {
-                poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
+                poJSON = poBranch.openRecord((String) getValue("sDestinat"));
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poBranch;
                 } else {
