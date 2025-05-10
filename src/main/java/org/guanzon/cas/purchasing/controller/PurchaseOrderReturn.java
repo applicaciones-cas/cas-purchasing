@@ -983,7 +983,7 @@ public class PurchaseOrderReturn extends Transaction{
         return lnRecQty;
     }
     
-    public int getReturnQty(String stockId, boolean isAdd)
+    public int getReturnQty(String stockId, String serialId, boolean isAdd)
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
@@ -1000,7 +1000,10 @@ public class PurchaseOrderReturn extends Transaction{
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                                 + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getSourceNo())
                                                 + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId));
-//                                                + " AND a.sSerialID = " + SQLUtil.toSQL(serialId));
+        
+        if(serialId != null && !"".equals(serialId)){
+            lsSQL = lsSQL + " AND b.sSerialID = " + SQLUtil.toSQL(serialId);
+        }
         
         if (isAdd) {
             lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
@@ -1372,7 +1375,7 @@ public class PurchaseOrderReturn extends Transaction{
                 case PurchaseOrderReturnStatus.PAID:
                 case PurchaseOrderReturnStatus.POSTED:
                     //Total return qty for specific po receiving
-                    lnRetQty = getReturnQty( Detail(lnCtr).getStockId(), true);
+                    lnRetQty = getReturnQty( Detail(lnCtr).getStockId(),Detail(lnCtr).getSerialId(), true);
                     lnRetQty = lnRetQty + Detail(lnCtr).getQuantity().intValue();
 
                     if(lnRetQty > lnRecQty){
