@@ -32,27 +32,27 @@ import org.json.simple.JSONObject;
  * @author Arsiela 03-12-2025
  */
 public class Model_POR_Master extends Model {
-        
+
     //reference objects
     Model_Branch poBranch;
     Model_Industry poIndustry;
     Model_Category poCategory;
-    Model_Company poCompany;    
+    Model_Company poCompany;
     Model_Term poTerm;
-    Model_Client_Master poSupplier;    
+    Model_Client_Master poSupplier;
     Model_Client_Address poSupplierAdress;
-    Model_Client_Institution_Contact poSupplierContactPerson;    
-    
+    Model_Client_Institution_Contact poSupplierContactPerson;
+
     @Override
     public void initialize() {
         try {
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
-            
+
             poEntity.last();
             poEntity.moveToInsertRow();
 
             MiscUtil.initRowSet(poEntity);
-            
+
             //assign default values
             poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dRefernce", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
@@ -77,7 +77,7 @@ public class Model_POR_Master extends Model {
             poEntity.absolute(1);
 
             ID = "sTransNox";
-            
+
             //initialize reference objects
             ParamModels model = new ParamModels(poGRider);
             poBranch = model.Branch();
@@ -85,298 +85,298 @@ public class Model_POR_Master extends Model {
             poCategory = model.Category();
             poCompany = model.Company();
             poTerm = model.Term();
-            
-            ClientModels clientModel = new ClientModels(poGRider); 
+
+            ClientModels clientModel = new ClientModels(poGRider);
             poSupplier = clientModel.ClientMaster();
             poSupplierAdress = clientModel.ClientAddress();
             poSupplierContactPerson = clientModel.ClientInstitutionContact();
 //            end - initialize reference objects
-            
+
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
     }
-    
-    public JSONObject setTransactionNo(String transactionNo){
+
+    public JSONObject setTransactionNo(String transactionNo) {
         return setValue("sTransNox", transactionNo);
     }
-    
-    public String getTransactionNo  (){
+
+    public String getTransactionNo() {
         return (String) getValue("sTransNox");
     }
-    
-    public JSONObject setBranchCode(String branchCode){
+
+    public JSONObject setBranchCode(String branchCode) {
         return setValue("sBranchCd", branchCode);
     }
-    
-    public String getBranchCode(){
+
+    public String getBranchCode() {
         return (String) getValue("sBranchCd");
     }
-    
-    public JSONObject setIndustryId(String industryID){
+
+    public JSONObject setIndustryId(String industryID) {
         return setValue("sIndstCdx", industryID);
     }
-    
-    public String getIndustryId(){
+
+    public String getIndustryId() {
         return (String) getValue("sIndstCdx");
     }
-    
-    public JSONObject setDepartmentId(String departmentID){
+
+    public JSONObject setDepartmentId(String departmentID) {
         return setValue("sDeptIDxx", departmentID);
     }
-    
-    public String getDepartmentId(){
+
+    public String getDepartmentId() {
         return (String) getValue("sDeptIDxx");
     }
-    
-    public JSONObject setTransactionDate(Date transactionDate){
+
+    public JSONObject setTransactionDate(Date transactionDate) {
         return setValue("dTransact", transactionDate);
     }
-    
-    public Date getTransactionDate(){
+
+    public Date getTransactionDate() {
         return (Date) getValue("dTransact");
     }
-    
-    public JSONObject setCompanyId(String companyID){
+
+    public JSONObject setCompanyId(String companyID) {
         return setValue("sCompnyID", companyID);
     }
-    
-    public String getCompanyId(){
+
+    public String getCompanyId() {
         return (String) getValue("sCompnyID");
     }
-    
-    public JSONObject setSupplierId(String supplierID){
+
+    public JSONObject setSupplierId(String supplierID) {
         return setValue("sSupplier", supplierID);
     }
-    
-    public String getSupplierId(){
+
+    public String getSupplierId() {
         return (String) getValue("sSupplier");
     }
-    
-    public JSONObject setAddressId(String addressID){
+
+    public JSONObject setAddressId(String addressID) {
         return setValue("sAddrssID", addressID);
     }
-    
-    public String getAddressId(){
+
+    public String getAddressId() {
         return (String) getValue("sAddrssID");
     }
-    
-    public JSONObject setContactId(String contactID){
+
+    public JSONObject setContactId(String contactID) {
         return setValue("sContctID", contactID);
     }
-    
-    public String getContactId(){
+
+    public String getContactId() {
         return (String) getValue("sContctID");
     }
-    
-    public JSONObject setTruckingId(String truckingID){
+
+    public JSONObject setTruckingId(String truckingID) {
         return setValue("sTrucking", truckingID);
     }
-    
-    public String getTruckingId(){
+
+    public String getTruckingId() {
         return (String) getValue("sTrucking");
     }
-    
-    public JSONObject setReferenceNo(String referenceNo){
+
+    public JSONObject setReferenceNo(String referenceNo) {
         return setValue("sReferNox", referenceNo);
     }
-    
-    public String getReferenceNo(){
+
+    public String getReferenceNo() {
         return (String) getValue("sReferNox");
     }
-    
-    public JSONObject setReferenceDate(Date refernceDate){
+
+    public JSONObject setReferenceDate(Date refernceDate) {
         return setValue("dRefernce", refernceDate);
     }
-    
-    public Date getReferenceDate(){
+
+    public Date getReferenceDate() {
         return (Date) getValue("dRefernce");
     }
-    
-    public JSONObject setTermCode(String termCode){
+
+    public JSONObject setTermCode(String termCode) {
         return setValue("sTermCode", termCode);
     }
-    
-    public String getTermCode(){
+
+    public String getTermCode() {
         return (String) getValue("sTermCode");
     }
-    
-    public JSONObject setTermDueDate(Date termDueDate){
+
+    public JSONObject setTermDueDate(Date termDueDate) {
         return setValue("dTermDuex", termDueDate);
     }
-    
-    public Date getTermDueDate(){
+
+    public Date getTermDueDate() {
         return (Date) getValue("dTermDuex");
     }
-    
-    public JSONObject setDueDate(Date dueDate){
+
+    public JSONObject setDueDate(Date dueDate) {
         return setValue("dDueDatex", dueDate);
     }
-    
-    public Date getDueDate(){
+
+    public Date getDueDate() {
         return (Date) getValue("dDueDatex");
     }
-    
-    public JSONObject setDiscountRate(Number discountRate){
+
+    public JSONObject setDiscountRate(Number discountRate) {
         return setValue("nDiscount", discountRate);
     }
-    
-    public Number getDiscountRate(){
+
+    public Number getDiscountRate() {
         return (Number) getValue("nDiscount");
     }
-    
-    public JSONObject setDiscount(Number discount){
+
+    public JSONObject setDiscount(Number discount) {
         return setValue("nAddDiscx", discount);
     }
-    
-    public Number getDiscount(){
+
+    public Number getDiscount() {
         return (Number) getValue("nAddDiscx");
     }
-    
-    public JSONObject setTransactionTotal(Number transactionTotal){
+
+    public JSONObject setTransactionTotal(Number transactionTotal) {
         return setValue("nTranTotl", transactionTotal);
     }
-    
-    public Number getTransactionTotal(){
+
+    public Number getTransactionTotal() {
         return (Number) getValue("nTranTotl");
     }
-    
-    public JSONObject setSalesInvoice(String salesInvoice){
+
+    public JSONObject setSalesInvoice(String salesInvoice) {
         return setValue("sSalesInv", salesInvoice);
     }
-    
-    public String getSalesInvoice(){
+
+    public String getSalesInvoice() {
         return (String) getValue("sSalesInv");
     }
-    
-    public JSONObject setVatableTax(String vatableTax){
+
+    public JSONObject setVatableTax(String vatableTax) {
         return setValue("cVATaxabl", vatableTax);
     }
-    
-    public String getVatableTax(){
+
+    public String getVatableTax() {
         return (String) getValue("cVATaxabl");
     }
-    
-    public JSONObject setVatRate(Number vatRate){
+
+    public JSONObject setVatRate(Number vatRate) {
         return setValue("nVATRatex", vatRate);
     }
-    
-    public Number getVatRate(){
+
+    public Number getVatRate() {
         return (Number) getValue("nVATRatex");
     }
-    
-    public JSONObject setWithHoldingTax(Number withHoldingTax){
+
+    public JSONObject setWithHoldingTax(Number withHoldingTax) {
         return setValue("nTWithHld", withHoldingTax);
     }
-    
-    public Number getWithHoldingTax(){
+
+    public Number getWithHoldingTax() {
         return (Number) getValue("nTWithHld");
     }
-    
-    public JSONObject setAmountPaid(Number amountPaid){
+
+    public JSONObject setAmountPaid(Number amountPaid) {
         return setValue("nAmtPaidx", amountPaid);
     }
-    
-    public Number getAmountPaid(){
+
+    public Number getAmountPaid() {
         return (Number) getValue("nAmtPaidx");
     }
-    
-    public JSONObject setFreight(Number freight){
+
+    public JSONObject setFreight(Number freight) {
         return setValue("nFreightx", freight);
     }
-    
-    public Number getFreight(){
+
+    public Number getFreight() {
         return (Number) getValue("nFreightx");
     }
-    
-    public JSONObject setRemarks(String remarks){
+
+    public JSONObject setRemarks(String remarks) {
         return setValue("sRemarksx", remarks);
     }
-    
-    public String getRemarks(){
+
+    public String getRemarks() {
         return (String) getValue("sRemarksx");
     }
-    
-    public JSONObject setPurpose(String purpose){
+
+    public JSONObject setPurpose(String purpose) {
         return setValue("cPurposex", purpose);
     }
-    
-    public String getPurpose(){
+
+    public String getPurpose() {
         return (String) getValue("cPurposex");
     }
-    
-    public JSONObject setPrint(String print){
+
+    public JSONObject setPrint(String print) {
         return setValue("cPrintxxx", print);
     }
-    
-    public String getPrint(){
+
+    public String getPrint() {
         return (String) getValue("cPrintxxx");
     }
-    
-    public JSONObject setEntryNo(int entryNo){
+
+    public JSONObject setEntryNo(int entryNo) {
         return setValue("nEntryNox", entryNo);
     }
-    
-    public int getEntryNo(){
+
+    public int getEntryNo() {
         return (int) getValue("nEntryNox");
     }
-    
-    public JSONObject setInventoryTypeCode(String inventoryTypeCode){
+
+    public JSONObject setInventoryTypeCode(String inventoryTypeCode) {
         return setValue("sInvTypCd", inventoryTypeCode);
     }
-    
-    public String getInventoryTypeCode(){
+
+    public String getInventoryTypeCode() {
         return (String) getValue("sInvTypCd");
     }
-    
-    public JSONObject isProcessed(boolean isProcessed){
+
+    public JSONObject isProcessed(boolean isProcessed) {
         return setValue("cProcessd", isProcessed ? "1" : "0");
     }
-    
-    public boolean isProcessed(){
+
+    public boolean isProcessed() {
         return ((String) getValue("cProcessd")).equals("1");
     }
-    
-    public JSONObject setTransactionStatus(String transactionStatus){
+
+    public JSONObject setTransactionStatus(String transactionStatus) {
         return setValue("cTranStat", transactionStatus);
     }
-    
-    public String getTransactionStatus(){
+
+    public String getTransactionStatus() {
         return (String) getValue("cTranStat");
     }
-    
-    public JSONObject setCategoryCode(String categoryCode){
+
+    public JSONObject setCategoryCode(String categoryCode) {
         return setValue("sCategrCd", categoryCode);
     }
-    
-    public String getCategoryCode(){
+
+    public String getCategoryCode() {
         return (String) getValue("sCategrCd");
     }
-    
-    public JSONObject setModifyingId(String modifyingId){
+
+    public JSONObject setModifyingId(String modifyingId) {
         return setValue("sModified", modifyingId);
     }
-    
-    public String getModifyingId(){
+
+    public String getModifyingId() {
         return (String) getValue("sModified");
     }
-    
-    public JSONObject setModifiedDate(Date modifiedDate){
+
+    public JSONObject setModifiedDate(Date modifiedDate) {
         return setValue("dModified", modifiedDate);
     }
-    
-    public Date getModifiedDate(){
+
+    public Date getModifiedDate() {
         return (Date) getValue("dModified");
     }
-    
+
     @Override
     public String getNextCode() {
 //        return "";
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
-    
+
     //reference object models
     public Model_Branch Branch() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sBranchCd"))) {
@@ -398,7 +398,7 @@ public class Model_POR_Master extends Model {
             return poBranch;
         }
     }
-    
+
     public Model_Industry Industry() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sIndstCdx"))) {
             if (poIndustry.getEditMode() == EditMode.READY
@@ -419,7 +419,7 @@ public class Model_POR_Master extends Model {
             return poIndustry;
         }
     }
-    
+
     public Model_Category Category() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sCategrCd"))) {
             if (poCategory.getEditMode() == EditMode.READY
@@ -440,7 +440,7 @@ public class Model_POR_Master extends Model {
             return poCategory;
         }
     }
-    
+
     public Model_Company Company() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sCompnyID"))) {
             if (poCompany.getEditMode() == EditMode.READY
@@ -461,7 +461,7 @@ public class Model_POR_Master extends Model {
             return poCompany;
         }
     }
-    
+
     public Model_Term Term() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sTermCode"))) {
             if (poTerm.getEditMode() == EditMode.READY
@@ -482,8 +482,7 @@ public class Model_POR_Master extends Model {
             return poTerm;
         }
     }
-    
-    
+
     public Model_Client_Master Supplier() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sSupplier"))) {
             if (poSupplier.getEditMode() == EditMode.READY
@@ -504,7 +503,7 @@ public class Model_POR_Master extends Model {
             return poSupplier;
         }
     }
-    
+
     public Model_Client_Address SupplierAddress() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sAddressID"))) {
             if (poSupplierAdress.getEditMode() == EditMode.READY
@@ -525,7 +524,7 @@ public class Model_POR_Master extends Model {
             return poSupplierAdress;
         }
     }
-    
+
     public Model_Client_Institution_Contact SupplierContactPerson() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sContctID"))) {
             if (poSupplierContactPerson.getEditMode() == EditMode.READY
@@ -546,7 +545,7 @@ public class Model_POR_Master extends Model {
             return poSupplierContactPerson;
         }
     }
-    
+
     public Model_Client_Master Trucking() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sTrucking"))) {
             if (poSupplier.getEditMode() == EditMode.READY
@@ -568,5 +567,5 @@ public class Model_POR_Master extends Model {
         }
     }
     //end - reference object models
-    
+
 }
