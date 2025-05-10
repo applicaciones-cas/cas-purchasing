@@ -1241,6 +1241,18 @@ public class PurchaseOrderReturn extends Transaction{
                 Master().setContactId(loRecord.Master().getContactId()); 
             }
             
+            //seek approval when user changed trasanction date
+            if(!pbIsPrint){
+                if(!xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate()))) {
+                    if (poGRider.getUserLevel() == UserRight.ENCODER) {
+                        poJSON = ShowDialogFX.getUserApproval(poGRider);
+                        if (!"success".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
+                    }
+                }
+            }
+            
             if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
                 lbUpdated = loRecord.getDetailCount() == getDetailCount();
                 if (lbUpdated) {

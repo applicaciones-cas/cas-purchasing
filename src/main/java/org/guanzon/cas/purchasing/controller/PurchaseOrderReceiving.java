@@ -86,6 +86,8 @@ public class PurchaseOrderReceiving extends Transaction {
 
     private boolean pbApproval = false;
     private boolean pbIsPrint = false;
+    private boolean pbIsWithDiscount = false;
+    private boolean pbIsWithDiscountRate = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
@@ -926,7 +928,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
 //        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
@@ -961,7 +963,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
@@ -997,7 +999,7 @@ public class PurchaseOrderReceiving extends Transaction {
         object.setRecordStatus(RecordStatus.ACTIVE);
 
 //        poJSON = object.searchRecord(value, byCode); //TODO
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, Master().getIndustryId(),  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
         if ("success".equals((String) poJSON.get("result"))) {
             if(Detail(row).getStockId().equals(object.getModel().getStockId())){
                 poJSON.put("result", "error");
@@ -1121,7 +1123,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //        }
         return poJSON;
     }
-
+    
     public JSONObject computeFields()
             throws SQLException,
             GuanzonException {
@@ -1130,12 +1132,18 @@ public class PurchaseOrderReceiving extends Transaction {
         //Compute Transaction Total
         Double ldblTotal = 0.00;
         Double ldblDiscount = Master().getDiscount().doubleValue();
+        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+        
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
         }
-        if (ldblDiscount < 0 || ldblDiscount > ldblTotal) {
+        
+        ldblDiscountRate = ldblTotal * ldblDiscountRate;
+        
+        if ((ldblDiscount < 0 || ldblDiscount > ldblTotal) || (ldblDiscountRate < 0 || ldblDiscountRate > ldblTotal)) {
         } else {
-            ldblTotal = ldblTotal - ldblDiscount;
+//            ldblTotal = ldblTotal - ldblDiscount; 
+            ldblTotal = ldblTotal - ldblDiscount - ldblDiscountRate;
         }
         
         Master().setTransactionTotal(ldblTotal);
@@ -1171,18 +1179,28 @@ public class PurchaseOrderReceiving extends Transaction {
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
         }
-        System.out.println("total : " + ldblTotal);
+        
         if (discount < 0 || discount > ldblTotal) {
             Master().setDiscount(0.00);
             computeDiscountRate(0.00);
             poJSON.put("result", "error");
             poJSON.put("message", "Discount amount cannot be negative or exceed the transaction total.");
+            return poJSON;
         } else {
-            poJSON.put("result", "success");
-            poJSON.put("message", "success");
-            ldblDiscRate = (discount / ldblTotal) * 100;
-            Master().setDiscountRate(ldblDiscRate);
+//            ldblDiscRate = (discount / ldblTotal) * 100;
+//            ldblDiscRate = (discount / ldblTotal);
+            //nettotal = total - discount - rate
+//            Master().setDiscountRate(ldblDiscRate);
+
+            ldblTotal = ldblTotal - discount - (Master().getDiscountRate().doubleValue() * ldblTotal);
+            if(ldblTotal < 0 ){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid transaction total.");
+                return poJSON;
+            }
         }
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
 
@@ -1195,18 +1213,29 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
         }
 
-        if (discountRate < 0 || discountRate > 100.00) {
+//        if (discountRate < 0 || discountRate > 100.00) {
+        if (discountRate < 0 || discountRate > 1.00) {
             Master().setDiscountRate(0.00);
             computeDiscount(0.00);
             poJSON.put("result", "error");
-            poJSON.put("message", "Discount rate cannot be negative or exceed 100.00");
-        } else {
-            poJSON.put("result", "success");
-            poJSON.put("message", "success");
-            ldblDiscount = ldblTotal * (discountRate / 100.00);
-            Master().setDiscount(ldblDiscount);
+            poJSON.put("message", "Discount rate cannot be negative or exceed 1.00");
+            return poJSON;
+        } else {;
+//            ldblDiscount = ldblTotal * (discountRate / 100.00);
+//            ldblDiscount = ldblTotal * discountRate;
+            //nettotal = total - discount - rate
+//            Master().setDiscount(ldblDiscount);
+
+            ldblTotal = ldblTotal - Master().getDiscount().doubleValue() - (discountRate * ldblTotal);
+            if(ldblTotal < 0 ){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid transaction total.");
+                return poJSON;
+            }
         }
 
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
 
