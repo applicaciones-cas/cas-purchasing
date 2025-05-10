@@ -1256,7 +1256,7 @@ public class PurchaseOrder extends Transaction {
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
-                + " ORDER BY a.dTransact DESC";
+                + " ORDER BY a.dTransact,a.sTransNox DESC";
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONArray dataArray = new JSONArray();
