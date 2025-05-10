@@ -37,6 +37,7 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
+import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
@@ -167,14 +168,25 @@ public class PurchaseOrder extends Transaction {
         boolean lbUpdated = false;
 
         if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED) && pnEditMode == EditMode.UPDATE) {
-            if (poGRider.getUserLevel() == 16) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
                 }
             }
         }
-
+        int lnRequestQuantity = 0;
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            lnRequestQuantity = Detail(lnCtr).InvStockRequestDetail().getApproved() - (Detail(lnCtr).InvStockRequestDetail().getPurchase() + Detail(lnCtr).InvStockRequestDetail().getIssued());
+            if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+                if (Detail(lnCtr).getQuantity().intValue() > lnRequestQuantity) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Invalid order quantity entered. The item is from a stock request, "
+                            + " and the order quantity must not be greater than the requested quantity.");
+                    return poJSON;
+                }
+            }
+        }
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
@@ -341,7 +353,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -401,7 +413,7 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -463,7 +475,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -524,7 +536,7 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -585,7 +597,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -646,8 +658,7 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        if (poGRider.getUserLevel() == 16) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -684,8 +695,7 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
-    
-    
+
     public JSONObject isDetailHasZeroQty() {
         poJSON = new JSONObject();
         int zeroQtyRow = -1;
@@ -728,7 +738,6 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-
     private JSONObject setValueToOthers(String status)
             throws CloneNotSupportedException,
             SQLException,
@@ -745,15 +754,25 @@ public class PurchaseOrder extends Transaction {
             System.out.println("StockId : " + (lnCtr + 1) + " : " + Detail(lnCtr).getStockID());
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
+                int totalRequest = 0;
+                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved()
+                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
+                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+
+                //1. Check discrepancy if the order quantity is not greater than request
+                if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
+                    return poJSON;
+                }
                 //1. Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
+
                 if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
-                    int totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved()
-                            - (Detail(lnCtr).InvStockRequestDetail().getIssued()
-                            + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+
                     if (totalRequest == 0) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "All stock requests related to this order number have already been processed.");
@@ -929,7 +948,7 @@ public class PurchaseOrder extends Transaction {
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
                 " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
-                " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
+                " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
@@ -1003,9 +1022,9 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
-        
+
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
+
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1026,7 +1045,7 @@ public class PurchaseOrder extends Transaction {
         }
         return poJSON;
     }
-    
+
     public JSONObject SearchBarcodeGerneral(String value, boolean byCode, int row)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
 
@@ -1037,9 +1056,9 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        
+
         poJSON = object.searchRecord(value, byCode, supplier, brand, null, category);
-        
+
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1070,7 +1089,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1101,7 +1120,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, null,category);
+        poJSON = object.searchRecord(value, byCode, supplier, brand, null, category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1122,6 +1141,7 @@ public class PurchaseOrder extends Transaction {
         }
         return poJSON;
     }
+
     public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
         Client object = new ClientControllers(poGRider, logwrapr).Client();
         object.Master().setRecordStatus(RecordStatus.ACTIVE);
@@ -1181,8 +1201,8 @@ public class PurchaseOrder extends Transaction {
         String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
-         String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry,category);
+        String category = Master().getCategoryCode();
+        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1211,7 +1231,7 @@ public class PurchaseOrder extends Transaction {
                 " b.nApproved > 0 ",
                 " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
                 " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
-                " c.sCategCd1 = " +  SQLUtil.toSQL(Master().getCategoryCode()),
+                " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
         String lsSQL = "SELECT"
                 + "  a.sTransNox,"
@@ -1236,7 +1256,7 @@ public class PurchaseOrder extends Transaction {
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
-                + " ORDER BY a.dTransact DESC";
+                + " ORDER BY a.dTransact,a.sTransNox DESC";
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONArray dataArray = new JSONArray();
@@ -1426,7 +1446,7 @@ public class PurchaseOrder extends Transaction {
                 + "  c.sBranchNm,"
                 + "  a.sBranchCd,"
                 + "  a.dTransact,"
-                + "  a.sReferNox,"
+                + "  a.sTransNox,"
                 + "  a.cTranStat"
                 + " FROM po_master a "
                 + " LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox"
@@ -1436,7 +1456,7 @@ public class PurchaseOrder extends Transaction {
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
-                " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
+                " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
@@ -1474,8 +1494,10 @@ public class PurchaseOrder extends Transaction {
     }
 
     public String getInventoryTypeCode() throws SQLException {
-        String lsSQL = "SELECT sInvTypCd FROM category";
-        lsSQL = MiscUtil.addCondition(lsSQL, " sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()));
+        String lsSQL = "SELECT a.sInvTypCd FROM category a"
+                + " LEFT JOIN inv_type b ON a.sInvTypCd = b.sInvTypCd";
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode())));
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         String inventoryTypeCode = null;
@@ -1486,6 +1508,152 @@ public class PurchaseOrder extends Transaction {
 
         MiscUtil.close(loRS);
         return inventoryTypeCode;
+    }
+
+    public JSONObject setDiscountAmount(String fsValue) {
+        poJSON = new JSONObject();
+        if (fsValue == null || fsValue.isEmpty()) {
+            fsValue = "0.00";
+        }
+        double lnTotalAmount = Master().getTranTotal().doubleValue();
+        if (lnTotalAmount == 0.00) {
+            poJSON.put("message", "You're not allowed to enter discount amount, no amount entered.");
+            poJSON.put("result", "error");
+            Master().setAdditionalDiscount(0.00);
+            Master().setDiscount(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+        double lnDiscountAmount = Double.parseDouble(fsValue.replace(",", ""));
+        if (lnDiscountAmount < 0.0 || lnDiscountAmount > lnTotalAmount) {
+            poJSON.put("message", "Invalid Discount Amount");
+            poJSON.put("result", "error");
+            Master().setAdditionalDiscount(0.00);
+            Master().setDiscount(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+
+        double lnDiscountRate = lnDiscountAmount / lnTotalAmount;
+        Master().setDiscount(lnDiscountRate);
+        Master().setAdditionalDiscount(lnDiscountAmount);
+
+        computeNetTotal();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject setDiscountRate(String fsValue) {
+        poJSON = new JSONObject();
+        if (fsValue == null || fsValue.isEmpty()) {
+            fsValue = "0.00";
+        }
+        double lnTotalAmount = Master().getTranTotal().doubleValue();
+        if (lnTotalAmount == 0.00) {
+            poJSON.put("message", "You're not allowed to enter discount rate, no detail amount entered.");
+            poJSON.put("result", "error");
+            Master().setAdditionalDiscount(0.00);
+            Master().setDiscount(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+        double lnDiscountRate = Double.parseDouble(fsValue);
+        if (lnDiscountRate < 0.00 || lnDiscountRate > 1.00) {
+            poJSON.put("message", "Invalid Discount Rate. Must be between 0.00 and 1.00 (1.00 = 100%)");
+            poJSON.put("result", "error");
+            Master().setAdditionalDiscount(0.00);
+            Master().setDiscount(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+
+        double lnDiscountAmount = lnDiscountRate * lnTotalAmount;
+        Master().setDiscount(lnDiscountRate);
+        Master().setAdditionalDiscount(lnDiscountAmount);
+        computeNetTotal();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject setAdvancePaymentRate(String fsValue) {
+        poJSON = new JSONObject();
+        if (fsValue == null || fsValue.isEmpty()) {
+            fsValue = "0.00";
+        }
+        // base always from calculation not getNetTotal
+        double lnTotalAndDiscount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue();
+
+//        if (lnTotalAndDiscount == 0.00) {
+//            poJSON.put("message", "You're not allowed to enter advance payment rate, no net amount.");
+//            poJSON.put("result", "error");
+//            Master().setDownPaymentRatesAmount(0.00);
+//            Master().setDownPaymentRatesPercentage(0.00);
+//            computeNetTotal();
+//            return poJSON;
+//        }
+        double lnAdvanceRate = Double.parseDouble(fsValue);
+        if (lnAdvanceRate < 0.00 || lnAdvanceRate > 1.00) {
+            poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.00 and 1.00 (1.00 = 100%)");
+            poJSON.put("result", "error");
+            Master().setDownPaymentRatesAmount(0.00);
+            Master().setDownPaymentRatesPercentage(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+
+        double lnDiscountAmount = lnAdvanceRate * lnTotalAndDiscount;
+        Master().setDownPaymentRatesPercentage(lnAdvanceRate);
+        Master().setDownPaymentRatesAmount(lnDiscountAmount);
+
+        computeNetTotal();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject setAdvancePaymentAmount(String fsValue) {
+        poJSON = new JSONObject();
+        if (fsValue == null || fsValue.isEmpty()) {
+            fsValue = "0.00";
+        }
+        // base always from calculation not getNetTotal
+        double lnTotalAndDiscount = Master().getTranTotal().doubleValue()
+                - Master().getAdditionalDiscount().doubleValue();
+//        if (lnTotalAndDiscount == 0.00) {
+//            poJSON.put("message", "You're not allowed to enter Advance Payment Amount, net amount.");
+//            poJSON.put("result", "error");
+//            Master().setDownPaymentRatesPercentage(0.00);
+//            Master().setDownPaymentRatesAmount(0.00);
+//            computeNetTotal();
+//            return poJSON;
+//        }
+        double lnAdvanceAmount = Double.parseDouble(fsValue.replace(",", ""));
+        if (lnAdvanceAmount < 0.0 || lnAdvanceAmount > lnTotalAndDiscount) {
+            poJSON.put("message", "Invalid Advance Payment Amount");
+            poJSON.put("result", "error");
+            Master().setDownPaymentRatesPercentage(0.00);
+            Master().setDownPaymentRatesAmount(0.00);
+            computeNetTotal();
+            return poJSON;
+        }
+
+        double lnDiscountRate = lnAdvanceAmount / lnTotalAndDiscount;
+        Master().setDownPaymentRatesPercentage(lnDiscountRate);
+        Master().setDownPaymentRatesAmount(lnAdvanceAmount);
+
+        computeNetTotal();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public void computeNetTotal() {
+        double detailNetAmount = 0.00;
+        double totalAmount = Master().getTranTotal().doubleValue();
+        double totalDiscountAmount = Master().getAdditionalDiscount().doubleValue();
+        double advancePayment = Master().getDownPaymentRatesAmount().doubleValue();
+
+        detailNetAmount = totalAmount - totalDiscountAmount - advancePayment;
+        Master().setNetTotal(detailNetAmount);
     }
 
     public JSONObject printTransaction() {
@@ -1504,8 +1672,15 @@ public class PurchaseOrder extends Transaction {
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
 
-            if (Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)) {
-                watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+            switch (Master().getTransactionStatus()) {
+                case PurchaseOrderStatus.POSTED:
+                case PurchaseOrderStatus.APPROVED:
+                    if ("1".equals(Master().getPrint())) {
+                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approvedreprint.png";
+                    } else {
+                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+                    }
+                    break;
             }
             parameters.put("watermarkImagePath", watermarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();

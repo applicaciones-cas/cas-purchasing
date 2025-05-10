@@ -132,14 +132,14 @@ public class PurchaseOrder_Vehicle implements GValidator {
         }
         if (poMaster.getWithAdvPaym() == true) {
             if (poMaster.getDownPaymentRatesPercentage() == null
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.00
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.0
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00) {
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() <= 0.00
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 1.00
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() <= 0.0
+                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 1.00) {
                 poJSON.put("message", "Invalid Advance Payment Rates.");
                 return poJSON;
             }
-            if (poMaster.getDownPaymentRatesAmount() == null || poMaster.getDownPaymentRatesAmount().doubleValue() < 0.00) {
+            if (poMaster.getDownPaymentRatesAmount() == null || poMaster.getDownPaymentRatesAmount().doubleValue() <= 0.00) {
                 poJSON.put("message", "Invalid Advance Payment Amount.");
                 return poJSON;
             }
@@ -152,19 +152,10 @@ public class PurchaseOrder_Vehicle implements GValidator {
                 return poJSON;
             }
         }
-        if (poMaster.getEditMode() == EditMode.ADDNEW) {
-            if (transactionDate.isBefore(serverDate)) {
-                String referenceNo = poMaster.getReference();
-                if (referenceNo == null || referenceNo.trim().isEmpty()) {
-                    poJSON.put("message", "A reference number is required for backdated transactions.");
-                    return poJSON;
-                }
-                poJSON = ShowDialogFX.getUserApproval(poGrider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    poJSON.put("message", (String) poJSON.get("message"));
-                    return poJSON;
-                }
-            }
+
+        if (transactionDate.isBefore(serverDate) && poMaster.getReference().trim().isEmpty()) {
+            poJSON.put("message", "A reference number is required for backdated transactions.");
+            return poJSON;
         }
         poJSON.put("result", "success");
         return poJSON;
