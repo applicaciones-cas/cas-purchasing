@@ -1536,7 +1536,7 @@ public class PurchaseOrder extends Transaction {
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < 0.00) {
-            poJSON.put("message", "Invalid Transaction Total");
+            poJSON.put("message", "Invalid Total Transaction Amount");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             computeNetTotal();
@@ -1574,7 +1574,7 @@ public class PurchaseOrder extends Transaction {
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < 0.00) {
-            poJSON.put("message", "Invalid Transaction Total");
+            poJSON.put("message", "Invalid Total Transaction Amount");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(0.00);
             computeNetTotal();
@@ -1611,12 +1611,11 @@ public class PurchaseOrder extends Transaction {
 
         Master().setDownPaymentRatesPercentage(lnAdvanceRate);
         computeNetTotal();
-
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < 0.00) {
-            poJSON.put("message", "Invalid Transaction Total");
+            poJSON.put("message", "Invalid Total Transaction Amount");
             poJSON.put("result", "error");
-            Master().setDownPaymentRatesAmount(0.00);
+            Master().setDownPaymentRatesPercentage(0.00);
             computeNetTotal();
             return poJSON;
         }
@@ -1653,10 +1652,9 @@ public class PurchaseOrder extends Transaction {
 
         Master().setDownPaymentRatesAmount(lnAdvanceAmount);
         computeNetTotal();
-
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < 0.00) {
-            poJSON.put("message", "Invalid Transaction Total");
+            poJSON.put("message", "Invalid Total Transaction Amount");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesAmount(0.00);
             computeNetTotal();
