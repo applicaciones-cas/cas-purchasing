@@ -1108,7 +1108,7 @@ public class PurchaseOrder extends Transaction {
                  hasNoSupplier ? supplier : null,
                  brand,
                  industry,
-                 category
+                hasNoSupplier ? category : null
          );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1147,7 +1147,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                category
+                hasNoSupplier ? category : null
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1188,7 +1188,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 industry,
-                category
+                hasNoSupplier ? category : null
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1226,7 +1226,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                category
+                hasNoSupplier ? category : null
         );
         
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1316,7 +1316,7 @@ public class PurchaseOrder extends Transaction {
                hasNoSupplier ? supplier : null,
                brand,
                industry,
-               category
+                hasNoSupplier ? category : null
        );
         
         if ("success".equals((String) poJSON.get("result"))) {
