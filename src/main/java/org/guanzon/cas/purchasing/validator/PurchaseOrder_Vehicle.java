@@ -157,7 +157,7 @@ public class PurchaseOrder_Vehicle implements GValidator {
             }
         }
 
-        if (poMaster.getTransactionStatus().equals(PurchaseOrderStatus.OPEN)) {
+        if (poMaster.getEditMode() == EditMode.ADDNEW) {
             if (transactionDate.isBefore(serverDate) && poMaster.getReference().trim().isEmpty()) {
                 poJSON.put("message", "A reference number is required for backdated transactions.");
                 return poJSON;
