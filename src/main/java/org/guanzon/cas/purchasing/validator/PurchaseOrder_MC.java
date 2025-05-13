@@ -152,9 +152,11 @@ public class PurchaseOrder_MC implements GValidator {
                 return poJSON;
             }
         }
-        if (transactionDate.isBefore(serverDate) && poMaster.getReference().trim().isEmpty()) {
-            poJSON.put("message", "A reference number is required for backdated transactions.");
-            return poJSON;
+        if (poMaster.getEditMode() == EditMode.ADDNEW) {
+            if (transactionDate.isBefore(serverDate) && poMaster.getReference().trim().isEmpty()) {
+                poJSON.put("message", "A reference number is required for backdated transactions.");
+                return poJSON;
+            }
         }
         poJSON.put("result", "success");
         return poJSON;
