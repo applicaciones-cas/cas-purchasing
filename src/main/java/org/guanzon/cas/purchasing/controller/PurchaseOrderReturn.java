@@ -67,7 +67,6 @@ import org.json.simple.parser.ParseException;
  */
 public class PurchaseOrderReturn extends Transaction{
 
-    private boolean pbApproval = false;
     private boolean pbIsPrint = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
@@ -152,12 +151,10 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
-        if (pbApproval) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
+        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
             }
         }
 
@@ -478,8 +475,8 @@ public class PurchaseOrderReturn extends Transaction{
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
-                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
-                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd));
+//                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -986,7 +983,7 @@ public class PurchaseOrderReturn extends Transaction{
         return lnRecQty;
     }
     
-    public int getReturnQty(String stockId, boolean isAdd)
+    public int getReturnQty(String stockId, String serialId, boolean isAdd)
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
@@ -1003,7 +1000,10 @@ public class PurchaseOrderReturn extends Transaction{
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                                 + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getSourceNo())
                                                 + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId));
-//                                                + " AND a.sSerialID = " + SQLUtil.toSQL(serialId));
+        
+        if(serialId != null && !"".equals(serialId)){
+            lsSQL = lsSQL + " AND b.sSerialID = " + SQLUtil.toSQL(serialId);
+        }
         
         if (isAdd) {
             lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
@@ -1171,11 +1171,8 @@ public class PurchaseOrderReturn extends Transaction{
             paDetailRemoved = new ArrayList<>();
         }
         
-        
         if(!pbIsPrint){
-            if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                || (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW )
-                    ) {
+            if (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW ){
                 if (poGRider.getUserLevel() == UserRight.ENCODER) {
                     poJSON = ShowDialogFX.getUserApproval(poGRider);
                     if (!"success".equals((String) poJSON.get("result"))) {
@@ -1243,7 +1240,8 @@ public class PurchaseOrderReturn extends Transaction{
             
             //seek approval when user changed trasanction date
             if(!pbIsPrint){
-                if(!xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate()))) {
+                if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus()) 
+                        || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate()))) {
                     if (poGRider.getUserLevel() == UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -1377,7 +1375,7 @@ public class PurchaseOrderReturn extends Transaction{
                 case PurchaseOrderReturnStatus.PAID:
                 case PurchaseOrderReturnStatus.POSTED:
                     //Total return qty for specific po receiving
-                    lnRetQty = getReturnQty( Detail(lnCtr).getStockId(), true);
+                    lnRetQty = getReturnQty( Detail(lnCtr).getStockId(),Detail(lnCtr).getSerialId(), true);
                     lnRetQty = lnRetQty + Detail(lnCtr).getQuantity().intValue();
 
                     if(lnRetQty > lnRecQty){
