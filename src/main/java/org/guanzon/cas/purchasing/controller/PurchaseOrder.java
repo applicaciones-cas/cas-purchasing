@@ -755,9 +755,9 @@ public class PurchaseOrder extends Transaction {
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
                 int totalRequest = 0;
-                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved()
-                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
-                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved());
+//                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
+//                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
                 //1. Check discrepancy if the order quantity is not greater than request
                 if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
@@ -834,6 +834,7 @@ public class PurchaseOrder extends Transaction {
                         lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
+                        lnRecQty =  poStockRequest.get(lnList).Detail(lnRow).getPurchase();
                         poStockRequest.get(lnList).Master().setProcessed(true);
                         poStockRequest.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
                         poStockRequest.get(lnList).Master().setModifyingId(poGRider.getUserID());
@@ -1012,7 +1013,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcode(String value, boolean byCode, int row)
+     public JSONObject SearchBarcode(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
@@ -1023,7 +1024,53 @@ public class PurchaseOrder extends Transaction {
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
 
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
+         poJSON = object.searchRecord(
+                 value,
+                 byCode,
+                 hasNoSupplier ? supplier : null,
+                 brand,
+                 industry,
+                 category
+         );
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
+                }
+            }
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+        }
+        return poJSON;
+    }
+
+    public JSONObject SearchBarcodeGeneral(String value, boolean byCode, int row,boolean hasNoSupplier)
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
+
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
+        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+        String category = Master().getCategoryCode();
+
+        poJSON = object.searchRecord(
+                value,
+                byCode,
+                hasNoSupplier ? supplier : null,
+                brand,
+                null,
+                category
+        );
 
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
@@ -1046,9 +1093,47 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeGerneral(String value, boolean byCode, int row)
+    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row, boolean hasNoSupplier)
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,NullPointerException {
+        
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
+        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
+        String category = Master().getCategoryCode();
+        
+        poJSON = object.searchRecord(
+                value,
+                byCode,
+                hasNoSupplier ? supplier : null,
+                brand,
+                industry,
+                category
+        );
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                if (lnRow != row) {
+                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
+                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Barcode: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
+                        poJSON.put("tableRow", lnRow);
+                        return poJSON;
+                    }
+                }
+            }
+            Detail(row).setStockID(object.getModel().getStockId());
+            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
+            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
+        }
+        return poJSON;
+    }
+
+    public JSONObject SearchBarcodeDescriptionGeneral(String value, boolean byCode, int row, boolean hasNoSupplier) 
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
-
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
@@ -1056,40 +1141,16 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-
-        poJSON = object.searchRecord(value, byCode, supplier, brand, null, category);
-
-        if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
-                if (lnRow != row) {
-                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
-                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Model: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
-                        poJSON.put("tableRow", lnRow);
-                        return poJSON;
-                    }
-                }
-            }
-            Detail(row).setStockID(object.getModel().getStockId());
-            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-//            Detail(row).isSerialized(object.getModel().isSerialized());
-//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
-        }
-        return poJSON;
-    }
-
-    public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,
-            NullPointerException {
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.setRecordStatus(RecordStatus.ACTIVE);
-
-        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
-        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
-        String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
+       
+        poJSON = object.searchRecord(
+                value,
+                byCode,
+                hasNoSupplier ? supplier : null,
+                brand,
+                null,
+                category
+        );
+        
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1105,39 +1166,6 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-//            Detail(row).isSerialized(object.getModel().isSerialized());
-//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
-        }
-        return poJSON;
-    }
-
-    public JSONObject SearchBarcodeDescriptionGeneral(String value, boolean byCode, int row) throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,
-            NullPointerException {
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.setRecordStatus(RecordStatus.ACTIVE);
-
-        String supplier = Master().getSupplierID().isEmpty() ? null : Master().getSupplierID();
-        String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
-        String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, null, category);
-        if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
-                if (lnRow != row) {
-                    if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
-                            && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Barcode: " + object.getModel().getDescription() + " already exist in table at row " + (lnRow + 1) + ".");
-                        poJSON.put("tableRow", lnRow);
-                        return poJSON;
-                    }
-                }
-            }
-            Detail(row).setStockID(object.getModel().getStockId());
-            Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
-            Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-//            Detail(row).isSerialized(object.getModel().isSerialized());
-//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
@@ -1194,7 +1222,8 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchModel(String value, boolean byCode, int row) throws SQLException, GuanzonException, NullPointerException {
+   public JSONObject SearchModel(String value, boolean byCode, int row, boolean hasNoSupplier)
+           throws SQLException, GuanzonException, NullPointerException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
@@ -1202,7 +1231,16 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        poJSON = object.searchRecord(value, byCode, supplier, brand, industry, category);
+        
+        poJSON = object.searchRecord(
+               value,
+               byCode,
+               hasNoSupplier ? supplier : null,
+               brand,
+               industry,
+               category
+       );
+        
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1218,8 +1256,6 @@ public class PurchaseOrder extends Transaction {
             Detail(row).setStockID(object.getModel().getStockId());
             Detail(row).setUnitPrice(object.getModel().getCost().doubleValue());
             Detail(row).setOldPrice(object.getModel().getCost().doubleValue());
-//            Detail(row).isSerialized(object.getModel().isSerialized());
-//            Detail(row).setCategoryCode(object.getModel().getCategoryFirstLevelId());
         }
         return poJSON;
     }
