@@ -41,6 +41,7 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.gl.services.GLControllers;
 import org.guanzon.cas.inv.Inventory;
 //import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
@@ -70,6 +71,7 @@ public class PurchaseOrder extends Transaction {
     List<Model_PO_Master> paPOMaster;
     List<StockRequest> poStockRequest;
     List<Model> paDetailRemoved;
+    GLControllers poPaymentRequest;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -78,6 +80,7 @@ public class PurchaseOrder extends Transaction {
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
         poStockRequest = new ArrayList<>();
+        poPaymentRequest = new GLControllers(poGRider, null);
 
         return initialize();
     }
@@ -413,15 +416,21 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//            if (!"success".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
+//        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
+        }
+        if(Master().getWithAdvPaym()){
+            poJSON = generatePRF();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Approve Transaction", SOURCE_CODE, Master().getTransactionNo());
@@ -435,6 +444,13 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
+        }
+        if(Master().getWithAdvPaym()){
+            poJSON = savePRF();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
         }
 
         poGRider.commitTrans();
@@ -796,6 +812,7 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
+    
 
     private void updateInvStockRequest(String status, String orderNo, String stockId, int quantity)
             throws GuanzonException,
@@ -854,6 +871,48 @@ public class PurchaseOrder extends Transaction {
             }
         }
     }
+    
+    
+    private JSONObject generatePRF()
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        poJSON = new JSONObject();
+        try {
+            poPaymentRequest.PaymentRequest().InitTransaction();
+            poPaymentRequest.PaymentRequest().NewTransaction();
+
+            poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
+            poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
+            if(poGRider.isMainOffice() || poGRider.isWarehouse()){
+                poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
+            }
+            poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
+            poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
+            poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
+            poPaymentRequest.PaymentRequest().Master().setPayeeID("M001250010"); //Master().getSupplierID()
+            poPaymentRequest.PaymentRequest().Master().setEntryNo(1);
+            poPaymentRequest.PaymentRequest().Master().setSeriesNo(poPaymentRequest.PaymentRequest().getSeriesNoByBranch());
+            
+            poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
+
+            poPaymentRequest.PaymentRequest().Detail(0).setEntryNo(1);
+            poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
+            poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
+            poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
+            poPaymentRequest.PaymentRequest().Detail(0).setDiscount(0.00);
+            poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount(0.00);
+            poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
+            poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax(0.00);
+
+            poJSON.put("result", "success");
+        } catch (Exception e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    }
 
     private int getRequestQty(String orderNo, String stockId, boolean isAdd) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
@@ -885,6 +944,25 @@ public class PurchaseOrder extends Transaction {
             lnRecQty = 0;
         }
         return lnRecQty;
+    }
+    private JSONObject savePRF()
+            throws CloneNotSupportedException {
+        poJSON = new JSONObject();
+        try {
+               poPaymentRequest.PaymentRequest().setWithParent(true);
+                poJSON = poPaymentRequest.PaymentRequest().SaveTransaction();
+                if ("error".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
+
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+            return poJSON;
+        }
+        poJSON.put("result", "success");
+        return poJSON;
     }
 
     private JSONObject saveUpdates(String status)
@@ -1030,7 +1108,7 @@ public class PurchaseOrder extends Transaction {
                  hasNoSupplier ? supplier : null,
                  brand,
                  industry,
-                 category
+                hasNoSupplier ? category : null
          );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1069,7 +1147,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                category
+                hasNoSupplier ? category : null
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1110,7 +1188,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 industry,
-                category
+                hasNoSupplier ? category : null
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1148,7 +1226,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                category
+                hasNoSupplier ? category : null
         );
         
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1238,7 +1316,7 @@ public class PurchaseOrder extends Transaction {
                hasNoSupplier ? supplier : null,
                brand,
                industry,
-               category
+                hasNoSupplier ? category : null
        );
         
         if ("success".equals((String) poJSON.get("result"))) {

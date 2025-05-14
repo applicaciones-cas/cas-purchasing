@@ -345,7 +345,7 @@ public class testPurchaseOrder {
                 Assert.fail();
             }
 
-            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("M00125000004");
+            loJSON = poPurchasingController.PurchaseOrder().OpenTransaction("A00125000001");
             if (!"success".equals((String) loJSON.get("result"))) {
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
