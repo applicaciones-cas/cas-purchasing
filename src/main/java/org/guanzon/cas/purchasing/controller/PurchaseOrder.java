@@ -41,6 +41,7 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.gl.Payee;
 import org.guanzon.cas.gl.services.GLControllers;
 import org.guanzon.cas.inv.Inventory;
 //import org.guanzon.cas.inv.Inventory;
@@ -72,6 +73,7 @@ public class PurchaseOrder extends Transaction {
     List<StockRequest> poStockRequest;
     List<Model> paDetailRemoved;
     GLControllers poPaymentRequest;
+    String PayeeID;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -426,12 +428,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if(Master().getWithAdvPaym()){
-            poJSON = generatePRF();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+        
+        poJSON = generatePRF();
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
         }
+
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Approve Transaction", SOURCE_CODE, Master().getTransactionNo());
 
@@ -445,13 +447,13 @@ public class PurchaseOrder extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
-        if(Master().getWithAdvPaym()){
-            poJSON = savePRF();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
+
+        poJSON = savePRF();
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
         }
+
 
         poGRider.commitTrans();
 
@@ -776,11 +778,14 @@ public class PurchaseOrder extends Transaction {
 //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
                 //1. Check discrepancy if the order quantity is not greater than request
-                if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
-                    return poJSON;
+                if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+                    if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
+                        return poJSON;
+                    }
                 }
+                
                 //1. Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
@@ -872,45 +877,48 @@ public class PurchaseOrder extends Transaction {
         }
     }
     
-    
+   
     private JSONObject generatePRF()
             throws CloneNotSupportedException,
             SQLException,
-            GuanzonException {
+            GuanzonException { 
         poJSON = new JSONObject();
         try {
-            poPaymentRequest.PaymentRequest().InitTransaction();
-            poPaymentRequest.PaymentRequest().NewTransaction();
+            if (Master().getWithAdvPaym()){
+                poPaymentRequest.PaymentRequest().InitTransaction();
+                poPaymentRequest.PaymentRequest().NewTransaction();
+                SearchPayee(Master().getSupplierID(), true);
 
-            poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
-            poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
-            if(poGRider.isMainOffice() || poGRider.isWarehouse()){
-                poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
+                poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
+                poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
+                if (poGRider.isMainOffice() || poGRider.isWarehouse()) {
+                    poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
+                }
+                poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
+                poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
+                poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
+                poPaymentRequest.PaymentRequest().Master().setPayeeID(PayeeID); //Master().getSupplierID()
+                poPaymentRequest.PaymentRequest().Master().setEntryNo(1);
+                poPaymentRequest.PaymentRequest().Master().setSeriesNo(poPaymentRequest.PaymentRequest().getSeriesNoByBranch());
+
+                poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
+
+                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo(1);
+                poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
+                poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
+                poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
+                poPaymentRequest.PaymentRequest().Detail(0).setDiscount(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
+                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax(0.00);
             }
-            poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
-            poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
-            poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
-            poPaymentRequest.PaymentRequest().Master().setPayeeID("M001250010"); //Master().getSupplierID()
-            poPaymentRequest.PaymentRequest().Master().setEntryNo(1);
-            poPaymentRequest.PaymentRequest().Master().setSeriesNo(poPaymentRequest.PaymentRequest().getSeriesNoByBranch());
             
-            poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
-
-            poPaymentRequest.PaymentRequest().Detail(0).setEntryNo(1);
-            poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
-            poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
-            poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
-            poPaymentRequest.PaymentRequest().Detail(0).setDiscount(0.00);
-            poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount(0.00);
-            poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
-            poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax(0.00);
-
-            poJSON.put("result", "success");
         } catch (Exception e) {
             poJSON.put("result", "error");
             poJSON.put("message", e.getMessage());
+            return poJSON;
         }
-
+        poJSON.put("result", "success");
         return poJSON;
     }
 
@@ -948,13 +956,15 @@ public class PurchaseOrder extends Transaction {
     private JSONObject savePRF()
             throws CloneNotSupportedException {
         poJSON = new JSONObject();
-        try {
+        try {  
+            if(Master().getWithAdvPaym()){
                poPaymentRequest.PaymentRequest().setWithParent(true);
                 poJSON = poPaymentRequest.PaymentRequest().SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("result", "error");
                     return poJSON;
                 }
-
+            }
         } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
@@ -1258,6 +1268,20 @@ public class PurchaseOrder extends Transaction {
             Master().setSupplierID(object.Master().getModel().getClientId());
             Master().setAddressID(object.ClientAddress().getModel().getAddressId());
             Master().setContactID(object.ClientInstitutionContact().getModel().getClientId());
+        }
+
+        return poJSON;
+    }
+    
+        public JSONObject SearchPayee(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Payee object = new GLControllers(poGRider, logwrapr).Payee();
+        object.setRecordStatus("1");
+
+        poJSON = object.searchRecordbyClient(value, byCode);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            PayeeID = object.getModel().getPayeeID();
+//            Master().setPayeeID(object.getModel().getPayeeID());
         }
 
         return poJSON;
