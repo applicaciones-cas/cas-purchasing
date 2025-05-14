@@ -1010,6 +1010,114 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return poJSON;
     }
+    
+    /*HIDDEN FEATURE*/
+    public JSONObject SearchBarcode(String value, boolean byCode, int row, boolean isWithSupplier)
+            throws SQLException,
+            GuanzonException {
+        poJSON = new JSONObject();
+        poJSON.put("row", row);
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        
+        if(isWithSupplier){
+            if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set.");
+                return poJSON;
+            }
+            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        } else {
+            poJSON = object.searchRecord(value, byCode, null,null, null,  null);
+        } 
+        
+        poJSON.put("row", row);
+        System.out.println("result" + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+
+            Detail(row).setStockId(object.getModel().getStockId());
+            Detail(row).setUnitType(object.getModel().getUnitType());
+            Detail(row).isSerialized(object.getModel().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        }
+        
+        System.out.println("StockID : " + Detail(row).Inventory().getStockId());
+        System.out.println("Model  : " + Detail(row).Inventory().Model().getDescription());
+        return poJSON;
+    }
+
+    public JSONObject SearchDescription(String value, boolean byCode, int row, boolean isWithSupplier)
+            throws SQLException,
+            GuanzonException {
+        poJSON = new JSONObject();
+        poJSON.put("row", row);
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        
+        if(isWithSupplier){
+            if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set.");
+                return poJSON;
+            }
+
+            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        } else {
+            poJSON = object.searchRecord(value, byCode, null,null, null,  null);
+        }
+        poJSON.put("row", row);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+
+            Detail(row).setStockId(object.getModel().getStockId());
+            Detail(row).setUnitType(object.getModel().getUnitType());
+            Detail(row).isSerialized(object.getModel().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+        }
+        
+        
+        System.out.println("StockID : " + Detail(row).Inventory().getStockId());
+        System.out.println("Model  : " + Detail(row).Inventory().Model().getDescription());
+
+        return poJSON;
+    }
+
+    public JSONObject SearchSupersede(String value, boolean byCode, int row, boolean isWithSupplier)
+            throws SQLException,
+            GuanzonException {
+        poJSON = new JSONObject();
+        
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        
+        if(isWithSupplier){
+            if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set.");
+                return poJSON;
+            }
+            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        } else {
+            poJSON = object.searchRecord(value, byCode, null,null, null,  null);
+        }
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            if(Detail(row).getStockId().equals(object.getModel().getStockId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Selected supersede must not be equal to the current stock ID.");
+                return poJSON;
+            }
+            Detail(row).setReplaceId(object.getModel().getStockId());
+        }
+        return poJSON;
+    }
 
     public JSONObject SearchBrand(String value, boolean byCode, int row)
             throws ExceptionInInitializerError,

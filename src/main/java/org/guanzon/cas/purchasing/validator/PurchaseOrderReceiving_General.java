@@ -116,10 +116,10 @@ public class PurchaseOrderReceiving_General implements GValidator{
             poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
             return poJSON;
         }
-        if (poMaster.getIndustryId() == null) {
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getIndustryId() == null) {
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
             poJSON.put("message", "Company is not set.");
             return poJSON;
