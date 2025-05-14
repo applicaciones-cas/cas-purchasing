@@ -82,7 +82,7 @@ public class PurchaseOrder extends Transaction {
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
         poStockRequest = new ArrayList<>();
-        poPaymentRequest = new GLControllers(poGRider, null);
+       
 
         return initialize();
     }
@@ -418,12 +418,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
-//        }
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -885,6 +885,8 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         try {
             if (Master().getWithAdvPaym()){
+                poPaymentRequest = new GLControllers(poGRider, null);
+                
                 poPaymentRequest.PaymentRequest().InitTransaction();
                 poPaymentRequest.PaymentRequest().NewTransaction();
                 SearchPayee(Master().getSupplierID(), true);
@@ -894,6 +896,7 @@ public class PurchaseOrder extends Transaction {
                 if (poGRider.isMainOffice() || poGRider.isWarehouse()) {
                     poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
                 }
+                
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
                 poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
@@ -903,14 +906,15 @@ public class PurchaseOrder extends Transaction {
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
 
-                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo(1);
+                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int)1);
                 poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
                 poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
                 poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
-                poPaymentRequest.PaymentRequest().Detail(0).setDiscount(0.00);
-                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setDiscount((double)0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount((double)0.00);
                 poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
-                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax((double)0.00);
+                poPaymentRequest.PaymentRequest().AddDetail();
             }
             
         } catch (Exception e) {
