@@ -418,12 +418,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//            if (!"success".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
+//        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -884,7 +884,7 @@ public class PurchaseOrder extends Transaction {
             GuanzonException { 
         poJSON = new JSONObject();
         try {
-            if (Master().getWithAdvPaym()){
+            if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
                 poPaymentRequest = new GLControllers(poGRider, null);
                 
                 poPaymentRequest.PaymentRequest().InitTransaction();
@@ -961,7 +961,7 @@ public class PurchaseOrder extends Transaction {
             throws CloneNotSupportedException {
         poJSON = new JSONObject();
         try {  
-            if(Master().getWithAdvPaym()){
+            if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
                poPaymentRequest.PaymentRequest().setWithParent(true);
                 poJSON = poPaymentRequest.PaymentRequest().SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
