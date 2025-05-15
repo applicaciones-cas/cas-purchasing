@@ -882,7 +882,7 @@ public class PurchaseOrder extends Transaction {
                 if (poGRider.isMainOffice() || poGRider.isWarehouse()) {
                     poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
                 }
-                
+
                 double transactionTotal = Master().getTranTotal().doubleValue();
                 double discountRate = Master().getDiscount().doubleValue();
                 double additionalDiscount = Master().getAdditionalDiscount().doubleValue();
@@ -897,9 +897,8 @@ public class PurchaseOrder extends Transaction {
                 double downPaymentPercentageAmount = netTotal * downPaymentPercentage;
                 netTotal -= downPaymentPercentageAmount;
                 netTotal -= downPaymentFixedAmount;
-                
-                double totalAdv = downPaymentPercentageAmount + downPaymentFixedAmount;
 
+                double totalAdv = downPaymentPercentageAmount + downPaymentFixedAmount;
 
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
@@ -1698,7 +1697,7 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double lnTotalAmount = Master().getTranTotal().doubleValue() - Master().getDiscount().doubleValue();
+        double lnTotalAmount = Master().getTranTotal().doubleValue() - (Master().getDiscount().doubleValue() * Master().getTranTotal().doubleValue());
         if (lnTotalAmount == 0.00) {
             poJSON.put("message", "You're not allowed to enter discount amount, no amount entered.");
             poJSON.put("result", "error");
@@ -1736,8 +1735,8 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double amountAfterDiscounts = Master().getTranTotal().doubleValue() - (Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
-                - Master().getAdditionalDiscount().doubleValue();
+        double amountAfterDiscounts = Master().getTranTotal().doubleValue() - ((Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
+                + Master().getAdditionalDiscount().doubleValue());
 
         if (amountAfterDiscounts <= 0.00) {
             poJSON.put("message", "Invalid to enter Advance Payment Rate, the total transaction amount is 0.00");
@@ -1776,12 +1775,13 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double amountAfterDiscounts = Master().getTranTotal().doubleValue() - (Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
-                - Master().getAdditionalDiscount().doubleValue();
+        double totalAmountAfterDiscount = Master().getTranTotal().doubleValue() - ((Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
+                + Master().getAdditionalDiscount().doubleValue());
+        double totalAdvRateAmount = totalAmountAfterDiscount * Master().getDownPaymentRatesPercentage().doubleValue();
+        double totalAmountDiscountWithRate = totalAmountAfterDiscount - totalAdvRateAmount;
 
         double lnAdvanceAmount = Double.parseDouble(fsValue.replace(",", ""));
-
-        if (amountAfterDiscounts <= 0.00) {
+        if (totalAmountDiscountWithRate <= 0.00) {
             poJSON.put("message", "Invalid to enter Advance Payment Amount, the total transaction amount is 0.00");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(0.00);
@@ -1789,7 +1789,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        if (lnAdvanceAmount < 0.00 || lnAdvanceAmount > amountAfterDiscounts) {
+        if (lnAdvanceAmount < 0.00 || lnAdvanceAmount > totalAmountDiscountWithRate) {
             poJSON.put("message", "Invalid Advance Payment Amount");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesAmount(0.00);
@@ -1813,27 +1813,25 @@ public class PurchaseOrder extends Transaction {
 
     public void computeNetTotal() {
         double totalAmount = Master().getTranTotal().doubleValue(); // Total transaction amount
-
         double discountRate = Master().getDiscount().doubleValue();
-        double discountRateAmount = totalAmount * discountRate;
-
-        // Subtract additional discount (fixed amount)
-        double additionalDiscount = Master().getAdditionalDiscount().doubleValue();
+        double discountRateWithTotalAmount = totalAmount * discountRate;
+        double additionalDiscountAmount = Master().getAdditionalDiscount().doubleValue();
 
         // Amount after all discounts
-        double amountAfterDiscounts = totalAmount - discountRateAmount - additionalDiscount;
+        double totalDiscount = (discountRateWithTotalAmount + additionalDiscountAmount);
 
         // Compute down payment from rate
         double downPaymentRate = Master().getDownPaymentRatesPercentage().doubleValue(); // e.g., 0.20 for 20%
-        double downPaymentAmountFromRate = amountAfterDiscounts * downPaymentRate;
+        double downPaymentAmountFromRate = totalDiscount * downPaymentRate;
 
         // Subtract down payment amount (fixed)
-        double downPaymentAmountFixed = Master().getDownPaymentRatesAmount().doubleValue();
+        double downPaymentAmount = Master().getDownPaymentRatesAmount().doubleValue();
 
+        double totalDownPayment = downPaymentAmountFromRate + downPaymentAmount;
         // Final net total
-        double netTotal = amountAfterDiscounts - downPaymentAmountFromRate - downPaymentAmountFixed;
-
+        double netTotal = totalAmount - totalDiscount - totalDownPayment;
         Master().setNetTotal(netTotal);
+
     }
 
     public JSONObject printTransaction() {
