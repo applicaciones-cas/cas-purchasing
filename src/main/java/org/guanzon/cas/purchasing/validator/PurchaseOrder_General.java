@@ -130,25 +130,11 @@ public class PurchaseOrder_General implements GValidator {
             poJSON.put("message", "Invalid Term.");
             return poJSON;
         }
-        if (poMaster.getWithAdvPaym() == true) {
-            if (poMaster.getDownPaymentRatesPercentage() == null
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.00
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() < 0.0
-                    || poMaster.getDownPaymentRatesPercentage().doubleValue() > 100.00) {
-                poJSON.put("message", "Invalid Advance Payment Rates.");
-                return poJSON;
-            }
-            if (poMaster.getDownPaymentRatesAmount() == null || poMaster.getDownPaymentRatesAmount().doubleValue() < 0.00) {
-                poJSON.put("message", "Invalid Advance Payment Amount.");
-                return poJSON;
-            }
-            if (poMaster.getDownPaymentRatesPercentage() == null) {
-                poJSON.put("message", "Invalid Advance Payment Rates.");
-                return poJSON;
-            }
-            if (poMaster.getDownPaymentRatesAmount() == null) {
-                poJSON.put("message", "Invalid Advance Payment Amount.");
+        if (poMaster.getWithAdvPaym()) {
+            double rate = poMaster.getDownPaymentRatesPercentage().doubleValue();
+            double amount = poMaster.getDownPaymentRatesAmount().doubleValue();
+            if (rate <= 0.00 && amount <= 0.00) {
+                poJSON.put("message", "You selected advance rate, but no Adv Rate and Adv Amount.");
                 return poJSON;
             }
         }
