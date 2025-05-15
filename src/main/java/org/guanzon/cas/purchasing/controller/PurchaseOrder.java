@@ -82,7 +82,6 @@ public class PurchaseOrder extends Transaction {
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
         poStockRequest = new ArrayList<>();
-       
 
         return initialize();
     }
@@ -417,7 +416,7 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        
+
         poJSON = generatePRF();
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -442,7 +441,6 @@ public class PurchaseOrder extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
-
 
         poGRider.commitTrans();
 
@@ -774,7 +772,7 @@ public class PurchaseOrder extends Transaction {
                         return poJSON;
                     }
                 }
-                
+
                 //1. Check for discrepancy
                 if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
@@ -806,7 +804,6 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
-    
 
     private void updateInvStockRequest(String status, String orderNo, String stockId, int quantity)
             throws GuanzonException,
@@ -845,7 +842,7 @@ public class PurchaseOrder extends Transaction {
                         lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
-                        lnRecQty =  poStockRequest.get(lnList).Detail(lnRow).getPurchase();
+                        lnRecQty = poStockRequest.get(lnList).Detail(lnRow).getPurchase();
                         poStockRequest.get(lnList).Master().setProcessed(true);
                         poStockRequest.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
                         poStockRequest.get(lnList).Master().setModifyingId(poGRider.getUserID());
@@ -865,20 +862,20 @@ public class PurchaseOrder extends Transaction {
             }
         }
     }
-    
-   
+
     private JSONObject generatePRF()
             throws CloneNotSupportedException,
             SQLException,
-            GuanzonException { 
+            GuanzonException {
         poJSON = new JSONObject();
         try {
             if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
                 poPaymentRequest = new GLControllers(poGRider, null);
-                
+
                 poPaymentRequest.PaymentRequest().InitTransaction();
                 poPaymentRequest.PaymentRequest().NewTransaction();
-                SearchPayee(Master().getSupplierID(), true);
+
+                SearchPayee(Master().getSupplierID(), "007", true);
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
                 poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
@@ -886,6 +883,24 @@ public class PurchaseOrder extends Transaction {
                     poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
                 }
                 
+                double transactionTotal = Master().getTranTotal().doubleValue();
+                double discountRate = Master().getDiscount().doubleValue();
+                double additionalDiscount = Master().getAdditionalDiscount().doubleValue();
+                double downPaymentPercentage = Master().getDownPaymentRatesPercentage().doubleValue();
+                double downPaymentFixedAmount = Master().getDownPaymentRatesAmount().doubleValue();
+
+                double discountAmount = transactionTotal * discountRate;
+                double netTotal = transactionTotal - discountAmount;
+
+                netTotal -= additionalDiscount;
+
+                double downPaymentPercentageAmount = netTotal * downPaymentPercentage;
+                netTotal -= downPaymentPercentageAmount;
+                netTotal -= downPaymentFixedAmount;
+                
+                double totalAdv = downPaymentPercentageAmount + downPaymentFixedAmount;
+
+
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
                 poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
@@ -895,17 +910,17 @@ public class PurchaseOrder extends Transaction {
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
 
-                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int)1);
+                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int) 1);
                 poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
                 poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
-                poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
-                poPaymentRequest.PaymentRequest().Detail(0).setDiscount((double)0.00);
-                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount((double)0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setAmount(totalAdv);
+                poPaymentRequest.PaymentRequest().Detail(0).setDiscount((double) 0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount((double) 0.00);
                 poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
-                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax((double)0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax((double) 0.00);
                 poPaymentRequest.PaymentRequest().AddDetail();
             }
-            
+
         } catch (Exception e) {
             poJSON.put("result", "error");
             poJSON.put("message", e.getMessage());
@@ -946,12 +961,13 @@ public class PurchaseOrder extends Transaction {
         }
         return lnRecQty;
     }
+
     private JSONObject savePRF()
             throws CloneNotSupportedException {
         poJSON = new JSONObject();
-        try {  
+        try {
             if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
-               poPaymentRequest.PaymentRequest().setWithParent(true);
+                poPaymentRequest.PaymentRequest().setWithParent(true);
                 poJSON = poPaymentRequest.PaymentRequest().SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
                     poJSON.put("result", "error");
@@ -1094,7 +1110,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-     public JSONObject SearchBarcode(String value, boolean byCode, int row, boolean hasNoSupplier)
+    public JSONObject SearchBarcode(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
@@ -1105,14 +1121,14 @@ public class PurchaseOrder extends Transaction {
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
 
-         poJSON = object.searchRecord(
-                 value,
-                 byCode,
-                 hasNoSupplier ? supplier : null,
-                 brand,
-                 industry,
+        poJSON = object.searchRecord(
+                value,
+                byCode,
+                hasNoSupplier ? supplier : null,
+                brand,
+                industry,
                 hasNoSupplier ? category : null
-         );
+        );
 
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
@@ -1133,7 +1149,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeGeneral(String value, boolean byCode, int row,boolean hasNoSupplier)
+    public JSONObject SearchBarcodeGeneral(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
 
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
@@ -1175,8 +1191,8 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject SearchBarcodeDescription(String value, boolean byCode, int row, boolean hasNoSupplier)
-            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException,NullPointerException {
-        
+            throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
+
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
 
@@ -1184,7 +1200,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        
+
         poJSON = object.searchRecord(
                 value,
                 byCode,
@@ -1213,7 +1229,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchBarcodeDescriptionGeneral(String value, boolean byCode, int row, boolean hasNoSupplier) 
+    public JSONObject SearchBarcodeDescriptionGeneral(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws ExceptionInInitializerError, SQLException, GuanzonException, CloneNotSupportedException, NullPointerException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
@@ -1222,7 +1238,7 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-       
+
         poJSON = object.searchRecord(
                 value,
                 byCode,
@@ -1231,7 +1247,7 @@ public class PurchaseOrder extends Transaction {
                 null,
                 hasNoSupplier ? category : null
         );
-        
+
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
@@ -1265,12 +1281,12 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
-    
-        public JSONObject SearchPayee(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+
+    public JSONObject SearchPayee(String value, String ParticularID, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Payee object = new GLControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClient(value, byCode);
+        poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             PayeeID = object.getModel().getPayeeID();
@@ -1317,8 +1333,8 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-   public JSONObject SearchModel(String value, boolean byCode, int row, boolean hasNoSupplier)
-           throws SQLException, GuanzonException, NullPointerException {
+    public JSONObject SearchModel(String value, boolean byCode, int row, boolean hasNoSupplier)
+            throws SQLException, GuanzonException, NullPointerException {
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.getModel().setRecordStatus(RecordStatus.ACTIVE);
 
@@ -1326,16 +1342,16 @@ public class PurchaseOrder extends Transaction {
         String brand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String industry = Master().getIndustryID().isEmpty() ? null : Master().getIndustryID();
         String category = Master().getCategoryCode();
-        
+
         poJSON = object.searchRecord(
-               value,
-               byCode,
-               hasNoSupplier ? supplier : null,
-               brand,
-               industry,
+                value,
+                byCode,
+                hasNoSupplier ? supplier : null,
+                brand,
+                industry,
                 hasNoSupplier ? category : null
-       );
-        
+        );
+
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
