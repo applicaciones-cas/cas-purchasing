@@ -16,10 +16,8 @@ public class PurchaseOrderValidatorFactory {
                 return new PurchaseOrder_Hospitality();
             case "05": //Los Pedritos
                 return new PurchaseOrder_LP();
-            case "06": //General
-                return new PurchaseOrder_General();
             default:
-                return null;
+                return new PurchaseOrder_General();
         }
     }
 }

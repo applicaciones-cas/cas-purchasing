@@ -82,7 +82,7 @@ public class PurchaseOrder extends Transaction {
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
         poStockRequest = new ArrayList<>();
-        poPaymentRequest = new GLControllers(poGRider, null);
+       
 
         return initialize();
     }
@@ -884,7 +884,9 @@ public class PurchaseOrder extends Transaction {
             GuanzonException { 
         poJSON = new JSONObject();
         try {
-            if (Master().getWithAdvPaym()){
+            if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
+                poPaymentRequest = new GLControllers(poGRider, null);
+                
                 poPaymentRequest.PaymentRequest().InitTransaction();
                 poPaymentRequest.PaymentRequest().NewTransaction();
                 SearchPayee(Master().getSupplierID(), true);
@@ -894,6 +896,7 @@ public class PurchaseOrder extends Transaction {
                 if (poGRider.isMainOffice() || poGRider.isWarehouse()) {
                     poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
                 }
+                
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
                 poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
@@ -903,14 +906,15 @@ public class PurchaseOrder extends Transaction {
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
 
-                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo(1);
+                poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int)1);
                 poPaymentRequest.PaymentRequest().Detail(0).setParticularID("007");
                 poPaymentRequest.PaymentRequest().Detail(0).setPRFRemarks("");
                 poPaymentRequest.PaymentRequest().Detail(0).setAmount(Master().getDownPaymentRatesAmount());
-                poPaymentRequest.PaymentRequest().Detail(0).setDiscount(0.00);
-                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setDiscount((double)0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setAddDiscount((double)0.00);
                 poPaymentRequest.PaymentRequest().Detail(0).setVatable("0");
-                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax(0.00);
+                poPaymentRequest.PaymentRequest().Detail(0).setWithHoldingTax((double)0.00);
+                poPaymentRequest.PaymentRequest().AddDetail();
             }
             
         } catch (Exception e) {
@@ -957,7 +961,7 @@ public class PurchaseOrder extends Transaction {
             throws CloneNotSupportedException {
         poJSON = new JSONObject();
         try {  
-            if(Master().getWithAdvPaym()){
+            if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > 0.00) {
                poPaymentRequest.PaymentRequest().setWithParent(true);
                 poJSON = poPaymentRequest.PaymentRequest().SaveTransaction();
                 if ("error".equals((String) poJSON.get("result"))) {
