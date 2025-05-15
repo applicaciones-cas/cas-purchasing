@@ -2680,7 +2680,9 @@ public class PurchaseOrderReceiving extends Transaction {
             //POR Serial
             //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
             //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
-            if(Detail(lnCtr).isSerialized()){
+            if(Detail(lnCtr).isSerialized() && 
+                    //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008
+                    (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008"))){
                 //check serial list must be equal to por detail receive qty
                 for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
                     if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
