@@ -180,18 +180,7 @@ public class PurchaseOrder extends Transaction {
                 }
             }
         }
-        int lnRequestQuantity = 0;
-        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            lnRequestQuantity = Detail(lnCtr).InvStockRequestDetail().getApproved() - (Detail(lnCtr).InvStockRequestDetail().getPurchase() + Detail(lnCtr).InvStockRequestDetail().getIssued());
-            if (!Detail(lnCtr).getSouceNo().isEmpty()) {
-                if (Detail(lnCtr).getQuantity().intValue() > lnRequestQuantity) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Invalid order quantity entered. The item is from a stock request, "
-                            + " and the order quantity must not be greater than the requested quantity.");
-                    return poJSON;
-                }
-            }
-        }
+//
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
