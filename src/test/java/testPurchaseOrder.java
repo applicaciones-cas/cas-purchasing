@@ -335,7 +335,7 @@ public class testPurchaseOrder {
     }
 
     @Test
-    public void testApproveTransaction() {
+     public void testApproveTransaction() {
         JSONObject loJSON;
 
         try {

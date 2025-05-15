@@ -906,7 +906,7 @@ public class PurchaseOrder extends Transaction {
                 poPaymentRequest.PaymentRequest().Master().setPayeeID(PayeeID); //Master().getSupplierID()
                 poPaymentRequest.PaymentRequest().Master().setEntryNo(1);
                 poPaymentRequest.PaymentRequest().Master().setSeriesNo(poPaymentRequest.PaymentRequest().getSeriesNoByBranch());
-
+                poPaymentRequest.PaymentRequest().Master().setTranTotal(totalAdv);
                 poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
 
                 poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int) 1);
