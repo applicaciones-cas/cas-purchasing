@@ -118,8 +118,8 @@ public class PurchaseOrderReceiving extends Transaction {
         paPurchaseOrder = new ArrayList<>();
         paInventoryTransaction = new ArrayList<>();
 
-        psCompanyId = getCompanyId();
-        psIndustryId = poGRider.getIndustry();
+//        psCompanyId = getCompanyId();
+//        psIndustryId = poGRider.getIndustry();
 
         return initialize();
     }
@@ -1511,7 +1511,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 paPORMaster.add(PurchaseOrderReceivingMaster());
                 poJSON.put("result", "error");
                 poJSON.put("continue", true);
-                poJSON.put("message", "No record found .");
+                poJSON.put("message", "No record found.");
             }
             MiscUtil.close(loRS);
         } catch (SQLException e) {
@@ -1750,6 +1750,7 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         boolean lbExist = false;
+        boolean lbReceived = false;
         int lnRow = 0;
         int lnAddOrderQty = 0;
         PurchaseOrderControllers loTrans = new PurchaseOrderControllers(poGRider, logwrapr);
@@ -1805,6 +1806,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().isSerialized());
 
                             AddDetail();
+                            lbReceived = true;
                         }
                     } else {
                         //sum order qty based on existing stock id in POR Detail
@@ -1817,10 +1819,17 @@ public class PurchaseOrderReceiving extends Transaction {
                         }
                         
                         Detail(lnRow).setOrderQty(lnAddOrderQty);
+                        lbReceived = true;
                     }
                     
                     lbExist = false;
                     lnAddOrderQty = 0;
+                }
+                
+                if(!lbReceived){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "No remaining order to be receive for Order No. " + transactionNo + ".");
+                    return poJSON;
                 }
             } else {
                 poJSON.put("result", "error");
@@ -3532,15 +3541,13 @@ public class PurchaseOrderReceiving extends Transaction {
             
             // 1. Prepare parameters
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sSupplierNm", Master().Supplier().getCompanyName());
             parameters.put("sBranchNm", poGRider.getBranchName()); //TODO
             parameters.put("sAddressx", poGRider.getAddress());
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("dReferDte", Master().getReferenceDate());
             parameters.put("sReferNox", Master().getReferenceNo());
-            parameters.put("sApprval1", "Jane Smith");
-            parameters.put("sApprval2", "Mike Johnson");
-            parameters.put("sApprval3", "Sarah Williams");
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
@@ -3564,42 +3571,83 @@ public class PurchaseOrderReceiving extends Transaction {
             parameters.put("watermarkImagePath", watermarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();
             
+            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving.jrxml";
             double lnTotal = 0.0;
             int lnRow = 1;
-            boolean lblIsWithSerial = false;
             String lsDescription = "";
+            String lsSerial = "";
+            String lsBarcode = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
                 
                 if(Detail(lnCtr).isSerialized()){
                     getPurchaseOrderReceivingSerial(Detail(lnCtr).getEntryNo());
-
                     for(int lnList = 0; lnList <=getPurchaseOrderReceivingSerialCount()-1; lnList++){
                         if(PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()){
-                            lblIsWithSerial = true;
-                            lsDescription = Detail(lnCtr).Inventory().getDescription() + "\n" + PurchaseOrderReceivingSerialList(lnList).getSerial01();
-                            lnTotal = Detail(lnCtr).getUnitPrce().doubleValue();
-                            orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), Detail(lnCtr).Inventory().getBarCode(),lsDescription , Detail(lnCtr).getUnitPrce().doubleValue(), 1, lnTotal));
-                            lnRow++;
-
+                            if("".equals(lsSerial)){
+                                lsSerial = PurchaseOrderReceivingSerialList(lnList).getSerial01();
+                            } else {
+                                lsSerial = lsSerial + "\n" + PurchaseOrderReceivingSerialList(lnList).getSerial01();
+                            }
                         }
                     }
                 }
                 
-                if(!lblIsWithSerial){
-                    lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
-                    orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), Detail(lnCtr).Inventory().getBarCode(), Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
-                    lnRow++;
+                switch(Master().getCategoryCode()){
+                    case "0005": //CAR
+                    case "0003": //Motorcycle
+                    case "0001": //Cellphone   
+                    case "0002": //Appliances  
+                        lsBarcode = Detail(lnCtr).Inventory().Brand().getDescription();
+
+                        if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
+                            lsDescription = Detail(lnCtr).Inventory().Model().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Variant().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Variant().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Variant().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Variant().getYearModel()!= 0){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Variant().getYearModel();
+                        }
+                        if(Detail(lnCtr).Inventory().Color().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Color().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Color().getDescription();
+                        }
+                        
+                        if(!"".equals(lsSerial)){
+                            lsDescription = lsDescription + "\n" + lsSerial;
+                        }
+                        orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
+                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                    break;
+                    case "0008": // Food  
+                        lsBarcode = Detail(lnCtr).Inventory().getBarCode();
+                        lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
+                                + " " + Detail(lnCtr).Inventory().getDescription(); 
+                        orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
+                                lsBarcode, lsDescription, Detail(lnCtr).Inventory().Measure().getDescription(),Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceivingFood.jrxml";
+                    break;
+                    case "0006": // CAR SP
+                    case "0004": // Motorcycle SP
+                    case "0007": // General
+                    case "0009": // Hospitality
+                    default:
+                        lsBarcode = Detail(lnCtr).Inventory().getBarCode();
+                        lsDescription = Detail(lnCtr).Inventory().getDescription();   
+                        orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
+                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                    break;
                 }
                 
-                lblIsWithSerial = false;
+                lnRow++;
                 lsDescription = "";
+                lsSerial = "";
             }
 
             // 3. Create data source
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
 
             // 4. Compile and fill report
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving.jrxml"; //TODO
             JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
             JasperPrint jasperPrint = JasperFillManager.fillReport(
                     jasperReport,
@@ -3653,6 +3701,7 @@ public class PurchaseOrderReceiving extends Transaction {
         private String sOrderNo;
         private String sBarcode;
         private String sDescription;
+        private String sMeasure;
         private double nUprice;
         private Integer nOrder;
         private double nTotal;
@@ -3663,6 +3712,18 @@ public class PurchaseOrderReceiving extends Transaction {
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
             this.sDescription = description;
+            this.nUprice = uprice;
+            this.nOrder = order;
+            this.nTotal = total;
+        }
+        
+        public OrderDetail(Integer rowNo, String orderNo, String barcode, String description, String measure,
+                double uprice, Integer order, double total) {
+            this.nRowNo = rowNo;
+            this.sOrderNo = orderNo;
+            this.sBarcode = barcode;
+            this.sDescription = description;
+            this.sMeasure = measure;
             this.nUprice = uprice;
             this.nOrder = order;
             this.nTotal = total;
@@ -3682,6 +3743,10 @@ public class PurchaseOrderReceiving extends Transaction {
 
         public String getsDescription() {
             return sDescription;
+        }
+
+        public String getsMeasure() {
+            return sMeasure;
         }
 
         public double getnUprice() {

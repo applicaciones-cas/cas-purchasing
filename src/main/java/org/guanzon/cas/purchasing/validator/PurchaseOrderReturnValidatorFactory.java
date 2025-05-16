@@ -24,7 +24,7 @@ public class PurchaseOrderReturnValidatorFactory {
                 return new PurchaseOrderReturn_Hospitality();
             case "05": //Los Pedritos
                 return new PurchaseOrderReturn_LP();
-            case "06": //Main Office
+            case "": //Main Office / General
                 return new PurchaseOrderReturn_General();
             case "07": //Appliances
                 return new PurchaseOrderReturn_Appliances();
