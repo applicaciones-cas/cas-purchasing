@@ -1249,41 +1249,40 @@ public class PurchaseOrderReturn extends Transaction{
                         }
                     }
                 }
-            }
             
-            if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
-                lbUpdated = loRecord.getDetailCount() == getDetailCount();
-                if (lbUpdated) {
-                    lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
-                }
+                if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
+                    lbUpdated = loRecord.getDetailCount() == getDetailCount();
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
+                    }
 
-                if (lbUpdated) {
-                    lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
-                }
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+                    }
 
-                if (lbUpdated) {
-                    for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
-                        lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
-                        if (lbUpdated) {
-                            lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
-                        } 
+                    if (lbUpdated) {
+                        for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
+                            lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
+                            if (lbUpdated) {
+                                lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                            } 
 
-                        if (!lbUpdated) {
-                            break;
+                            if (!lbUpdated) {
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (lbUpdated) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "No update has been made.");
-                    return poJSON;
-                }
+                    if (lbUpdated) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "No update has been made.");
+                        return poJSON;
+                    }
 
-                Master().setPrint("0"); 
-                Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+                    Master().setPrint("0"); 
+                    Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+                }
             }
-            
         }
 
         //assign other info on detail
@@ -1483,7 +1482,6 @@ public class PurchaseOrderReturn extends Transaction{
             if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
                     || PurchaseOrderReturnStatus.POSTED.equals(Master().getTransactionStatus())) {
                 InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
-                loInvSerial.initialize();
                 loInvSerial.setWithParentClass(true);
                 //            InventoryTrans.POReturn();
             }
