@@ -1835,7 +1835,7 @@ public class PurchaseOrder extends Transaction {
 
     }
 
-    public JSONObject printTransaction() {
+    public JSONObject printTransaction(String jasperType) {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
         try {
@@ -1844,6 +1844,7 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sAddressx", poGRider.getAddress());
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
+            parameters.put("sDestination", Master().Branch().getDescription());
             parameters.put("sApprval1", "John Doe");
             parameters.put("sApprval2", "Lu Cifer");
             parameters.put("sApprval3", "Le Min Hoo");
@@ -1871,17 +1872,36 @@ public class PurchaseOrder extends Transaction {
                 orderDetails.add(new OrderDetail(lnCtr + 1,
                         String.valueOf(Detail(lnCtr).getSouceNo()),
                         Detail(lnCtr).Inventory().getBarCode(),
-                        Detail(lnCtr).Inventory().getDescription(),
+                      Detail(lnCtr).Inventory().Brand().getDescription(),
+                              Detail(lnCtr).Inventory().Variant().getDescription() + " " + Detail(lnCtr).Inventory().Variant().getYearModel(),
+                         Detail(lnCtr).Inventory().Model().getDescription(),
+                        Detail(lnCtr).Inventory().Measure().getDescription(),
+                         Detail(lnCtr).Inventory().Color().getDescription(),
+                     Detail(lnCtr).Inventory().getDescription(),
                         Detail(lnCtr).getUnitPrice().doubleValue(),
-                        Detail(lnCtr).getQuantity().intValue(),
-                        lnTotal));
+                         Detail(lnCtr).getQuantity().intValue(),
+                         lnTotal));
             }
 
             // 3. Create data source
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
 
             // 4. Compile and fill report
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrder.jrxml"; //TODO
+            String jrxmlPath = "";
+            switch (jasperType) {
+                case PurchaseOrderStaticData.Printing_CAR_MC_MPUnit_Appliance:
+                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCarMcMPUnitAppliance.jrxml"; //TODO
+                    break;
+                case PurchaseOrderStaticData.Printing_CARSp_MCSp_General:
+                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCARSpMCSpGeneral.jrxml"; //TODO PurchaseOrderPedritos
+                    break;
+                case PurchaseOrderStaticData.Printing_Pedritos:
+                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderPedritos.jrxml"; //TODO PurchaseOrderPedritos
+                    break;
+                default:
+                    throw new AssertionError();
+            }
+           
             JasperReport jasperReport;
 
             jasperReport = JasperCompileManager.compileReport(jrxmlPath);
@@ -1909,16 +1929,26 @@ public class PurchaseOrder extends Transaction {
         private Integer nRowNo;
         private String sOrderNo;
         private String sBarcode;
+        private String sBrandName;
+        private String sVariant;
+        private String sModel;
+        private String sMeasure;
+        private String sColor;
         private String sDescription;
         private double nUprice;
         private Integer nOrder;
         private double nTotal;
 
-        public OrderDetail(Integer rowNo, String orderNo, String barcode, String description,
+        public OrderDetail(Integer rowNo, String orderNo, String barcode,String BrandName,String Variant,String Model,String Measure, String Color, String description,
                 double uprice, Integer order, double total) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
+            this.sBrandName = BrandName;
+            this.sVariant = Variant;
+            this.sModel = Model;
+            this.sMeasure = Measure;
+            this.sColor = Color;
             this.sDescription = description;
             this.nUprice = uprice;
             this.nOrder = order;
@@ -1935,6 +1965,25 @@ public class PurchaseOrder extends Transaction {
 
         public String getsBarcode() {
             return sBarcode;
+        }
+        
+        public String getsBrandName() {
+            return sBrandName;
+        }
+        
+        public String getsVariant() {
+            return sVariant;
+        }
+        
+        public String getsModel() {
+            return sModel;
+        }
+        
+        public String getsMeasure() {
+            return sMeasure;
+        }
+        public String getsColor() {
+            return sColor;
         }
 
         public String getsDescription() {
