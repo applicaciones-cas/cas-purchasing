@@ -1021,7 +1021,7 @@ public class PurchaseOrder extends Transaction {
                 + "  b.sDescript,"
                 + "  c.sCompnyNm,"
                 + "  e.sCompnyNm, "
-                + "  f.sDescript,"                
+                + "  f.sDescript,"
                 + "  a.sBranchCd"
                 + " FROM po_master a "
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
@@ -1044,7 +1044,6 @@ public class PurchaseOrder extends Transaction {
             lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
 
-        
         initSQL();
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
@@ -1052,15 +1051,14 @@ public class PurchaseOrder extends Transaction {
                 " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
 
-        
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
         }
         if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-            lsSQL = lsSQL +  " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
+            lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
-        
+
         lsSQL = lsSQL + " GROUP BY a.sTransNox";
         System.out.println("SQL EXECUTED: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
@@ -1255,7 +1253,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                category 
+                category
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1357,9 +1355,9 @@ public class PurchaseOrder extends Transaction {
                 value,
                 byCode,
                 hasNoSupplier ? supplier : null,
-          brand,
-       industry,
-       category 
+                brand,
+                industry,
+                category
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1623,7 +1621,7 @@ public class PurchaseOrder extends Transaction {
             lsSQL = lsSQL + lsTransStat;
         }
         if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-            lsSQL = lsSQL +  " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
+            lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
                 + " ORDER BY dTransact ASC";
@@ -1688,15 +1686,15 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         double lnDiscountRate = Double.parseDouble(fsValue);
-        if (lnDiscountRate < PurchaseOrderStaticData.default_value_double || lnDiscountRate > 1.00) {
-            poJSON.put("message", "Invalid Discount Rate. Must be between 0.00 and 1.00 (1.00 = 100%)");
+        if (lnDiscountRate < PurchaseOrderStaticData.default_value_double || lnDiscountRate > 100.00) {
+            poJSON.put("message", "Invalid Discount Rate.  Must be between 0.00 and 100.00");
             poJSON.put("result", "error");
             Master().setDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
 
-        Master().setDiscount(lnDiscountRate);
+        Master().setDiscount(lnDiscountRate / 100);
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1720,7 +1718,6 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("message", "You're not allowed to enter discount amount, no amount entered.");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(PurchaseOrderStaticData.default_value_double);
-            Master().setDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
@@ -1729,7 +1726,6 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("message", "Invalid Discount Amount");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(PurchaseOrderStaticData.default_value_double);
-            Master().setDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
@@ -1765,15 +1761,15 @@ public class PurchaseOrder extends Transaction {
         }
 
         double lnAdvanceRate = Double.parseDouble(fsValue);
-        if (lnAdvanceRate < PurchaseOrderStaticData.default_value_double || lnAdvanceRate > 1.00) {
-            poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.00 and 1.00 (1.00 = 100%)");
+        if (lnAdvanceRate < PurchaseOrderStaticData.default_value_double || lnAdvanceRate > 100.00) {
+            poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.00 and 100.00");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
 
-        Master().setDownPaymentRatesPercentage(lnAdvanceRate);
+        Master().setDownPaymentRatesPercentage(lnAdvanceRate / 100);
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1889,15 +1885,15 @@ public class PurchaseOrder extends Transaction {
                 orderDetails.add(new OrderDetail(lnCtr + 1,
                         String.valueOf(Detail(lnCtr).getSouceNo()),
                         Detail(lnCtr).Inventory().getBarCode(),
-                      Detail(lnCtr).Inventory().Brand().getDescription(),
-                              Detail(lnCtr).Inventory().Variant().getDescription() + " " + Detail(lnCtr).Inventory().Variant().getYearModel(),
-                         Detail(lnCtr).Inventory().Model().getDescription(),
+                        Detail(lnCtr).Inventory().Brand().getDescription(),
+                        Detail(lnCtr).Inventory().Variant().getDescription() + " " + Detail(lnCtr).Inventory().Variant().getYearModel(),
+                        Detail(lnCtr).Inventory().Model().getDescription(),
                         Detail(lnCtr).Inventory().Measure().getDescription(),
-                         Detail(lnCtr).Inventory().Color().getDescription(),
-                     Detail(lnCtr).Inventory().getDescription(),
+                        Detail(lnCtr).Inventory().Color().getDescription(),
+                        Detail(lnCtr).Inventory().getDescription(),
                         Detail(lnCtr).getUnitPrice().doubleValue(),
-                         Detail(lnCtr).getQuantity().intValue(),
-                         lnTotal));
+                        Detail(lnCtr).getQuantity().intValue(),
+                        lnTotal));
             }
 
             // 3. Create data source
@@ -1907,18 +1903,18 @@ public class PurchaseOrder extends Transaction {
             String jrxmlPath = "";
             switch (jasperType) {
                 case PurchaseOrderStaticData.Printing_CAR_MC_MPUnit_Appliance:
-                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCarMcMPUnitAppliance.jrxml"; //TODO
+                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCarMcMPUnitAppliance.jrxml"; //TODO
                     break;
                 case PurchaseOrderStaticData.Printing_CARSp_MCSp_General:
-                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCARSpMCSpGeneral.jrxml"; //TODO PurchaseOrderPedritos
+                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCARSpMCSpGeneral.jrxml"; //TODO PurchaseOrderPedritos
                     break;
                 case PurchaseOrderStaticData.Printing_Pedritos:
-                     jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderPedritos.jrxml"; //TODO PurchaseOrderPedritos
+                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderPedritos.jrxml"; //TODO PurchaseOrderPedritos
                     break;
                 default:
                     throw new AssertionError();
             }
-           
+
             JasperReport jasperReport;
 
             jasperReport = JasperCompileManager.compileReport(jrxmlPath);
@@ -1956,7 +1952,7 @@ public class PurchaseOrder extends Transaction {
         private Integer nOrder;
         private double nTotal;
 
-        public OrderDetail(Integer rowNo, String orderNo, String barcode,String BrandName,String Variant,String Model,String Measure, String Color, String description,
+        public OrderDetail(Integer rowNo, String orderNo, String barcode, String BrandName, String Variant, String Model, String Measure, String Color, String description,
                 double uprice, Integer order, double total) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
@@ -1983,22 +1979,23 @@ public class PurchaseOrder extends Transaction {
         public String getsBarcode() {
             return sBarcode;
         }
-        
+
         public String getsBrandName() {
             return sBrandName;
         }
-        
+
         public String getsVariant() {
             return sVariant;
         }
-        
+
         public String getsModel() {
             return sModel;
         }
-        
+
         public String getsMeasure() {
             return sMeasure;
         }
+
         public String getsColor() {
             return sColor;
         }
