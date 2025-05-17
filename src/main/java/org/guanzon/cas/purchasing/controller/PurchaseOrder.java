@@ -1380,10 +1380,7 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-        String lsBranch = "";
-        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-            lsBranch = " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
-        }
+
         String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
@@ -1411,7 +1408,10 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
                 + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
-
+        
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsSQL = lsSQL +  " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+        }
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
