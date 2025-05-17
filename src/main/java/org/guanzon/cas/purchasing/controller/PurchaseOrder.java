@@ -1615,6 +1615,7 @@ public class PurchaseOrder extends Transaction {
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
+                 " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
