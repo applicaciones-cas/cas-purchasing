@@ -3596,14 +3596,16 @@ public class PurchaseOrderReceiving extends Transaction {
     }
 
     private CustomJasperViewer poViewer = null;
+    private String psTransactionNo = "";
 
     public JSONObject printRecord(Runnable onPrintedCallback) {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
+        psTransactionNo = Master().getTransactionNo();
         try {
             
             //Reopen Transaction to get the accurate data
-            poJSON = OpenTransaction(Master().getTransactionNo());
+            poJSON = OpenTransaction(psTransactionNo);
             if ("error".equals((String) poJSON.get("result"))) {
                 System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
                 return poJSON;
@@ -3917,15 +3919,16 @@ public class PurchaseOrderReceiving extends Transaction {
                 GuanzonException {
             poJSON = new JSONObject();
             if (fbIsPrinted) {
+//                poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+                poJSON = OpenTransaction(psTransactionNo);
+                if ("error".equals((String) poJSON.get("result"))) {
+                    Platform.runLater(() -> {
+                        ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
+                        SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+                    });
+                    fbIsPrinted = false;
+                }
                 if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-                    poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        Platform.runLater(() -> {
-                            ShowMessageFX.Warning(null, "Print Purchase Order Receiving", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
-                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-                        });
-                        fbIsPrinted = false;
-                    }
                     poJSON = UpdateTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
