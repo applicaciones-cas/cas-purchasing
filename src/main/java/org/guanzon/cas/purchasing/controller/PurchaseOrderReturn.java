@@ -86,7 +86,7 @@ public class PurchaseOrderReturn extends Transaction{
         paDetailRemoved = new ArrayList<>();
         paInventoryTransaction = new ArrayList<>();
 
-        psIndustryId = poGRider.getIndustry();
+//        psIndustryId = poGRider.getIndustry();
 
         return initialize();
     }
@@ -1249,41 +1249,40 @@ public class PurchaseOrderReturn extends Transaction{
                         }
                     }
                 }
-            }
             
-            if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
-                lbUpdated = loRecord.getDetailCount() == getDetailCount();
-                if (lbUpdated) {
-                    lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
-                }
+                if(PurchaseOrderReturnStatus.RETURNED.equals(Master().getTransactionStatus())){
+                    lbUpdated = loRecord.getDetailCount() == getDetailCount();
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Master().getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
+                    }
 
-                if (lbUpdated) {
-                    lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
-                }
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
+                    }
 
-                if (lbUpdated) {
-                    for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
-                        lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
-                        if (lbUpdated) {
-                            lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
-                        } 
+                    if (lbUpdated) {
+                        for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
+                            lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
+                            if (lbUpdated) {
+                                lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                            } 
 
-                        if (!lbUpdated) {
-                            break;
+                            if (!lbUpdated) {
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (lbUpdated) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "No update has been made.");
-                    return poJSON;
-                }
+                    if (lbUpdated) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "No update has been made.");
+                        return poJSON;
+                    }
 
-                Master().setPrint("0"); 
-                Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+                    Master().setPrint("0"); 
+                    Master().setTransactionStatus(PurchaseOrderReturnStatus.OPEN); //If edited update trasaction status into open
+                }
             }
-            
         }
 
         //assign other info on detail
@@ -1483,7 +1482,6 @@ public class PurchaseOrderReturn extends Transaction{
             if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
                     || PurchaseOrderReturnStatus.POSTED.equals(Master().getTransactionStatus())) {
                 InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
-                loInvSerial.initialize();
                 loInvSerial.setWithParentClass(true);
                 //            InventoryTrans.POReturn();
             }
@@ -1577,15 +1575,16 @@ public class PurchaseOrderReturn extends Transaction{
             
             // 1. Prepare parameters
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sSupplierNm", Master().Supplier().getCompanyName());
             parameters.put("sBranchNm", poGRider.getBranchName());
             parameters.put("sAddressx", poGRider.getAddress());
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("dReferDte", Master().PurchaseOrderReceivingMaster().getTransactionDate());
             parameters.put("sReferNox", Master().getSourceNo());
-            parameters.put("sApprval1", "Jane Smith");
-            parameters.put("sApprval2", "Mike Johnson");
-            parameters.put("sApprval3", "Sarah Williams");
+//            parameters.put("sApprval1", "Jane Smith");
+//            parameters.put("sApprval2", "Mike Johnson");
+//            parameters.put("sApprval3", "Sarah Williams");
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
@@ -1608,14 +1607,62 @@ public class PurchaseOrderReturn extends Transaction{
 
             parameters.put("watermarkImagePath", watermarkPath);
             List<TransactionDetail> transDetails = new ArrayList<>();
+            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn.jrxml";
 
             double lnTotal = 0.0;
             int lnRow = 1;
+            String lsDescription = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
-                transDetails.add(new TransactionDetail(lnRow, String.valueOf(Detail(lnCtr).InventorySerial().getSerial01()), Detail(lnCtr).Inventory().getBarCode(), 
-                        Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), 
-                        Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                String lsBarcode = "";
+                switch(Master().getCategoryCode()){
+                    case "0005": //CAR
+                    case "0003": //Motorcycle
+                    case "0001": //Cellphone   
+                    case "0002": //Appliances  
+                        lsBarcode = Detail(lnCtr).Inventory().Brand().getDescription();
+
+                        if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
+                            lsDescription = Detail(lnCtr).Inventory().Model().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Variant().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Variant().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Variant().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Variant().getYearModel()!= 0){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Variant().getYearModel();
+                        }
+                        if(Detail(lnCtr).Inventory().Color().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Color().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Color().getDescription();
+                        }
+                        
+                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
+                                Detail(lnCtr).Inventory().getDescription() + "\n" + Detail(lnCtr).InventorySerial().getSerial01(), Detail(lnCtr).getUnitPrce().doubleValue(), 
+                                Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                    break;
+                    case "0008": // Food  
+                        lsBarcode = Detail(lnCtr).Inventory().getBarCode();
+                        lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
+                                + " " + Detail(lnCtr).Inventory().getDescription(); 
+                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), 
+                                lsBarcode, lsDescription, Detail(lnCtr).Inventory().Measure().getDescription(),Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturnFood.jrxml";
+                    break;
+                    case "0006": // CAR SP
+                    case "0004": // Motorcycle SP
+                    case "0007": // General
+                    case "0009": // Hospitality
+                    default:
+                        lsBarcode = Detail(lnCtr).Inventory().getBarCode();
+                        lsDescription = Detail(lnCtr).Inventory().getDescription();   
+                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
+                                Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), 
+                                Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                        break;
+                }
+                
+//                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
+//                transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), Detail(lnCtr).Inventory().getBarCode(), 
+//                        Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), 
+//                        Detail(lnCtr).getQuantity().intValue(), lnTotal));
                 lnRow++;
             }
 
@@ -1623,7 +1670,6 @@ public class PurchaseOrderReturn extends Transaction{
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(transDetails);
 
             // 4. Compile and fill report
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn.jrxml"; //TODO
             JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
             JasperPrint jasperPrint = JasperFillManager.fillReport(
                     jasperReport,
@@ -1677,6 +1723,7 @@ public class PurchaseOrderReturn extends Transaction{
         private String sOrderNo;
         private String sBarcode;
         private String sDescription;
+        private String sMeasure;
         private double nUprice;
         private Integer nOrder;
         private double nTotal;
@@ -1687,6 +1734,18 @@ public class PurchaseOrderReturn extends Transaction{
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
             this.sDescription = description;
+            this.nUprice = uprice;
+            this.nOrder = order;
+            this.nTotal = total;
+        }
+        
+        public TransactionDetail(Integer rowNo, String orderNo, String barcode, String description, String measure,
+                double uprice, Integer order, double total) {
+            this.nRowNo = rowNo;
+            this.sOrderNo = orderNo;
+            this.sBarcode = barcode;
+            this.sDescription = description;
+            this.sMeasure = measure;
             this.nUprice = uprice;
             this.nOrder = order;
             this.nTotal = total;
