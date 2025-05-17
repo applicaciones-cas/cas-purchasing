@@ -1086,8 +1086,8 @@ public class PurchaseOrderReturn extends Transaction{
                 referenceNo = "";
             }
             initSQL();
-            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
-                    + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                    " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                     + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
                     + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
@@ -1103,6 +1103,14 @@ public class PurchaseOrderReturn extends Transaction{
                     //load all purchase order receiving
                     break;
             }
+            
+            if(psIndustryId == null || "".equals(psIndustryId)){
+                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
+            } else {
+                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+            }
+            
+            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
 
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -1612,8 +1620,9 @@ public class PurchaseOrderReturn extends Transaction{
             double lnTotal = 0.0;
             int lnRow = 1;
             String lsDescription = "";
+            String lsBarcode = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                String lsBarcode = "";
+                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
                 switch(Master().getCategoryCode()){
                     case "0005": //CAR
                     case "0003": //Motorcycle
@@ -1635,7 +1644,7 @@ public class PurchaseOrderReturn extends Transaction{
                         }
                         
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
-                                Detail(lnCtr).Inventory().getDescription() + "\n" + Detail(lnCtr).InventorySerial().getSerial01(), Detail(lnCtr).getUnitPrce().doubleValue(), 
+                                lsDescription + "\n" + Detail(lnCtr).InventorySerial().getSerial01(), Detail(lnCtr).getUnitPrce().doubleValue(), 
                                 Detail(lnCtr).getQuantity().intValue(), lnTotal));
                     break;
                     case "0008": // Food  
@@ -1644,7 +1653,7 @@ public class PurchaseOrderReturn extends Transaction{
                                 + " " + Detail(lnCtr).Inventory().getDescription(); 
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), 
                                 lsBarcode, lsDescription, Detail(lnCtr).Inventory().Measure().getDescription(),Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
-                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturnFood.jrxml";
+                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn_Food.jrxml";
                     break;
                     case "0006": // CAR SP
                     case "0004": // Motorcycle SP
@@ -1654,7 +1663,7 @@ public class PurchaseOrderReturn extends Transaction{
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().getDescription();   
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
-                                Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), 
+                                lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), 
                                 Detail(lnCtr).getQuantity().intValue(), lnTotal));
                         break;
                 }
@@ -1664,6 +1673,8 @@ public class PurchaseOrderReturn extends Transaction{
 //                        Detail(lnCtr).Inventory().getDescription(), Detail(lnCtr).getUnitPrce().doubleValue(), 
 //                        Detail(lnCtr).getQuantity().intValue(), lnTotal));
                 lnRow++;
+                lsDescription = "";
+                lsBarcode = "";
             }
 
             // 3. Create data source
@@ -1902,7 +1913,7 @@ public class PurchaseOrderReturn extends Transaction{
             if (onPrintedCallback != null) {
                 poViewer = null;
                 this.dispose();
-                onPrintedCallback.run();  // <- triggers controller method!
+//                onPrintedCallback.run();  // <- triggers controller method!
             }
             SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
         }

@@ -5,6 +5,7 @@
  */
 package org.guanzon.cas.purchasing.validator;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -16,10 +17,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
 
 /**
@@ -27,7 +31,7 @@ import org.json.simple.JSONObject;
  * @author Arsiela 03-12-2025
  */
 public class PurchaseOrderReceiving_LP implements GValidator{
-    GRiderCAS poGrider;
+    GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
     
@@ -36,7 +40,7 @@ public class PurchaseOrderReceiving_LP implements GValidator{
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
-        poGrider = (GRiderCAS) applicationDriver;
+        poGRider = (GRiderCAS) applicationDriver;
     }
 
     @Override
@@ -95,7 +99,7 @@ public class PurchaseOrderReceiving_LP implements GValidator{
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         Date loReferenceDate = poMaster.getReferenceDate();
-        LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
+        LocalDate serverDate = strToDate(xsDateShort(poGRider.getServerDate()));
         LocalDate oneYearAgo = serverDate.minusYears(1);
         
         if (loTransactionDate == null) {
@@ -178,7 +182,7 @@ public class PurchaseOrderReceiving_LP implements GValidator{
         poJSON = new JSONObject();
         Date loTransactionDate = poMaster.getTransactionDate();
         Date loReferenceDate = poMaster.getReferenceDate();
-        LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
+        LocalDate serverDate = strToDate(xsDateShort(poGRider.getServerDate()));
         LocalDate oneYearAgo = serverDate.minusYears(1);
         
         if (loTransactionDate == null) {
@@ -285,101 +289,83 @@ public class PurchaseOrderReceiving_LP implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateCancelled(){
+    private JSONObject validateCancelled() throws SQLException{
         poJSON = new JSONObject();
-                
+        
+        //TODO
+//        poJSON = checkPOReturn();
+//        if("error".equals((String) poJSON.get("result"))){
+//            poJSON.put("message", "Found existing Purchase Order Return <" + (String) poJSON.get("sTransNox") + ">. Cancellation of transaction aborted.");
+//            return poJSON;
+//        }
+        
         poJSON.put("result", "success");
         return poJSON;
     }
     
-    private JSONObject validateVoid(){
+    private JSONObject validateVoid() throws SQLException{
         poJSON = new JSONObject();
-                
+        
+        //TODO
+//        poJSON = checkPOReturn();
+//        if("error".equals((String) poJSON.get("result"))){
+//            poJSON.put("message", "Found existing Purchase Order Return <" + (String) poJSON.get("sTransNox") + ">. Voiding of transaction aborted.");
+//            return poJSON;
+//        }
+        
         poJSON.put("result", "success");
         return poJSON;
     }
     
-    private JSONObject validateReturned()throws SQLException{
+    private JSONObject validateReturned() throws SQLException{
         poJSON = new JSONObject();
-        Date loTransactionDate = poMaster.getTransactionDate();
-        Date loReferenceDate = poMaster.getReferenceDate();
-        LocalDate serverDate = strToDate(xsDateShort(poGrider.getServerDate()));
-        LocalDate oneYearAgo = serverDate.minusYears(1);
         
-        if (loTransactionDate == null) {
-            poJSON.put("message", "Invalid Transaction Date.");
-            return poJSON;
-        }
-
-        if ("1900-01-01".equals(xsDateShort(loTransactionDate))) {
-            poJSON.put("message", "Invalid Transaction Date.");
-            return poJSON;
-        }
-        LocalDate transactionDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
-        if (transactionDate.isAfter(serverDate)) {
-            poJSON.put("message", "Future transaction dates are not allowed.");
-            return poJSON;
-        }
-        // Backdated beyond 1 year validation
-        if (transactionDate.isBefore(oneYearAgo)) {
-            poJSON.put("message", "Backdated transactions beyond 1 year are not allowed.");
-            return poJSON;
-        }
-        if (poMaster.getIndustryId() == null) {
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
-        if (poMaster.getCompanyId() == null || poMaster.getCompanyId().isEmpty()) {
-            poJSON.put("message", "Company is not set.");
-            return poJSON;
-        }
-        if (poMaster.getDepartmentId()== null || poMaster.getDepartmentId().isEmpty()) {
-            poJSON.put("message", "Department is not set.");
-            return poJSON;
-        }
-        if (poMaster.getCategoryCode()== null || poMaster.getCategoryCode().isEmpty()) {
-            poJSON.put("message", "Category is not set.");
-            return poJSON;
-        }
-        //Do not validate supplier: PO Receiving is allowed to save without supplier according to sir mac
-        //Need to validate supplier : based on meeting 04142025
-        if (poMaster.getSupplierId() == null || poMaster.getSupplierId().isEmpty()) {
-            poJSON.put("message", "Supplier is not set.");
-            return poJSON;
-        }
-        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
-            poJSON.put("message", "Trucking is not set.");
-            return poJSON;
-        }
-        if (loReferenceDate == null) {
-            poJSON.put("message", "Invalid Reference Date.");
-            return poJSON;
-        }
-        if ("1900-01-01".equals(xsDateShort(loReferenceDate))) {
-            poJSON.put("message", "Invalid Reference Date.");
-            return poJSON;
-        }
-        LocalDate referenceDate = strToDate(xsDateShort(poMaster.getTransactionDate()));
-        if (referenceDate.isAfter(serverDate)) {
-            poJSON.put("message", "Future reference dates are not allowed.");
-            return poJSON;
-        }
-        // Backdated beyond 1 year validation
-        if (referenceDate.isBefore(oneYearAgo)) {
-            poJSON.put("message", "Backdated reference dates beyond 1 year are not allowed.");
-            return poJSON;
-        }
-        if (poMaster.getReferenceNo()== null || poMaster.getReferenceNo().isEmpty()) {
-            poJSON.put("message", "Reference is not set.");
-            return poJSON;
-        }
-        if (poMaster.getTermCode() == null || poMaster.getTermCode().isEmpty()) {
-            poJSON.put("message", "Invalid Term.");
-            return poJSON;
-        }
+            //TODO
+//        poJSON = checkPOReturn();
+//        if("error".equals((String) poJSON.get("result"))){
+//            poJSON.put("message", "Found existing Purchase Order Return <" + (String) poJSON.get("sTransNox") + ">. Returning of transaction aborted.");
+//            return poJSON;
+//        }
         
         poJSON.put("result", "success");
         return poJSON;
+    }
+    
+    //check existing PO Return
+    private JSONObject checkPOReturn() throws SQLException{
+        poJSON = new JSONObject();
+        String lsPOReturn = "";
+        String lsSQL = " SELECT "
+                + " a.sTransNox "
+                + " FROM po_return_master a ";
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sSourceNo = " + SQLUtil.toSQL(poMaster.getTransactionNo())
+                + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
+                + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.PAID)
+                + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.POSTED)
+                + " ) ");
+        
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+            if (MiscUtil.RecordCount(loRS) > 0) {
+                while (loRS.next()) {
+                    if(lsPOReturn.isEmpty()){
+                        lsPOReturn = loRS.getString("sTransNox");
+                    } else {
+                        lsPOReturn = lsPOReturn + ", " +loRS.getString("sTransNox");
+                    }
+                }
+                poJSON.put("result", "error");
+                poJSON.put("result", "sTransNox");
+                return poJSON;
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            System.out.println("No record loaded.");
+        }
+        
+        poJSON.put("result", "success");
+        return poJSON; 
     }
     
     private static String xsDateShort(Date fdValue) {
