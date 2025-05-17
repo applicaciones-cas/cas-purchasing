@@ -1021,7 +1021,8 @@ public class PurchaseOrder extends Transaction {
                 + "  b.sDescript,"
                 + "  c.sCompnyNm,"
                 + "  e.sCompnyNm, "
-                + "  f.sDescript"
+                + "  f.sDescript,"                
+                + "  a.sBranchCd"
                 + " FROM po_master a "
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
@@ -1033,6 +1034,7 @@ public class PurchaseOrder extends Transaction {
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
         String lsTransStat = "";
+        String lsBranch = "";
         if (psTranStat.length() > 1) {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
                 lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
@@ -1041,16 +1043,24 @@ public class PurchaseOrder extends Transaction {
         } else {
             lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
         }
+
+        
         initSQL();
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
                 " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
+
+        
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
         }
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsSQL = lsSQL +  " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
+        }
+        
         lsSQL = lsSQL + " GROUP BY a.sTransNox";
         System.out.println("SQL EXECUTED: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
@@ -1127,7 +1137,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 industry,
-                hasNoSupplier ? category : null
+                category
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1166,7 +1176,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                hasNoSupplier ? category : null
+                category
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1207,7 +1217,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 industry,
-                hasNoSupplier ? category : null
+                category
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1245,7 +1255,7 @@ public class PurchaseOrder extends Transaction {
                 hasNoSupplier ? supplier : null,
                 brand,
                 null,
-                hasNoSupplier ? category : null
+                category 
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1347,9 +1357,9 @@ public class PurchaseOrder extends Transaction {
                 value,
                 byCode,
                 hasNoSupplier ? supplier : null,
-                brand,
-                industry,
-                hasNoSupplier ? category : null
+          brand,
+       industry,
+       category 
         );
 
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1372,6 +1382,10 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
+        String lsBranch = "";
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsBranch = " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
+        }
         String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
@@ -1607,6 +1621,9 @@ public class PurchaseOrder extends Transaction {
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
             lsSQL = lsSQL + lsTransStat;
+        }
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsSQL = lsSQL +  " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
                 + " ORDER BY dTransact ASC";
