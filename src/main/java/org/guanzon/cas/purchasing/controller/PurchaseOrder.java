@@ -1844,7 +1844,7 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sAddressx", poGRider.getAddress());
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
-            parameters.put("sDestination", Master().Branch().getDescription());
+            parameters.put("sDestination", Master().Branch().getBranchName());
             parameters.put("sApprval1", "John Doe");
             parameters.put("sApprval2", "Lu Cifer");
             parameters.put("sApprval3", "Le Min Hoo");
