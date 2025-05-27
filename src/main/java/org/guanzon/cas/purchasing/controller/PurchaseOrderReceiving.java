@@ -485,13 +485,39 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         //check JE
-
+        
+        poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
+        
         //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted);
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
         if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
             return poJSON;
         }
-
+        
+        //Update process in PO Receiving Master
+        poJSON = Master().openRecord(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        poJSON = Master().updateRecord();
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        Master().isProcessed(true);
+        
+        poJSON = Master().saveRecord();
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        poGRider.commitTrans();
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         if (lbPosted) {
