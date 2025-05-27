@@ -59,6 +59,9 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("nOrderQty", 0);
             poEntity.updateObject("nUnitPrce", 0.00);
             poEntity.updateObject("nFreightx", 0.00);
+//            poEntity.updateObject("nDiscount", 0.00);
+//            poEntity.updateObject("nAddDiscx", 0.00);
+//            poEntity.updateObject("nTranTotl", 0.00);
             //end - assign default values
 
             poEntity.insertRow();
@@ -158,6 +161,30 @@ public class Model_POR_Detail extends Model{
         return (Number) getValue("nFreightx");
     }
     
+    public JSONObject setDiscount(Number discount){
+        return setValue("nDiscount", discount);
+    }
+    
+    public Number getDiscount(){
+        return (Number) getValue("nDiscount");
+    }
+    
+    public JSONObject setAdditionalDiscount(Number additionalDiscount){
+        return setValue("nAddDiscx", additionalDiscount);
+    }
+    
+    public Number getAdditionalDiscount(){
+        return (Number) getValue("nAddDiscx");
+    }
+    
+    public JSONObject setTotal(Number total){
+        return setValue("nTranTotl", total);
+    }
+    
+    public Number getTotal(){
+        return (Number) getValue("nTranTotl");
+    }
+    
     public JSONObject setExpiryDate(Date expiryDate){
         return setValue("dExpiryDt", expiryDate);
     }
@@ -182,12 +209,20 @@ public class Model_POR_Detail extends Model{
         return (Number) getValue("nOrderQty");
     }
     
-    public JSONObject setWithVat(String withVat){
-        return setValue("cWithVATx", withVat);
-    }
+//    public JSONObject setWithVat(String withVat){
+//        return setValue("cWithVATx", withVat);
+//    }
+//    
+//    public String getWithVat(){
+//        return (String) getValue("cWithVATx");
+//    }
     
-    public String getWithVat(){
-        return (String) getValue("cWithVATx");
+    public JSONObject isVatable(boolean isVatable){
+        return setValue("cWithVATx", isVatable ? "1" : "0");
+    } 
+    
+    public boolean isVatable(){
+        return ((String) getValue("cWithVATx")).equals("1");
     }
     
     public JSONObject isSerialized(boolean isSerialize){
