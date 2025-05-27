@@ -160,6 +160,10 @@ public class PurchaseOrderReceiving_MC implements GValidator{
             poJSON.put("message", "Future reference dates are not allowed.");
             return poJSON;
         }
+        if (referenceDate.isAfter(transactionDate)) {
+            poJSON.put("message", "Reference date cannot be later than the receiving date.");
+            return poJSON;
+        }
         // Backdated beyond 1 year validation
         if (referenceDate.isBefore(oneYearAgo)) {
             poJSON.put("message", "Backdated reference dates beyond 1 year are not allowed.");

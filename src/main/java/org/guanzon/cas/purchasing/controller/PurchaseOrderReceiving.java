@@ -4030,7 +4030,10 @@ public class PurchaseOrderReceiving extends Transaction {
                     });
                     fbIsPrinted = false;
                 }
-                if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+                
+                if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
+                        || PurchaseOrderReceivingStatus.POSTED.equals(Master().getTransactionStatus())
+                        || PurchaseOrderReceivingStatus.PAID.equals(Master().getTransactionStatus())) {
                     poJSON = UpdateTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
