@@ -89,6 +89,7 @@ public class PurchaseOrderReceiving extends Transaction {
     private boolean pbIsPrint = false;
     private boolean pbIsWithDiscount = false;
     private boolean pbIsWithDiscountRate = false;
+    private boolean pbIsSIPosting = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
@@ -572,7 +573,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
 
-        poGRider.beginTrans("UPDATE STATUS", "CancelledTransaction", SOURCE_CODE, Master().getTransactionNo());
+        poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, Master().getTransactionNo());
 
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbCancelled, true);
@@ -701,6 +702,10 @@ public class PurchaseOrderReceiving extends Transaction {
 
     public void setCategoryId(String categoryId) {
         psCategorCd = categoryId;
+    }
+
+    public void isSIPosting(boolean isSIPosting) {
+        pbIsSIPosting = isSIPosting;
     }
 
     public JSONObject searchTransaction()
@@ -2828,8 +2833,9 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             if(!pbIsPrint){
-                if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                        || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate()))) {
+                if ((PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
+                        || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate())))
+                        && !pbIsSIPosting) {
                     if (poGRider.getUserLevel() == UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -2937,117 +2943,123 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
 
             //POR Serial
-            //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
-            //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
-            if(Detail(lnCtr).isSerialized() && 
-                    //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008
-                    (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008"))){
-                //check serial list must be equal to por detail receive qty
-                for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
-                    if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
-                        //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
-                        if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
-                                || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
-                            poJSON.put("result", "error");
-                            poJSON.put("message", "Serial cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
-                            return poJSON;
-                        }
-
-                        if ("02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
-                            if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
+            if(!pbIsSIPosting){ //Validate POR Serial only in PO Receiving Form
+                //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
+                //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
+                if(Detail(lnCtr).isSerialized() && 
+                        //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008
+                        (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008"))){
+                    //check serial list must be equal to por detail receive qty
+                    for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
+                        if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
+                            //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
+                            if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
+                                    || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
                                 poJSON.put("result", "error");
-                                poJSON.put("message", "Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                poJSON.put("message", "Serial cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
                                 return poJSON;
                             }
-                        }
 
-                        if ("03".equals(Master().getIndustryId())) {
-                            if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
-                                    && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
+                            if ("02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
+                                if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "Location cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                    return poJSON;
+                                }
+                            }
+
+                            if ("03".equals(Master().getIndustryId())) {
+                                if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
+                                        && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "CS / Plate No cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                    return poJSON;
+                                }
+                            }
+                            //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
+                            //Check for existing serial 01
+                            JSONObject loJSON = checkExistingSerialinDB(lnList, "serial01");
+                            lsColumnName = getColumnName("serial01");
+                            if("error".equals((String) loJSON.get("result"))){
                                 poJSON.put("result", "error");
-                                poJSON.put("message", "CS / Plate No cannot be empty for Entry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo());
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database.\nContact System Administrator.");
+                                return poJSON;
+                            } 
+    //
+    //                        //Check for existing serial 02
+                            loJSON = checkExistingSerialinDB(lnList, "serial02");
+                            lsColumnName = getColumnName("serial02");
+                            if("error".equals((String) loJSON.get("result"))){
+                                poJSON.put("result", "error");
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database.\nContact System Administrator.");
                                 return poJSON;
                             }
-                        }
-                        //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
-                        //Check for existing serial 01
-                        JSONObject loJSON = checkExistingSerialinDB(lnList, "serial01");
-                        lsColumnName = getColumnName("serial01");
-                        if("error".equals((String) loJSON.get("result"))){
-                            poJSON.put("result", "error");
-                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database.\nContact System Administrator.");
-                            return poJSON;
-                        } 
-//
-//                        //Check for existing serial 02
-                        loJSON = checkExistingSerialinDB(lnList, "serial02");
-                        lsColumnName = getColumnName("serial02");
-                        if("error".equals((String) loJSON.get("result"))){
-                            poJSON.put("result", "error");
-                            poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database.\nContact System Administrator.");
-                            return poJSON;
-                        }
 
-//                        //Check for existing CS No
-//                        if (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()!= null 
-//                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo())){
-//                            loJSON = checkExistingSerialinDB(lnList, "csno");
-//                            lsColumnName = getColumnName("csno");
-//                            if("error".equals((String) loJSON.get("result"))){
-//                                poJSON.put("result", "error");
-//                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-//                                return poJSON;
-//                            }
-//                        }
-//
-//                        //Check for existing Plate No
-//                        if (PurchaseOrderReceivingSerialList(lnList).getPlateNo() != null 
-//                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo())){
-//                            loJSON = checkExistingSerialinDB(lnList, "plateno");
-//                            lsColumnName = getColumnName("plateno");
-//                            if("error".equals((String) loJSON.get("result"))){
-//                                poJSON.put("result", "error");
-//                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
-//                                return poJSON;
-//                            }
-//                        }
-                        lnSerialCnt++;
+    //                        //Check for existing CS No
+    //                        if (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()!= null 
+    //                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo())){
+    //                            loJSON = checkExistingSerialinDB(lnList, "csno");
+    //                            lsColumnName = getColumnName("csno");
+    //                            if("error".equals((String) loJSON.get("result"))){
+    //                                poJSON.put("result", "error");
+    //                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+    //                                return poJSON;
+    //                            }
+    //                        }
+    //
+    //                        //Check for existing Plate No
+    //                        if (PurchaseOrderReceivingSerialList(lnList).getPlateNo() != null 
+    //                                && !"".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo())){
+    //                            loJSON = checkExistingSerialinDB(lnList, "plateno");
+    //                            lsColumnName = getColumnName("plateno");
+    //                            if("error".equals((String) loJSON.get("result"))){
+    //                                poJSON.put("result", "error");
+    //                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() + " already exist in database see Serial ID: " + (String) loJSON.get("sSerialID"));
+    //                                return poJSON;
+    //                            }
+    //                        }
+                            lnSerialCnt++;
+                        }
+                    }
+
+                    if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Descrepancy found in POR Serial. Quantity must be equal to POR Serial list for Entry No. " + (lnCtr + 1) + ".");
+                        return poJSON;
                     }
                 }
 
-                if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Descrepancy found in POR Serial. Quantity must be equal to POR Serial list for Entry No. " + (lnCtr + 1) + ".");
+                lnSerialCnt = 0;
+            }
+        }
+        
+        
+        //Update this fieds only in PO Receiving Form
+        if(!pbIsSIPosting){
+            //Remove Unnecessary Transaction Attachment
+            if (getTransactionAttachmentCount() > 0) {
+                Iterator<TransactionAttachment> attachment = TransactionAttachmentList().iterator();
+                while (attachment.hasNext()) {
+                    TransactionAttachment item = attachment.next();
+
+                    if ((String) item.getModel().getFileName() == null || "".equals(item.getModel().getFileName())) {
+                        attachment.remove();
+                    }
+                }
+            }
+
+            //Set Transaction Attachments
+            for (int lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
+                TransactionAttachmentList(lnCtr).getModel().setSourceCode(SOURCE_CODE);
+                TransactionAttachmentList(lnCtr).getModel().setSourceNo(Master().getTransactionNo());
+            }
+
+            //Allow the user to edit details but seek an approval from the approving officer
+            if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+                poJSON = setValueToOthers(Master().getTransactionStatus());
+                if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
                 }
-            }
-
-            lnSerialCnt = 0;
-        }
-
-        //Remove Unnecessary Transaction Attachment
-        if (getTransactionAttachmentCount() > 0) {
-            Iterator<TransactionAttachment> attachment = TransactionAttachmentList().iterator();
-            while (attachment.hasNext()) {
-                TransactionAttachment item = attachment.next();
-
-                if ((String) item.getModel().getFileName() == null || "".equals(item.getModel().getFileName())) {
-                    attachment.remove();
-                }
-            }
-        }
-
-        //Set Transaction Attachments
-        for (int lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
-            TransactionAttachmentList(lnCtr).getModel().setSourceCode(SOURCE_CODE);
-            TransactionAttachmentList(lnCtr).getModel().setSourceNo(Master().getTransactionNo());
-        }
-
-        //Allow the user to edit details but seek an approval from the approving officer
-        if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            poJSON = setValueToOthers(Master().getTransactionStatus());
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
             }
         }
 
@@ -3065,9 +3077,15 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject saveOthers() {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
-        int lnCtr, lnRow;
-
+        
+        //Skip Updating others when transaction triggered at SI Posting
+        if(pbIsSIPosting){
+            poJSON.put("result", "success");
+            return poJSON; 
+        }
+        
         try {
+            int lnCtr, lnRow;
             //Purchase Order Receiving Serial
             InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
             loInvSerial.setWithParentClass(true);
