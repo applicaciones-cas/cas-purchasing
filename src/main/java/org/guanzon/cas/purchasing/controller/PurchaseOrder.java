@@ -407,12 +407,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
-//        }
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -1835,18 +1835,18 @@ public class PurchaseOrder extends Transaction {
         // Amount after all discounts
         double totalDiscount = (discountRateWithTotalAmount + additionalDiscountAmount);
 
-        // Compute down payment from rate
-        double downPaymentRate = Master().getDownPaymentRatesPercentage().doubleValue(); // e.g., 0.20 for 20%
-        double downPaymentAmountFromRate = totalDiscount * downPaymentRate;
-
-        // Subtract down payment amount (fixed)
-        double downPaymentAmount = Master().getDownPaymentRatesAmount().doubleValue();
-
-        double totalDownPayment = downPaymentAmountFromRate + downPaymentAmount;
+//        // Compute down payment from rate
+//        double downPaymentRate = Master().getDownPaymentRatesPercentage().doubleValue(); // e.g., 0.20 for 20%
+//        double downPaymentAmountFromRate = totalDiscount * downPaymentRate;
+//
+//        // Subtract down payment amount (fixed)
+//        double downPaymentAmount = Master().getDownPaymentRatesAmount().doubleValue();
+//        double totalDownPayment = downPaymentAmountFromRate + downPaymentAmount;
         // Final net total
-        double netTotal = totalAmount - totalDiscount - totalDownPayment;
+//        double netTotal = totalAmount - totalDiscount - totalDownPayment;
+//
+        double netTotal = totalAmount - totalDiscount;
         Master().setNetTotal(netTotal);
-
     }
 
     public JSONObject printTransaction(String jasperType) {
@@ -1929,6 +1929,10 @@ public class PurchaseOrder extends Transaction {
 
             CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
             viewer.setVisible(true);
+            
+            
+            
+            
             poJSON.put("result", "success");
         } catch (JRException | SQLException | GuanzonException ex) {
             poJSON.put("result", "error");
