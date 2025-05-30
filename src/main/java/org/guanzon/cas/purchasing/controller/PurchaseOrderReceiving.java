@@ -89,7 +89,7 @@ public class PurchaseOrderReceiving extends Transaction {
     private boolean pbIsPrint = false;
     private boolean pbIsWithDiscount = false;
     private boolean pbIsWithDiscountRate = false;
-    private boolean pbIsSIPosting = false;
+    private boolean pbIsFinance = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
@@ -485,6 +485,13 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+        
         //check JE
         
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
@@ -704,8 +711,8 @@ public class PurchaseOrderReceiving extends Transaction {
         psCategorCd = categoryId;
     }
 
-    public void isSIPosting(boolean isSIPosting) {
-        pbIsSIPosting = isSIPosting;
+    public void isFinance(boolean isFinance) {
+        pbIsFinance = isFinance;
     }
 
     public JSONObject searchTransaction()
@@ -1384,7 +1391,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
         
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
         
         ldblDiscountRate = ldblTotal * ldblDiscountRate;
@@ -1426,7 +1433,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblDiscRate = 0.00;
 
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
         
         if (discount < 0 || discount > ldblTotal) {
@@ -1459,7 +1466,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblDiscount = 0.00;
 
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue());
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
 
         if (discountRate < 0 || discountRate > 100.00) {
@@ -1955,7 +1962,7 @@ public class PurchaseOrderReceiving extends Transaction {
         boolean lbExist = false;
         boolean lbReceived = false;
         int lnRow = 0;
-        int lnAddOrderQty = 0;
+        double lnAddOrderQty = 0.00;
         PurchaseOrderControllers loTrans = new PurchaseOrderControllers(poGRider, logwrapr);
         poJSON = loTrans.PurchaseOrder().InitTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1998,13 +2005,13 @@ public class PurchaseOrderReceiving extends Transaction {
 
                     if (!lbExist) {
                         //Only insert po detail that has item to receive
-                        if (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().intValue() > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue()) {
+                        if (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue()) {
                             Detail(getDetailCount() - 1).setBrandId(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getBrandId());
                             Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo());
                             Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrder().Detail(lnCtr).getStockID());
                             Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getUnitType());
-                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().intValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
-                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().intValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
+                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
+                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
                             Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().isSerialized());
 
@@ -2016,7 +2023,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         for (int lnOrder = 0; lnOrder <= loTrans.PurchaseOrder().getDetailCount() - 1; lnOrder++) {
                             if(Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnOrder).getTransactionNo())){
                                 if(Detail(lnRow).getStockId().equals(loTrans.PurchaseOrder().Detail(lnOrder).getStockID())){
-                                    lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().intValue() - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().intValue());
+                                    lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue());
                                 }
                             }
                         }
@@ -2132,7 +2139,7 @@ public class PurchaseOrderReceiving extends Transaction {
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
-        int lnQuantity = Detail(entryNo - 1).getQuantity().intValue();
+        double lnQuantity = Detail(entryNo - 1).getQuantity().doubleValue();
         int lnSerialCnt = 0;
         boolean lbShowMessage = false;
 
@@ -2589,7 +2596,7 @@ public class PurchaseOrderReceiving extends Transaction {
     //Use for changing of quantity in por detail
     public JSONObject checkPurchaseOrderReceivingSerial(int entryNo, int quantity) {
         poJSON = new JSONObject();
-        int lnQty = Detail(entryNo - 1).getQuantity().intValue();
+        double lnQty = Detail(entryNo - 1).getQuantity().doubleValue();
         int lnEntryNo = 0;
         boolean lbChecked = false;
 
@@ -2746,11 +2753,11 @@ public class PurchaseOrderReceiving extends Transaction {
         paOthers.sort(Comparator.comparingInt(item -> item.getEntryNo()));
         
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-            if(Detail(lnCtr).getQuantity().intValue() > 0){ 
+            if(Detail(lnCtr).getQuantity().doubleValue() > 0){ 
                 lnEntryNo = lnEntryNo + 1;
             }
             
-            if(Detail(lnCtr).getQuantity().intValue() <= 0){ 
+            if(Detail(lnCtr).getQuantity().doubleValue() <= 0){ 
                 lnNewEntryNo = lnEntryNo + 1;
                 
                 for(int lnRow = 0; lnRow <= paOthers.size()-1; lnRow++){
@@ -2779,7 +2786,7 @@ public class PurchaseOrderReceiving extends Transaction {
             
             lbMatch = false;
             
-            if (Detail(lnCtr).getQuantity().intValue() > 0) {
+            if (Detail(lnCtr).getQuantity().doubleValue() > 0) {
                 lbHasQty = true;
             }
         }
@@ -2813,7 +2820,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
         if (getDetailCount() == 1) {
             //do not allow a single item detail with no quantity order
-            if (Detail(0).getQuantity().intValue() == 0) {
+            if (Detail(0).getQuantity().doubleValue() == 0) {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Your Purchase order receiving has zero quantity.");
                 return poJSON;
@@ -2835,7 +2842,7 @@ public class PurchaseOrderReceiving extends Transaction {
             if(!pbIsPrint){
                 if ((PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
                         || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate())))
-                        && !pbIsSIPosting) {
+                        && !pbIsFinance) {
                     if (poGRider.getUserLevel() == UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -2923,7 +2930,7 @@ public class PurchaseOrderReceiving extends Transaction {
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
-                if(Detail(lnCtr).getOrderQty().intValue() < Detail(lnCtr).getQuantity().intValue()){
+                if(Detail(lnCtr).getOrderQty().intValue() < Detail(lnCtr).getQuantity().doubleValue()){
                     poJSON.put("result", "error");
                     poJSON.put("message", "Receive quantity cannot be greater than the order quantity for Order No. " + Detail(lnCtr).getOrderNo());
                     return poJSON;
@@ -2943,7 +2950,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
 
             //POR Serial
-            if(!pbIsSIPosting){ //Validate POR Serial only in PO Receiving Form
+            if(!pbIsFinance){ //Validate POR Serial only in PO Receiving Form
                 //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
                 //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
                 if(Detail(lnCtr).isSerialized() && 
@@ -3022,7 +3029,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         }
                     }
 
-                    if (lnSerialCnt != Detail(lnCtr).getQuantity().intValue()) {
+                    if (lnSerialCnt != Detail(lnCtr).getQuantity().doubleValue()) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Descrepancy found in POR Serial. Quantity must be equal to POR Serial list for Entry No. " + (lnCtr + 1) + ".");
                         return poJSON;
@@ -3035,7 +3042,7 @@ public class PurchaseOrderReceiving extends Transaction {
         
         
         //Update this fieds only in PO Receiving Form
-        if(!pbIsSIPosting){
+        if(!pbIsFinance){
             //Remove Unnecessary Transaction Attachment
             if (getTransactionAttachmentCount() > 0) {
                 Iterator<TransactionAttachment> attachment = TransactionAttachmentList().iterator();
@@ -3079,7 +3086,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         
         //Skip Updating others when transaction triggered at SI Posting
-        if(pbIsSIPosting){
+        if(pbIsFinance){
             poJSON.put("result", "success");
             return poJSON; 
         }
@@ -3243,21 +3250,21 @@ public class PurchaseOrderReceiving extends Transaction {
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())) {
                 //1. Check for discrepancy
-                if (Detail(lnCtr).getOrderQty().intValue() != Detail(lnCtr).getQuantity().intValue()) {
+                if (Detail(lnCtr).getOrderQty().intValue() != Detail(lnCtr).getQuantity().doubleValue()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
                 //Purchase Order
-                poJSON = updatePurchaseOrder(status, Detail(lnCtr).getOrderNo(), Detail(lnCtr).getStockId(), Detail(lnCtr).getQuantity().intValue());
+                poJSON = updatePurchaseOrder(status, Detail(lnCtr).getOrderNo(), Detail(lnCtr).getStockId(), Detail(lnCtr).getQuantity().doubleValue());
                 if("error".equals((String) poJSON.get("result"))){
                     return poJSON;
                 }
 
                 //Inventory Transaction
                 if(Detail(lnCtr).getReplaceId() != null && !"".equals(Detail(lnCtr).getReplaceId())){
-                    updateInventoryTransaction(status, Detail(lnCtr).getReplaceId(), Detail(lnCtr).getQuantity().intValue());
+                    updateInventoryTransaction(status, Detail(lnCtr).getReplaceId(), Detail(lnCtr).getQuantity().doubleValue());
                 } else {
-                    updateInventoryTransaction(status, Detail(lnCtr).getStockId(), Detail(lnCtr).getQuantity().intValue());
+                    updateInventoryTransaction(status, Detail(lnCtr).getStockId(), Detail(lnCtr).getQuantity().doubleValue());
                 }
 
             } else {
@@ -3270,16 +3277,16 @@ public class PurchaseOrderReceiving extends Transaction {
         //Update purchase order removed in purchase order receiving
         for (lnCtr = 0; lnCtr <= getDetailRemovedCount() - 1; lnCtr++) {
             //Purchase Order
-            poJSON = updatePurchaseOrder(status, DetailRemove(lnCtr).getOrderNo(), DetailRemove(lnCtr).getStockId(), DetailRemove(lnCtr).getQuantity().intValue());
+            poJSON = updatePurchaseOrder(status, DetailRemove(lnCtr).getOrderNo(), DetailRemove(lnCtr).getStockId(), DetailRemove(lnCtr).getQuantity().doubleValue());
             if("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
             
             //Inventory Transaction TODO
             if(DetailRemove(lnCtr).getReplaceId() != null && !"".equals(DetailRemove(lnCtr).getReplaceId())){
-                updateInventoryTransaction(status, DetailRemove(lnCtr).getReplaceId(), DetailRemove(lnCtr).getQuantity().intValue());
+                updateInventoryTransaction(status, DetailRemove(lnCtr).getReplaceId(), DetailRemove(lnCtr).getQuantity().doubleValue());
             } else {
-                updateInventoryTransaction(status, DetailRemove(lnCtr).getStockId(), DetailRemove(lnCtr).getQuantity().intValue());
+                updateInventoryTransaction(status, DetailRemove(lnCtr).getStockId(), DetailRemove(lnCtr).getQuantity().doubleValue());
             }
         }
 
@@ -3287,13 +3294,13 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
 
-    private JSONObject updatePurchaseOrder(String status, String orderNo, String stockId, int quantity)
+    private JSONObject updatePurchaseOrder(String status, String orderNo, String stockId, double quantity)
             throws GuanzonException,
             SQLException,
             CloneNotSupportedException {
         int lnRow, lnList;
-        int lnRecQty = 0;
-        int lnOrderQty = 0;
+        double lnRecQty = 0;
+        double lnOrderQty = 0;
         boolean lbExist = false;
         //2.check if order no is already exist in purchase order array list
         for (lnRow = 0; lnRow <= paPurchaseOrder.size() - 1; lnRow++) {
@@ -3329,7 +3336,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 
                 for (lnRow = 0; lnRow <= paPurchaseOrder.get(lnList).getDetailCount() - 1; lnRow++) {
                     if (stockId.equals(paPurchaseOrder.get(lnList).Detail(lnRow).getStockID())) {
-                        lnOrderQty = lnOrderQty + paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().intValue();
+                        lnOrderQty = lnOrderQty + paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue();
                     }
                 }
                 
@@ -3356,9 +3363,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     lnRecQty = 0;
                     paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(0);
                 } else {
-                    if(lnRecQty > paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().intValue()){
+                    if(lnRecQty > paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
                         paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity());
-                        lnRecQty = lnRecQty - paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().intValue();
+                        lnRecQty = lnRecQty - paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue();
                     } else {
                         paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(lnRecQty);
                         lnRecQty = 0;
@@ -3544,6 +3551,13 @@ public class PurchaseOrderReceiving extends Transaction {
                     if ("error".equals((String) poJSON.get("result"))) {
                         return poJSON;
                     }
+                    
+                    loInvSerial.getModel().setLocation("0");
+                    poJSON = loInvSerial.saveRecord();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                    
                     //Not Supported yet
 //                    poJSON = loInvSerial.deleteRecord();
 //                    if ("error".equals((String) poJSON.get("result"))) {
@@ -3558,6 +3572,8 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
         }
            
         poJSON.put("result", "success");
@@ -3565,7 +3581,7 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     //TODO
-    private void updateInventoryTransaction(String status, String stockId, int quantity)
+    private void updateInventoryTransaction(String status, String stockId, double quantity)
             throws GuanzonException,
             SQLException,
             CloneNotSupportedException {
@@ -3797,7 +3813,7 @@ public class PurchaseOrderReceiving extends Transaction {
             String lsBarcode = "";
             String lsMeasure = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().intValue();
+                lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                 
                 if(Detail(lnCtr).isSerialized()){
                     getPurchaseOrderReceivingSerial(Detail(lnCtr).getEntryNo());
@@ -3836,7 +3852,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             lsDescription = lsDescription + "\n" + lsSerial;
                         }
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
-                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                     break;
                     case "0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
@@ -3846,7 +3862,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
                                 + " " + Detail(lnCtr).Inventory().getDescription(); 
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
-                                lsBarcode, lsDescription, lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                                lsBarcode, lsDescription, lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                         jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving_Food.jrxml";
                     break;
                     case "0006": // CAR SP
@@ -3857,7 +3873,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().getDescription();   
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
-                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().intValue(), lnTotal));
+                                lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                     break;
                 }
                 
@@ -3926,11 +3942,11 @@ public class PurchaseOrderReceiving extends Transaction {
         private String sDescription;
         private String sMeasure;
         private double nUprice;
-        private Integer nOrder;
+        private double nOrder;
         private double nTotal;
 
         public OrderDetail(Integer rowNo, String orderNo, String barcode, String description,
-                double uprice, Integer order, double total) {
+                double uprice, double order, double total) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
@@ -3941,7 +3957,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         public OrderDetail(Integer rowNo, String orderNo, String barcode, String description, String measure,
-                double uprice, Integer order, double total) {
+                double uprice, double order, double total) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
@@ -3976,7 +3992,7 @@ public class PurchaseOrderReceiving extends Transaction {
             return nUprice;
         }
 
-        public Integer getnOrder() {
+        public double getnOrder() {
             return nOrder;
         }
 

@@ -1880,7 +1880,10 @@ public class PurchaseOrderReturn extends Transaction{
                     });
                     fbIsPrinted = false;
                 }
-                if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+                
+                if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())
+                        || PurchaseOrderReturnStatus.POSTED.equals(Master().getTransactionStatus())
+                        || PurchaseOrderReturnStatus.PAID.equals(Master().getTransactionStatus())) {
                     poJSON = UpdateTransaction();
                     if ("error".equals((String) poJSON.get("result"))) {
                         Platform.runLater(() -> {
