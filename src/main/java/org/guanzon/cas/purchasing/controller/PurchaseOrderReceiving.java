@@ -9,6 +9,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -1004,6 +1005,8 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         poJSON.put("row", row);
+        String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
         
@@ -1013,8 +1016,12 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-//        poJSON = object.searchRecord(value, byCode);
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, 
+                Master().getSupplierId(),
+                lsBrand, 
+                lsIndustry,  
+                Master().getCategoryCode());
+        
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
@@ -1039,17 +1046,23 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         poJSON.put("row", row);
+        String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
+        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
         
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
             poJSON.put("message", "Supplier is not set.");
             return poJSON;
         }
-        
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
-        object.setRecordStatus(RecordStatus.ACTIVE);
 
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, 
+                Master().getSupplierId(),
+                lsBrand, 
+                lsIndustry,  
+                Master().getCategoryCode());
+        
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
@@ -1109,6 +1122,8 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         poJSON.put("row", row);
+        String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
         
@@ -1118,10 +1133,13 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("message", "Supplier is not set.");
                 return poJSON;
             }
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
-        } else {
-            poJSON = object.searchRecord(value, byCode, null,null, null,  Master().getCategoryCode());
         } 
+        
+        poJSON = object.searchRecord(value, byCode, 
+                isWithSupplier ? Master().getSupplierId() : null,
+                lsBrand, 
+                lsIndustry,  
+                Master().getCategoryCode());
         
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
@@ -1147,6 +1165,8 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         poJSON.put("row", row);
+        String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
+        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
         object.setRecordStatus(RecordStatus.ACTIVE);
         
@@ -1156,11 +1176,14 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("message", "Supplier is not set.");
                 return poJSON;
             }
-
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
-        } else {
-            poJSON = object.searchRecord(value, byCode, null,null, null,  Master().getCategoryCode());
-        }
+        } 
+        
+        poJSON = object.searchRecord(value, byCode, 
+                isWithSupplier ? Master().getSupplierId() : null,
+                lsBrand, 
+                lsIndustry,  
+                Master().getCategoryCode());
+        
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
@@ -2802,7 +2825,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Model item = detail.next();
 
             if ("".equals((String) item.getValue("sStockIDx"))
-                    || (int) item.getValue("nQuantity") <= 0) {
+                    || (double) item.getValue("nQuantity") <= 0) {
                 detail.remove();
 
                 if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
@@ -2954,8 +2977,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
                 //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
                 if(Detail(lnCtr).isSerialized() && 
-                        //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008
-                        (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008"))){
+                        //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008 : GENERAL 0007
+                        (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008") && !Master().getCategoryCode().equals("0007"))){
                     //check serial list must be equal to por detail receive qty
                     for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
                         if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
@@ -2989,7 +3012,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             lsColumnName = getColumnName("serial01");
                             if("error".equals((String) loJSON.get("result"))){
                                 poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database.\nContact System Administrator.");
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() + " already exist in database for Entry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo()+".\nContact System Administrator.");
                                 return poJSON;
                             } 
     //
@@ -2998,7 +3021,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             lsColumnName = getColumnName("serial02");
                             if("error".equals((String) loJSON.get("result"))){
                                 poJSON.put("result", "error");
-                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database.\nContact System Administrator.");
+                                poJSON.put("message", lsColumnName +" "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() + " already exist in database for Entry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo()+".\nContact System Administrator.");
                                 return poJSON;
                             }
 
@@ -3882,6 +3905,17 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsBarcode = "";
                 lsSerial = "";
             }
+            
+            File file = new File(jrxmlPath);
+
+            if (file.exists()) {
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Jasper file does not exist. \nEnsure the file is located in \"D:\\GGC_Maven_Systems\\reports\"");
+                poViewer = null;
+                onPrintedCallback.run();
+                return poJSON;
+            }
 
             // 3. Create data source
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
@@ -4214,7 +4248,7 @@ public class PurchaseOrderReceiving extends Transaction {
             case "frame":
             case "csno":
             case "plateno":
-                lsHeader = "Engine No»Frame No»CS No»Plate No»Description";
+                lsHeader = "Engine No»Frame No»Plate No»CS No»Description";
                 lsColName = "sSerial01»sSerial02»sPlateNoP»sCStckrNo»sDescript";
                 lsColCriteria = "j.sSerial01»j.sSerial02»IFNULL(k.sPlateNoP, '')»IFNULL(k.sCStckrNo, '')»b.sDescript";
                 
@@ -4370,8 +4404,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "   LEFT JOIN inv_serial j "                                                           
                 + "     ON j.sSerialID = i.sSerialID "                                                   
                 + "   LEFT JOIN inv_serial_registration k "                                              
-                + "     ON k.sSerialID = i.sSerialID "                                                   
-   ;
+                + "     ON k.sSerialID = i.sSerialID "   ;
     }
     
 //    private String getSQ_BrowseInvSerial(){

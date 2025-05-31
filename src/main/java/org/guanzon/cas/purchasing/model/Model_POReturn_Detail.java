@@ -44,7 +44,7 @@ public class Model_POReturn_Detail extends Model{
             //assign default values
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateObject("nQuantity", 0);
+            poEntity.updateObject("nQuantity", 0.00);
             poEntity.updateObject("nUnitPrce", 0.00);
             poEntity.updateObject("nFreightx", 0.00);
             //end - assign default values
