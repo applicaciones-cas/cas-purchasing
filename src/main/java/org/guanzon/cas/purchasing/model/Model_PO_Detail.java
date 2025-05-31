@@ -62,7 +62,7 @@ public class Model_PO_Detail extends Model {
             poEntity.updateObject("nOldPrice", 0.0);
             poEntity.updateObject("nQtyOnHnd", 0);
             poEntity.updateObject("nRecOrder", 0);
-            poEntity.updateObject("nQuantity", 0);
+            poEntity.updateObject("nQuantity", 0.0);
             poEntity.updateObject("nReceived", 0);
             poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
 

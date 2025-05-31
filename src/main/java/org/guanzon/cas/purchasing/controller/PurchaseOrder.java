@@ -184,7 +184,7 @@ public class PurchaseOrder extends Transaction {
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
-            int quantity = (int) item.getValue("nQuantity");
+            double quantity = (double) item.getValue("nQuantity");
             String stockID = (String) item.getValue("sStockIDx");
 
             // Remove only items with empty stock ID or zero quantity
