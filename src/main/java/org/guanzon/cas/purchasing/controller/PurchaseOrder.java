@@ -1340,6 +1340,8 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
+    
+    
 
     public JSONObject SearchModel(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws SQLException, GuanzonException, NullPointerException {
@@ -1383,7 +1385,7 @@ public class PurchaseOrder extends Transaction {
 
         String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
-                " g.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierID()),
+                " (g.sSupplier = " + SQLUtil.toSQL( Master().getSupplierID()) + " OR g.sSupplier IS NULL )",
                 " b.nApproved > 0 ",
                 " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
                 " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
