@@ -1881,7 +1881,7 @@ public class PurchaseOrder extends Transaction {
 
             double lnTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().intValue();
+                lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
 
                 orderDetails.add(new OrderDetail(lnCtr + 1,
                         String.valueOf(Detail(lnCtr).getSouceNo()),
@@ -1893,7 +1893,7 @@ public class PurchaseOrder extends Transaction {
                         Detail(lnCtr).Inventory().Color().getDescription(),
                         Detail(lnCtr).Inventory().getDescription(),
                         Detail(lnCtr).getUnitPrice().doubleValue(),
-                        Detail(lnCtr).getQuantity().intValue(),
+                        Detail(lnCtr).getQuantity().doubleValue(),
                         lnTotal));
             }
 
@@ -1951,11 +1951,11 @@ public class PurchaseOrder extends Transaction {
         private String sColor;
         private String sDescription;
         private double nUprice;
-        private Integer nOrder;
+        private double nOrder;
         private double nTotal;
 
         public OrderDetail(Integer rowNo, String orderNo, String barcode, String BrandName, String Variant, String Model, String Measure, String Color, String description,
-                double uprice, Integer order, double total) {
+                double uprice, double order, double total) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
@@ -2010,7 +2010,7 @@ public class PurchaseOrder extends Transaction {
             return nUprice;
         }
 
-        public Integer getnOrder() {
+        public double getnOrder() {
             return nOrder;
         }
 
