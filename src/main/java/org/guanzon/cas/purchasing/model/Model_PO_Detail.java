@@ -57,13 +57,13 @@ public class Model_PO_Detail extends Model {
 
             //assign default values
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateObject("nCancelld", 0);
+            poEntity.updateObject("nCancelld", 0.00);
             poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nOldPrice", 0.0000);
-            poEntity.updateObject("nQtyOnHnd", 0);
-            poEntity.updateObject("nRecOrder", 0);
-            poEntity.updateObject("nQuantity", 0.0);
-            poEntity.updateObject("nReceived", 0);
+            poEntity.updateObject("nQtyOnHnd", 0.00);
+            poEntity.updateObject("nRecOrder", 0.00);
+            poEntity.updateObject("nQuantity", 0.00);
+            poEntity.updateObject("nReceived", 0.00);
             poEntity.updateObject("dModified", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
 
             poEntity.insertRow();

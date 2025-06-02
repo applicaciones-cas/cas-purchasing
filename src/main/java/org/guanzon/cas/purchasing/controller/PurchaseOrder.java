@@ -188,7 +188,7 @@ public class PurchaseOrder extends Transaction {
             String stockID = (String) item.getValue("sStockIDx");
 
             // Remove only items with empty stock ID or zero quantity
-            if (stockID.isEmpty() || quantity <= 0) {
+            if (stockID.isEmpty() || quantity <= 0.00) {
                 detail.remove();
             }
         }
@@ -710,11 +710,11 @@ public class PurchaseOrder extends Transaction {
         int lastRow = getDetailCount() - 1;
 
         for (int lnRow = 0; lnRow <= lastRow; lnRow++) {
-            int quantity = Detail(lnRow).getQuantity().intValue();
+            double quantity = Detail(lnRow).getQuantity().doubleValue();
             String stockID = (String) Detail(lnRow).getValue("sStockIDx");
 
             if (!stockID.isEmpty()) {
-                if (quantity == 0) {
+                if (quantity == 0.00) {
                     hasZeroQty = true;
                     if (zeroQtyRow == -1) {
                         zeroQtyRow = lnRow;
@@ -760,14 +760,14 @@ public class PurchaseOrder extends Transaction {
             System.out.println("StockId : " + (lnCtr + 1) + " : " + Detail(lnCtr).getStockID());
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
-                int totalRequest = 0;
-                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved());
+                double totalRequest = 0.00;
+                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved().doubleValue());
 //                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
 //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
                 //1. Check discrepancy if the order quantity is not greater than request
                 if (!Detail(lnCtr).getSouceNo().isEmpty()) {
-                    if (Detail(lnCtr).getQuantity().intValue() > totalRequest) {
+                    if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
                         return poJSON;
@@ -775,7 +775,7 @@ public class PurchaseOrder extends Transaction {
                 }
 
                 //1. Check for discrepancy
-                if (Detail(lnCtr).getQuantity().intValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
+                if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity().doubleValue()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
@@ -789,7 +789,7 @@ public class PurchaseOrder extends Transaction {
                     }
                 }
 
-                updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), (int) Detail(lnCtr).getQuantity());
+                updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), Detail(lnCtr).getQuantity().doubleValue());
 
             } else {
                 //Require approve for all po receiving without po
@@ -800,18 +800,18 @@ public class PurchaseOrder extends Transaction {
         //Update stock request removed in purchase order
         for (lnCtr = 0; lnCtr <= getDetailRemovedCount() - 1; lnCtr++) {
             //Purchase Order
-            updateInvStockRequest(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(), (int) DetailRemove(lnCtr).getQuantity());
+            updateInvStockRequest(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(), DetailRemove(lnCtr).getQuantity().doubleValue());
         }
         poJSON.put("result", "success");
         return poJSON;
     }
 
-    private void updateInvStockRequest(String status, String orderNo, String stockId, int quantity)
+    private void updateInvStockRequest(String status, String orderNo, String stockId, double quantity)
             throws GuanzonException,
             SQLException,
             CloneNotSupportedException {
         int lnRow, lnList;
-        int lnRecQty = 0;
+        double lnRecQty = 0.00;
         boolean lbExist = false;
         //2.check if order no is already exist in purchase order array list
         for (lnRow = 0; lnRow <= poStockRequest.size() - 1; lnRow++) {
@@ -843,7 +843,7 @@ public class PurchaseOrder extends Transaction {
                         lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
-                        lnRecQty = poStockRequest.get(lnList).Detail(lnRow).getPurchase();
+                        lnRecQty = poStockRequest.get(lnList).Detail(lnRow).getPurchase().doubleValue();
                         poStockRequest.get(lnList).Master().setProcessed(true);
                         poStockRequest.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
                         poStockRequest.get(lnList).Master().setModifyingId(poGRider.getUserID());
@@ -1340,8 +1340,6 @@ public class PurchaseOrder extends Transaction {
 
         return poJSON;
     }
-    
-    
 
     public JSONObject SearchModel(String value, boolean byCode, int row, boolean hasNoSupplier)
             throws SQLException, GuanzonException, NullPointerException {
@@ -1385,7 +1383,7 @@ public class PurchaseOrder extends Transaction {
 
         String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
-                " (g.sSupplier = " + SQLUtil.toSQL( Master().getSupplierID()) + " OR g.sSupplier IS NULL )",
+                " (g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()) + " OR g.sSupplier IS NULL )",
                 " b.nApproved > 0 ",
                 " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
                 " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
@@ -1410,9 +1408,9 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
                 + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
-        
+
         if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-            lsSQL = lsSQL +  " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+            lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
@@ -1525,9 +1523,9 @@ public class PurchaseOrder extends Transaction {
             }
 
             // If at least one stock is not fully processed, set flag to false
-            if (loTrans.StockRequest().Detail(lnCtr).getApproved()
-                    != loTrans.StockRequest().Detail(lnCtr).getIssued()
-                    + loTrans.StockRequest().Detail(lnCtr).getPurchase()) {
+            if (loTrans.StockRequest().Detail(lnCtr).getApproved().doubleValue()
+                    != loTrans.StockRequest().Detail(lnCtr).getIssued().doubleValue()
+                    + loTrans.StockRequest().Detail(lnCtr).getPurchase().doubleValue()) {
                 allProcessed = false;
             }
 
@@ -1541,8 +1539,8 @@ public class PurchaseOrder extends Transaction {
             }
 
             if (!exists) {
-                int remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved()
-                        - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase());
+                double remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved().doubleValue()
+                        - (loTrans.StockRequest().Detail(lnCtr).getIssued().doubleValue() + loTrans.StockRequest().Detail(lnCtr).getPurchase().doubleValue());
                 if (remainingStock > 0) {
                     AddDetail();
                     int lnLastIndex = getDetailCount() - 1;
@@ -1617,7 +1615,7 @@ public class PurchaseOrder extends Transaction {
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
-                 " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
+                " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
         lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
@@ -1931,10 +1929,7 @@ public class PurchaseOrder extends Transaction {
 
             CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
             viewer.setVisible(true);
-            
-            
-            
-            
+
             poJSON.put("result", "success");
         } catch (JRException | SQLException | GuanzonException ex) {
             poJSON.put("result", "error");
