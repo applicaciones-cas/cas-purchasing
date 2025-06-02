@@ -57,7 +57,7 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("nWHCountx", 0.00);
             poEntity.updateObject("nQuantity", 0.00);
             poEntity.updateObject("nOrderQty", 0.00);
-            poEntity.updateObject("nUnitPrce", 0.00);
+            poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
 //            poEntity.updateObject("nDiscount", 0.00);
 //            poEntity.updateObject("nAddDiscx", 0.00);

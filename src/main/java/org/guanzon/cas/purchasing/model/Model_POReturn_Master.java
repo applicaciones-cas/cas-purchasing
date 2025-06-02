@@ -57,8 +57,8 @@ public class Model_POReturn_Master extends Model {
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nDiscount", 0.00);
-            poEntity.updateObject("nAddDiscx", 0.00);
-            poEntity.updateObject("nTranTotl", 0.00);
+            poEntity.updateObject("nAddDiscx", 0.0000);
+            poEntity.updateObject("nTranTotl", 0.0000);
             poEntity.updateObject("nVATRatex", 0.00);
             poEntity.updateObject("nTWithHld", 0.00);
             poEntity.updateObject("nAmtPaidx", 0.00);
