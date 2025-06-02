@@ -1678,10 +1678,10 @@ public class PurchaseOrder extends Transaction {
     public JSONObject setDiscountRate(String fsValue) {
         poJSON = new JSONObject();
         if (fsValue == null || fsValue.isEmpty()) {
-            fsValue = "0.00";
+            fsValue = "0.0000";
         }
         double lnTotalAmount = Master().getTranTotal().doubleValue();
-        if (lnTotalAmount == 0.00) {
+        if (lnTotalAmount == 0.0000) {
             poJSON.put("message", "You're not allowed to enter discount rate, no detail amount entered.");
             poJSON.put("result", "error");
             Master().setDiscount(PurchaseOrderStaticData.default_value_double);
@@ -1689,15 +1689,15 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         double lnDiscountRate = Double.parseDouble(fsValue);
-        if (lnDiscountRate < PurchaseOrderStaticData.default_value_double || lnDiscountRate > 100.00) {
-            poJSON.put("message", "Invalid Discount Rate.  Must be between 0.00 and 100.00");
+        if (lnDiscountRate < PurchaseOrderStaticData.default_value_double || lnDiscountRate > 100.0000) {
+            poJSON.put("message", "Invalid Discount Rate.  Must be between 0.0000 and 100.0000");
             poJSON.put("result", "error");
             Master().setDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
 
-        Master().setDiscount(lnDiscountRate / 100);
+        Master().setDiscount(lnDiscountRate);
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1714,7 +1714,7 @@ public class PurchaseOrder extends Transaction {
     public JSONObject setDiscountAmount(String fsValue) {
         poJSON = new JSONObject();
         if (fsValue == null || fsValue.isEmpty()) {
-            fsValue = "0.00";
+            fsValue = "0.0000";
         }
         double lnTotalAmount = Master().getTranTotal().doubleValue() - (Master().getDiscount().doubleValue() * Master().getTranTotal().doubleValue());
         if (lnTotalAmount == PurchaseOrderStaticData.default_value_double) {
@@ -1756,7 +1756,7 @@ public class PurchaseOrder extends Transaction {
                 + Master().getAdditionalDiscount().doubleValue());
 
         if (amountAfterDiscounts <= PurchaseOrderStaticData.default_value_double) {
-            poJSON.put("message", "Invalid to enter Advance Payment Rate, the total transaction amount is 0.00");
+            poJSON.put("message", "Invalid to enter Advance Payment Rate, the total transaction amount is 0.0000");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
@@ -1764,15 +1764,15 @@ public class PurchaseOrder extends Transaction {
         }
 
         double lnAdvanceRate = Double.parseDouble(fsValue);
-        if (lnAdvanceRate < PurchaseOrderStaticData.default_value_double || lnAdvanceRate > 100.00) {
-            poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.00 and 100.00");
+        if (lnAdvanceRate < PurchaseOrderStaticData.default_value_double || lnAdvanceRate > 100.0000) {
+            poJSON.put("message", "Invalid Advance Payment Rate. Must be between 0.0000 and 100.0000");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
 
-        Master().setDownPaymentRatesPercentage(lnAdvanceRate / 100);
+        Master().setDownPaymentRatesPercentage(lnAdvanceRate);
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1790,7 +1790,7 @@ public class PurchaseOrder extends Transaction {
     public JSONObject setAdvancePaymentAmount(String fsValue) {
         poJSON = new JSONObject();
         if (fsValue == null || fsValue.isEmpty()) {
-            fsValue = "0.00";
+            fsValue = "0.0000";
         }
         double totalAmountAfterDiscount = Master().getTranTotal().doubleValue() - ((Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
                 + Master().getAdditionalDiscount().doubleValue());
@@ -1799,7 +1799,7 @@ public class PurchaseOrder extends Transaction {
 
         double lnAdvanceAmount = Double.parseDouble(fsValue.replace(",", ""));
         if (totalAmountDiscountWithRate <= PurchaseOrderStaticData.default_value_double) {
-            poJSON.put("message", "Invalid to enter Advance Payment Amount, the total transaction amount is 0.00");
+            poJSON.put("message", "Invalid to enter Advance Payment Amount, the total transaction amount is 0.0000");
             poJSON.put("result", "error");
             Master().setDownPaymentRatesPercentage(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
@@ -1881,7 +1881,7 @@ public class PurchaseOrder extends Transaction {
             parameters.put("watermarkImagePath", watermarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();
 
-            double lnTotal = 0.0;
+            double lnTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().intValue();
 

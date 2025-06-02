@@ -61,12 +61,12 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("sTermCode", "0000004");
             poEntity.updateObject("nDiscount", 0.00);
-            poEntity.updateObject("nAddDiscx", 0.00);
-            poEntity.updateObject("nTranTotl", 0.00);
-            poEntity.updateObject("nAmtPaidx", 0.00);
+            poEntity.updateObject("nAddDiscx", 0.0000);
+            poEntity.updateObject("nTranTotl", 0.0000);
+            poEntity.updateObject("nAmtPaidx", 0.0000);
             poEntity.updateObject("nDPRatexx", 0.00);
-            poEntity.updateObject("nAdvAmtxx", 0.00);
-            poEntity.updateObject("nNetTotal", 0.00);
+            poEntity.updateObject("nAdvAmtxx", 0.0000);
+            poEntity.updateObject("nNetTotal", 0.0000);
             poEntity.updateObject("cEmailSnt", Logical.NO);
             poEntity.updateObject("nEmailSnt", 0);
             poEntity.updateObject("cPrintxxx", Logical.NO);

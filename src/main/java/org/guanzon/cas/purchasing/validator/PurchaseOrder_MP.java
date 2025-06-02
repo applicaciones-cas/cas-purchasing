@@ -132,7 +132,7 @@ public class PurchaseOrder_MP implements GValidator {
         if (poMaster.getWithAdvPaym()) {
             double rate = poMaster.getDownPaymentRatesPercentage().doubleValue();
             double amount = poMaster.getDownPaymentRatesAmount().doubleValue();
-            if (rate <= 0.00 && amount <= 0.00) {
+            if (rate <= 0.0000 && amount <= 0.0000) {
                 poJSON.put("message", "You selected advance rate, but no Adv Rate and Adv Amount.");
                 return poJSON;
             }
