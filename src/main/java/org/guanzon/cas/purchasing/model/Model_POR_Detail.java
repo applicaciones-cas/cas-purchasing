@@ -54,7 +54,7 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("cSerialze", "0");
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateObject("nWHCountx", 0);
+            poEntity.updateObject("nWHCountx", 0.00);
             poEntity.updateObject("nQuantity", 0.00);
             poEntity.updateObject("nOrderQty", 0.00);
             poEntity.updateObject("nUnitPrce", 0.00);

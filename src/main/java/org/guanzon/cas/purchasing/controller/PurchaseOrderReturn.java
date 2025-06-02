@@ -1226,14 +1226,20 @@ public class PurchaseOrderReturn extends Transaction{
         }
         
         Iterator<Model> detail = Detail().iterator();
+        String lsQuantity = "0.00";
         while (detail.hasNext()) {
             Model item = detail.next();
+            if(item.getValue("nQuantity") != null && !"".equals(item.getValue("nQuantity"))){
+                lsQuantity = item.getValue("nQuantity").toString();
+            }
 
             if ("".equals((String) item.getValue("sStockIDx"))
-                    || (double) item.getValue("nQuantity") <= 0) {
+                    || Double.valueOf(lsQuantity) <= 0.00) {
                 detail.remove();
                 paDetailRemoved.add(item);
             }
+            
+            lsQuantity = "0.00";
         }
         
         //Validate detail after removing all zero qty and empty stock Id
@@ -1515,9 +1521,9 @@ public class PurchaseOrderReturn extends Transaction{
                     if(status.equals(PurchaseOrderReturnStatus.CONFIRMED) 
                             || status.equals(PurchaseOrderReturnStatus.POSTED)
                             || status.equals(PurchaseOrderReturnStatus.PAID)){
-                        loInvSerial.getModel().setLocation("0");
+                        loInvSerial.getModel().setLocation("2"); //Return to Supplier
                     } else {
-                        loInvSerial.getModel().setLocation("1");
+                        loInvSerial.getModel().setLocation("0"); 
                     }
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
@@ -1675,6 +1681,7 @@ public class PurchaseOrderReturn extends Transaction{
             int lnRow = 1;
             String lsDescription = "";
             String lsBarcode = "";
+            String lsMeasure = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                 switch(Master().getCategoryCode()){
@@ -1704,9 +1711,13 @@ public class PurchaseOrderReturn extends Transaction{
                     case "0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
-                                + " " + Detail(lnCtr).Inventory().getDescription(); 
+                                + " " + Detail(lnCtr).Inventory().getDescription();
+                        if (Detail(lnCtr).Inventory().Measure().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Measure().getDescription())){
+                            lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
+                        }
+                        
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), 
-                                lsBarcode, lsDescription, Detail(lnCtr).Inventory().Measure().getDescription(),Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
+                                lsBarcode, lsDescription,lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                         jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn_Food.jrxml";
                     break;
                     case "0006": // CAR SP
@@ -1845,6 +1856,10 @@ public class PurchaseOrderReturn extends Transaction{
 
         public double getnUprice() {
             return nUprice;
+        }
+        
+        public String getsMeasure() {
+            return sMeasure;
         }
 
         public double getnOrder() {

@@ -1417,7 +1417,7 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
         
-        ldblDiscountRate = ldblTotal * ldblDiscountRate;
+        ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         
         if ((ldblDiscount < 0 || ldblDiscount > ldblTotal) || (ldblDiscountRate < 0 || ldblDiscountRate > ldblTotal)) {
         } else {
@@ -2028,13 +2028,13 @@ public class PurchaseOrderReceiving extends Transaction {
 
                     if (!lbExist) {
                         //Only insert po detail that has item to receive
-                        if (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue()) {
+                        if (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue()) {
                             Detail(getDetailCount() - 1).setBrandId(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getBrandId());
                             Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo());
                             Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrder().Detail(lnCtr).getStockID());
                             Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getUnitType());
-                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
-                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().intValue());
+                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
+                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
                             Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().isSerialized());
 
@@ -2821,17 +2821,21 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         Iterator<Model> detail = Detail().iterator();
+        String lsQuantity = "0.00";
         while (detail.hasNext()) {
             Model item = detail.next();
-
+            if(item.getValue("nQuantity") != null && !"".equals(item.getValue("nQuantity"))){
+                lsQuantity = item.getValue("nQuantity").toString();
+            }
             if ("".equals((String) item.getValue("sStockIDx"))
-                    || (double) item.getValue("nQuantity") <= 0) {
+                    || Double.valueOf(lsQuantity) <= 0.00) {
                 detail.remove();
 
                 if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
                     paDetailRemoved.add(item);
                 }
             }
+            lsQuantity = "0.00";
         }
         
         //Validate detail after removing all zero qty and empty stock Id
@@ -2953,7 +2957,7 @@ public class PurchaseOrderReceiving extends Transaction {
         //assign other info on detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
-                if(Detail(lnCtr).getOrderQty().intValue() < Detail(lnCtr).getQuantity().doubleValue()){
+                if(Detail(lnCtr).getOrderQty().doubleValue() < Detail(lnCtr).getQuantity().doubleValue()){
                     poJSON.put("result", "error");
                     poJSON.put("message", "Receive quantity cannot be greater than the order quantity for Order No. " + Detail(lnCtr).getOrderNo());
                     return poJSON;
@@ -2976,9 +2980,9 @@ public class PurchaseOrderReceiving extends Transaction {
             if(!pbIsFinance){ //Validate POR Serial only in PO Receiving Form
                 //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
                 //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
-                if(Detail(lnCtr).isSerialized() && 
-                        //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008 : GENERAL 0007
-                        (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008") && !Master().getCategoryCode().equals("0007"))){
+                if(Detail(lnCtr).isSerialized()){ 
+                      //SPMC : 0004 SPCAR   : 0006 FOOD      : 0008 : GENERAL 0007
+                      // &&  (!Master().getCategoryCode().equals("0004") && !Master().getCategoryCode().equals("0006") && !Master().getCategoryCode().equals("0008") && !Master().getCategoryCode().equals("0007"))){
                     //check serial list must be equal to por detail receive qty
                     for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
                         if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
@@ -3273,7 +3277,7 @@ public class PurchaseOrderReceiving extends Transaction {
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())) {
                 //1. Check for discrepancy
-                if (Detail(lnCtr).getOrderQty().intValue() != Detail(lnCtr).getQuantity().doubleValue()) {
+                if (Detail(lnCtr).getOrderQty().doubleValue() != Detail(lnCtr).getQuantity().doubleValue()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
@@ -3353,7 +3357,7 @@ public class PurchaseOrderReceiving extends Transaction {
             case PurchaseOrderReceivingStatus.PAID:
             case PurchaseOrderReceivingStatus.POSTED:
                 //Get total received qty from other po receiving entry
-                lnRecQty = getReceivedQty(orderNo, stockId, true);
+                lnRecQty = getReceivedQty(orderNo, stockId, true).doubleValue();
                 //Add received qty in po receiving
                 lnRecQty = lnRecQty + quantity;
                 
@@ -3373,7 +3377,7 @@ public class PurchaseOrderReceiving extends Transaction {
             case PurchaseOrderReceivingStatus.VOID:
             case PurchaseOrderReceivingStatus.RETURNED:
                 //Get total received qty from other po receiving entry
-                lnRecQty = getReceivedQty(orderNo, stockId, false);
+                lnRecQty = getReceivedQty(orderNo, stockId, false).doubleValue();
                 //Deduct received qty in po receiving
                 lnRecQty = lnRecQty - quantity;
                 break;
@@ -3404,11 +3408,11 @@ public class PurchaseOrderReceiving extends Transaction {
     }
 
     //Open record for checking total receive qty per purchase order
-    private int getReceivedQty(String orderNo, String stockId, boolean isAdd)
+    private Number getReceivedQty(String orderNo, String stockId, boolean isAdd)
             throws SQLException,
             GuanzonException {
         poJSON = new JSONObject();
-        int lnRecQty = 0;
+        double lnRecQty = 0;
         String lsSQL = " SELECT "
                 + " b.nQuantity AS nQuantity "
                 + " FROM po_receiving_master a "
@@ -3431,7 +3435,7 @@ public class PurchaseOrderReceiving extends Transaction {
         try {
             if (MiscUtil.RecordCount(loRS) >= 0) {
                 while (loRS.next()) {
-                    lnRecQty = lnRecQty + loRS.getInt("nQuantity");
+                    lnRecQty = lnRecQty + loRS.getDouble("nQuantity");
                 }
             }
             MiscUtil.close(loRS);
