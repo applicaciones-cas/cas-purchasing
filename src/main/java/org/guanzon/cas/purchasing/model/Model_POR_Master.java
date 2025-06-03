@@ -224,6 +224,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getDiscountRate() {
+        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
+            return 0.00;
+        } 
         return (Number) getValue("nDiscount");
     }
 
@@ -232,6 +235,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getDiscount() {
+        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nAddDiscx");
     }
 
@@ -240,6 +246,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getTransactionTotal() {
+        if(getValue("nTranTotl") == null || "".equals(getValue("nTranTotl"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nTranTotl");
     }
 
@@ -264,6 +273,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getVatRate() {
+        if(getValue("nVATRatex") == null || "".equals(getValue("nVATRatex"))){
+            return 0.00;
+        } 
         return (Number) getValue("nVATRatex");
     }
 
@@ -272,6 +284,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getWithHoldingTax() {
+        if(getValue("nTWithHld") == null || "".equals(getValue("nTWithHld"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nTWithHld");
     }
 
@@ -280,6 +295,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getAmountPaid() {
+        if(getValue("nAmtPaidx") == null || "".equals(getValue("nAmtPaidx"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nAmtPaidx");
     }
 
@@ -288,6 +306,9 @@ public class Model_POR_Master extends Model {
     }
 
     public Number getFreight() {
+        if(getValue("nFreightx") == null || "".equals(getValue("nFreightx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nFreightx");
     }
 

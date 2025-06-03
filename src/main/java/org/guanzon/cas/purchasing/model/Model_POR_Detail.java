@@ -142,6 +142,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getQuantity(){
+        if(getValue("nQuantity") == null || "".equals(getValue("nQuantity"))){
+            return 0.00;
+        } 
         return (Number) getValue("nQuantity");
     }
     
@@ -150,6 +153,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getUnitPrce(){
+        if(getValue("nUnitPrce") == null || "".equals(getValue("nUnitPrce"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nUnitPrce");
     }
     
@@ -158,6 +164,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getFreight(){
+        if(getValue("nFreightx") == null || "".equals(getValue("nFreightx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nFreightx");
     }
     
@@ -166,6 +175,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getDiscount(){
+        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
+            return 0.00;
+        } 
         return (Number) getValue("nDiscount");
     }
     
@@ -174,6 +186,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getAdditionalDiscount(){
+        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nAddDiscx");
     }
     
@@ -182,6 +197,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getTotal(){
+        if(getValue("nTranTotl") == null || "".equals(getValue("nTranTotl"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nTranTotl");
     }
     
@@ -198,6 +216,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getWhCount(){
+        if(getValue("nWHCountx") == null || "".equals(getValue("nWHCountx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nWHCountx");
     }
     
@@ -206,16 +227,11 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getOrderQty(){
+        if(getValue("nOrderQty") == null || "".equals(getValue("nOrderQty"))){
+            return 0.00;
+        } 
         return (Number) getValue("nOrderQty");
     }
-    
-//    public JSONObject setWithVat(String withVat){
-//        return setValue("cWithVATx", withVat);
-//    }
-//    
-//    public String getWithVat(){
-//        return (String) getValue("cWithVATx");
-//    }
     
     public JSONObject isVatable(boolean isVatable){
         return setValue("cWithVATx", isVatable ? "1" : "0");

@@ -115,6 +115,9 @@ public class Model_POReturn_Detail extends Model{
     }
     
     public Number getQuantity(){
+        if(getValue("nQuantity") == null || "".equals(getValue("nQuantity"))){
+            return 0.00;
+        } 
         return (Number) getValue("nQuantity");
     }
     
@@ -123,6 +126,9 @@ public class Model_POReturn_Detail extends Model{
     }
     
     public Number getUnitPrce(){
+        if(getValue("nUnitPrce") == null || "".equals(getValue("nUnitPrce"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nUnitPrce");
     }
     
@@ -131,6 +137,9 @@ public class Model_POReturn_Detail extends Model{
     }
     
     public Number getFreight(){
+        if(getValue("nFreightx") == null || "".equals(getValue("nFreightx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nFreightx");
     }
     

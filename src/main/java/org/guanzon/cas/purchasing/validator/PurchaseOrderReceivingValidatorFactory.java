@@ -26,6 +26,8 @@ public class PurchaseOrderReceivingValidatorFactory {
                 return new PurchaseOrderReceiving_LP();
             case "": //General
                 return new PurchaseOrderReceiving_General();
+            case "07": //Appliances
+                return new PurchaseOrderReceiving_Appliances();
             default:
                 return null;
         }

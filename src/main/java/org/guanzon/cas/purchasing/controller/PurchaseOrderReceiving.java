@@ -1439,7 +1439,7 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal = ldblTotal - ldblDiscount - ldblDiscountRate;
         }
         
-        Master().setTransactionTotal(ldblTotal);
+        poJSON = Master().setTransactionTotal(ldblTotal);
         
         //Compute Term Due Date
         LocalDate ldReferenceDate = strToDate(xsDateShort(Master().getReferenceDate()));

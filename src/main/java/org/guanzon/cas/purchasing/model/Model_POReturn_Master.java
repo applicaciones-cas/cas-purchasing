@@ -61,7 +61,7 @@ public class Model_POReturn_Master extends Model {
             poEntity.updateObject("nTranTotl", 0.0000);
             poEntity.updateObject("nVATRatex", 0.00);
             poEntity.updateObject("nTWithHld", 0.00);
-            poEntity.updateObject("nAmtPaidx", 0.00);
+            poEntity.updateObject("nAmtPaidx", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
             poEntity.updateString("cPrintxxx", Logical.NO);
             poEntity.updateString("cProcessd", Logical.NO);
@@ -166,6 +166,9 @@ public class Model_POReturn_Master extends Model {
     }
     
     public Number getDiscountRate(){
+        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
+            return 0.00;
+        } 
         return (Number) getValue("nDiscount");
     }
     
@@ -174,6 +177,9 @@ public class Model_POReturn_Master extends Model {
     }
     
     public Number getDiscount(){
+        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nAddDiscx");
     }
     
@@ -182,6 +188,9 @@ public class Model_POReturn_Master extends Model {
     }
     
     public Number getTransactionTotal(){
+        if(getValue("nTranTotl") == null || "".equals(getValue("nTranTotl"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nTranTotl");
     }
     
@@ -206,6 +215,9 @@ public class Model_POReturn_Master extends Model {
     }
     
     public Number getAmountPaid(){
+        if(getValue("nAmtPaidx") == null || "".equals(getValue("nAmtPaidx"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nAmtPaidx");
     }
     
@@ -214,6 +226,9 @@ public class Model_POReturn_Master extends Model {
     }
     
     public Number getFreight(){
+        if(getValue("nFreightx") == null || "".equals(getValue("nFreightx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nFreightx");
     }
     

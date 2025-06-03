@@ -1523,7 +1523,7 @@ public class PurchaseOrderReturn extends Transaction{
                             || status.equals(PurchaseOrderReturnStatus.PAID)){
                         loInvSerial.getModel().setLocation("2"); //Return to Supplier
                     } else {
-                        loInvSerial.getModel().setLocation("0"); 
+                        loInvSerial.getModel().setLocation("1"); 
                     }
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
