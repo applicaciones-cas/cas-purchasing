@@ -75,6 +75,7 @@ public class PurchaseOrder extends Transaction {
     List<Model> paDetailRemoved;
     GLControllers poPaymentRequest;
     String PayeeID;
+    Double NetTotl = 0.00;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -1678,7 +1679,7 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.0000";
         }
-        double lnTotalAmount = Master().getTranTotal().doubleValue();
+        double lnTotalAmount = (double)Master().getTranTotal();
         if (lnTotalAmount == 0.0000) {
             poJSON.put("message", "You're not allowed to enter discount rate, no detail amount entered.");
             poJSON.put("result", "error");
@@ -1688,14 +1689,14 @@ public class PurchaseOrder extends Transaction {
         }
         double lnDiscountRate = Double.parseDouble(fsValue);
         if (lnDiscountRate < PurchaseOrderStaticData.default_value_double || lnDiscountRate > 100.0000) {
-            poJSON.put("message", "Invalid Discount Rate.  Must be between 0.0000 and 100.0000");
+            poJSON.put("message", "Invalid Discount Rate.  Must be between 0.00 and 100.00");
             poJSON.put("result", "error");
             Master().setDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
 
-        Master().setDiscount(lnDiscountRate);
+        Master().setDiscount(lnDiscountRate);   
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1713,6 +1714,13 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.0000";
+        }
+        if (Double.parseDouble(fsValue) >= 1000000.0000){
+            poJSON.put("message", "Discount amount must not exceed 1 Million.");
+            poJSON.put("result", "error");
+            Master().setAdditionalDiscount(PurchaseOrderStaticData.default_value_double);
+            computeNetTotal();
+            return poJSON;
         }
         double lnTotalAmount = Master().getTranTotal().doubleValue() - (Master().getDiscount().doubleValue() * Master().getTranTotal().doubleValue());
         if (lnTotalAmount == PurchaseOrderStaticData.default_value_double) {
@@ -1828,7 +1836,8 @@ public class PurchaseOrder extends Transaction {
 
     public void computeNetTotal() {
         double totalAmount = Master().getTranTotal().doubleValue(); // Total transaction amount
-        double discountRate = Master().getDiscount().doubleValue();
+        double discountRate = Master().getDiscount().doubleValue() / 100;
+        System.out.printf("Discount: %.2f%%\n", discountRate );
         double discountRateWithTotalAmount = totalAmount * discountRate;
         double additionalDiscountAmount = Master().getAdditionalDiscount().doubleValue();
 
@@ -1847,6 +1856,20 @@ public class PurchaseOrder extends Transaction {
 //
         double netTotal = totalAmount - totalDiscount;
         Master().setNetTotal(netTotal);
+        
+    }
+    public JSONObject netTotalChecker(int pnRow){
+        poJSON = new JSONObject(); 
+            NetTotl = (double)Master().getNetTotal() + ((double)Detail(pnRow).getQuantity() * (double)Detail(pnRow).getUnitPrice());
+            if(NetTotl >= 100000000.0000){
+                poJSON.put("result", "error");
+                poJSON.put("message", "NetTotal exceeds 100 Million!");
+                Detail(pnRow).setQuantity(0);
+                computeNetTotal();
+                return poJSON;
+            }
+         poJSON.put("result", "success");    
+        return poJSON;
     }
 
     public JSONObject printTransaction(String jasperType) {
