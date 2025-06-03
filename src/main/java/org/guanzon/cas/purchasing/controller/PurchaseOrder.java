@@ -75,7 +75,6 @@ public class PurchaseOrder extends Transaction {
     List<Model> paDetailRemoved;
     GLControllers poPaymentRequest;
     String PayeeID;
-    Double NetTotl = 0.00;
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
@@ -1861,10 +1860,10 @@ public class PurchaseOrder extends Transaction {
 
     public JSONObject netTotalChecker(int pnRow) {
         poJSON = new JSONObject();
-        NetTotl = (double) Master().getNetTotal() + ((double) Detail(pnRow).getQuantity() * (double) Detail(pnRow).getUnitPrice());
+        double NetTotl = Master().getNetTotal().doubleValue() + (Detail(pnRow).getQuantity().doubleValue() * Detail(pnRow).getUnitPrice().doubleValue());
         if (NetTotl >= 100000000.0000) {
             poJSON.put("result", "error");
-            poJSON.put("message", "NetTotal exceeds 100 Million!");
+            poJSON.put("message", "The net total exceeds the maximum allowed amount. Please reduce the value and try again.");
             Detail(pnRow).setQuantity(0);
             computeNetTotal();
             return poJSON;
