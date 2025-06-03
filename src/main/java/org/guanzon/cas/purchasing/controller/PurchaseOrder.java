@@ -1679,7 +1679,7 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.0000";
         }
-        double lnTotalAmount = (double)Master().getTranTotal();
+        double lnTotalAmount = (double) Master().getTranTotal();
         if (lnTotalAmount == 0.0000) {
             poJSON.put("message", "You're not allowed to enter discount rate, no detail amount entered.");
             poJSON.put("result", "error");
@@ -1696,7 +1696,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        Master().setDiscount(lnDiscountRate);   
+        Master().setDiscount(lnDiscountRate);
         computeNetTotal();
         double lnNetTotal = Master().getNetTotal().doubleValue();
         if (lnNetTotal < PurchaseOrderStaticData.default_value_double) {
@@ -1715,14 +1715,14 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.0000";
         }
-        if (Double.parseDouble(fsValue) >= 1000000.0000){
+        if (Double.parseDouble(fsValue) >= 1000000.0000) {
             poJSON.put("message", "Discount amount must not exceed 1 Million.");
             poJSON.put("result", "error");
             Master().setAdditionalDiscount(PurchaseOrderStaticData.default_value_double);
             computeNetTotal();
             return poJSON;
         }
-        double lnTotalAmount = Master().getTranTotal().doubleValue() - (Master().getDiscount().doubleValue() * Master().getTranTotal().doubleValue());
+        double lnTotalAmount = Master().getTranTotal().doubleValue() - ((Master().getDiscount().doubleValue() / 100) * Master().getTranTotal().doubleValue());
         if (lnTotalAmount == PurchaseOrderStaticData.default_value_double) {
             poJSON.put("message", "You're not allowed to enter discount amount, no amount entered.");
             poJSON.put("result", "error");
@@ -1758,7 +1758,7 @@ public class PurchaseOrder extends Transaction {
         if (fsValue == null || fsValue.isEmpty()) {
             fsValue = "0.00";
         }
-        double amountAfterDiscounts = Master().getTranTotal().doubleValue() - ((Master().getTranTotal().doubleValue() * Master().getDiscount().doubleValue())
+        double amountAfterDiscounts = Master().getTranTotal().doubleValue() - (((Master().getTranTotal().doubleValue() / 100) * Master().getDiscount().doubleValue())
                 + Master().getAdditionalDiscount().doubleValue());
 
         if (amountAfterDiscounts <= PurchaseOrderStaticData.default_value_double) {
@@ -1837,7 +1837,7 @@ public class PurchaseOrder extends Transaction {
     public void computeNetTotal() {
         double totalAmount = Master().getTranTotal().doubleValue(); // Total transaction amount
         double discountRate = Master().getDiscount().doubleValue() / 100;
-        System.out.printf("Discount: %.2f%%\n", discountRate );
+        System.out.printf("Discount: %.2f%%\n", discountRate);
         double discountRateWithTotalAmount = totalAmount * discountRate;
         double additionalDiscountAmount = Master().getAdditionalDiscount().doubleValue();
 
@@ -1856,19 +1856,20 @@ public class PurchaseOrder extends Transaction {
 //
         double netTotal = totalAmount - totalDiscount;
         Master().setNetTotal(netTotal);
-        
+
     }
-    public JSONObject netTotalChecker(int pnRow){
-        poJSON = new JSONObject(); 
-            NetTotl = (double)Master().getNetTotal() + ((double)Detail(pnRow).getQuantity() * (double)Detail(pnRow).getUnitPrice());
-            if(NetTotl >= 100000000.0000){
-                poJSON.put("result", "error");
-                poJSON.put("message", "NetTotal exceeds 100 Million!");
-                Detail(pnRow).setQuantity(0);
-                computeNetTotal();
-                return poJSON;
-            }
-         poJSON.put("result", "success");    
+
+    public JSONObject netTotalChecker(int pnRow) {
+        poJSON = new JSONObject();
+        NetTotl = (double) Master().getNetTotal() + ((double) Detail(pnRow).getQuantity() * (double) Detail(pnRow).getUnitPrice());
+        if (NetTotl >= 100000000.0000) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "NetTotal exceeds 100 Million!");
+            Detail(pnRow).setQuantity(0);
+            computeNetTotal();
+            return poJSON;
+        }
+        poJSON.put("result", "success");
         return poJSON;
     }
 
