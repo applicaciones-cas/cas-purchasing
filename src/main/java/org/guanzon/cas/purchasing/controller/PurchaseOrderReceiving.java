@@ -1552,16 +1552,21 @@ public class PurchaseOrderReceiving extends Transaction {
     }
 
     public JSONObject checkExistingStock(String stockId, String description, String expiryDate, int row, boolean isSave) {
+        poJSON = new JSONObject();
         for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
-            if(lnRow != row ){
-                if  (("".equals(Detail(lnRow).getOrderNo()) || Detail(lnRow).getOrderNo() == null) &&
-                    (stockId.equals(Detail(lnRow).getStockId()))) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
-                    poJSON.put("row", lnRow);
-                    System.out.println("json row : " + poJSON.get("row"));
-                    return poJSON;
-                } 
+            if(Detail(lnRow).getQuantity().doubleValue() > 0){
+                if("".equals(Detail(row).getOrderNo()) || Detail(row).getOrderNo() == null){
+                    if(lnRow != row ){
+                        if  ( ("".equals(Detail(lnRow).getOrderNo()) || Detail(lnRow).getOrderNo() == null)
+                                && stockId.equals(Detail(lnRow).getStockId())) {
+                            poJSON.put("result", "error");
+                            poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
+                            poJSON.put("row", lnRow);
+                            System.out.println("json row : " + poJSON.get("row"));
+                            return poJSON;
+                        } 
+                    }
+                }
             }
         }
         
@@ -1601,6 +1606,10 @@ public class PurchaseOrderReceiving extends Transaction {
 //                }
 //            }
 //        }
+
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
+        poJSON.put("row", row);
         return poJSON;
     }
 
