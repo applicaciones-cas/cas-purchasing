@@ -5,6 +5,7 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -184,11 +185,20 @@ public class PurchaseOrder extends Transaction {
         Iterator<Model> detail = Detail().iterator();
         while (detail.hasNext()) {
             Model item = detail.next();
-            double quantity = (double) item.getValue("nQuantity");
-            String stockID = (String) item.getValue("sStockIDx");
+            Object quantityObj = item.getValue("nQuantity");
+            Object stockIDObj = item.getValue("sStockIDx");
 
-            // Remove only items with empty stock ID or zero quantity
-            if (stockID.isEmpty() || quantity <= 0.00) {
+            // Check if the values are not null
+            if (quantityObj != null && stockIDObj != null) {
+                double quantity = ((Number) quantityObj).doubleValue();
+                String stockID = (String) stockIDObj;
+
+                // Remove only items with empty stock ID or zero quantity
+                if (stockID.isEmpty() || quantity <= 0.00) {
+                    detail.remove();
+                }
+            } else {
+                // Handle the case where the values are null
                 detail.remove();
             }
         }
@@ -1888,6 +1898,12 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
+            parameters.put("nTtlAmntx", Master().getTranTotal().doubleValue());
+            parameters.put("nDiscRate", Master().getDiscount().doubleValue());
+            parameters.put("nDiscAmnt", Master().getAdditionalDiscount().doubleValue());
+            parameters.put("nAdvAmntx", Master().getDownPaymentRatesAmount().doubleValue());
+            parameters.put("nAdvRatex", Master().getDownPaymentRatesPercentage().doubleValue());
+            parameters.put("nNetAmntx", Master().getNetTotal().doubleValue());
 
             switch (Master().getTransactionStatus()) {
                 case PurchaseOrderStatus.POSTED:
@@ -1912,12 +1928,13 @@ public class PurchaseOrder extends Transaction {
                         Detail(lnCtr).Inventory().Brand().getDescription(),
                         Detail(lnCtr).Inventory().Variant().getDescription() + " " + Detail(lnCtr).Inventory().Variant().getYearModel(),
                         Detail(lnCtr).Inventory().Model().getDescription(),
-                        Detail(lnCtr).Inventory().Measure().getDescription(),
+                        Detail(lnCtr).Inventory().Measure().getDescription() != null ? Detail(lnCtr).Inventory().Measure().getDescription() : "",
                         Detail(lnCtr).Inventory().Color().getDescription(),
                         Detail(lnCtr).Inventory().getDescription(),
                         Detail(lnCtr).getUnitPrice().doubleValue(),
                         Detail(lnCtr).getQuantity().doubleValue(),
-                        lnTotal));
+                        lnTotal
+                ));
             }
 
             // 3. Create data source
@@ -1976,9 +1993,14 @@ public class PurchaseOrder extends Transaction {
         private double nUprice;
         private double nOrder;
         private double nTotal;
+        private double nDiscRate;
+        private double nDiscAmt;
+        private double nAdvRate;
+        private double nAdvAmt;
+        private double nNetAmt;
 
         public OrderDetail(Integer rowNo, String orderNo, String barcode, String BrandName, String Variant, String Model, String Measure, String Color, String description,
-                double uprice, double order, double total) {
+                double uprice, double order, double nTotal) {
             this.nRowNo = rowNo;
             this.sOrderNo = orderNo;
             this.sBarcode = barcode;
@@ -1990,7 +2012,7 @@ public class PurchaseOrder extends Transaction {
             this.sDescription = description;
             this.nUprice = uprice;
             this.nOrder = order;
-            this.nTotal = total;
+            this.nTotal = nTotal;
         }
 
         public Integer getnRowNo() {
@@ -2040,6 +2062,27 @@ public class PurchaseOrder extends Transaction {
         public double getnTotal() {
             return nTotal;
         }
+
+        public double getnDiscRate() {
+            return nDiscRate;
+        }
+
+        public double getnDiscAmt() {
+            return nDiscAmt;
+        }
+
+        public double getnAdvRate() {
+            return nAdvRate;
+        }
+
+        public double getnAdvAmt() {
+            return nAdvAmt;
+        }
+
+        public double getnNetAmt() {
+            return nNetAmt;
+        }
+
     }
 
     public class CustomJasperViewer extends JasperViewer {
