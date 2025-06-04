@@ -54,11 +54,14 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("cSerialze", "0");
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateObject("nQuantity", 0);
-            poEntity.updateObject("nWHCountx", 0);
-            poEntity.updateObject("nOrderQty", 0);
-            poEntity.updateObject("nUnitPrce", 0.00);
+            poEntity.updateObject("nWHCountx", 0.00);
+            poEntity.updateObject("nQuantity", 0.00);
+            poEntity.updateObject("nOrderQty", 0.00);
+            poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
+//            poEntity.updateObject("nDiscount", 0.00);
+//            poEntity.updateObject("nAddDiscx", 0.00);
+//            poEntity.updateObject("nTranTotl", 0.00);
             //end - assign default values
 
             poEntity.insertRow();
@@ -139,6 +142,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getQuantity(){
+        if(getValue("nQuantity") == null || "".equals(getValue("nQuantity"))){
+            return 0.00;
+        } 
         return (Number) getValue("nQuantity");
     }
     
@@ -147,6 +153,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getUnitPrce(){
+        if(getValue("nUnitPrce") == null || "".equals(getValue("nUnitPrce"))){
+            return 0.0000;
+        } 
         return (Number) getValue("nUnitPrce");
     }
     
@@ -155,7 +164,43 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getFreight(){
+        if(getValue("nFreightx") == null || "".equals(getValue("nFreightx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nFreightx");
+    }
+    
+    public JSONObject setDiscount(Number discount){
+        return setValue("nDiscount", discount);
+    }
+    
+    public Number getDiscount(){
+        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nDiscount");
+    }
+    
+    public JSONObject setAdditionalDiscount(Number additionalDiscount){
+        return setValue("nAddDiscx", additionalDiscount);
+    }
+    
+    public Number getAdditionalDiscount(){
+        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
+            return 0.0000;
+        } 
+        return (Number) getValue("nAddDiscx");
+    }
+    
+    public JSONObject setTotal(Number total){
+        return setValue("nTranTotl", total);
+    }
+    
+    public Number getTotal(){
+        if(getValue("nTranTotl") == null || "".equals(getValue("nTranTotl"))){
+            return 0.0000;
+        } 
+        return (Number) getValue("nTranTotl");
     }
     
     public JSONObject setExpiryDate(Date expiryDate){
@@ -171,6 +216,9 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getWhCount(){
+        if(getValue("nWHCountx") == null || "".equals(getValue("nWHCountx"))){
+            return 0.00;
+        } 
         return (Number) getValue("nWHCountx");
     }
     
@@ -179,15 +227,18 @@ public class Model_POR_Detail extends Model{
     }
     
     public Number getOrderQty(){
+        if(getValue("nOrderQty") == null || "".equals(getValue("nOrderQty"))){
+            return 0.00;
+        } 
         return (Number) getValue("nOrderQty");
     }
     
-    public JSONObject setWithVat(String withVat){
-        return setValue("cWithVATx", withVat);
-    }
+    public JSONObject isVatable(boolean isVatable){
+        return setValue("cWithVATx", isVatable ? "1" : "0");
+    } 
     
-    public String getWithVat(){
-        return (String) getValue("cWithVATx");
+    public boolean isVatable(){
+        return ((String) getValue("cWithVATx")).equals("1");
     }
     
     public JSONObject isSerialized(boolean isSerialize){

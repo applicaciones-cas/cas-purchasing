@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -29,7 +30,7 @@ import org.json.simple.JSONObject;
  *
  * @author Arsiela 03-12-2025
  */
-public class PurchaseOrderReceiving_Vehicle implements GValidator{
+public class PurchaseOrderReceiving_Appliances implements GValidator{
     GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
@@ -88,7 +89,7 @@ public class PurchaseOrderReceiving_Vehicle implements GValidator{
                     poJSON.put("result", "success");
             }
         } catch (SQLException ex) {
-            Logger.getLogger(PurchaseOrderReceiving_Vehicle.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(PurchaseOrderReceiving_Appliances.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;
