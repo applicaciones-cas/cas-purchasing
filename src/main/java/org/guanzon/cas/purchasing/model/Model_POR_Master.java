@@ -67,6 +67,10 @@ public class Model_POR_Master extends Model {
             poEntity.updateObject("nTWithHld", 0.00);
             poEntity.updateObject("nAmtPaidx", 0.00);
             poEntity.updateObject("nFreightx", 0.00);
+            poEntity.updateObject("nVATSales", 0.00);
+            poEntity.updateObject("nVATAmtxx", 0.00);
+            poEntity.updateObject("nZroVATSl", 0.00);
+            poEntity.updateObject("nVATExmpt", 0.00);
             poEntity.updateString("cPrintxxx", Logical.NO);
             poEntity.updateString("cProcessd", Logical.NO);
             poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
@@ -260,12 +264,12 @@ public class Model_POR_Master extends Model {
         return (String) getValue("sSalesInv");
     }
 
-    public JSONObject setVatableTax(String vatableTax) {
-        return setValue("cVATaxabl", vatableTax);
-    }
-
-    public String getVatableTax() {
-        return (String) getValue("cVATaxabl");
+    public JSONObject isVatTaxable(boolean isVatable){
+        return setValue("cVATaxabl", isVatable ? "1" : "0");
+    } 
+    
+    public boolean isVatTaxable(){
+        return ((String) getValue("cVATaxabl")).equals("1");
     }
 
     public JSONObject setVatRate(Number vatRate) {
@@ -277,6 +281,14 @@ public class Model_POR_Master extends Model {
             return 0.00;
         } 
         return (Number) getValue("nVATRatex");
+    }
+
+    public JSONObject isTaxWithHold(boolean taxWithHold){
+        return setValue("cTWithHld", taxWithHold ? "1" : "0");
+    } 
+    
+    public boolean isTaxWithHold(){
+        return ((String) getValue("cTWithHld")).equals("1");
     }
 
     public JSONObject setWithHoldingTax(Number withHoldingTax) {
@@ -310,6 +322,50 @@ public class Model_POR_Master extends Model {
             return 0.00;
         } 
         return (Number) getValue("nFreightx");
+    }
+    
+    public JSONObject setVatSales(Number vatSales) {
+        return setValue("nVATSales", vatSales);
+    }
+
+    public Number getVatSales() {
+        if(getValue("nVATSales") == null || "".equals(getValue("nVATSales"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATSales");
+    }
+    
+    public JSONObject setVatAmount(Number vatAmount) {
+        return setValue("nVATAmtxx", vatAmount);
+    }
+
+    public Number getVatAmount() {
+        if(getValue("nVATAmtxx") == null || "".equals(getValue("nVATAmtxx"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATAmtxx");
+    }
+    
+    public JSONObject setZeroVatSales(Number zeroVatSales) {
+        return setValue("nZroVATSl", zeroVatSales);
+    }
+
+    public Number getZeroVatSales() {
+        if(getValue("nZroVATSl") == null || "".equals(getValue("nZroVATSl"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nZroVATSl");
+    }
+    
+    public JSONObject setVatExemptSales(Number vatExemptSales) {
+        return setValue("nVATExmpt", vatExemptSales);
+    }
+
+    public Number getVatExemptSales() {
+        if(getValue("nVATExmpt") == null || "".equals(getValue("nVATExmpt"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATExmpt");
     }
 
     public JSONObject setRemarks(String remarks) {

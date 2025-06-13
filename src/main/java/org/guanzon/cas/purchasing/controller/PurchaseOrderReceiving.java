@@ -1449,43 +1449,33 @@ public class PurchaseOrderReceiving extends Transaction {
         Master().setTermDueDate(ldTermDue);
         
         /*Compute VAT Amount*/
+        double ldblVatSales = 0.0000;
+        double ldblVatAmount = 0.0000;
+        double ldblNetVatAmount = 0.0000;
         if(pbIsFinance){
-            /* PO Receiving Master
-            Vat Inclusive : YES
-            Transaction Total : sum of total detail
-            Freight Amount : Input
-            Discount Amount : Input
-            VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
-            VAT Amount : VAT Sales - (VAT Sales / 1.12)
-            Net VAT Amount : VAT Sales - VAT Amount
-            Zero Vat Sales : Input
-            Vat Exempt : Input
-            Withholding Tax : Input
-
-            Net Total : VAT Sales - Withholding Tax
-            Net Total : VAT Sales 
-
-            Vat Inclusive : NO
-            Transaction Total : sum of total detail
-            Freight Amount : Input
-            Discount Amount : Input
-            VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
-            VAT Amount : VAT Sales * 0.12
-            Net VAT Amount : VAT Sales + VAT Amount
-            Zero Vat Sales : Input
-            Vat Exempt : Input
-            Withholding Tax : Input
-
-            Net Total : Net VAT Amount - Withholding Tax
-            Net Total : Net VAT Amount 
+            if(Master().isVatTaxable()){
+                //VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
+                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) 
+                                - (ldblDiscountRate + ldblDiscount);
+                //VAT Amount : VAT Sales - (VAT Sales / 1.12)
+                ldblVatAmount = ldblVatSales - ( ldblVatSales / 1.12);
+                //Net VAT Amount : VAT Sales - VAT Amount
+                ldblNetVatAmount = ldblVatSales - ldblVatAmount;
+            } else {
+                //VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
+                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) 
+                                - (ldblDiscountRate + ldblDiscount);
+                //VAT Amount : VAT Sales - (VAT Sales / 1.12)
+                ldblVatAmount = ldblVatSales * 0.12;
+                //Net VAT Amount : VAT Sales + VAT Amount
+                ldblNetVatAmount = ldblVatSales + ldblVatAmount;
+            }
             
-            PO Receiving Detail
-            
-            */
-            
-            
+            Master().setVatSales(ldblVatSales);
+            Master().setVatAmount(ldblVatAmount);
+            Master().setVatExemptSales(ldblTotal);
+            Master().setZeroVatSales(0.00); //TODO
         }
-
         return poJSON;
     }
 

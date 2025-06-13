@@ -233,6 +233,28 @@ public class Model_POR_Detail extends Model{
         return (Number) getValue("nOrderQty");
     }
     
+    public JSONObject setDiscountRate(Number discountRate){
+        return setValue("nDiscount", discountRate);
+    }
+    
+    public Number getDiscountRate(){
+        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nDiscount");
+    }
+    
+    public JSONObject setDiscountAmount(Number discountAmount){
+        return setValue("nAddlDiscx", discountAmount);
+    }
+    
+    public Number getDiscountAmount(){
+        if(getValue("nAddlDiscx") == null || "".equals(getValue("nAddlDiscx"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nAddlDiscx");
+    }
+    
     public JSONObject isVatable(boolean isVatable){
         return setValue("cWithVATx", isVatable ? "1" : "0");
     } 
