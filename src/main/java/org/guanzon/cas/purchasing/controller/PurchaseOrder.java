@@ -42,8 +42,6 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
-import org.guanzon.cas.gl.Payee;
-import org.guanzon.cas.gl.services.GLControllers;
 import org.guanzon.cas.inv.Inventory;
 //import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
@@ -67,6 +65,8 @@ import org.guanzon.cas.purchasing.validator.PurchaseOrderValidatorFactory;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import ph.com.guanzongroup.cas.cashflow.Payee;
+import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 
 public class PurchaseOrder extends Transaction {
 
@@ -74,7 +74,7 @@ public class PurchaseOrder extends Transaction {
     List<Model_PO_Master> paPOMaster;
     List<StockRequest> poStockRequest;
     List<Model> paDetailRemoved;
-    GLControllers poPaymentRequest;
+    CashflowControllers poPaymentRequest;
     String PayeeID;
     private boolean pbApproval = false;
 
@@ -417,12 +417,12 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//            if (!"success".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
+//        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -881,7 +881,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         try {
             if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > PurchaseOrderStaticData.default_value_double) {
-                poPaymentRequest = new GLControllers(poGRider, null);
+                poPaymentRequest = new CashflowControllers(poGRider, null);
 
                 poPaymentRequest.PaymentRequest().InitTransaction();
                 poPaymentRequest.PaymentRequest().NewTransaction();
@@ -1301,7 +1301,7 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject SearchPayee(String value, String ParticularID, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
-        Payee object = new GLControllers(poGRider, logwrapr).Payee();
+        Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
         poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
