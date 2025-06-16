@@ -59,8 +59,8 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("nOrderQty", 0.00);
             poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
-//            poEntity.updateObject("nDiscount", 0.00);
-//            poEntity.updateObject("nAddDiscx", 0.00);
+            poEntity.updateObject("nDiscount", 0.00);
+            poEntity.updateObject("nAddDiscx", 0.0000);
 //            poEntity.updateObject("nTranTotl", 0.00);
             //end - assign default values
 
