@@ -11,12 +11,12 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <exec.mainClass>org.guanzon.cas.purchasing.CasPurchasing</exec.mainClass>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.guanzon</groupId>
             <artifactId>appdriver-agent</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -32,28 +32,22 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>org.guanzon.cas.inventory</groupId>
-            <artifactId>cas-inventory</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
             <version>6.19.0</version>
             <type>jar</type>
         </dependency>
-   <dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
             <version>1.9</version>
         </dependency>
-  <dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>4.0.1</version>
@@ -69,25 +63,49 @@
             <version>4.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.guanzon.clients</groupId>
-            <artifactId>cas-clients</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-parameter</artifactId>
+            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.guanzon</groupId>
-            <artifactId>cas</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>cas-client</artifactId>
+            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.guanzon</groupId>
-            <artifactId>cas-parameters</artifactId>
+            <artifactId>cas-inv</artifactId>
+            <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-inv-warehouse</artifactId>
             <version>0.1-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-gl</artifactId>
+            <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>ph.com.guanzongroup</groupId>
+            <artifactId>cas-cashflow</artifactId>
+            <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -100,12 +118,12 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <distributionManagement>
         <repository>
             <id>github</id>
             <name>GitHub Guanzon-Central-Repository Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/mtcuison/Guanzon-Central-Repository/</url>
         </repository>
-    </distributionManagement> 
+    </distributionManagement>
 </project>
