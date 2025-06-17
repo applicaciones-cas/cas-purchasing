@@ -55,9 +55,6 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
-import org.guanzon.cas.gl.CachePayable;
-import org.guanzon.cas.gl.services.GLControllers;
-import org.guanzon.cas.gl.services.GLModels;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
@@ -82,6 +79,8 @@ import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderReceivingValidatorFactory;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import ph.com.guanzongroup.cas.cashflow.CachePayable;
+import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 
 /**
  *
@@ -2792,7 +2791,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private JSONObject populateCachePayable() throws SQLException, GuanzonException, CloneNotSupportedException{
         poJSON = new JSONObject();
-        poCachePayable = new GLControllers(poGRider, logwrapr).CachePayable();
+        poCachePayable = new CashflowControllers(poGRider, logwrapr).CachePayable();
         poCachePayable.InitTransaction();
         poCachePayable.setWithParent(true);
         poJSON = poCachePayable.NewTransaction();
@@ -2845,6 +2844,85 @@ public class PurchaseOrderReceiving extends Transaction {
         
         return poJSON;
     }
+
+    
+//    private JSONObject populateCachePayable() throws SQLException, GuanzonException, CloneNotSupportedException{
+//        poJSON = new JSONObject();
+//        poCachePayable = new CashflowControllers(poGRider, logwrapr).CachePayable();
+//        poCachePayable.InitTransaction();
+//        poCachePayable.setWithParent(true);
+//        poJSON = poCachePayable.NewTransaction();
+//        if ("error".equals((String) poJSON.get("result"))){
+//            return poJSON;
+//        }
+//        
+//        Double ldblGrossAmt = 0.0000;
+//        Double ldblTotal = 0.0000;
+//        Double ldblDetTotal = 0.0000;
+//        Double ldblDiscAmt = 0.0000;
+//        Double ldblDiscountRate = 0.0000;
+//        boolean lbExist = false;
+//        int lnCacheRow = 0;
+//        
+//        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+//            ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+//            ldblDiscountRate = ldblDetTotal * (Detail(lnCtr).getDiscountRate().doubleValue() / 100);
+//            ldblDiscAmt = Detail(lnCtr).getDiscount().doubleValue() + ldblDiscountRate;
+//            ldblTotal += ldblDetTotal;
+//            ldblGrossAmt += ldblDetTotal;
+//            
+//            if(lnCtr > 0) {
+//                for(lnCacheRow = 0; lnCacheRow <= poCachePayable.getDetailCount()-1; lnCacheRow++){
+////                    if(poCachePayable.Detail(lnCacheRow).getTransactionType().equals(Detail(lnCtr).Inventory().getInventoryTypeId())){
+//                    if(poCachePayable.Detail(lnCacheRow).getTransactionType().equals("TEST")){
+//                        ldblTotal = poCachePayable.Detail(lnCacheRow).getGrossAmount() + ldblDetTotal;
+//                        ldblDiscAmt =  poCachePayable.Detail(lnCacheRow).getDiscountAmount() + ldblDiscAmt;
+//                        lbExist = true;
+//                        break;
+//                    }
+//                }
+//            }
+//            
+//            if(!lbExist){
+//                //Cache Payable Detail
+////                if(poCachePayable.getDetailCount() < 0){
+////                    poCachePayable.AddDetail();
+////                    lnCacheRow = 0;
+////                } else {
+////                    poCachePayable.AddDetail();
+////                    lnCacheRow = poCachePayable.getDetailCount()-1;
+////                }
+//            }
+//            
+////            poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
+//            poCachePayable.Detail(lnCacheRow).setTransactionType("TEST");
+//            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal);
+//            poCachePayable.Detail(lnCacheRow).setDiscountAmount(ldblDiscAmt);
+//            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal-ldblDiscAmt);
+//        }
+//        
+//        //Cache Payable Master
+//        poCachePayable.Master().setIndustryCode(Master().getIndustryId());
+//        poCachePayable.Master().setBranchCode(Master().getBranchCode());
+//        poCachePayable.Master().setTransactionDate(poGRider.getServerDate()); //TODO
+//        poCachePayable.Master().setCompanyId(Master().getCompanyId());
+//        poCachePayable.Master().setClientId(Master().getSupplierId());
+//        poCachePayable.Master().setDueDate(Master().getDueDate());
+//        poCachePayable.Master().setSourceCode(getSourceCode());
+//        poCachePayable.Master().setSourceNo(Master().getTransactionNo());
+//        poCachePayable.Master().setReferNo(Master().getReferenceNo()); //TODO
+//        poCachePayable.Master().setGrossAmount(ldblGrossAmt); //TODO
+//        poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
+//        poCachePayable.Master().setDiscountAmount(Master().getDiscount().doubleValue()); //TODO
+//        poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
+//        poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
+//        poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
+//        poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
+//        poCachePayable.Master().setNetTotal(Master().getTransactionTotal().doubleValue()); //TODO
+//        poCachePayable.Master().setPayables(Master().getTransactionTotal().doubleValue()); //TODO
+//        
+//        return poJSON;
+//    }
 
     @Override
     public String getSourceCode() {
