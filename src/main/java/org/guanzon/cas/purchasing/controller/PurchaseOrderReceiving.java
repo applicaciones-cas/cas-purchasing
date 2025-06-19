@@ -533,6 +533,7 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        poCachePayable.setWithParent(true);
         poJSON = poCachePayable.SaveTransaction();
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
@@ -1445,6 +1446,7 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
         poJSON = Master().setTransactionTotal(ldblTotal); //Sum of purchase amount
+        System.out.println(poJSON.clone());
         if(ldblDiscountRate > 0){
             ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         }
@@ -1478,10 +1480,14 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             Master().isTaxWithHold(Master().getWithHoldingTax().doubleValue() > 0.0000);
-            Master().setVatSales(ldblVatSales);
-            Master().setVatAmount(ldblVatAmount);
-            Master().setVatExemptSales(ldblTotal);
-            Master().setZeroVatSales(0.00); //TODO
+            poJSON = Master().setVatSales(ldblVatSales);
+            System.out.println(poJSON.clone());
+            poJSON = Master().setVatAmount(ldblVatAmount);
+            System.out.println(poJSON.clone());
+            poJSON = Master().setVatExemptSales(ldblTotal);
+            System.out.println(poJSON.clone());
+            poJSON = Master().setZeroVatSales(0.00); //TODO
+            System.out.println(poJSON.clone());
         }
         return poJSON;
     }
@@ -1523,7 +1529,7 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal = ldblTotal - (discount + ((Master().getDiscountRate().doubleValue() / 100.00) * ldblTotal));
             if(ldblTotal < 0 ){
                 poJSON.put("result", "error");
-                poJSON.put("message", "Invalid transaction total.");
+                poJSON.put("message", "Invalid transaction net total.");
                 return poJSON;
             }
         }
@@ -1557,7 +1563,7 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal = ldblTotal - (Master().getDiscount().doubleValue() + ((discountRate / 100.00) * ldblTotal));
             if(ldblTotal < 0 ){
                 poJSON.put("result", "error");
-                poJSON.put("message", "Invalid transaction total.");
+                poJSON.put("message", "Invalid transaction net total.");
                 return poJSON;
             }
         }
@@ -2843,7 +2849,6 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         poCachePayable = new CashflowControllers(poGRider, logwrapr).CachePayable();
         poCachePayable.InitTransaction();
-        poCachePayable.setWithParent(true);
         poJSON = poCachePayable.NewTransaction();
         if ("error".equals((String) poJSON.get("result"))){
             return poJSON;
@@ -3053,6 +3058,15 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("message", "Your Purchase order receiving has zero quantity.");
                 return poJSON;
             }
+        }
+        
+        //Validate transaction total
+        double ldblTotal = Master().getTransactionTotal().doubleValue() - (Master().getDiscount().doubleValue() 
+                         + ((Master().getDiscountRate().doubleValue() / 100.00) * Master().getTransactionTotal().doubleValue()));
+        if(ldblTotal < 0.0000 ){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid transaction net total.");
+            return poJSON;
         }
 
         if (getEditMode() == EditMode.UPDATE) {
