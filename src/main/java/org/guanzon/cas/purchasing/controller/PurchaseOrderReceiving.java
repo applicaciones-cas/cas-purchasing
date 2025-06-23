@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javax.script.ScriptException;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
@@ -77,6 +78,9 @@ import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderReceivingValidatorFactory;
+import org.guanzon.cas.tbjhandler.TBJEntry;
+import org.guanzon.cas.tbjhandler.TBJTransaction;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import ph.com.guanzongroup.cas.cashflow.CachePayable;
@@ -501,6 +505,24 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         //check JE
+        if(poJournal == null){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Please review journal entry before posting.");
+            return poJSON;
+        } else {
+            switch(poJournal.getEditMode()){
+                case EditMode.ADDNEW:
+                case EditMode.UPDATE:
+                break;
+                case EditMode.READY:
+                    poJournal.UpdateTransaction();
+                break;
+                default:
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Please review journal entry before posting.");
+                    return poJSON;
+            }
+        }
         
         //populate cache payable
         poJSON = populateCachePayable();
@@ -541,6 +563,12 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = poCachePayable.SaveTransaction();
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        poJournal.setWithParent(true);
+        poJSON = poJournal.SaveTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
         
@@ -2939,10 +2967,21 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     public Journal Journal(){
+        try {
+            if(poJournal == null){
+                poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+                poJournal.InitTransaction();
+            }
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        }
         return poJournal;
     }
     
-    public JSONObject populateJournal() throws SQLException, GuanzonException, CloneNotSupportedException{
+    public JSONObject populateJournal() throws SQLException, GuanzonException, CloneNotSupportedException, ScriptException{
         poJSON = new JSONObject();
         if(poJournal == null){
             poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
@@ -2954,60 +2993,93 @@ public class PurchaseOrderReceiving extends Transaction {
             if ("error".equals((String) poJSON.get("result"))){
                 return poJSON;
             }
+            if(getEditMode() == EditMode.UPDATE){
+                poJournal.UpdateTransaction();
+            }
         } else {
-            poJSON = poJournal.NewTransaction();
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
-            }
-        
-            Double ldblDebitAmt = 0.0000;
-            Double ldblCreditAmt = 0.0000;
-            Double ldblDetTotal = 0.0000;
-            boolean lbExist = false;
-            int lnCacheRow = 0;
+            if(getEditMode() == EditMode.UPDATE){
+                poJSON = poJournal.NewTransaction();
+                if ("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                }
 
-            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+                poJournal.Detail(poJournal.getDetailCount()-1).setForMonthOf(poGRider.getServerDate());
+                double ldblNetTotal = 0.0000;
+                double ldblDiscount = Master().getDiscount().doubleValue();
+                double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+                if(ldblDiscountRate > 0){
+                    ldblDiscountRate = Master().getTransactionTotal().doubleValue() * (ldblDiscountRate / 100);
+                }
+                ldblDiscount = ldblDiscount + ldblDiscountRate;
+                //Net Total = Vat Amount - Tax Amount
+                if (Master().isVatTaxable()) {
+                    //Net VAT Amount : VAT Sales - VAT Amount
+                    //Net Total : VAT Sales - Withholding Tax
+                    ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
+                } else {
+                    //Net VAT Amount : VAT Sales + VAT Amount
+                    //Net Total : Net VAT Amount - Withholding Tax
+                    ldblNetTotal = (Master().getVatSales().doubleValue()
+                            + Master().getVatAmount().doubleValue())
+                            - Master().getWithHoldingTax().doubleValue();
 
-                if(lnCtr > 0) {
-                    for(lnCacheRow = 0; lnCacheRow <= poJournal.getDetailCount()-1; lnCacheRow++){
-                        if(poJournal.Detail(lnCacheRow).getAccountCode().equals(Detail(lnCtr).Inventory().getInventoryTypeId())){
-                            ldblDebitAmt = poJournal.Detail(lnCacheRow).getDebitAmount()+ ldblDetTotal;
-                            ldblCreditAmt =  poJournal.Detail(lnCacheRow).getCreditAmount()+ ldblDetTotal;
-                            lbExist = true;
-                            break;
-                        }
-                    }
+                }
 
-                    if(!lbExist){
+                JSONObject jsonmaster = new JSONObject();
+                jsonmaster.put("nWTaxTotl", Master().getWithHoldingTax());
+                jsonmaster.put("nDiscTotl", ldblDiscount);
+                jsonmaster.put("nNetTotal", ldblNetTotal);
+                jsonmaster.put("cPaymType", "0");
+
+                JSONArray jsondetails = new JSONArray();
+
+                JSONObject jsondetail = new JSONObject();
+                jsondetail.put("sAcctCode", "2101010");
+                jsondetail.put("nAmtAppld", ldblNetTotal);
+
+                jsondetails.add(jsondetail);
+
+                jsondetail = new JSONObject();
+                jsondetail.put("sAcctCode", "5201000");
+                jsondetail.put("nAmtAppld", ldblNetTotal);
+                jsondetails.add(jsondetail);
+
+                jsondetail = new JSONObject();
+                jsondetail.put("PO_Receiving_Master", jsonmaster);
+                jsondetail.put("PO_Receiving_Detail", jsondetails);
+
+                TBJTransaction tbj = new TBJTransaction(SOURCE_CODE,Master().getIndustryId(), Master().getCategoryCode());
+                tbj.setGRiderCAS(poGRider);
+                tbj.setData(jsondetail);
+                jsonmaster = tbj.processRequest();
+
+                if(jsonmaster.get("result").toString().equalsIgnoreCase("success")){
+                    List<TBJEntry> xlist = tbj.getJournalEntries();
+                    for (TBJEntry xlist1 : xlist) {
+                        System.out.println("Account:" + xlist1.getAccount() );
+                        System.out.println("Debit:" + xlist1.getDebit());
+                        System.out.println("Credit:" + xlist1.getCredit());
+                        poJournal.Detail(poJournal.getDetailCount()-1).setForMonthOf(poGRider.getServerDate());
+                        poJournal.Detail(poJournal.getDetailCount()-1).setAccountCode(xlist1.getAccount());
+                        poJournal.Detail(poJournal.getDetailCount()-1).setCreditAmount(xlist1.getCredit());
+                        poJournal.Detail(poJournal.getDetailCount()-1).setDebitAmount(xlist1.getDebit());
+                        poJournal.Detail(poJournal.getDetailCount()-1).setForMonthOf(Master().getTransactionDate());
                         poJournal.AddDetail();
-                        lnCacheRow = poJournal.getDetailCount()-1;
                     }
+                } else {
+                    System.out.println(jsonmaster.toJSONString());
                 }
 
-                //Journal Entry Detail
-                if(poJournal.getDetailCount() < 0){
-                    poJournal.AddDetail();
-                    lnCacheRow = 0;
-                }
-
-                poJournal.Detail(lnCacheRow).setAccountCode(Detail(lnCtr).Inventory().getInventoryTypeId());
-                poJournal.Detail(lnCacheRow).setCreditAmount(ldblCreditAmt);
-                poJournal.Detail(lnCacheRow).setDebitAmount(ldblDebitAmt);
-                poJournal.Detail(lnCacheRow).setForMonthOf(Master().getTransactionDate());
-
-                ldblDebitAmt = 0.0000;
-                ldblCreditAmt = 0.0000;
-                ldblDetTotal = 0.0000;
+                //Journa Entry Master
+                poJournal.Master().setAccountPerId("dummy");
+                poJournal.Master().setIndustryCode(Master().getIndustryId());
+                poJournal.Master().setBranchCode(Master().getBranchCode());
+                poJournal.Master().setDepartmentId(Master().getDepartmentId());
+                poJournal.Master().setTransactionDate(poGRider.getServerDate()); 
+                poJournal.Master().setCompanyId(Master().getCompanyId());
+                poJournal.Master().setSourceCode(getSourceCode());
+                poJournal.Master().setSourceNo(Master().getTransactionNo());
             }
-
-            //Journa Entry Master
-            poJournal.Master().setIndustryCode(Master().getIndustryId());
-            poJournal.Master().setBranchCode(Master().getBranchCode());
-            poJournal.Master().setTransactionDate(poGRider.getServerDate()); 
-            poJournal.Master().setCompanyId(Master().getCompanyId());
-            poJournal.Master().setSourceCode(getSourceCode());
-            poJournal.Master().setSourceNo(Master().getTransactionNo());
         
         }
         
@@ -3038,6 +3110,47 @@ public class PurchaseOrderReceiving extends Transaction {
 
         return "";
     }
+     
+//            Double ldblDebitAmt = 0.0000;
+//            Double ldblCreditAmt = 0.0000;
+//            Double ldblDetTotal = 0.0000;
+//            boolean lbExist = false;
+//            int lnCacheRow = 0;
+
+//            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+//                ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+//
+//                if(lnCtr > 0) {
+//                    for(lnCacheRow = 0; lnCacheRow <= poJournal.getDetailCount()-1; lnCacheRow++){
+//                        if(poJournal.Detail(lnCacheRow).getAccountCode().equals(Detail(lnCtr).Inventory().getInventoryTypeId())){
+//                            ldblDebitAmt = poJournal.Detail(lnCacheRow).getDebitAmount()+ ldblDetTotal;
+//                            ldblCreditAmt =  poJournal.Detail(lnCacheRow).getCreditAmount()+ ldblDetTotal;
+//                            lbExist = true;
+//                            break;
+//                        }
+//                    }
+//
+//                    if(!lbExist){
+//                        poJournal.AddDetail();
+//                        lnCacheRow = poJournal.getDetailCount()-1;
+//                    }
+//                }
+//
+//                //Journal Entry Detail
+//                if(poJournal.getDetailCount() < 0){
+//                    poJournal.AddDetail();
+//                    lnCacheRow = 0;
+//                }
+//
+//                poJournal.Detail(lnCacheRow).setAccountCode(Detail(lnCtr).Inventory().getInventoryTypeId());
+//                poJournal.Detail(lnCacheRow).setCreditAmount(ldblCreditAmt);
+//                poJournal.Detail(lnCacheRow).setDebitAmount(ldblDebitAmt);
+//                poJournal.Detail(lnCacheRow).setForMonthOf(Master().getTransactionDate());
+//
+//                ldblDebitAmt = 0.0000;
+//                ldblCreditAmt = 0.0000;
+//                ldblDetTotal = 0.0000;
+//            }
 
     @Override
     public String getSourceCode() {
@@ -3464,13 +3577,22 @@ public class PurchaseOrderReceiving extends Transaction {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
         
-        //Skip Updating others when transaction triggered at SI Posting
-        if(pbIsFinance){
-            poJSON.put("result", "success");
-            return poJSON; 
-        }
-        
         try {
+            //Skip Updating others when transaction triggered at SI Posting
+            if(pbIsFinance){
+                if(poJournal != null){
+                    if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
+                        poJournal.setWithParent(true);
+                        poJSON = poJournal.SaveTransaction();
+                        if ("error".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
+                    }
+                }
+                poJSON.put("result", "success");
+                return poJSON; 
+            }
+            
             int lnCtr, lnRow;
             //Purchase Order Receiving Serial
             InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
