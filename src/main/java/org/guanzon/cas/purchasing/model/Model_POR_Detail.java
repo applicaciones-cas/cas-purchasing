@@ -170,28 +170,6 @@ public class Model_POR_Detail extends Model{
         return (Number) getValue("nFreightx");
     }
     
-    public JSONObject setDiscount(Number discount){
-        return setValue("nDiscount", discount);
-    }
-    
-    public Number getDiscount(){
-        if(getValue("nDiscount") == null || "".equals(getValue("nDiscount"))){
-            return 0.00;
-        } 
-        return (Number) getValue("nDiscount");
-    }
-    
-    public JSONObject setAdditionalDiscount(Number additionalDiscount){
-        return setValue("nAddDiscx", additionalDiscount);
-    }
-    
-    public Number getAdditionalDiscount(){
-        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
-            return 0.0000;
-        } 
-        return (Number) getValue("nAddDiscx");
-    }
-    
     public JSONObject setTotal(Number total){
         return setValue("nTranTotl", total);
     }
@@ -245,14 +223,14 @@ public class Model_POR_Detail extends Model{
     }
     
     public JSONObject setDiscountAmount(Number discountAmount){
-        return setValue("nAddlDiscx", discountAmount);
+        return setValue("nAddDiscx", discountAmount);
     }
     
     public Number getDiscountAmount(){
-        if(getValue("nAddlDiscx") == null || "".equals(getValue("nAddlDiscx"))){
-            return 0.00;
+        if(getValue("nAddDiscx") == null || "".equals(getValue("nAddDiscx"))){
+            return 0.0000;
         } 
-        return (Number) getValue("nAddlDiscx");
+        return (Number) getValue("nAddDiscx");
     }
     
     public JSONObject isVatable(boolean isVatable){
