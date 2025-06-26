@@ -158,6 +158,7 @@ public class PurchaseOrderReceiving extends Transaction {
             resetMaster();
             resetOthers();
             Detail().clear();
+            Journal();
         return openTransaction(transactionNo);
     }
 
@@ -497,13 +498,6 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if (poGRider.getUserLevel() == UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
-        }
-        
         //check JE
         if(poJournal == null){
             poJSON.put("result", "error");
@@ -515,12 +509,30 @@ public class PurchaseOrderReceiving extends Transaction {
                 case EditMode.UPDATE:
                 break;
                 case EditMode.READY:
-                    poJournal.UpdateTransaction();
+                    if(poJournal.Master().getTransactionNo() != null && !"".equals(poJournal.Master().getTransactionNo())){
+                        //poJournal.UpdateTransaction();
+                    } else {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Please review journal entry before posting.");
+                        return poJSON; 
+                    }
                 break;
                 default:
                     poJSON.put("result", "error");
                     poJSON.put("message", "Please review journal entry before posting.");
                     return poJSON;
+            }
+        }
+        
+        poJSON = validateJournal();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
             }
         }
         
@@ -566,13 +578,13 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        poGRider.commitTrans();
+        
         poJournal.setWithParent(true);
-        poJSON = poJournal.SaveTransaction();
+        poJSON = poJournal.ConfirmTransaction(remarks);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        
-        poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -1478,7 +1490,6 @@ public class PurchaseOrderReceiving extends Transaction {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
         }
         poJSON = Master().setTransactionTotal(ldblTotal); //Sum of purchase amount
-        System.out.println(poJSON.clone());
         if(ldblDiscountRate > 0){
             ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         }
@@ -1513,19 +1524,18 @@ public class PurchaseOrderReceiving extends Transaction {
             
             Master().isTaxWithHold(Master().getWithHoldingTax().doubleValue() > 0.0000);
             poJSON = Master().setVatSales(ldblVatSales);
-            System.out.println(poJSON.clone());
             poJSON = Master().setVatAmount(ldblVatAmount);
-            System.out.println(poJSON.clone());
             poJSON = Master().setVatExemptSales(ldblTotal);
-            System.out.println(poJSON.clone());
             poJSON = Master().setZeroVatSales(0.00); //TODO
-            System.out.println(poJSON.clone());
         }
         return poJSON;
     }
 
     /*Convert Date to String*/
     private static String xsDateShort(Date fdValue) {
+        if(fdValue == null){
+            return "1900-01-01";
+        }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String date = sdf.format(fdValue);
         return date;
@@ -1771,8 +1781,11 @@ public class PurchaseOrderReceiving extends Transaction {
             if (companyId == null) {
                 companyId = "";
             }
-            if (supplierId == null) {
-                supplierId = "";
+            if (supplierId == null || "".equals(supplierId)) {
+//                supplierId = "";
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set");
+                return poJSON;
             }
             if (branchCode == null) {
                 branchCode = "";
@@ -2178,6 +2191,16 @@ public class PurchaseOrderReceiving extends Transaction {
 
     public void resetMaster() {
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+    }
+    
+    public void resetJournal() {
+        try {
+            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+        } catch (SQLException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     //Purchase Order Receiving Serial
@@ -2983,27 +3006,38 @@ public class PurchaseOrderReceiving extends Transaction {
     
     public JSONObject populateJournal() throws SQLException, GuanzonException, CloneNotSupportedException, ScriptException{
         poJSON = new JSONObject();
-        if(poJournal == null){
+        if(getEditMode() == EditMode.UNKNOWN){
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record to load");
+            return poJSON;
+        }
+        
+        if(poJournal == null || getEditMode() == EditMode.READY){
             poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
             poJournal.InitTransaction();
         }
+        
         String lsJournal = existJournal();
         if(lsJournal != null && !"".equals(lsJournal)){
-            poJSON = poJournal.OpenTransaction(lsJournal);
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
+            if(getEditMode() == EditMode.READY){
+                poJSON = poJournal.OpenTransaction(lsJournal);
+                if ("error".equals((String) poJSON.get("result"))){
+                    return poJSON;
+                }
             }
+            
             if(getEditMode() == EditMode.UPDATE){
-                poJournal.UpdateTransaction();
+                if(poJournal.getEditMode() == EditMode.READY){
+                    poJournal.UpdateTransaction();
+                }
             }
         } else {
-            if(getEditMode() == EditMode.UPDATE){
+            if(getEditMode() == EditMode.UPDATE && poJournal.getEditMode() != EditMode.ADDNEW){
                 poJSON = poJournal.NewTransaction();
                 if ("error".equals((String) poJSON.get("result"))){
                     return poJSON;
                 }
 
-                poJournal.Detail(poJournal.getDetailCount()-1).setForMonthOf(poGRider.getServerDate());
                 double ldblNetTotal = 0.0000;
                 double ldblDiscount = Master().getDiscount().doubleValue();
                 double ldblDiscountRate = Master().getDiscountRate().doubleValue();
@@ -3063,7 +3097,6 @@ public class PurchaseOrderReceiving extends Transaction {
                         poJournal.Detail(poJournal.getDetailCount()-1).setAccountCode(xlist1.getAccount());
                         poJournal.Detail(poJournal.getDetailCount()-1).setCreditAmount(xlist1.getCredit());
                         poJournal.Detail(poJournal.getDetailCount()-1).setDebitAmount(xlist1.getDebit());
-                        poJournal.Detail(poJournal.getDetailCount()-1).setForMonthOf(Master().getTransactionDate());
                         poJournal.AddDetail();
                     }
                 } else {
@@ -3079,10 +3112,32 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJournal.Master().setCompanyId(Master().getCompanyId());
                 poJournal.Master().setSourceCode(getSourceCode());
                 poJournal.Master().setSourceNo(Master().getTransactionNo());
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record to load");
+                return poJSON;
             }
         
         }
         
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    public JSONObject checkExistAcctCode(int fnRow, String fsAcctCode){
+        poJSON = new JSONObject();
+        
+        for(int lnCtr = 0;lnCtr <= poJournal.getDetailCount()-1; lnCtr++){
+            if(fsAcctCode.equals(poJournal.Detail(lnCtr).getAccountCode()) && fnRow != lnCtr){
+                poJSON.put("row", lnCtr);
+                poJSON.put("result", "error");
+                poJSON.put("message", "Account code " + fsAcctCode + " already exist at row " + (lnCtr+1) + ".");
+                poJournal.Detail(fnRow).setAccountCode("");
+                return poJSON;
+            }
+        }
+    
+        poJSON.put("result", "success");
         return poJSON;
     }
     
@@ -3560,6 +3615,15 @@ public class PurchaseOrderReceiving extends Transaction {
                     return poJSON;
                 }
             }
+        } else {
+            if(poJournal != null){
+                if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
+                    poJSON = validateJournal();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                }
+            }
         }
 
         poJSON.put("result", "success");
@@ -3583,6 +3647,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 if(poJournal != null){
                     if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
                         poJournal.setWithParent(true);
+                        poJournal.Master().setModifiedDate(poGRider.getServerDate());
                         poJSON = poJournal.SaveTransaction();
                         if ("error".equals((String) poJSON.get("result"))) {
                             return poJSON;
@@ -3723,6 +3788,53 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject validateJournal(){
+        poJSON = new JSONObject();
+        double ldblCreditAmt = 0.0000;
+        double ldblDebitAmt = 0.0000;
+        for(int lnCtr = 0; lnCtr <= poJournal.getDetailCount()-1; lnCtr++){
+            ldblDebitAmt += poJournal.Detail(lnCtr).getDebitAmount();
+            ldblCreditAmt += poJournal.Detail(lnCtr).getCreditAmount();
+            
+            if(poJournal.Detail(lnCtr).getCreditAmount() > 0.0000 ||  poJournal.Detail(lnCtr).getDebitAmount() > 0.0000){
+                if(poJournal.Detail(lnCtr).getAccountCode() != null && !"".equals(poJournal.Detail(lnCtr).getAccountCode())){
+                    if(poJournal.Detail(lnCtr).getForMonthOf() == null || "1900-01-01".equals(xsDateShort(poJournal.Detail(lnCtr).getForMonthOf()))){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Invalid reporting date of journal at row "+(lnCtr+1)+" .");
+                        return poJSON;
+                    }
+                }
+            }
+        }
+        
+        if(ldblDebitAmt == 0.0000 ){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid journal entry debit amount.");
+            return poJSON;
+        }
+        
+        if(ldblCreditAmt == 0.0000){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid journal entry credit amount.");
+            return poJSON;
+        }
+        
+        if(ldblDebitAmt < ldblCreditAmt || ldblDebitAmt > ldblCreditAmt){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Debit should be equal to credit amount.");
+            return poJSON;
+        }
+        
+        if(ldblDebitAmt < Master().getTransactionTotal().doubleValue() || ldblDebitAmt > Master().getTransactionTotal().doubleValue()){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Debit and credit amount should be equal to transaction total.");
+            return poJSON;
+        }
+        
+        
         return poJSON;
     }
 
