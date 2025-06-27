@@ -479,6 +479,11 @@ public class PurchaseOrderReceiving extends Transaction {
 
         String lsStatus = PurchaseOrderReceivingStatus.POSTED;
         boolean lbPosted = true;
+        
+        poJSON = OpenTransaction(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
@@ -486,7 +491,7 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
 
-        if (lsStatus.equals((String) poMaster.getValue("cTranStat"))) {
+        if (lsStatus.equals((String) poMaster.getValue("cTranStat")) || Master().isProcessed()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already processed.");
             return poJSON;
@@ -1527,6 +1532,10 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON = Master().setVatAmount(ldblVatAmount);
             poJSON = Master().setVatExemptSales(ldblTotal);
             poJSON = Master().setZeroVatSales(0.00); //TODO
+            if(Master().getVatRate().doubleValue() == 0.00){
+                poJSON = Master().setVatRate(12.00); //Set default value
+            }
+            
         }
         return poJSON;
     }
@@ -1782,10 +1791,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 companyId = "";
             }
             if (supplierId == null || "".equals(supplierId)) {
-//                supplierId = "";
-                poJSON.put("result", "error");
-                poJSON.put("message", "Supplier is not set");
-                return poJSON;
+                supplierId = "";
             }
             if (branchCode == null) {
                 branchCode = "";
@@ -1803,9 +1809,16 @@ public class PurchaseOrderReceiving extends Transaction {
             );
             switch (formName) {
                 case "siposting":
-                    lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
-                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) ";
+//                    if ("".equals(supplierId)) {
+//                        poJSON.put("result", "error");
+//                        poJSON.put("message", "Supplier is not set");
+//                        return poJSON;
+//                    }
+                    
+//                    lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+//                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) ";
 //                                  + " AND a.cProcessd = " + SQLUtil.toSQL("0");
+                    lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED);
                     break;
                 case "confirmation":
                     lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.OPEN)
@@ -3112,6 +3125,9 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJournal.Master().setCompanyId(Master().getCompanyId());
                 poJournal.Master().setSourceCode(getSourceCode());
                 poJournal.Master().setSourceNo(Master().getTransactionNo());
+            } else if(getEditMode() == EditMode.UPDATE && poJournal.getEditMode() == EditMode.ADDNEW) {
+                poJSON.put("result", "success");
+                return poJSON;
             } else {
                 poJSON.put("result", "error");
                 poJSON.put("message", "No record to load");
