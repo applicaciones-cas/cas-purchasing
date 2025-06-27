@@ -2998,6 +2998,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
         poCachePayable.Master().setNetTotal(ldblNetTotal); //TODO
         poCachePayable.Master().setPayables(ldblNetTotal); //TODO
+        poCachePayable.Master().setTransactionStatus("1"); //TODO
         
         return poJSON;
     }
