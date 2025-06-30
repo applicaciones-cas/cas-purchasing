@@ -3848,11 +3848,11 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if(ldblDebitAmt < Master().getTransactionTotal().doubleValue() || ldblDebitAmt > Master().getTransactionTotal().doubleValue()){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Debit and credit amount should be equal to transaction total.");
-            return poJSON;
-        }
+//        if(ldblDebitAmt < Master().getTransactionTotal().doubleValue() || ldblDebitAmt > Master().getTransactionTotal().doubleValue()){
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Debit and credit amount should be equal to transaction total.");
+//            return poJSON;
+//        }
         
         
         return poJSON;
