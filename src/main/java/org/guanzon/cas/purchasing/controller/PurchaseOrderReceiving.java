@@ -3052,45 +3052,48 @@ public class PurchaseOrderReceiving extends Transaction {
                     return poJSON;
                 }
 
-                double ldblNetTotal = 0.0000;
-                double ldblDiscount = Master().getDiscount().doubleValue();
-                double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-                if(ldblDiscountRate > 0){
-                    ldblDiscountRate = Master().getTransactionTotal().doubleValue() * (ldblDiscountRate / 100);
-                }
-                ldblDiscount = ldblDiscount + ldblDiscountRate;
-                //Net Total = Vat Amount - Tax Amount
-                if (Master().isVatTaxable()) {
-                    //Net VAT Amount : VAT Sales - VAT Amount
-                    //Net Total : VAT Sales - Withholding Tax
-                    ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
-                } else {
-                    //Net VAT Amount : VAT Sales + VAT Amount
-                    //Net Total : Net VAT Amount - Withholding Tax
-                    ldblNetTotal = (Master().getVatSales().doubleValue()
-                            + Master().getVatAmount().doubleValue())
-                            - Master().getWithHoldingTax().doubleValue();
-
-                }
-
+//                double ldblNetTotal = 0.0000;
+//                double ldblDiscount = Master().getDiscount().doubleValue();
+//                double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+//                if(ldblDiscountRate > 0){
+//                    ldblDiscountRate = Master().getTransactionTotal().doubleValue() * (ldblDiscountRate / 100);
+//                }
+//                ldblDiscount = ldblDiscount + ldblDiscountRate;
+//                //Net Total = Vat Amount - Tax Amount
+//                if (Master().isVatTaxable()) {
+//                    //Net VAT Amount : VAT Sales - VAT Amount
+//                    //Net Total : VAT Sales - Withholding Tax
+//                    ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
+//                } else {
+//                    //Net VAT Amount : VAT Sales + VAT Amount
+//                    //Net Total : Net VAT Amount - Withholding Tax
+//                    ldblNetTotal = (Master().getVatSales().doubleValue()
+//                            + Master().getVatAmount().doubleValue())
+//                            - Master().getWithHoldingTax().doubleValue();
+//
+//                }
+                
+                System.out.println("MASTER");
+                //retreiving using column index
                 JSONObject jsonmaster = new JSONObject();
-                jsonmaster.put("nWTaxTotl", Master().getWithHoldingTax());
-                jsonmaster.put("nDiscTotl", ldblDiscount);
-                jsonmaster.put("nNetTotal", ldblNetTotal);
-                jsonmaster.put("cPaymType", "0");
-
+                for (int lnCtr = 1; lnCtr <= Master().getColumnCount(); lnCtr++){
+                    System.out.println(Master().getColumn(lnCtr) + " ->> " + Master().getValue(lnCtr));
+                    jsonmaster.put(Master().getColumn(lnCtr),  Master().getValue(lnCtr));
+                }
+                
                 JSONArray jsondetails = new JSONArray();
-
                 JSONObject jsondetail = new JSONObject();
-                jsondetail.put("sAcctCode", "2101010");
-                jsondetail.put("nAmtAppld", ldblNetTotal);
-
-                jsondetails.add(jsondetail);
-
-                jsondetail = new JSONObject();
-                jsondetail.put("sAcctCode", "5201000");
-                jsondetail.put("nAmtAppld", ldblNetTotal);
-                jsondetails.add(jsondetail);
+                
+                System.out.println("DETAIL");
+                for (int lnCtr = 0; lnCtr <= Detail().size() - 1; lnCtr++){
+                    jsondetail = new JSONObject();
+                    System.out.println("DETAIL ROW : " + lnCtr);
+                    for (int lnCol = 1; lnCol <= Detail(lnCtr).getColumnCount(); lnCol++){
+                        System.out.println(Detail(lnCtr).getColumn(lnCol) + " ->> " + Detail(lnCtr).getValue(lnCol));
+                        jsondetail.put(Detail(lnCtr).getColumn(lnCol),  Detail(lnCtr).getValue(lnCol));
+                    }
+                    jsondetails.add(jsondetail);
+                }
 
                 jsondetail = new JSONObject();
                 jsondetail.put("PO_Receiving_Master", jsonmaster);
