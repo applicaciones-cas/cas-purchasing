@@ -2,6 +2,7 @@
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.script.ScriptException;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -41,7 +42,7 @@ public class testPurchaseOrderReceiving {
         poPurchaseReceivingController = new PurchaseOrderReceivingControllers(instance, null).PurchaseOrderReceiving();
     }
 
-    @Test
+//    @Test
     public void testNewTransaction() {
         String branchCd = instance.getBranchCode();
         String industryId = "01";
@@ -400,51 +401,118 @@ public class testPurchaseOrderReceiving {
         }
     }
     
+    @Test
+    public void testOpenTransactionSIPosting() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = poPurchaseReceivingController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poPurchaseReceivingController.OpenTransaction("A00125000050");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Master().getColumnCount(); lnCol++){
+                System.out.println(poPurchaseReceivingController.Master().getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchaseReceivingController.Master().Branch().getBranchName());
+            System.out.println(poPurchaseReceivingController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchaseReceivingController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(poPurchaseReceivingController.Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            poPurchaseReceivingController.populateJournal();
+            
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getTransactionNo());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getTransactionDate());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getBranchCode());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getCompanyId());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getIndustryCode());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getDepartmentId());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getEntryNumber());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getSourceNo());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getSourceCode());
+            System.out.println("Journal Master : " + poPurchaseReceivingController.Journal().Master().getRemarks());
+            
+            for(int lnCtr = 0; lnCtr <= poPurchaseReceivingController.Journal().Detail().size()-1;lnCtr++){
+                System.out.println("Journal Detail : " + poPurchaseReceivingController.Journal().Detail(lnCtr).getTransactionNo());
+                System.out.println("Journal Detail : " + poPurchaseReceivingController.Journal().Detail(lnCtr).getEntryNumber());
+                System.out.println("Journal Detail : " + poPurchaseReceivingController.Journal().Detail(lnCtr).getForMonthOf());
+                System.out.println("Journal Detail : " + poPurchaseReceivingController.Journal().Detail(lnCtr).getCreditAmount());
+                System.out.println("Journal Detail : " + poPurchaseReceivingController.Journal().Detail(lnCtr).getDebitAmount());
+            }
+            
+        } catch (CloneNotSupportedException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ScriptException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    } 
+        
 //    @Test
-//    public void testApproveTransaction() {
-//        JSONObject loJSON;
-//        
-//        try {
-//            loJSON = poPurchaseReceivingController.InitTransaction();
-//            if (!"success".equals((String) loJSON.get("result"))){
-//                System.err.println((String) loJSON.get("message"));
-//                Assert.fail();
-//            } 
-//
-//            loJSON = poPurchaseReceivingController.OpenTransaction("M00125000016");
-//            if (!"success".equals((String) loJSON.get("result"))){
-//                System.err.println((String) loJSON.get("message"));
-//                Assert.fail();
-//            } 
-//
-//            //retreiving using column index
-//            for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Master().getColumnCount(); lnCol++){
-//                System.out.println(poPurchaseReceivingController.Master().getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Master().getValue(lnCol));
-//            }
-//            //retreiving using field descriptions
-//            System.out.println(poPurchaseReceivingController.Master().Branch().getBranchName());
-//            System.out.println(poPurchaseReceivingController.Master().Category().getDescription());
-//
-//            //retreiving using column index
-//            for (int lnCtr = 0; lnCtr <= poPurchaseReceivingController.Detail().size() - 1; lnCtr++){
-//                for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Detail(lnCtr).getColumnCount(); lnCol++){
-//                    System.out.println(poPurchaseReceivingController.Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Detail(lnCtr).getValue(lnCol));
-//                }
-//            }
-//            
-//            loJSON = poPurchaseReceivingController.ApproveTransaction("test approve");
-//            if (!"success".equals((String) loJSON.get("result"))){
-//                System.err.println((String) loJSON.get("message"));
-//                Assert.fail();
-//            } 
-//            
-//            System.out.println((String) loJSON.get("message"));
-//        } catch (CloneNotSupportedException |ParseException e) {
-//            System.err.println(MiscUtil.getException(e));
-//            Assert.fail();
-//        } catch (SQLException | GuanzonException ex) {
-//            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
+    public void testApproveTransaction() {
+        JSONObject loJSON;
+
+        try {
+            loJSON = poPurchaseReceivingController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poPurchaseReceivingController.OpenTransaction("A00125000050");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Master().getColumnCount(); lnCol++){
+                System.out.println(poPurchaseReceivingController.Master().getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(poPurchaseReceivingController.Master().Branch().getBranchName());
+            System.out.println(poPurchaseReceivingController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= poPurchaseReceivingController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= poPurchaseReceivingController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(poPurchaseReceivingController.Detail(lnCtr).getColumn(lnCol) + " ->> " + poPurchaseReceivingController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+
+            poPurchaseReceivingController.populateJournal();
+            loJSON = poPurchaseReceivingController.PostTransaction("test post");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ScriptException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }  
     
 }
