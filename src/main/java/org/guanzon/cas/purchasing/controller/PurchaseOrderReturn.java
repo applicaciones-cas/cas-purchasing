@@ -79,7 +79,7 @@ public class PurchaseOrderReturn extends Transaction{
     List<Model> paDetailRemoved;
     
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "PRet";
+        SOURCE_CODE = "PORt";
 
         poMaster = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnMaster();
         poDetail = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnDetails();
