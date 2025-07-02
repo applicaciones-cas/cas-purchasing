@@ -1892,15 +1892,6 @@ public class PurchaseOrderReceiving extends Transaction {
             );
             switch (formName) {
                 case "siposting":
-//                    if ("".equals(supplierId)) {
-//                        poJSON.put("result", "error");
-//                        poJSON.put("message", "Supplier is not set");
-//                        return poJSON;
-//                    }
-                    
-//                    lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
-//                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) ";
-//                                  + " AND a.cProcessd = " + SQLUtil.toSQL("0");
                     lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED);
                     break;
                 case "confirmation":
@@ -1912,6 +1903,77 @@ public class PurchaseOrderReceiving extends Transaction {
                     //load all purchase order receiving
                     break;
             }
+            
+            if(psIndustryId == null || "".equals(psIndustryId)){
+                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
+            } else {
+                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+            }
+            
+            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            poJSON = new JSONObject();
+
+            int lnctr = 0;
+
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                paPORMaster = new ArrayList<>();
+                while (loRS.next()) {
+                    // Print the result set
+                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
+                    System.out.println("sCompnyNm: " + loRS.getString("sCompnyNm"));
+                    System.out.println("------------------------------------------------------------------------------");
+
+                    paPORMaster.add(PurchaseOrderReceivingMaster());
+                    paPORMaster.get(paPORMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                    lnctr++;
+                }
+
+                System.out.println("Records found: " + lnctr);
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                paPORMaster = new ArrayList<>();
+                paPORMaster.add(PurchaseOrderReceivingMaster());
+                poJSON.put("result", "error");
+                poJSON.put("continue", true);
+                poJSON.put("message", "No record found.");
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+        }
+        return poJSON;
+    }
+    
+    public JSONObject loadUnPostPurchaseOrderReceiving(String supplier, String branch, String referenceNo) {
+        try {
+            if (supplier == null || "".equals(supplier)) {
+                supplier = "";
+            }
+            if (branch == null) {
+                branch = "";
+            }
+            if (referenceNo == null) {
+                referenceNo = "";
+            }
+            initSQL();
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                    " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+                    + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                    + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
+                    + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
+            );
             
             if(psIndustryId == null || "".equals(psIndustryId)){
                 lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
@@ -3468,6 +3530,14 @@ public class PurchaseOrderReceiving extends Transaction {
                 Master().setSupplierId(loRecord.Master().getSupplierId());
                 Master().setAddressId(loRecord.Master().getAddressId()); 
                 Master().setContactId(loRecord.Master().getContactId()); 
+            }
+            //Set original branch code
+            if(!Master().getBranchCode().equals(loRecord.Master().getBranchCode())){
+                Master().setBranchCode(loRecord.Master().getBranchCode());
+            }
+            //Set original company id
+            if(!Master().getCompanyId().equals(loRecord.Master().getCompanyId())){
+                Master().setCompanyId(loRecord.Master().getCompanyId());
             }
             
             if(!pbIsPrint){
