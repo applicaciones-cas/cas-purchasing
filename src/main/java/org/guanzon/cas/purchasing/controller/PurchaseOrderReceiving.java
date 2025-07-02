@@ -829,7 +829,7 @@ public class PurchaseOrderReceiving extends Transaction {
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
-                + " AND a.sBranchCD = " + SQLUtil.toSQL(poGRider.getBranchCode())
+                + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -890,7 +890,7 @@ public class PurchaseOrderReceiving extends Transaction {
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
-                + " AND a.sBranchCD = " + SQLUtil.toSQL(poGRider.getBranchCode())
+                + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
         if (psTranStat != null && !"".equals(psTranStat)) {
@@ -904,6 +904,71 @@ public class PurchaseOrderReceiving extends Transaction {
                 "Transaction Date»Transaction No»Industry»Company»Supplier",
                 "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
                 "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject searchTransaction(String industryId, String companyId, String supplier, String receivingBranch, String sReferenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        if(supplier == null){
+            supplier = "";
+        }
+        if(receivingBranch == null){
+            receivingBranch = "";
+        }
+        if(sReferenceNo == null){
+            sReferenceNo = "";
+        }
+        
+        if(industryId == null || "".equals(industryId)){
+            industryId = psIndustryId;
+        }
+        
+        if(companyId == null || "".equals(companyId)){
+            companyId = psCompanyId;
+        }
+        
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
+                + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
+                + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Industry»Company»Supplier»Receiving Branch",
+                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
                 1);
 
         if (poJSON != null) {
@@ -3034,7 +3099,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     public JSONObject populateJournal() throws SQLException, GuanzonException, CloneNotSupportedException, ScriptException{
         poJSON = new JSONObject();
-        if(getEditMode() == EditMode.UNKNOWN){
+        if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
             poJSON.put("result", "error");
             poJSON.put("message", "No record to load");
             return poJSON;
@@ -4363,13 +4428,15 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sSupplier  "
                 + " , a.sReferNox  "
                 + " , a.sCategrCd  "
+                + " , e.sBranchNm  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
                 + " FROM po_receiving_master a "
                 + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx ";
+                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx "
+                + " LEFT JOIN branch e ON e.sBranchCd = a.sBranchCd ";
     }
     
 //    @Override
