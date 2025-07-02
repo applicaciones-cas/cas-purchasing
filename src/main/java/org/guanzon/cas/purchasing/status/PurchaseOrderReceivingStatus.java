@@ -17,4 +17,6 @@ public class PurchaseOrderReceivingStatus {
     public static final  String VOID = "4";
     public static final  String PAID = "5"; //posted > paid
     public static final  String RETURNED = "6";
+    
+    public static final  String GLCODE = "ACCOUNTS_PAYABLE";
 }

@@ -117,7 +117,7 @@ public class PurchaseOrderReceiving extends Transaction {
     List<Model> paDetailRemoved;
 
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "POR";
+        SOURCE_CODE = "PORc";
 
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
@@ -199,15 +199,29 @@ public class PurchaseOrderReceiving extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        if (pbApproval) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
+        
+        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
             }
         }
+        
+        //if with discrepancy require approval
+//        if (pbApproval) {
+//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//                poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
+//            }
+//        } else {
+//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "You are not allow to confirm this transaction.");
+//                return poJSON;
+//            }
+//        }
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
@@ -432,14 +446,14 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
 
-        if (pbApproval) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
-                poJSON = ShowDialogFX.getUserApproval(poGRider);
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
-            }
-        }
+//        if (pbApproval) {
+//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//                poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
+//            }
+//        }
 
         poGRider.beginTrans("UPDATE STATUS", "PaidTransaction", SOURCE_CODE, Master().getTransactionNo());
 
