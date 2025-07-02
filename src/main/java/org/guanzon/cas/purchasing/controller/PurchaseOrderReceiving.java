@@ -1612,7 +1612,11 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON = Master().setVatExemptSales(ldblTotal);
             poJSON = Master().setZeroVatSales(0.00); //TODO
             if(Master().getVatRate().doubleValue() == 0.00){
-                poJSON = Master().setVatRate(12.00); //Set default value
+                if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
+                    poJSON = Master().setVatRate(0.00); //Set default value
+                } else {
+                    poJSON = Master().setVatRate(12.00); //Set default value
+                }
             }
             
         }
