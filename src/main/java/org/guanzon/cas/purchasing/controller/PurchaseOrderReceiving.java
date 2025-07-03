@@ -88,6 +88,7 @@ import ph.com.guanzongroup.cas.cashflow.Journal;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
+import ph.com.guanzongroup.cas.cashflow.status.CachePayableStatus;
 
 /**
  *
@@ -3133,17 +3134,17 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setDueDate(Master().getDueDate());
         poCachePayable.Master().setSourceCode(getSourceCode());
         poCachePayable.Master().setSourceNo(Master().getTransactionNo());
-        poCachePayable.Master().setReferNo(Master().getReferenceNo()); //TODO
-        poCachePayable.Master().setGrossAmount(ldblGrossAmt); //TODO
+        poCachePayable.Master().setReferNo(Master().getReferenceNo()); 
+        poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
         poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
         poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt); 
         poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
-        poCachePayable.Master().setNetTotal(ldblNetTotal); //TODO
-        poCachePayable.Master().setPayables(ldblNetTotal); //TODO
-        poCachePayable.Master().setTransactionStatus("1"); //set to 1
+        poCachePayable.Master().setNetTotal(ldblNetTotal); 
+        poCachePayable.Master().setPayables(ldblNetTotal); 
+        poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         
         return poJSON;
     }
