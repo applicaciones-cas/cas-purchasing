@@ -771,7 +771,7 @@ public class PurchaseOrder extends Transaction {
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
                 double totalRequest = 0.00;
-                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved().doubleValue());
+                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved());
 //                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
 //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
@@ -785,7 +785,7 @@ public class PurchaseOrder extends Transaction {
                 }
 
                 //1. Check for discrepancy
-                if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity().doubleValue()) {
+                if (Detail(lnCtr).getQuantity().doubleValue()!= Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
@@ -853,7 +853,7 @@ public class PurchaseOrder extends Transaction {
                         lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
-                        lnRecQty = poStockRequest.get(lnList).Detail(lnRow).getPurchase().doubleValue();
+                        lnRecQty = poStockRequest.get(lnList).Detail(lnRow).getPurchase();
                         poStockRequest.get(lnList).Master().setProcessed(true);
                         poStockRequest.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
                         poStockRequest.get(lnList).Master().setModifyingId(poGRider.getUserID());
@@ -1533,9 +1533,9 @@ public class PurchaseOrder extends Transaction {
             }
 
             // If at least one stock is not fully processed, set flag to false
-            if (loTrans.StockRequest().Detail(lnCtr).getApproved().doubleValue()
-                    != loTrans.StockRequest().Detail(lnCtr).getIssued().doubleValue()
-                    + loTrans.StockRequest().Detail(lnCtr).getPurchase().doubleValue()) {
+            if (loTrans.StockRequest().Detail(lnCtr).getApproved()
+                    != loTrans.StockRequest().Detail(lnCtr).getIssued()
+                    + loTrans.StockRequest().Detail(lnCtr).getPurchase()) {
                 allProcessed = false;
             }
 
@@ -1549,8 +1549,8 @@ public class PurchaseOrder extends Transaction {
             }
 
             if (!exists) {
-                double remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved().doubleValue()
-                        - (loTrans.StockRequest().Detail(lnCtr).getIssued().doubleValue() + loTrans.StockRequest().Detail(lnCtr).getPurchase().doubleValue());
+                double remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved()
+                        - (loTrans.StockRequest().Detail(lnCtr).getIssued()+ loTrans.StockRequest().Detail(lnCtr).getPurchase());
                 if (remainingStock > 0) {
                     AddDetail();
                     int lnLastIndex = getDetailCount() - 1;
