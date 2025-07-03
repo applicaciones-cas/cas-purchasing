@@ -83,19 +83,13 @@
         <dependency>
             <groupId>org.guanzon</groupId>
             <artifactId>cas-inv-warehouse</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>cas-gl</artifactId>
-            <version>0.2-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
