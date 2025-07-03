@@ -88,6 +88,7 @@ import ph.com.guanzongroup.cas.cashflow.Journal;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
+import ph.com.guanzongroup.cas.cashflow.status.CachePayableStatus;
 
 /**
  *
@@ -829,7 +830,7 @@ public class PurchaseOrderReceiving extends Transaction {
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
-                + " AND a.sBranchCD = " + SQLUtil.toSQL(poGRider.getBranchCode())
+                + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -890,7 +891,7 @@ public class PurchaseOrderReceiving extends Transaction {
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
-                + " AND a.sBranchCD = " + SQLUtil.toSQL(poGRider.getBranchCode())
+                + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
         if (psTranStat != null && !"".equals(psTranStat)) {
@@ -904,6 +905,71 @@ public class PurchaseOrderReceiving extends Transaction {
                 "Transaction Date»Transaction No»Industry»Company»Supplier",
                 "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
                 "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject searchTransaction(String industryId, String companyId, String supplier, String receivingBranch, String sReferenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        if(supplier == null){
+            supplier = "";
+        }
+        if(receivingBranch == null){
+            receivingBranch = "";
+        }
+        if(sReferenceNo == null){
+            sReferenceNo = "";
+        }
+        
+        if(industryId == null || "".equals(industryId)){
+            industryId = psIndustryId;
+        }
+        
+        if(companyId == null || "".equals(companyId)){
+            companyId = psCompanyId;
+        }
+        
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
+                + " AND a.sCompnyID = " + SQLUtil.toSQL(companyId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
+                + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
+                + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Industry»Company»Supplier»Receiving Branch",
+                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
                 1);
 
         if (poJSON != null) {
@@ -1547,7 +1613,11 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON = Master().setVatExemptSales(ldblTotal);
             poJSON = Master().setZeroVatSales(0.00); //TODO
             if(Master().getVatRate().doubleValue() == 0.00){
-                poJSON = Master().setVatRate(12.00); //Set default value
+                if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
+                    poJSON = Master().setVatRate(0.00); //Set default value
+                } else {
+                    poJSON = Master().setVatRate(12.00); //Set default value
+                }
             }
             
         }
@@ -1823,15 +1893,6 @@ public class PurchaseOrderReceiving extends Transaction {
             );
             switch (formName) {
                 case "siposting":
-//                    if ("".equals(supplierId)) {
-//                        poJSON.put("result", "error");
-//                        poJSON.put("message", "Supplier is not set");
-//                        return poJSON;
-//                    }
-                    
-//                    lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
-//                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " ) ";
-//                                  + " AND a.cProcessd = " + SQLUtil.toSQL("0");
                     lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED);
                     break;
                 case "confirmation":
@@ -1843,6 +1904,77 @@ public class PurchaseOrderReceiving extends Transaction {
                     //load all purchase order receiving
                     break;
             }
+            
+            if(psIndustryId == null || "".equals(psIndustryId)){
+                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
+            } else {
+                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+            }
+            
+            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            poJSON = new JSONObject();
+
+            int lnctr = 0;
+
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                paPORMaster = new ArrayList<>();
+                while (loRS.next()) {
+                    // Print the result set
+                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
+                    System.out.println("sCompnyNm: " + loRS.getString("sCompnyNm"));
+                    System.out.println("------------------------------------------------------------------------------");
+
+                    paPORMaster.add(PurchaseOrderReceivingMaster());
+                    paPORMaster.get(paPORMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                    lnctr++;
+                }
+
+                System.out.println("Records found: " + lnctr);
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                paPORMaster = new ArrayList<>();
+                paPORMaster.add(PurchaseOrderReceivingMaster());
+                poJSON.put("result", "error");
+                poJSON.put("continue", true);
+                poJSON.put("message", "No record found.");
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+        }
+        return poJSON;
+    }
+    
+    public JSONObject loadUnPostPurchaseOrderReceiving(String supplier, String branch, String referenceNo) {
+        try {
+            if (supplier == null || "".equals(supplier)) {
+                supplier = "";
+            }
+            if (branch == null) {
+                branch = "";
+            }
+            if (referenceNo == null) {
+                referenceNo = "";
+            }
+            initSQL();
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                    " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+                    + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                    + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
+                    + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
+            );
             
             if(psIndustryId == null || "".equals(psIndustryId)){
                 lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
@@ -3002,17 +3134,17 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setDueDate(Master().getDueDate());
         poCachePayable.Master().setSourceCode(getSourceCode());
         poCachePayable.Master().setSourceNo(Master().getTransactionNo());
-        poCachePayable.Master().setReferNo(Master().getReferenceNo()); //TODO
-        poCachePayable.Master().setGrossAmount(ldblGrossAmt); //TODO
+        poCachePayable.Master().setReferNo(Master().getReferenceNo()); 
+        poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
         poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
         poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt); 
         poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
-        poCachePayable.Master().setNetTotal(ldblNetTotal); //TODO
-        poCachePayable.Master().setPayables(ldblNetTotal); //TODO
-        poCachePayable.Master().setTransactionStatus("1"); //set to 1
+        poCachePayable.Master().setNetTotal(ldblNetTotal); 
+        poCachePayable.Master().setPayables(ldblNetTotal); 
+        poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         
         return poJSON;
     }
@@ -3034,7 +3166,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     public JSONObject populateJournal() throws SQLException, GuanzonException, CloneNotSupportedException, ScriptException{
         poJSON = new JSONObject();
-        if(getEditMode() == EditMode.UNKNOWN){
+        if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
             poJSON.put("result", "error");
             poJSON.put("message", "No record to load");
             return poJSON;
@@ -3399,6 +3531,14 @@ public class PurchaseOrderReceiving extends Transaction {
                 Master().setSupplierId(loRecord.Master().getSupplierId());
                 Master().setAddressId(loRecord.Master().getAddressId()); 
                 Master().setContactId(loRecord.Master().getContactId()); 
+            }
+            //Set original branch code
+            if(!Master().getBranchCode().equals(loRecord.Master().getBranchCode())){
+                Master().setBranchCode(loRecord.Master().getBranchCode());
+            }
+            //Set original company id
+            if(!Master().getCompanyId().equals(loRecord.Master().getCompanyId())){
+                Master().setCompanyId(loRecord.Master().getCompanyId());
             }
             
             if(!pbIsPrint){
@@ -4363,13 +4503,15 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sSupplier  "
                 + " , a.sReferNox  "
                 + " , a.sCategrCd  "
+                + " , e.sBranchNm  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
                 + " FROM po_receiving_master a "
                 + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx ";
+                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx "
+                + " LEFT JOIN branch e ON e.sBranchCd = a.sBranchCd ";
     }
     
 //    @Override
