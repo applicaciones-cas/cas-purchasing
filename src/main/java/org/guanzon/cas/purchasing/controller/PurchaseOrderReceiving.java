@@ -2355,6 +2355,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public void resetJournal() {
         try {
             poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+            poJournal.InitTransaction();
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
         } catch (GuanzonException ex) {
