@@ -785,7 +785,7 @@ public class PurchaseOrder extends Transaction {
                 }
 
                 //1. Check for discrepancy
-                if (Detail(lnCtr).getQuantity().doubleValue()!= Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
+                if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
                     System.out.println("Require Approval");
                     pbApproval = true;
                 }
@@ -1304,7 +1304,7 @@ public class PurchaseOrder extends Transaction {
         Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
+        poJSON = object.searchRecordbyClientID(ParticularID, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             PayeeID = object.getModel().getPayeeID();
@@ -1550,7 +1550,7 @@ public class PurchaseOrder extends Transaction {
 
             if (!exists) {
                 double remainingStock = loTrans.StockRequest().Detail(lnCtr).getApproved()
-                        - (loTrans.StockRequest().Detail(lnCtr).getIssued()+ loTrans.StockRequest().Detail(lnCtr).getPurchase());
+                        - (loTrans.StockRequest().Detail(lnCtr).getIssued() + loTrans.StockRequest().Detail(lnCtr).getPurchase());
                 if (remainingStock > 0) {
                     AddDetail();
                     int lnLastIndex = getDetailCount() - 1;
