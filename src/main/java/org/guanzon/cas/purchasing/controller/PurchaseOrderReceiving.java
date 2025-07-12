@@ -693,6 +693,22 @@ public class PurchaseOrderReceiving extends Transaction {
 //        }
 
         poGRider.commitTrans();
+        
+        //Check journal
+        String lsJournal = existJournal();
+        if(lsJournal != null && !"".equals(lsJournal)){
+            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+            poJournal.InitTransaction();
+            poJSON = poJournal.OpenTransaction(lsJournal);
+            if ("error".equals((String) poJSON.get("result"))){
+                return poJSON;
+            }
+            
+            poJSON = poJournal.VoidTransaction("VoidTransaction");
+            if ("error".equals((String) poJSON.get("result"))){
+                return poJSON;
+            }
+        }
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -3188,9 +3204,13 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             if(getEditMode() == EditMode.UPDATE){
-                if(poJournal.getEditMode() == EditMode.READY){
+                if(poJournal.getEditMode() == EditMode.READY || poJournal.getEditMode() == EditMode.UNKNOWN){
+                    poJSON = poJournal.OpenTransaction(lsJournal);
+                    if ("error".equals((String) poJSON.get("result"))){
+                        return poJSON;
+                    }
                     poJournal.UpdateTransaction();
-                }
+                } 
             }
         } else {
             if(getEditMode() == EditMode.UPDATE && poJournal.getEditMode() != EditMode.ADDNEW){
@@ -3268,7 +3288,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
 
                 //Journa Entry Master
-                poJournal.Master().setAccountPerId("dummy");
+                poJournal.Master().setAccountPerId("");
                 poJournal.Master().setIndustryCode(Master().getIndustryId());
                 poJournal.Master().setBranchCode(Master().getBranchCode());
                 poJournal.Master().setDepartmentId(Master().getDepartmentId());
