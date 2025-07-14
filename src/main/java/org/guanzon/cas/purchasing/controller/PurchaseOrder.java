@@ -1304,7 +1304,7 @@ public class PurchaseOrder extends Transaction {
         Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClientID(ParticularID, byCode);
+        poJSON = object.searchRecordbyClient(value,ParticularID, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             PayeeID = object.getModel().getPayeeID();
