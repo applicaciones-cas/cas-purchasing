@@ -333,7 +333,7 @@ public class PurchaseOrder extends Transaction {
         return updateTransaction();
     }
 
-    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, CloneNotSupportedException, GuanzonException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.CONFIRMED;
@@ -982,10 +982,12 @@ public class PurchaseOrder extends Transaction {
                 if ("error".equals((String) poJSON.get("result"))) {
                     poJSON.put("result", "error");
                     return poJSON;
+
                 }
             }
         } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            Logger.getLogger(PurchaseOrder.class
+                    .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
@@ -1010,11 +1012,13 @@ public class PurchaseOrder extends Transaction {
                 if ("error".equals((String) poJSON.get("result"))) {
                     System.out.println("Stock Request Saving " + (String) poJSON.get("message"));
                     return poJSON;
+
                 }
             }
 
         } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            Logger.getLogger(PurchaseOrder.class
+                    .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
@@ -1058,7 +1062,7 @@ public class PurchaseOrder extends Transaction {
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
-                " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
+                " a.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
 
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
@@ -1974,9 +1978,12 @@ public class PurchaseOrder extends Transaction {
         } catch (JRException | SQLException | GuanzonException ex) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction print aborted!");
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            Logger
+                    .getLogger(PurchaseOrder.class
+                            .getName()).log(Level.SEVERE, null, ex);
         }
         return poJSON;
+
     }
 
     public static class OrderDetail {
