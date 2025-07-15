@@ -685,7 +685,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         //check  the user level again then if he/she allow to approve
-        poGRider.beginTrans("UPDATE STATUS", "Void Transaction", SOURCE_CODE, Master().getTransactionNo());
+        poGRider.beginTrans("UPDATE STATUS", "Return Transaction", SOURCE_CODE, Master().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn, true);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -1304,7 +1304,7 @@ public class PurchaseOrder extends Transaction {
         Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClient(value,ParticularID, byCode);
+        poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             PayeeID = object.getModel().getPayeeID();
