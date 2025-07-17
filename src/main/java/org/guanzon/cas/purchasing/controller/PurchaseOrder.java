@@ -816,7 +816,8 @@ public class PurchaseOrder extends Transaction {
                 if (!Detail(lnCtr).getSouceNo().isEmpty()) {
 //                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
 
-                    if(status.equals(PurchaseOrderStatus.CONFIRMED)){
+                   if (status.equals(PurchaseOrderStatus.CONFIRMED) ||
+                           status.equals(PurchaseOrderStatus.APPROVED)) {
                         double remaining = 0.0000;
                             remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
                                     (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
