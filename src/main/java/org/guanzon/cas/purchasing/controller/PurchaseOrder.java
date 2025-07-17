@@ -812,7 +812,23 @@ public class PurchaseOrder extends Transaction {
 //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
                 //1. Check discrepancy if the order quantity is not greater than request
+                
                 if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+//                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
+
+                    if(status.equals(PurchaseOrderStatus.CONFIRMED)){
+                        double remaining = 0.0000;
+                            remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
+                                    (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
+                                    Detail(lnCtr).InvStockRequestDetail().getIssued() + 
+                                    Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+                        if (remaining == 0.00) {
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Discrepancy: Stock requests related to this order number have already been processed.");
+                            return poJSON;
+                        }
+                    }
+                    
                     if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
