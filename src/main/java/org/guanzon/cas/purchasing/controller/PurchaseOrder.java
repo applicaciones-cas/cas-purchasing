@@ -333,7 +333,7 @@ public class PurchaseOrder extends Transaction {
         return updateTransaction();
     }
 
-    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, CloneNotSupportedException, GuanzonException {
         poJSON = new JSONObject();
 
         String lsStatus = PurchaseOrderStatus.CONFIRMED;
@@ -361,6 +361,12 @@ public class PurchaseOrder extends Transaction {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -417,12 +423,18 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//            poJSON = ShowDialogFX.getUserApproval(poGRider);
-//            if (!"success".equals((String) poJSON.get("result"))) {
-//                return poJSON;
-//            }
-//        }
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
+            }
+        }
         poJSON = setValueToOthers(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -495,6 +507,12 @@ public class PurchaseOrder extends Transaction {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -556,6 +574,12 @@ public class PurchaseOrder extends Transaction {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -617,6 +641,12 @@ public class PurchaseOrder extends Transaction {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -678,6 +708,12 @@ public class PurchaseOrder extends Transaction {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer..");
+                    return poJSON;
+                }
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -685,7 +721,7 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         //check  the user level again then if he/she allow to approve
-        poGRider.beginTrans("UPDATE STATUS", "Void Transaction", SOURCE_CODE, Master().getTransactionNo());
+        poGRider.beginTrans("UPDATE STATUS", "Return Transaction", SOURCE_CODE, Master().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbReturn, true);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -776,7 +812,24 @@ public class PurchaseOrder extends Transaction {
 //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
                 //1. Check discrepancy if the order quantity is not greater than request
+                
                 if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+//                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
+
+                   if (status.equals(PurchaseOrderStatus.CONFIRMED) ||
+                           status.equals(PurchaseOrderStatus.APPROVED)) {
+                        double remaining = 0.0000;
+                            remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
+                                    (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
+                                    Detail(lnCtr).InvStockRequestDetail().getIssued() + 
+                                    Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+                        if (remaining == 0.00) {
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Discrepancy: Stock requests related to this order number have already been processed.");
+                            return poJSON;
+                        }
+                    }
+                    
                     if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
@@ -982,10 +1035,12 @@ public class PurchaseOrder extends Transaction {
                 if ("error".equals((String) poJSON.get("result"))) {
                     poJSON.put("result", "error");
                     return poJSON;
+
                 }
             }
         } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            Logger.getLogger(PurchaseOrder.class
+                    .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
@@ -1010,11 +1065,13 @@ public class PurchaseOrder extends Transaction {
                 if ("error".equals((String) poJSON.get("result"))) {
                     System.out.println("Stock Request Saving " + (String) poJSON.get("message"));
                     return poJSON;
+
                 }
             }
 
         } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            Logger.getLogger(PurchaseOrder.class
+                    .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
@@ -1058,7 +1115,7 @@ public class PurchaseOrder extends Transaction {
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
-                " f.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
+                " a.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
                 " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
 
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
@@ -1304,7 +1361,7 @@ public class PurchaseOrder extends Transaction {
         Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClient(value,ParticularID, byCode);
+        poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
 
         if ("success".equals((String) poJSON.get("result"))) {
             PayeeID = object.getModel().getPayeeID();
@@ -1974,9 +2031,12 @@ public class PurchaseOrder extends Transaction {
         } catch (JRException | SQLException | GuanzonException ex) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction print aborted!");
-            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+            Logger
+                    .getLogger(PurchaseOrder.class
+                            .getName()).log(Level.SEVERE, null, ex);
         }
         return poJSON;
+
     }
 
     public static class OrderDetail {
