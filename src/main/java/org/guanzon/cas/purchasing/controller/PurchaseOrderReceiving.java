@@ -201,23 +201,29 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
             }
         }
         
         //if with discrepancy require approval
 //        if (pbApproval) {
-//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
 //                poJSON = ShowDialogFX.getUserApproval(poGRider);
 //                if (!"success".equals((String) poJSON.get("result"))) {
 //                    return poJSON;
 //                }
 //            }
 //        } else {
-//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
 //                poJSON.put("result", "error");
 //                poJSON.put("message", "You are not allow to confirm this transaction.");
 //                return poJSON;
@@ -289,10 +295,16 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -376,7 +388,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //        }
 //
 //        if (pbApproval) {
-//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
 //                poJSON = ShowDialogFX.getUserApproval(poGRider);
 //                if (!"success".equals((String) poJSON.get("result"))) {
 //                    return poJSON;
@@ -448,7 +460,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
 //        if (pbApproval) {
-//            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
 //                poJSON = ShowDialogFX.getUserApproval(poGRider);
 //                if (!"success".equals((String) poJSON.get("result"))) {
 //                    return poJSON;
@@ -549,10 +561,16 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
             }
         }
         
@@ -646,10 +664,16 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -750,10 +774,16 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -3431,17 +3461,6 @@ public class PurchaseOrderReceiving extends Transaction {
         if (paDetailRemoved == null) {
             paDetailRemoved = new ArrayList<>();
         }
-        
-        if(!pbIsPrint){
-            if (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW ){
-                if (poGRider.getUserLevel() == UserRight.ENCODER) {
-                    poJSON = ShowDialogFX.getUserApproval(poGRider);
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                }
-            }
-        }
 
         Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         Master().setModifiedDate(poGRider.getServerDate());
@@ -3563,13 +3582,18 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             if(!pbIsPrint){
-                if ((PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                        || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate())))
+                if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
                         && !pbIsFinance) {
-                    if (poGRider.getUserLevel() == UserRight.ENCODER) {
+                    if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             return poJSON;
+                        } else {
+                            if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "User is not an authorized approving officer.");
+                                return poJSON;
+                            }
                         }
                     }
                 }
@@ -3854,27 +3878,28 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             int lnCtr, lnRow;
-            //Purchase Order Receiving Serial
-            InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
-            loInvSerial.setWithParentClass(true);
-
-            for (lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++) {
+            for (lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++) {        
+                System.out.println("SAVE INVENTORY SERIAL ROW : " + lnRow);
+                //Purchase Order Receiving Serial
+                InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
                 //1. Check for Serial ID
                 if ("".equals(paOthers.get(lnRow).getSerialId()) || paOthers.get(lnRow).getSerialId() == null) {
                     //1.1 Create New Inventory Serial
                     poJSON = loInvSerial.newRecord();
+                    System.out.println("inv serial new record : " + (String) poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial " + (String) poJSON.get("message"));
                         return poJSON;
                     }
                 } else {
                     //1.2 Update Inventory Serial / Registration
                     poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
+                    System.out.println("inv serial open record : " + (String) poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         return poJSON;
                     }
-                    System.out.println(loInvSerial.getEditMode());
+                    System.out.println("inv serial edit mode : " +  loInvSerial.getEditMode());
                     poJSON = loInvSerial.updateRecord();
+                    System.out.println("inv serial update record : " + (String) poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         return poJSON;
                     }
@@ -3916,8 +3941,8 @@ public class PurchaseOrderReceiving extends Transaction {
 
                     //3. Validation Serial
                     poJSON = loInvSerial.isEntryOkay();
+                    System.out.println("inv serial validation : " + (String) poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial validation : " + (String) poJSON.get("message"));
                         return poJSON;
                     }
 
@@ -3929,6 +3954,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     System.out.println("Location   : " + loInvSerial.getModel().getLocation());
                     System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
                     System.out.println("---------------------------------------------------------------------- ");
+                    loInvSerial.setWithParentClass(true);
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
                         System.out.println("inv serial saving" + (String) poJSON.get("message"));
