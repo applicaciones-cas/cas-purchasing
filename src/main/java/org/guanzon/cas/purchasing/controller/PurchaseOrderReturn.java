@@ -147,10 +147,16 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() == UserRight.ENCODER) {
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             poJSON = ShowDialogFX.getUserApproval(poGRider);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
+            } else {
+                if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
             }
         }
 
@@ -218,10 +224,16 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -338,10 +350,16 @@ public class PurchaseOrderReturn extends Transaction{
         }
         
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -412,10 +430,16 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            if (poGRider.getUserLevel() == UserRight.ENCODER) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
                 }
             }
             
@@ -1196,17 +1220,6 @@ public class PurchaseOrderReturn extends Transaction{
         if (paDetailRemoved == null) {
             paDetailRemoved = new ArrayList<>();
         }
-        
-        if(!pbIsPrint){
-            if (!xsDateShort(poGRider.getServerDate()).equals(xsDateShort(Master().getTransactionDate()))  && getEditMode() == EditMode.ADDNEW ){
-                if (poGRider.getUserLevel() == UserRight.ENCODER) {
-                    poJSON = ShowDialogFX.getUserApproval(poGRider);
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                }
-            }
-        }
 
         Master().setModifyingId(poGRider.getUserID());
         Master().setModifiedDate(poGRider.getServerDate());
@@ -1272,12 +1285,17 @@ public class PurchaseOrderReturn extends Transaction{
             
             //seek approval when user changed trasanction date
             if(!pbIsPrint){
-                if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus()) 
-                        || !xsDateShort(loRecord.Master().getTransactionDate()).equals(xsDateShort(Master().getTransactionDate()))) {
-                    if (poGRider.getUserLevel() == UserRight.ENCODER) {
+                if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+                    if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             return poJSON;
+                        } else {
+                            if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "User is not an authorized approving officer.");
+                                return poJSON;
+                            }
                         }
                     }
                 }
@@ -1296,7 +1314,7 @@ public class PurchaseOrderReturn extends Transaction{
                         for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
                             lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
                             if (lbUpdated) {
-                                lbUpdated = loRecord.Detail(lnCtr).getQuantity() == Detail(lnCtr).getQuantity();
+                                lbUpdated = loRecord.Detail(lnCtr).getQuantity().doubleValue() == Detail(lnCtr).getQuantity().doubleValue();
                             } 
 
                             if (!lbUpdated) {
