@@ -1782,7 +1782,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         if  ( ("".equals(Detail(lnRow).getOrderNo()) || Detail(lnRow).getOrderNo() == null)
                                 && stockId.equals(Detail(lnRow).getStockId())) {
                             poJSON.put("result", "error");
-                            poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
+                            poJSON.put("message", description+ " already exists in table at row " + (lnRow+1) + ".");
                             poJSON.put("row", lnRow);
                             System.out.println("json row : " + poJSON.get("row"));
                             return poJSON;
@@ -1809,16 +1809,16 @@ public class PurchaseOrderReceiving extends Transaction {
 //                                return poJSON;
 //                            }
 //                        } else {
-//                            //Do not allow same stock Id without expiry date that already exist in po receiving detail
+//                            //Do not allow same stock Id without expiry date that already exists in po receiving detail
 //                            if ("1900-01-01".equals(xsDateShort(Detail(lnRow).getExpiryDate()))) {
 //                                poJSON.put("result", "error");
-//                                poJSON.put("message", barcode + " already exist in table at row " + (lnRow + 1) + ".");
+//                                poJSON.put("message", barcode + " already exists in table at row " + (lnRow + 1) + ".");
 //                                return poJSON;
 //                            } else {
 //                                //Do not allow same stock Id with the same expiry date
 //                                if (expiryDate.equals(xsDateShort(Detail(lnRow).getExpiryDate()))) {
 //                                    poJSON.put("result", "error");
-//                                    poJSON.put("message", barcode + " already exist in table at row " + (lnRow + 1) + ".");
+//                                    poJSON.put("message", barcode + " already exists in table at row " + (lnRow + 1) + ".");
 //                                    Detail().remove(row);
 //                                    return poJSON;
 //                                }
@@ -2324,7 +2324,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     
                     for (lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                         if (Detail(lnRow).getOrderNo() != null && !"".equals(Detail(lnRow).getOrderNo())) {
-                            //check when pre-owned po is already exist in detail. 
+                            //check when pre-owned po is already exists in detail. 
                             //if exist only pre-owned purchase order will allow to insert in por detail 
                             if (Detail(lnRow).PurchaseOrderMaster().getPreOwned() != loTrans.PurchaseOrder().Master().getPreOwned()) {
                                 poJSON.put("result", "error");
@@ -2492,7 +2492,7 @@ public class PurchaseOrderReceiving extends Transaction {
         boolean lbShowMessage = false;
 
         if (!serialId.isEmpty()) {
-            //1. Checke Serial if already exist in POR Serial list
+            //1. Checke Serial if already exists in POR Serial list
             for (int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount() - 1; lnCtr++) {
                 if (paOthers.get(lnCtr).getSerialId().equals(serialId)) {
                     poJSON.put("result", "success");
@@ -2682,7 +2682,7 @@ public class PurchaseOrderReceiving extends Transaction {
         
         lsColName = getColumnName(columnName);
 
-        //check when serial id already exist do not allow to change brand / model
+        //check when serial id already exists do not allow to change brand / model
         for (int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount() - 1; lnCtr++) {
             if(lnPrevEntryNo < 0){
                 lnRow = 1;
@@ -2742,7 +2742,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             if ("error".equals((String) poJSON.get("result"))){
-                poJSON.put("message", lsColName + " already exist for Entry No " + paOthers.get(lnCtr).getEntryNo() + "  at row " + lnRow + ".");
+                poJSON.put("message", lsColName + " already exists for Entry No " + paOthers.get(lnCtr).getEntryNo() + "  at row " + lnRow + ".");
                 poJSON.put("set", false);
                 return poJSON;
             }
@@ -2751,7 +2751,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //                if(paOthers.get(row).getSerialId() == null || "".equals(paOthers.get(lnSerialRow).getSerialId())){
 //                    JSONObject loJSON = checkExistingSerialinDB(value, columnName, paOthers.get(row).getStockId());
 //                    if("success".equals((String) loJSON.get("result"))){
-//                        if( ShowMessageFX.YesNo(null, "Purchase Order Receiving Serial", lsColName + " already exist in database, do you want to set serial ID including serial information? ") == true){
+//                        if( ShowMessageFX.YesNo(null, "Purchase Order Receiving Serial", lsColName + " already exists in database, do you want to set serial ID including serial information? ") == true){
 //                            paOthers.get(row).setSerialId((String) loJSON.get("sSerialID"));
 //                            paOthers.get(row).setSerial01((String) loJSON.get("sSerial01"));
 //                            paOthers.get(row).setSerial02((String) loJSON.get("sSerial02"));
@@ -2907,7 +2907,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject checkExistingSerialId(int entryNo) {
         poJSON = new JSONObject();
 
-        //check when serial id already exist do not allow to change brand / model
+        //check when serial id already exists do not allow to change brand / model
         for (int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount() - 1; lnCtr++) {
             if (paOthers.get(lnCtr).getEntryNo() == entryNo) {
                 if (paOthers.get(lnCtr).getSerialId() != null && !"".equals(paOthers.get(lnCtr).getSerialId())) {
@@ -3348,7 +3348,7 @@ public class PurchaseOrderReceiving extends Transaction {
             if(fsAcctCode.equals(poJournal.Detail(lnCtr).getAccountCode()) && fnRow != lnCtr){
                 poJSON.put("row", lnCtr);
                 poJSON.put("result", "error");
-                poJSON.put("message", "Account code " + fsAcctCode + " already exist at row " + (lnCtr+1) + ".");
+                poJSON.put("message", "Account code " + fsAcctCode + " already exists at row " + (lnCtr+1) + ".");
                 poJournal.Detail(fnRow).setAccountCode("");
                 return poJSON;
             }
@@ -3742,7 +3742,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                 poJSON.put("message", "Serialized item found in transaction details."
                                                     + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
                                                     + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() 
-                                                    + " > is already exist in the database." 
+                                                    + " > already exists in the database." 
                                                     +"\nPlease contact the System Administrator for assistance.");
                                 return poJSON;
                             } 
@@ -3755,7 +3755,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                 poJSON.put("message", "Serialized item found in transaction details."
                                                     + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
                                                     + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() 
-                                                    + " > is already exist in the database." 
+                                                    + " > already exists in the database." 
                                                     +"\nPlease contact the System Administrator for assistance.");
                                 return poJSON;
                             }
@@ -3770,7 +3770,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                     poJSON.put("message", "Serialized item found in transaction details."
                                                         + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
                                                         + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() 
-                                                        + " > is already exist in the database." 
+                                                        + " > already exists in the database." 
                                                         +"\nPlease contact the System Administrator for assistance.");
                                     return poJSON;
                                 }
@@ -3786,7 +3786,7 @@ public class PurchaseOrderReceiving extends Transaction {
                                     poJSON.put("message", "Serialized item found in transaction details."
                                                         + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
                                                         + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getPlateNo() 
-                                                        + " > is already exist in the database." 
+                                                        + " > already exists in the database." 
                                                         +"\nPlease contact the System Administrator for assistance.");
                                     return poJSON;
                                 }
@@ -4136,7 +4136,7 @@ public class PurchaseOrderReceiving extends Transaction {
         double lnRecQty = 0;
         double lnOrderQty = 0;
         boolean lbExist = false;
-        //2.check if order no is already exist in purchase order array list
+        //2.check if order no is already exists in purchase order array list
         for (lnRow = 0; lnRow <= paPurchaseOrder.size() - 1; lnRow++) {
             System.out.println("paPurchaseOrder.get(lnRow).Master().getTransactionNo() : " + paPurchaseOrder.get(lnRow).Master().getTransactionNo());
             if (paPurchaseOrder.get(lnRow).Master().getTransactionNo() != null) {

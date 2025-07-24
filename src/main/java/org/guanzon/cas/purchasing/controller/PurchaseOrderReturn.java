@@ -1073,9 +1073,9 @@ public class PurchaseOrderReturn extends Transaction{
             if(lnRow != row ){
                 if (stockId.equals(Detail(lnRow).getStockId()) && serialId.equals(Detail(lnRow).getSerialId())) {
                     if(!"".equals(serialId)){
-                        poJSON.put("message", Detail(lnRow).InventorySerial().getSerial01() + " " + description+ " already exist in table at row " + (lnRow+1) + ".");
+                        poJSON.put("message", Detail(lnRow).InventorySerial().getSerial01() + " " + description+ " already exists in table at row " + (lnRow+1) + ".");
                     } else {
-                        poJSON.put("message", description+ " already exist in table at row " + (lnRow+1) + ".");
+                        poJSON.put("message", description+ " already exists in table at row " + (lnRow+1) + ".");
                     }
                     poJSON.put("result", "error");
                     poJSON.put("row", lnRow);
