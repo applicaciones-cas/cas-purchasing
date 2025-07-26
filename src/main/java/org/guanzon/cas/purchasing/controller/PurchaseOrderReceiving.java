@@ -719,20 +719,20 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         //Check journal
-        String lsJournal = existJournal();
-        if(lsJournal != null && !"".equals(lsJournal)){
-            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
-            poJournal.InitTransaction();
-            poJSON = poJournal.OpenTransaction(lsJournal);
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
-            }
-            
-            poJSON = poJournal.VoidTransaction("VoidTransaction");
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
-            }
-        }
+//        String lsJournal = existJournal();
+//        if(lsJournal != null && !"".equals(lsJournal)){
+//            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+//            poJournal.InitTransaction();
+//            poJSON = poJournal.OpenTransaction(lsJournal);
+//            if ("error".equals((String) poJSON.get("result"))){
+//                return poJSON;
+//            }
+//            
+//            poJSON = poJournal.VoidTransaction("VoidTransaction");
+//            if ("error".equals((String) poJSON.get("result"))){
+//                return poJSON;
+//            }
+//        }
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
