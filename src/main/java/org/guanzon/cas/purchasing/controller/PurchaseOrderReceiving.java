@@ -603,6 +603,8 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         Master().isProcessed(true);
+        Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        Master().setModifiedDate(poGRider.getServerDate());
         poJSON = Master().saveRecord();
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
