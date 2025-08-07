@@ -621,6 +621,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         poJournal.setWithParent(true);
+        poJournal.setWithUI(false);
         poJSON = poJournal.ConfirmTransaction(remarks);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
