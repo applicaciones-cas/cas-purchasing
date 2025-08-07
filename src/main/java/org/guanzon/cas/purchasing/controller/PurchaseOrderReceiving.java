@@ -603,6 +603,8 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         Master().isProcessed(true);
+        Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        Master().setModifiedDate(poGRider.getServerDate());
         poJSON = Master().saveRecord();
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
@@ -619,6 +621,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         poJournal.setWithParent(true);
+        poJournal.setWithUI(false);
         poJSON = poJournal.ConfirmTransaction(remarks);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -719,20 +722,20 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         //Check journal
-        String lsJournal = existJournal();
-        if(lsJournal != null && !"".equals(lsJournal)){
-            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
-            poJournal.InitTransaction();
-            poJSON = poJournal.OpenTransaction(lsJournal);
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
-            }
-            
-            poJSON = poJournal.VoidTransaction("VoidTransaction");
-            if ("error".equals((String) poJSON.get("result"))){
-                return poJSON;
-            }
-        }
+//        String lsJournal = existJournal();
+//        if(lsJournal != null && !"".equals(lsJournal)){
+//            poJournal = new CashflowControllers(poGRider, logwrapr).Journal();
+//            poJournal.InitTransaction();
+//            poJSON = poJournal.OpenTransaction(lsJournal);
+//            if ("error".equals((String) poJSON.get("result"))){
+//                return poJSON;
+//            }
+//            
+//            poJSON = poJournal.VoidTransaction("VoidTransaction");
+//            if ("error".equals((String) poJSON.get("result"))){
+//                return poJSON;
+//            }
+//        }
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -3192,6 +3195,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setNetTotal(ldblNetTotal); 
         poCachePayable.Master().setPayables(ldblNetTotal); 
         poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
+        poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
         return poJSON;
     }
@@ -4665,10 +4670,10 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
                 
                 switch(Master().getCategoryCode()){
-                    case "0005": //CAR
-                    case "0003": //Motorcycle
-                    case "0001": //Cellphone   
-                    case "0002": //Appliances  
+                    case PurchaseOrderReceivingStatus.CAR : 		//"0005": CAR        
+                    case PurchaseOrderReceivingStatus.MOTORCYCLE :	//"0003": Motorcycle 
+                    case PurchaseOrderReceivingStatus.MOBILEPHONE :	//"0001": Cellphone  
+                    case PurchaseOrderReceivingStatus.APPLIANCES :	//"0002": Appliances 
                         lsBarcode = Detail(lnCtr).Inventory().Brand().getDescription();
 
                         if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
@@ -4690,7 +4695,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
                                 lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                     break;
-                    case "0008": // Food  
+                    case PurchaseOrderReceivingStatus.FOOD : //"0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         if (Detail(lnCtr).Inventory().Measure().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Measure().getDescription())){
                             lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
@@ -4701,10 +4706,10 @@ public class PurchaseOrderReceiving extends Transaction {
                                 lsBarcode, lsDescription, lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                         jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving_Food.jrxml";
                     break;
-                    case "0006": // CAR SP
-                    case "0004": // Motorcycle SP
-                    case "0007": // General
-                    case "0009": // Hospitality
+                    case PurchaseOrderReceivingStatus.SPCAR :       //case "0006":  CAR SP       
+                    case PurchaseOrderReceivingStatus.SPMC  :       //case "0004":  Motorcycle SP
+                    case PurchaseOrderReceivingStatus.GENERAL :     //case "0007":  General      
+                    case PurchaseOrderReceivingStatus.HOSPITALITY : //case "0009":  Hospitality                          
                     default:
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().getDescription();   
