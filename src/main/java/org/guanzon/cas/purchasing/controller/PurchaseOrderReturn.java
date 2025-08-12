@@ -1221,6 +1221,11 @@ public class PurchaseOrderReturn extends Transaction{
             paDetailRemoved = new ArrayList<>();
         }
 
+        if(Master().getEditMode() == EditMode.ADDNEW){
+            System.out.println("Will Save : " + Master().getNextCode());
+            Master().setTransactionNo(Master().getNextCode());
+        }
+        
         Master().setModifyingId(poGRider.getUserID());
         Master().setModifiedDate(poGRider.getServerDate());
         
