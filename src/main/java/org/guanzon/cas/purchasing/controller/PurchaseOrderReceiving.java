@@ -621,8 +621,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         poJournal.setWithParent(true);
-        poJournal.setWithUI(false);
-        poJSON = poJournal.ConfirmTransaction(remarks);
+        poJournal.setWithUI(true);
+        poJSON = poJournal.ConfirmTransaction("Confirm Transaction");
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -1788,7 +1788,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject checkExistingStock(String stockId, String description, String expiryDate, int row, boolean isSave) {
         poJSON = new JSONObject();
         for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
-            if(Detail(lnRow).getQuantity().doubleValue() > 0){
+//            if(Detail(lnRow).getQuantity().doubleValue() > 0){ //Why did I add this condition...
                 if("".equals(Detail(row).getOrderNo()) || Detail(row).getOrderNo() == null){
                     if(lnRow != row ){
                         if  ( ("".equals(Detail(lnRow).getOrderNo()) || Detail(lnRow).getOrderNo() == null)
@@ -1801,7 +1801,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         } 
                     }
                 }
-            }
+//            }
         }
         
         
