@@ -1619,6 +1619,7 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblTotal = 0.00;
         Double ldblDiscount = Master().getDiscount().doubleValue();
         Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+        Double ldblVatExempt = 0.00;
         
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
@@ -1654,12 +1655,20 @@ public class PurchaseOrderReceiving extends Transaction {
                 ldblVatAmount = ldblVatSales * 0.12;
                 //Net VAT Amount : VAT Sales + VAT Amount
                 ldblNetVatAmount = ldblVatSales + ldblVatAmount;
+                
+                //Sum all vat exempt sales
+                for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                    if(!Detail(lnCtr).isVatable()){
+                        ldblVatExempt += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+                    }
+                }
+                
             }
             
             Master().isTaxWithHold(Master().getWithHoldingTax().doubleValue() > 0.0000);
             poJSON = Master().setVatSales(ldblVatSales);
             poJSON = Master().setVatAmount(ldblVatAmount);
-            poJSON = Master().setVatExemptSales(ldblTotal);
+            poJSON = Master().setVatExemptSales(ldblVatExempt);
             poJSON = Master().setZeroVatSales(0.00); //TODO
             if(Master().getVatRate().doubleValue() == 0.00){
                 if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
