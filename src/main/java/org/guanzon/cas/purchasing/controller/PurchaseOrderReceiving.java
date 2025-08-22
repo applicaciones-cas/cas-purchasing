@@ -621,8 +621,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.commitTrans();
         
         poJournal.setWithParent(true);
-        poJournal.setWithUI(false);
-        poJSON = poJournal.ConfirmTransaction(remarks);
+        poJournal.setWithUI(true);
+        poJSON = poJournal.ConfirmTransaction("Confirm Transaction");
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -1619,7 +1619,6 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblTotal = 0.00;
         Double ldblDiscount = Master().getDiscount().doubleValue();
         Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-        Double ldblVatExempt = 0.00;
         
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
@@ -1640,33 +1639,41 @@ public class PurchaseOrderReceiving extends Transaction {
         if(pbIsFinance){
             double ldblVatSales = 0.0000;
             double ldblVatAmount = 0.0000;
-            double ldblNetVatAmount = 0.0000;
+            double ldblNetVatableSalesAmount = 0.0000;
+            double ldblVatExempt = 0.00;
+            double ldblVatableTotal = 0.00;
+            
+            //Sum all vat exempt sales
+            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                if(Detail(lnCtr).isVatable()){
+                    ldblVatableTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+                } else {
+                    ldblVatExempt += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+                }
+            }
+            
+            //VAT Sales : (Vatable Total + Freight Amount) - Discount Amount
+            ldblVatSales = (ldblVatableTotal + Master().getFreight().doubleValue()) - (ldblDiscount + ldblDiscountRate);
+            
             if(Master().isVatTaxable()){
                 //VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
-                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) - (ldblDiscount + ldblDiscountRate);
+//                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) - (ldblDiscount + ldblDiscountRate);
                 //VAT Amount : VAT Sales - (VAT Sales / 1.12)
                 ldblVatAmount = ldblVatSales - ( ldblVatSales / 1.12);
                 //Net VAT Amount : VAT Sales - VAT Amount
-                ldblNetVatAmount = ldblVatSales - ldblVatAmount;
+                ldblNetVatableSalesAmount = ldblVatSales - ldblVatAmount;
             } else {
                 //VAT Sales : (Transaction Total + Freight Amount) - Discount Amount
-                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) - (ldblDiscount + ldblDiscountRate);
-                //VAT Amount : VAT Sales - (VAT Sales / 1.12)
+//                ldblVatSales = (ldblTotal + Master().getFreight().doubleValue()) - (ldblDiscount + ldblDiscountRate);
+                //VAT Amount : VAT Sales * 0.12
                 ldblVatAmount = ldblVatSales * 0.12;
                 //Net VAT Amount : VAT Sales + VAT Amount
-                ldblNetVatAmount = ldblVatSales + ldblVatAmount;
-                
-                //Sum all vat exempt sales
-                for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                    if(!Detail(lnCtr).isVatable()){
-                        ldblVatExempt += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-                    }
-                }
+                ldblNetVatableSalesAmount = ldblVatSales + ldblVatAmount;
                 
             }
             
             Master().isTaxWithHold(Master().getWithHoldingTax().doubleValue() > 0.0000);
-            poJSON = Master().setVatSales(ldblVatSales);
+            poJSON = Master().setVatSales(ldblNetVatableSalesAmount);
             poJSON = Master().setVatAmount(ldblVatAmount);
             poJSON = Master().setVatExemptSales(ldblVatExempt);
             poJSON = Master().setZeroVatSales(0.00); //TODO
@@ -1680,6 +1687,32 @@ public class PurchaseOrderReceiving extends Transaction {
             
         }
         return poJSON;
+    }
+    
+    public Double getNetTotal(){
+         //Net Total = Vat Amount - Tax Amount
+        double ldblNetTotal = 0.00;
+//        if (Master().isVatTaxable()) {
+//            //Net VAT Amount : VAT Sales - VAT Amount
+//            //Net Total : VAT Sales - Withholding Tax
+//            ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
+//        } else {
+//            //Net VAT Amount : VAT Sales + VAT Amount
+//            //Net Total : Net VAT Amount - Withholding Tax
+//            ldblNetTotal = (Master().getVatSales().doubleValue()
+//                    + Master().getVatAmount().doubleValue())
+//                    - Master().getWithHoldingTax().doubleValue();
+//
+//        }
+//        
+//        ldblNetTotal = ldblNetTotal + Master().getVatExemptSales().doubleValue();
+        
+        ldblNetTotal = (Master().getVatSales().doubleValue()
+                    + Master().getVatAmount().doubleValue()
+                    + Master().getVatExemptSales().doubleValue())
+                    - Master().getWithHoldingTax().doubleValue();
+
+        return ldblNetTotal;
     }
 
     /*Convert Date to String*/
@@ -1788,7 +1821,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public JSONObject checkExistingStock(String stockId, String description, String expiryDate, int row, boolean isSave) {
         poJSON = new JSONObject();
         for(int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++){
-            if(Detail(lnRow).getQuantity().doubleValue() > 0){
+//            if(Detail(lnRow).getQuantity().doubleValue() > 0){ //Why did I add this condition...
                 if("".equals(Detail(row).getOrderNo()) || Detail(row).getOrderNo() == null){
                     if(lnRow != row ){
                         if  ( ("".equals(Detail(lnRow).getOrderNo()) || Detail(lnRow).getOrderNo() == null)
@@ -1801,7 +1834,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         } 
                     }
                 }
-            }
+//            }
         }
         
         
