@@ -266,7 +266,7 @@ public class testPurchaseOrderReceiving {
         }
     }
     
-//     @Test
+     @Test
     public void testOpenTransaction() {
         JSONObject loJSON;
         
