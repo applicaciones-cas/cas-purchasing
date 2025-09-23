@@ -1671,7 +1671,9 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return poJSON;
     }
-     public Double getNetTotal(){
+    
+    //TODO
+    public Double getNetTotal(){
          //Net Total = Vat Amount - Tax Amount
         Double ldblNetTotal = 0.00;
         Double ldblTotal =  Master().getTransactionTotal().doubleValue();
@@ -1688,7 +1690,8 @@ public class PurchaseOrderReceiving extends Transaction {
                         - ldblDiscount)
                         - Master().getWithHoldingTax().doubleValue();
         } else {
-            ldblNetTotal = (((Master().getTransactionTotal().doubleValue() -  Master().getVatExemptSales().doubleValue())
+            ldblNetTotal = (((Master().getVatSales().doubleValue()
+                        + Master().getVatAmount().doubleValue() + Master().getVatExemptSales().doubleValue())
                         + Master().getVatAmount().doubleValue())
                         - ldblDiscount)
                         - Master().getWithHoldingTax().doubleValue();
