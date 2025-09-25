@@ -3442,42 +3442,41 @@ public class PurchaseOrderReceiving extends Transaction {
         if ("error".equals((String) poJSON.get("result"))){
             return poJSON;
         }
-        //get the excess advance payment and total discount amount
-        Double ldblTotalDiscAmt =  pdblTotalDiscAmt;
-        Double ldblAdvPayment =  pdblAdvPayment;
-        int lnRow = 0;
-        
         //Populate Cache Payable detail
         if(poCachePayableTrucking.getDetailCount() < 0){
             poCachePayableTrucking.AddDetail();
         }
 
-        lnRow = poCachePayableTrucking.getDetailCount() - 1;
+        int lnRow = poCachePayableTrucking.getDetailCount() - 1;
         poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight")); //TODO
         poCachePayableTrucking.Detail(lnRow).setGrossAmount(Master().getFreight());
         poCachePayableTrucking.Detail(lnRow).setPayables(Master().getFreight()); 
         
-        //Update AmountPaid
-        if(pdblAdvPayment >= poCachePayableTrucking.Detail(lnRow).getPayables()){
-            poCachePayableTrucking.Detail(lnRow).setAmountPaid(poCachePayableTrucking.Detail(lnRow).getPayables());
-            pdblAdvPayment = pdblAdvPayment - poCachePayableTrucking.Detail(lnRow).getPayables();
-        } else {
-            if( pdblAdvPayment > 0.0000){
-                poCachePayableTrucking.Detail(lnRow).setAmountPaid(pdblAdvPayment);
-                pdblAdvPayment = 0.0000;
-            }
-        }
-
-        //Update Discount
-        if(pdblTotalDiscAmt >= poCachePayableTrucking.Detail(lnRow).getPayables()){
-            poCachePayableTrucking.Detail(lnRow).setDiscountAmount(poCachePayableTrucking.Detail(lnRow).getPayables());
-            pdblTotalDiscAmt = pdblTotalDiscAmt - poCachePayableTrucking.Detail(lnRow).getPayables();
-        } else {
-            if( pdblTotalDiscAmt > 0.0000){
-                poCachePayableTrucking.Detail(lnRow).setDiscountAmount(pdblTotalDiscAmt);
-                pdblTotalDiscAmt = 0.0000;
-            }
-        }
+        //get the excess advance payment and total discount amount
+//        Double ldblTotalDiscAmt =  pdblTotalDiscAmt;
+//        Double ldblAdvPayment =  pdblAdvPayment;
+        
+//        //Update AmountPaid
+//        if(pdblAdvPayment >= poCachePayableTrucking.Detail(lnRow).getPayables()){
+//            poCachePayableTrucking.Detail(lnRow).setAmountPaid(poCachePayableTrucking.Detail(lnRow).getPayables());
+//            pdblAdvPayment = pdblAdvPayment - poCachePayableTrucking.Detail(lnRow).getPayables();
+//        } else {
+//            if( pdblAdvPayment > 0.0000){
+//                poCachePayableTrucking.Detail(lnRow).setAmountPaid(pdblAdvPayment);
+//                pdblAdvPayment = 0.0000;
+//            }
+//        }
+//
+//        //Update Discount
+//        if(pdblTotalDiscAmt >= poCachePayableTrucking.Detail(lnRow).getPayables()){
+//            poCachePayableTrucking.Detail(lnRow).setDiscountAmount(poCachePayableTrucking.Detail(lnRow).getPayables());
+//            pdblTotalDiscAmt = pdblTotalDiscAmt - poCachePayableTrucking.Detail(lnRow).getPayables();
+//        } else {
+//            if( pdblTotalDiscAmt > 0.0000){
+//                poCachePayableTrucking.Detail(lnRow).setDiscountAmount(pdblTotalDiscAmt);
+//                pdblTotalDiscAmt = 0.0000;
+//            }
+//        }
        
         //Cache Payable Trucking Master
         poCachePayableTrucking.Master().setIndustryCode(Master().getIndustryId());
@@ -3490,11 +3489,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setSourceNo(Master().getTransactionNo());
         poCachePayableTrucking.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayableTrucking.Master().setGrossAmount(Master().getFreight().doubleValue()); 
-        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
         poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue());
         poCachePayableTrucking.Master().setNetTotal(Master().getFreight().doubleValue()); 
         poCachePayableTrucking.Master().setPayables(Master().getFreight().doubleValue()); 
-        poCachePayableTrucking.Master().setAmountPaid(ldblAdvPayment);
+//        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
+//        poCachePayableTrucking.Master().setAmountPaid(ldblAdvPayment);
         poCachePayableTrucking.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
@@ -3799,6 +3798,12 @@ public class PurchaseOrderReceiving extends Transaction {
 
         Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         Master().setModifiedDate(poGRider.getServerDate());
+        
+        //validator
+        poJSON = isEntryOkay(Master().getTransactionStatus());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         
         boolean lbHasQty = false;
         int lnEntryNo = 0;

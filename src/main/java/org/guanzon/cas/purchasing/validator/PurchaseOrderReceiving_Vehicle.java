@@ -146,6 +146,13 @@ public class PurchaseOrderReceiving_Vehicle implements GValidator{
 //            poJSON.put("message", "Trucking is not set.");
 //            return poJSON;
 //        }
+        //If trucking is not empty FREIGHT AMOUNT is required
+        if (poMaster.getTruckingId()!= null && !"".equals(poMaster.getTruckingId())) {
+            if (poMaster.getFreight().doubleValue() <= 0.00) {
+                poJSON.put("message", "Invalid Freight Amount.");
+                return poJSON;
+            }
+        }
         if (loReferenceDate == null) {
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;
@@ -233,6 +240,13 @@ public class PurchaseOrderReceiving_Vehicle implements GValidator{
 //            poJSON.put("message", "Trucking is not set.");
 //            return poJSON;
 //        }
+        //If trucking is not empty FREIGHT AMOUNT is required
+        if (poMaster.getTruckingId()!= null && !"".equals(poMaster.getTruckingId())) {
+            if (poMaster.getFreight().doubleValue() <= 0.00) {
+                poJSON.put("message", "Invalid Freight Amount.");
+                return poJSON;
+            }
+        }
         if (loReferenceDate == null) {
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;
