@@ -3799,10 +3799,15 @@ public class PurchaseOrderReceiving extends Transaction {
         Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         Master().setModifiedDate(poGRider.getServerDate());
         
-        //validator
-        poJSON = isEntryOkay(Master().getTransactionStatus());
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
+        if(pbIsFinance){
+            //If trucking is not empty FREIGHT AMOUNT is required
+            if (Master().getTruckingId()!= null && !"".equals(Master().getTruckingId())) {
+                if (Master().getFreight().doubleValue() <= 0.00) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Invalid Freight Amount.");
+                    return poJSON;
+                }
+            }
         }
         
         boolean lbHasQty = false;
