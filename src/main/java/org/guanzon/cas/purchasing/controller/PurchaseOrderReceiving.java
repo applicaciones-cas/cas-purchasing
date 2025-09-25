@@ -583,6 +583,11 @@ public class PurchaseOrderReceiving extends Transaction {
         //populate cache payable freight
         if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
             && Master().getFreight().doubleValue() > 0.0000){
+            if("".equals(getInvTypeCode("freight"))){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Freight transaction type cannot be empty.\nContact System Administrator to address the issue.");
+                return poJSON;
+            }
             poJSON = populateCachePayableFreight();
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
@@ -3305,9 +3310,11 @@ public class PurchaseOrderReceiving extends Transaction {
 //        return poJSON;
 //    }
 
-    private Double pdblAdvPayment = getAdvancePayment();
-    private Double pdblTotalDiscAmt =  Master().getDiscount().doubleValue() + (Master().getTransactionTotal().doubleValue() * (Master().getDiscountRate().doubleValue() / 100));
+    private Double pdblAdvPayment = 0.0000;
+    private Double pdblTotalDiscAmt = 0.0000;
     private JSONObject populateCachePayable() throws SQLException, GuanzonException, CloneNotSupportedException{
+        pdblAdvPayment = getAdvancePayment();
+        pdblTotalDiscAmt = Master().getDiscount().doubleValue() + (Master().getTransactionTotal().doubleValue() * (Master().getDiscountRate().doubleValue() / 100));
         poJSON = new JSONObject();
         poCachePayable = new CashflowControllers(poGRider, logwrapr).CachePayable();
         poCachePayable.InitTransaction();
@@ -3445,7 +3452,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         lnRow = poCachePayableTrucking.getDetailCount() - 1;
-        poCachePayableTrucking.Detail(lnRow).setTransactionType(""); //TODO
+        poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight")); //TODO
         poCachePayableTrucking.Detail(lnRow).setGrossAmount(Master().getFreight());
         poCachePayableTrucking.Detail(lnRow).setPayables(Master().getFreight()); 
         
@@ -3492,6 +3499,30 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
         
         return poJSON;
+    }
+    
+    private String getInvTypeCode(String fsValue){
+        try {
+            String lsSQL = "SELECT sInvTypCd, sDescript FROM inv_type ";
+            lsSQL = MiscUtil.addCondition(lsSQL, " cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
+                                                + " AND lower(sDescript) LIKE " + SQLUtil.toSQL("%"+fsValue));
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            try {
+                if (MiscUtil.RecordCount(loRS) > 0) {
+                    if(loRS.next()){
+                        return  loRS.getString("sInvTypCd");
+                    }
+                }
+                MiscUtil.close(loRS);
+            } catch (SQLException e) {
+                System.out.println("No record loaded.");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        }
+            
+        return  "";
     }
     
     public Journal Journal(){
