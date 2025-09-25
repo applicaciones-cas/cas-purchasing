@@ -3410,6 +3410,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
         poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt); 
+        poCachePayable.Master().setVATSales(Master().getVatSales().doubleValue());
         poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
