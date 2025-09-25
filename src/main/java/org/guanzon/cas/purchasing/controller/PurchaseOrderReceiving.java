@@ -1645,11 +1645,15 @@ public class PurchaseOrderReceiving extends Transaction {
             
             double ldblDetailVatAmount = 0.0000;
             double ldblDetailVatSales = 0.0000;
+            double ldblDetailTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 if(Detail(lnCtr).isVatable()){
-                    ldblDetailVatAmount = (Detail(lnCtr).getUnitPrce().doubleValue() * 0.12) * Detail(lnCtr).getQuantity().doubleValue();
+//                    ldblDetailVatAmount = (Detail(lnCtr).getUnitPrce().doubleValue() * 0.12) * Detail(lnCtr).getQuantity().doubleValue();
+//                    ldblDetailVatSales = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue()) - ldblDetailVatAmount;
+                    ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
+                    ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
                     ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
-                    ldblDetailVatSales = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue()) - ldblDetailVatAmount;
+                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount;
                     ldblVatSales = ldblVatSales + ldblDetailVatSales;
                 } else {
                     ldblVatExemptSales += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
@@ -1670,6 +1674,24 @@ public class PurchaseOrderReceiving extends Transaction {
             
         }
         return poJSON;
+    }
+    
+    public Double getAdvancePayment() throws SQLException, GuanzonException{
+        double ldblAmtPaid = 0.0000;
+        double ldblAdvPaymentTotal = 0.0000;
+        List<String> llistPurchaseOrder = new ArrayList<>();
+        
+        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+            if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
+                if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
+                    ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
+                    ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
+                    llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+                } 
+            }
+        }
+        
+        return ldblAdvPaymentTotal;
     }
     
     //TODO
