@@ -143,10 +143,10 @@ public class PurchaseOrderReceiving_Appliances implements GValidator{
             poJSON.put("message", "Supplier is not set.");
             return poJSON;
         }
-        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
-            poJSON.put("message", "Trucking is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
+//            poJSON.put("message", "Trucking is not set.");
+//            return poJSON;
+//        }
         if (loReferenceDate == null) {
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;
@@ -230,10 +230,10 @@ public class PurchaseOrderReceiving_Appliances implements GValidator{
             poJSON.put("message", "Supplier is not set.");
             return poJSON;
         }
-        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
-            poJSON.put("message", "Trucking is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getTruckingId()== null || poMaster.getTruckingId().isEmpty()) {
+//            poJSON.put("message", "Trucking is not set.");
+//            return poJSON;
+//        }
         if (loReferenceDate == null) {
             poJSON.put("message", "Invalid Reference Date.");
             return poJSON;

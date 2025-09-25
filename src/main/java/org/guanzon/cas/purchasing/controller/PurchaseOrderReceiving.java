@@ -60,7 +60,6 @@ import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.services.InvControllers;
-import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
@@ -107,6 +106,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private Model_POR_Serial poSerial;
     private CachePayable poCachePayable;
+    private CachePayable poCachePayableTrucking;
     private Journal poJournal;
     
     List<Model_PO_Master> paPOMaster;
@@ -580,6 +580,15 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        //populate cache payable freight
+        if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
+            && Master().getFreight().doubleValue() > 0.0000){
+            poJSON = populateCachePayableFreight();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+        
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
         
         //change status
@@ -616,6 +625,16 @@ public class PurchaseOrderReceiving extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
+        }
+        
+        if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
+            && Master().getFreight().doubleValue() > 0.0000){
+            poCachePayableTrucking.setWithParent(true);
+            poJSON = poCachePayableTrucking.SaveTransaction();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
         }
         
         poGRider.commitTrans();
@@ -1676,21 +1695,24 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
     
-    public Double getAdvancePayment() throws SQLException, GuanzonException{
+    public Double getAdvancePayment() {
         double ldblAmtPaid = 0.0000;
         double ldblAdvPaymentTotal = 0.0000;
         List<String> llistPurchaseOrder = new ArrayList<>();
-        
-        for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
-            if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
-                if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
-                    ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
-                    ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
-                    llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
-                } 
+        try {
+            for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+                if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
+                    if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
+                            ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
+                            ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
+                            llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+                    } 
+                }
             }
-        }
         
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        }
         return ldblAdvPaymentTotal;
     }
     
@@ -1701,7 +1723,6 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblTotal =  Master().getTransactionTotal().doubleValue();
         Double ldblDiscount = Master().getDiscount().doubleValue();
         Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-        Double ldblVatAmountofVatExempt = 0.0000;
         if(ldblDiscountRate > 0){
             ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         }
@@ -3284,7 +3305,8 @@ public class PurchaseOrderReceiving extends Transaction {
 //        return poJSON;
 //    }
 
-    
+    private Double pdblAdvPayment = getAdvancePayment();
+    private Double pdblTotalDiscAmt =  Master().getDiscount().doubleValue() + (Master().getTransactionTotal().doubleValue() * (Master().getDiscountRate().doubleValue() / 100));
     private JSONObject populateCachePayable() throws SQLException, GuanzonException, CloneNotSupportedException{
         poJSON = new JSONObject();
         poCachePayable = new CashflowControllers(poGRider, logwrapr).CachePayable();
@@ -3295,27 +3317,32 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         Double ldblGrossAmt = 0.0000;
-        Double ldblTotalDiscAmt = 0.0000;
         Double ldblTotal = 0.0000;
         Double ldblDetTotal = 0.0000;
-        Double ldblDiscAmt = 0.0000;
-        Double ldblDiscountRate = 0.0000;
-        Double ldblNetTotal = 0.0000;
+        Double ldblVatAmountDetail = 0.0000;
         boolean lbExist = false;
         int lnCacheRow = 0;
         
+        //Populate Cache Payable detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-            ldblDiscountRate = ldblDetTotal * (Detail(lnCtr).getDiscountRate().doubleValue() / 100);
-            ldblDiscAmt = Detail(lnCtr).getDiscountAmount().doubleValue() + ldblDiscountRate;
-            ldblTotal += ldblDetTotal;
+            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
             ldblGrossAmt += ldblDetTotal;
             
+            //If vat exclusive detail total + vat amount
+            if(!Master().isVatTaxable()){
+                if(Detail(lnCtr).isVatable()){
+                    ldblDetTotal = ldblDetTotal + ldblVatAmountDetail;
+                }
+            }
+            
+            ldblTotal += ldblDetTotal;
+            
+            //Check existing transaction type
             if(lnCtr > 0) {
                 for(lnCacheRow = 0; lnCacheRow <= poCachePayable.getDetailCount()-1; lnCacheRow++){
                     if(poCachePayable.Detail(lnCacheRow).getTransactionType().equals(Detail(lnCtr).Inventory().getInventoryTypeId())){
                         ldblTotal = poCachePayable.Detail(lnCacheRow).getGrossAmount() + ldblDetTotal;
-                        ldblDiscAmt =  poCachePayable.Detail(lnCacheRow).getDiscountAmount() + ldblDiscAmt;
                         lbExist = true;
                         break;
                     }
@@ -3334,24 +3361,37 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
-            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal);
-            poCachePayable.Detail(lnCacheRow).setDiscountAmount(ldblDiscAmt);
-            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal);
-        }
-        ldblTotalDiscAmt =  Master().getDiscount().doubleValue() + (ldblGrossAmt * (Master().getDiscountRate().doubleValue() / 100));
-        if (Master().isVatTaxable()) {
-            //Net VAT Amount : VAT Sales - VAT Amount
-            //Net Total : VAT Sales - Withholding Tax
-            ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
-        } else {
-            //Net VAT Amount : VAT Sales + VAT Amount
-            //Net Total : Net VAT Amount - Withholding Tax
-            ldblNetTotal = (Master().getVatSales().doubleValue()
-                    + Master().getVatAmount().doubleValue())
-                    - Master().getWithHoldingTax().doubleValue();
+            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); //TODO
+            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); //TODO
         }
         
+        //Update cache payable
+        for(int lnCtr = 0; lnCtr <= poCachePayable.getDetailCount()-1; lnCtr++){
+            //Update AmountPaid
+            if(pdblAdvPayment >= poCachePayable.Detail(lnCtr).getPayables()){
+                poCachePayable.Detail(lnCtr).setAmountPaid(poCachePayable.Detail(lnCtr).getPayables());
+                pdblAdvPayment = pdblAdvPayment - poCachePayable.Detail(lnCtr).getPayables();
+            } else {
+                if( pdblAdvPayment > 0.0000){
+                    poCachePayable.Detail(lnCtr).setAmountPaid(pdblAdvPayment);
+                    pdblAdvPayment = 0.0000;
+                }
+            }
+            
+            //Update Discount
+            if(pdblTotalDiscAmt >= poCachePayable.Detail(lnCtr).getPayables()){
+                poCachePayable.Detail(lnCtr).setDiscountAmount(poCachePayable.Detail(lnCtr).getPayables());
+                pdblTotalDiscAmt = pdblTotalDiscAmt - poCachePayable.Detail(lnCtr).getPayables();
+            } else {
+                if( pdblTotalDiscAmt > 0.0000){
+                    poCachePayable.Detail(lnCtr).setDiscountAmount(pdblTotalDiscAmt);
+                    pdblTotalDiscAmt = 0.0000;
+                }
+            }
+        }
+       
         //Cache Payable Master
+        Double ldblTotalDiscAmt =  Master().getDiscount().doubleValue() + (ldblGrossAmt * (Master().getDiscountRate().doubleValue() / 100));
         poCachePayable.Master().setIndustryCode(Master().getIndustryId());
         poCachePayable.Master().setBranchCode(Master().getBranchCode());
         poCachePayable.Master().setTransactionDate(poGRider.getServerDate()); 
@@ -3362,17 +3402,94 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setSourceNo(Master().getTransactionNo());
         poCachePayable.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
-        poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
         poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt); 
         poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
-        poCachePayable.Master().setNetTotal(getNetTotal()); //ldblNetTotal //TODO
-        poCachePayable.Master().setPayables(getNetTotal());  //ldblNetTotal //TODO
+        poCachePayable.Master().setAmountPaid(getAdvancePayment());
         poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
+        
+        if(Master().getTruckingId() == null || "".equals(Master().getTruckingId())){
+            poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
+            poCachePayable.Master().setNetTotal(getNetTotal()); 
+            poCachePayable.Master().setPayables(getNetTotal()); 
+        } else {
+            poCachePayable.Master().setNetTotal(getNetTotal() - Master().getFreight().doubleValue()); 
+            poCachePayable.Master().setPayables(getNetTotal() - Master().getFreight().doubleValue()); 
+        }
+        
+        Master().setAmountPaid(getAdvancePayment());
+        
+        return poJSON;
+    }
+    
+    private JSONObject populateCachePayableFreight() throws SQLException, GuanzonException, CloneNotSupportedException{
+        poJSON = new JSONObject();
+        poCachePayableTrucking = new CashflowControllers(poGRider, logwrapr).CachePayable();
+        poCachePayableTrucking.InitTransaction();
+        poJSON = poCachePayableTrucking.NewTransaction();
+        if ("error".equals((String) poJSON.get("result"))){
+            return poJSON;
+        }
+        //get the excess advance payment and total discount amount
+        Double ldblTotalDiscAmt =  pdblTotalDiscAmt;
+        Double ldblAdvPayment =  pdblAdvPayment;
+        int lnRow = 0;
+        
+        //Populate Cache Payable detail
+        if(poCachePayableTrucking.getDetailCount() < 0){
+            poCachePayableTrucking.AddDetail();
+        }
+
+        lnRow = poCachePayableTrucking.getDetailCount() - 1;
+        poCachePayableTrucking.Detail(lnRow).setTransactionType(""); //TODO
+        poCachePayableTrucking.Detail(lnRow).setGrossAmount(Master().getFreight());
+        poCachePayableTrucking.Detail(lnRow).setPayables(Master().getFreight()); 
+        
+        //Update AmountPaid
+        if(pdblAdvPayment >= poCachePayableTrucking.Detail(lnRow).getPayables()){
+            poCachePayableTrucking.Detail(lnRow).setAmountPaid(poCachePayableTrucking.Detail(lnRow).getPayables());
+            pdblAdvPayment = pdblAdvPayment - poCachePayableTrucking.Detail(lnRow).getPayables();
+        } else {
+            if( pdblAdvPayment > 0.0000){
+                poCachePayableTrucking.Detail(lnRow).setAmountPaid(pdblAdvPayment);
+                pdblAdvPayment = 0.0000;
+            }
+        }
+
+        //Update Discount
+        if(pdblTotalDiscAmt >= poCachePayableTrucking.Detail(lnRow).getPayables()){
+            poCachePayableTrucking.Detail(lnRow).setDiscountAmount(poCachePayableTrucking.Detail(lnRow).getPayables());
+            pdblTotalDiscAmt = pdblTotalDiscAmt - poCachePayableTrucking.Detail(lnRow).getPayables();
+        } else {
+            if( pdblTotalDiscAmt > 0.0000){
+                poCachePayableTrucking.Detail(lnRow).setDiscountAmount(pdblTotalDiscAmt);
+                pdblTotalDiscAmt = 0.0000;
+            }
+        }
+       
+        //Cache Payable Trucking Master
+        poCachePayableTrucking.Master().setIndustryCode(Master().getIndustryId());
+        poCachePayableTrucking.Master().setBranchCode(Master().getBranchCode());
+        poCachePayableTrucking.Master().setTransactionDate(poGRider.getServerDate()); 
+        poCachePayableTrucking.Master().setCompanyId(Master().getCompanyId());
+        poCachePayableTrucking.Master().setClientId(Master().getTruckingId());
+        poCachePayableTrucking.Master().setDueDate(Master().getDueDate());
+        poCachePayableTrucking.Master().setSourceCode(getSourceCode());
+        poCachePayableTrucking.Master().setSourceNo(Master().getTransactionNo());
+        poCachePayableTrucking.Master().setReferNo(Master().getReferenceNo()); 
+        poCachePayableTrucking.Master().setGrossAmount(Master().getFreight().doubleValue()); 
+        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
+        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue());
+        poCachePayableTrucking.Master().setNetTotal(Master().getFreight().doubleValue()); 
+        poCachePayableTrucking.Master().setPayables(Master().getFreight().doubleValue()); 
+        poCachePayableTrucking.Master().setAmountPaid(ldblAdvPayment);
+        poCachePayableTrucking.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
+        poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
         
         return poJSON;
     }
