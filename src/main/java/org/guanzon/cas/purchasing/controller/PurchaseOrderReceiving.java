@@ -1701,24 +1701,21 @@ public class PurchaseOrderReceiving extends Transaction {
         Double ldblTotal =  Master().getTransactionTotal().doubleValue();
         Double ldblDiscount = Master().getDiscount().doubleValue();
         Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+        Double ldblVatAmountofVatExempt = 0.0000;
         if(ldblDiscountRate > 0){
             ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         }
         ldblDiscount = ldblDiscount + ldblDiscountRate;
         if (Master().isVatTaxable()) {
-            ldblNetTotal = ((Master().getVatSales().doubleValue()
+            ldblNetTotal = Master().getVatSales().doubleValue()
                         + Master().getVatAmount().doubleValue()
-                        + Master().getVatExemptSales().doubleValue())
-                        - ldblDiscount)
-                        - Master().getWithHoldingTax().doubleValue();
+                        + Master().getVatExemptSales().doubleValue();
         } else {
-            ldblNetTotal = (((Master().getVatSales().doubleValue()
-                        + Master().getVatAmount().doubleValue() + Master().getVatExemptSales().doubleValue())
-                        + Master().getVatAmount().doubleValue())
-                        - ldblDiscount)
-                        - Master().getWithHoldingTax().doubleValue();
-
+            ldblNetTotal = ldblTotal + Master().getVatAmount().doubleValue();
         }
+        
+        ldblNetTotal = (ldblNetTotal - ldblDiscount) + Master().getFreight().doubleValue();
+        
         return ldblNetTotal;
     }
     
