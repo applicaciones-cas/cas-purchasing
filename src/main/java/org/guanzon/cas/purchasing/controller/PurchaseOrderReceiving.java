@@ -3491,7 +3491,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setSourceNo(Master().getTransactionNo());
         poCachePayableTrucking.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayableTrucking.Master().setGrossAmount(Master().getFreight().doubleValue()); 
-        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue());
+//        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue()); //Do not set the freight since detail has already a freight
         poCachePayableTrucking.Master().setNetTotal(Master().getFreight().doubleValue()); 
         poCachePayableTrucking.Master().setPayables(Master().getFreight().doubleValue()); 
 //        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
