@@ -582,7 +582,8 @@ public class PurchaseOrderReceiving extends Transaction {
         
         //populate cache payable freight
         if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
-            && Master().getFreight().doubleValue() > 0.0000){
+            && Master().getFreight().doubleValue() > 0.0000
+            && !Master().getTruckingId().equals(Master().getSupplierId())){
             if("".equals(getInvTypeCode("freight"))){
                 poJSON.put("result", "error");
                 poJSON.put("message", "Freight transaction type cannot be empty.\nContact System Administrator to address the issue.");
@@ -633,7 +634,8 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
-            && Master().getFreight().doubleValue() > 0.0000){
+            && Master().getFreight().doubleValue() > 0.0000
+            && !Master().getTruckingId().equals(Master().getSupplierId())){
             poCachePayableTrucking.setWithParent(true);
             poJSON = poCachePayableTrucking.SaveTransaction();
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -3489,7 +3491,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setSourceNo(Master().getTransactionNo());
         poCachePayableTrucking.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayableTrucking.Master().setGrossAmount(Master().getFreight().doubleValue()); 
-        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue());
+//        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue()); //Do not set the freight since detail has already a freight
         poCachePayableTrucking.Master().setNetTotal(Master().getFreight().doubleValue()); 
         poCachePayableTrucking.Master().setPayables(Master().getFreight().doubleValue()); 
 //        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
