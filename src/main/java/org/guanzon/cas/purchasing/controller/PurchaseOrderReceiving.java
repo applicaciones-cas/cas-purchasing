@@ -2394,7 +2394,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         //Check the return to be insert in detail
                         poJSON = loReturn.PurchaseOrderReturn().InitTransaction();
-                        poJSON = loReturn.PurchaseOrderReturn().OpenTransaction(transactionNo);;
+                        poJSON = loReturn.PurchaseOrderReturn().OpenTransaction(transactionNo);
                         poJSON = loReceiving.PurchaseOrderReceiving().InitTransaction();
                         poJSON = loReceiving.PurchaseOrderReceiving().OpenTransaction(loReturn.PurchaseOrderReturn().Master().getSourceNo());
                         for(int lnRec = 0; lnRec <= loReceiving.PurchaseOrderReceiving().getDetailCount()-1;lnRec++){
@@ -3711,6 +3711,9 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     public double getQuantity(int row){
+        if(Detail(row).getStockId() == null){
+            return 0.00;
+        }
         double lnQty = 0.00;
         for(int lnCtr = 0;lnCtr <= getDetailCount() - 1; lnCtr++){
             if(Detail(row).getStockId().equals(Detail(lnCtr).getStockId())){
