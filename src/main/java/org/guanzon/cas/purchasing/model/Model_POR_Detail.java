@@ -21,6 +21,7 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.parameter.model.Model_Brand;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
+import org.guanzon.cas.purchasing.services.PurchaseOrderReturnModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -38,6 +39,7 @@ public class Model_POR_Detail extends Model{
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
     Model_PO_Master poPurchaseOrder;
+    Model_POReturn_Master poPurchaseOrderReturn;
     
     @Override
     public void initialize() {
@@ -80,6 +82,8 @@ public class Model_POR_Detail extends Model{
             
             Model_PO_Master purchaseOrderModel = new PurchaseOrderModels(poGRider).PurchaseOrderMaster(); 
             poPurchaseOrder = purchaseOrderModel;
+            Model_POReturn_Master purchaseOrderReturnModel = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnMaster(); 
+            poPurchaseOrderReturn = purchaseOrderReturnModel;
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -356,6 +360,27 @@ public class Model_POR_Detail extends Model{
                 poPurchaseOrder.initialize();
                 return poPurchaseOrder;
             }
+    }
+    
+    public Model_POReturn_Master PurchaseOrderReturnMaster() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sOrderNox"))) {
+            if (poPurchaseOrderReturn.getEditMode() == EditMode.READY
+                    && poPurchaseOrderReturn.getTransactionNo().equals((String) getValue("sOrderNox"))) {
+                return poPurchaseOrderReturn;
+            } else {
+                poJSON = poPurchaseOrderReturn.openRecord((String) getValue("sOrderNox"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poPurchaseOrderReturn;
+                } else {
+                    poPurchaseOrderReturn.initialize();
+                    return poPurchaseOrderReturn;
+                }
+            }
+        } else {
+            poPurchaseOrderReturn.initialize();
+            return poPurchaseOrderReturn;
+        }
     }
     
     public JSONObject openRecord(String transactionNo, String stockId) throws SQLException, GuanzonException {
