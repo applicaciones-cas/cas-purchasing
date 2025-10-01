@@ -2375,6 +2375,16 @@ public class PurchaseOrderReceiving extends Transaction {
                     }
                     
                     for (lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+                        if (Detail(lnRow).getOrderNo() != null && !"".equals(Detail(lnRow).getOrderNo())) {
+                            //check when pre-owned po is already exists in detail. 
+                            //if exist only pre-owned purchase order will allow to insert in por detail 
+//                            if (Detail(lnRow).PurchaseOrderMaster().getPreOwned() != loTrans.PurchaseOrderReturn().Master().getPreOwned()) {
+//                                poJSON.put("result", "error");
+//                                poJSON.put("message", "Purchase orders for pre-owned items cannot be combined with purchase orders for new items.");
+//                                return poJSON;
+//                            }
+                        }
+                        
                         if (Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrderReturn().Detail(lnCtr).getTransactionNo())
                                 && (Detail(lnRow).getStockId().equals(loTrans.PurchaseOrderReturn().Detail(lnCtr).getStockId()))) {
                             lbExist = true;
@@ -2384,7 +2394,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                     if (!lbExist) {
                         //Only insert po detail that has item to receive
-                        //if (loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrderReturn().Detail(lnCtr).getReceivedQuantity().doubleValue()) {
+                        if (loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrderReturn().Detail(lnCtr).getReceivedQty().doubleValue()) {
                             Detail(getDetailCount() - 1).setBrandId(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().getBrandId());
                             Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrderReturn().Detail(lnCtr).getTransactionNo());
                             Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrderReturn().Detail(lnCtr).getStockId());
@@ -2396,7 +2406,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                             AddDetail();
                             lbReceived = true;
-                        //}
+                        }
                     } else {
                         //sum order qty based on existing stock id in POR Detail
                         for (int lnOrder = 0; lnOrder <= loTrans.PurchaseOrderReturn().getDetailCount() - 1; lnOrder++) {
@@ -3674,15 +3684,64 @@ public class PurchaseOrderReceiving extends Transaction {
         return lnQty;
     }
     
-    public double setQuantity(int row, double value){
-        double lnQty = 0.00;
-        for(int lnCtr = 0;lnCtr <= getDetailCount() - 1; lnCtr++){
-            if(Detail(row).getStockId().equals(Detail(lnCtr).getStockId())){
-                lnQty += Detail(row).getQuantity().doubleValue();
-            }
+    public JSONObject setQuantity(int row, double value){
+        poJSON = new JSONObject();
+        if(Detail(row).getStockId() == null || "".equals(Detail(row).getStockId())){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Stock Id cannot be empty.");
+            return poJSON;
         }
-        
-        return lnQty;
+        try {
+            double lnQuantity = 0.00;
+            double lnQty = 0.00;
+            int lnRow = -1;
+
+            for(int lnCtr = 0;lnCtr <= getDetailCount() - 1; lnCtr++){
+                if(Detail(row).getStockId().equals(Detail(lnCtr).getStockId())){
+                    lnQty += Detail(row).getQuantity().doubleValue();
+                    if(Detail(lnCtr).getEditMode() == EditMode.ADDNEW){
+                        lnRow = lnCtr;
+                    }
+                }
+            }
+            
+            if(lnQty != value){
+                while(lnQty != value){
+                    if(lnQty < value){
+                        lnQty++;
+                        lnQuantity++;
+                    } else {
+                        lnQty--;
+                        lnQuantity--;
+                    }
+                }
+                
+                if(lnRow < 0 ){
+                    Detail(row).isReverse(false);
+                    AddDetail();
+                    lnRow = getDetailCount() - 1;
+                } 
+
+                Detail(lnRow).setStockId(Detail(row).getStockId());
+                Detail(lnRow).setReplaceId(Detail(row).getReplaceId());
+                Detail(lnRow).setUnitType(Detail(row).getUnitType());
+                Detail(lnRow).setUnitPrce(Detail(row).getUnitPrce());
+                Detail(lnRow).setDiscountRate(Detail(row).getDiscountRate());
+                Detail(lnRow).setDiscountAmount(Detail(row).getDiscountAmount());
+                Detail(lnRow).setFreight(Detail(row).getFreight());
+                Detail(lnRow).setExpiryDate(Detail(row).getExpiryDate());
+                Detail(lnRow).setWhCount(Detail(row).getWhCount());
+                Detail(lnRow).setOrderNo(Detail(row).getOrderNo());
+                Detail(lnRow).setTotal(Detail(row).getTotal());
+                Detail(lnRow).isVatable(Detail(row).isVatable());
+                Detail(lnRow).setQuantity(lnQuantity);
+                Detail(lnRow).isReverse(true);
+            }
+
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+        }
+        return poJSON;
     }
     
     @Override

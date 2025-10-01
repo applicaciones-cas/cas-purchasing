@@ -45,6 +45,7 @@ public class Model_POReturn_Detail extends Model{
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nQuantity", 0.00);
+            poEntity.updateObject("nReceived", 0.00);
             poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
             //end - assign default values
@@ -119,6 +120,17 @@ public class Model_POReturn_Detail extends Model{
             return 0.00;
         } 
         return (Number) getValue("nQuantity");
+    }
+    
+    public JSONObject setReceivedQty(Number receivedQuantity){
+        return setValue("nReceived", receivedQuantity);
+    }
+    
+    public Number getReceivedQty(){
+        if(getValue("nReceived") == null || "".equals(getValue("nReceived"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nReceived");
     }
     
     public JSONObject setUnitPrce(Number unitPrce){

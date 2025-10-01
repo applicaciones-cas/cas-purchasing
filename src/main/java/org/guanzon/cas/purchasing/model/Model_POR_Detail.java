@@ -63,6 +63,7 @@ public class Model_POR_Detail extends Model{
             poEntity.updateObject("nFreightx", 0.00);
             poEntity.updateObject("nDiscount", 0.00);
             poEntity.updateObject("nAddDiscx", 0.0000);
+            poEntity.updateObject("cReversex", "+");
 //            poEntity.updateObject("nTranTotl", 0.00);
             //end - assign default values
 
@@ -251,6 +252,14 @@ public class Model_POR_Detail extends Model{
     
     public boolean isSerialized(){
         return ((String) getValue("cSerialze")).equals("1");
+    }
+    
+    public JSONObject isReverse(boolean isReverse) {
+        return setValue("cReversex", isReverse ? "+" : "-");
+    }
+
+    public boolean isReverse() {
+        return ((String) getValue("cReversex")).equals("+");
     }
     
     public JSONObject setModifiedDate(Date modifiedDate){
