@@ -48,6 +48,7 @@ public class Model_POReturn_Detail extends Model{
             poEntity.updateObject("nReceived", 0.00);
             poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
+            poEntity.updateObject("cReversex", "+");
             //end - assign default values
 
             poEntity.insertRow();
@@ -169,6 +170,14 @@ public class Model_POReturn_Detail extends Model{
     
     public String getBatchNo(){
         return (String) getValue("sBatchNox");
+    }
+    
+    public JSONObject isReverse(boolean isReverse) {
+        return setValue("cReversex", isReverse ? "+" : "-");
+    }
+
+    public boolean isReverse() {
+        return ((String) getValue("cReversex")).equals("+");
     }
     
     public JSONObject setModifiedDate(Date modifiedDate){

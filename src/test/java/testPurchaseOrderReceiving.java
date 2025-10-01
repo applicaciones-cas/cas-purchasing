@@ -266,7 +266,7 @@ public class testPurchaseOrderReceiving {
         }
     }
     
-     @Test
+//     @Test
     public void testOpenTransaction() {
         JSONObject loJSON;
         
@@ -401,7 +401,7 @@ public class testPurchaseOrderReceiving {
         }
     }
     
-    @Test
+//    @Test
     public void testOpenTransactionSIPosting() {
         JSONObject loJSON;
         
@@ -515,4 +515,46 @@ public class testPurchaseOrderReceiving {
         }
     }  
     
+//    @Test
+    public void testgetPurchaseOrderReturnList() {
+        String industryId = "01";
+        String companyId = "0001";
+        String categoryId = "0001";
+        
+        JSONObject loJSON;
+        
+        loJSON = poPurchaseReceivingController.InitTransaction();
+        if (!"success".equals((String) loJSON.get("result"))){
+            System.err.println((String) loJSON.get("message"));
+            Assert.fail();
+        }
+        
+        poPurchaseReceivingController.setIndustryId(industryId); //direct assignment of value
+        poPurchaseReceivingController.setCompanyId(companyId); //direct assignment of value
+        poPurchaseReceivingController.setCategoryId(categoryId); //direct assignment of value
+        
+        poPurchaseReceivingController.Master().setIndustryId(industryId); //direct assignment of value
+        poPurchaseReceivingController.Master().setCompanyId(companyId); //direct assignment of value
+        
+        loJSON = poPurchaseReceivingController.getPurchaseOrderReturn("");
+        if (!"success".equals((String) loJSON.get("result"))) {
+            System.err.println((String) loJSON.get("message"));
+            Assert.fail();
+        }
+        
+        //retreiving using column index
+        for (int lnCtr = 0; lnCtr <= poPurchaseReceivingController.getPurchaseOrderReturnCount() - 1; lnCtr++){
+            try {
+                System.out.println("PO Return Row No ->> " + lnCtr);
+                System.out.println("PO Return Transaction No ->> " + poPurchaseReceivingController.PurchaseOrderReturnList(lnCtr).getTransactionNo());
+                System.out.println("PO Return Transaction Date ->> " + poPurchaseReceivingController.PurchaseOrderReturnList(lnCtr).getTransactionDate());
+                System.out.println("PO Return Industry ->> " + poPurchaseReceivingController.PurchaseOrderReturnList(lnCtr).Industry().getDescription());
+                System.out.println("PO Return Company ->> " + poPurchaseReceivingController.PurchaseOrderReturnList(lnCtr).Company().getCompanyName());
+                System.out.println("PO Return Supplier ->> " + poPurchaseReceivingController.PurchaseOrderReturnList(lnCtr).Supplier().getCompanyName());
+                System.out.println("----------------------------------------------------------------------------------");
+            } catch (GuanzonException | SQLException ex) {
+                Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
 }

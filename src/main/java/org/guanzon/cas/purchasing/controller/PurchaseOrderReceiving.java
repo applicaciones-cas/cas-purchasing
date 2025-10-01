@@ -2327,7 +2327,7 @@ public class PurchaseOrderReceiving extends Transaction {
             } else {
                 poJSON.put("result", "error");
                 poJSON.put("continue", true);
-                poJSON.put("message", "No approved purchase order return found .");
+                poJSON.put("message", "No confirmed purchase order return found .");
             }
             MiscUtil.close(loRS);
         } catch (SQLException ex) {
@@ -2352,13 +2352,18 @@ public class PurchaseOrderReceiving extends Transaction {
         boolean lbReceived = false;
         int lnRow = 0;
         double lnAddOrderQty = 0.00;
+        boolean lbReturnPreOwned = false;
+        boolean lbReplacePreOwned = false;
+        //For Checking
+        PurchaseOrderReturnControllers loReturn = new PurchaseOrderReturnControllers(poGRider, logwrapr);
+        PurchaseOrderReceivingControllers loReceiving = new PurchaseOrderReceivingControllers(poGRider, logwrapr);
+        
         PurchaseOrderReturnControllers loTrans = new PurchaseOrderReturnControllers(poGRider, logwrapr);
         poJSON = loTrans.PurchaseOrderReturn().InitTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
             poJSON = loTrans.PurchaseOrderReturn().OpenTransaction(transactionNo);
             if ("success".equals((String) poJSON.get("result"))) {
                 for (int lnCtr = 0; lnCtr <= loTrans.PurchaseOrderReturn().getDetailCount() - 1; lnCtr++) {
-                    
                     //Check existing supplier
                     if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
                         Master().setSupplierId(loTrans.PurchaseOrderReturn().Master().getSupplierId());
@@ -2375,14 +2380,36 @@ public class PurchaseOrderReceiving extends Transaction {
                     }
                     
                     for (lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
-                        if (Detail(lnRow).getOrderNo() != null && !"".equals(Detail(lnRow).getOrderNo())) {
-                            //check when pre-owned po is already exists in detail. 
-                            //if exist only pre-owned purchase order will allow to insert in por detail 
-//                            if (Detail(lnRow).PurchaseOrderMaster().getPreOwned() != loTrans.PurchaseOrderReturn().Master().getPreOwned()) {
-//                                poJSON.put("result", "error");
-//                                poJSON.put("message", "Purchase orders for pre-owned items cannot be combined with purchase orders for new items.");
-//                                return poJSON;
-//                            }
+                        //Check the detail
+                        poJSON = loReturn.PurchaseOrderReturn().InitTransaction();
+                        poJSON = loReturn.PurchaseOrderReturn().OpenTransaction(Detail(lnRow).getOrderNo());
+                        poJSON = loReceiving.PurchaseOrderReceiving().InitTransaction();
+                        poJSON = loReceiving.PurchaseOrderReceiving().OpenTransaction(loReturn.PurchaseOrderReturn().Master().getSourceNo());
+                        for(int lnRec = 0; lnRec <= loReceiving.PurchaseOrderReceiving().getDetailCount()-1;lnRec++){
+                            if (loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo() != null && !"".equals(loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo())) {
+                                lbReplacePreOwned = loReceiving.PurchaseOrderReceiving().Detail(lnRow).PurchaseOrderMaster().getPreOwned();
+                                break;
+                            }
+                        }
+
+                        //Check the return to be insert in detail
+                        poJSON = loReturn.PurchaseOrderReturn().InitTransaction();
+                        poJSON = loReturn.PurchaseOrderReturn().OpenTransaction(transactionNo);;
+                        poJSON = loReceiving.PurchaseOrderReceiving().InitTransaction();
+                        poJSON = loReceiving.PurchaseOrderReceiving().OpenTransaction(loReturn.PurchaseOrderReturn().Master().getSourceNo());
+                        for(int lnRec = 0; lnRec <= loReceiving.PurchaseOrderReceiving().getDetailCount()-1;lnRec++){
+                            if (loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo() != null && !"".equals(loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo())) {
+                                lbReturnPreOwned = loReceiving.PurchaseOrderReceiving().Detail(lnRow).PurchaseOrderMaster().getPreOwned();
+                                break;
+                            }
+                        }
+                        
+                        //check when pre-owned po is already exists in detail. 
+                        //if exist only pre-owned purchase order will allow to insert in por detail 
+                        if (lbReplacePreOwned != lbReturnPreOwned) {
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Purchase orders for pre-owned items cannot be combined with purchase orders for new items.");
+                            return poJSON;
                         }
                         
                         if (Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrderReturn().Detail(lnCtr).getTransactionNo())
@@ -2399,11 +2426,16 @@ public class PurchaseOrderReceiving extends Transaction {
                             Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrderReturn().Detail(lnCtr).getTransactionNo());
                             Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrderReturn().Detail(lnCtr).getStockId());
                             Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().getUnitType());
-                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue());
-                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue());
+                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnCtr).getReceivedQty().doubleValue());
+                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrderReturn().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnCtr).getReceivedQty().doubleValue());
                             Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrderReturn().Detail(lnCtr).getUnitPrce());
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized());
-
+                            
+                            //autoadd serial
+                            if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
+                                populatePurchaseOrderReceivingSerial(getDetailCount() - 1, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
+                            }
+                            
                             AddDetail();
                             lbReceived = true;
                         }
@@ -2412,13 +2444,18 @@ public class PurchaseOrderReceiving extends Transaction {
                         for (int lnOrder = 0; lnOrder <= loTrans.PurchaseOrderReturn().getDetailCount() - 1; lnOrder++) {
                             if(Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrderReturn().Detail(lnOrder).getTransactionNo())){
                                 if(Detail(lnRow).getStockId().equals(loTrans.PurchaseOrderReturn().Detail(lnOrder).getStockId())){
-                                    lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrderReturn().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnOrder).getQuantity().doubleValue());
+                                    lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrderReturn().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrderReturn().Detail(lnOrder).getReceivedQty().doubleValue());
                                 }
                             }
                         }
                         
                         Detail(lnRow).setOrderQty(lnAddOrderQty);
                         lbReceived = true;
+                        
+                        //autoadd serial
+                        if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
+                            populatePurchaseOrderReceivingSerial(lnRow, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
+                        }
                     }
                     
                     lbExist = false;
@@ -3827,7 +3864,7 @@ public class PurchaseOrderReceiving extends Transaction {
         
         if(!lbHasQty){
             poJSON.put("result", "error");
-            poJSON.put("message", "Your Purchase order receiving cannot be zero quantity.");
+            poJSON.put("message", "Your transaction cannot be zero quantity.");
             return poJSON;
         }
         
@@ -3852,7 +3889,7 @@ public class PurchaseOrderReceiving extends Transaction {
         //Validate detail after removing all zero qty and empty stock Id
         if (getDetailCount() <= 0) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No Purchase order receiving detail to be save.");
+            poJSON.put("message", "No transaction detail to be save.");
             return poJSON;
         }
 
@@ -3860,7 +3897,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //do not allow a single item detail with no quantity order
             if (Detail(0).getQuantity().doubleValue() == 0) {
                 poJSON.put("result", "error");
-                poJSON.put("message", "Your Purchase order receiving has zero quantity.");
+                poJSON.put("message", "Your transaction has zero quantity.");
                 return poJSON;
             }
         }
