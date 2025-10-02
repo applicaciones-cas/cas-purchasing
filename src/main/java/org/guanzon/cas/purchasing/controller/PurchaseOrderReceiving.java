@@ -3913,19 +3913,21 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             if ("".equals((String) item.getValue("sStockIDx"))
                     || Double.valueOf(lsQuantity) <= 0.00) {
-//                detail.remove();
-//                if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
-//                    paDetailRemoved.add(item);
-//                }
-                //TODO
-                if (item.getEditMode() == EditMode.ADDNEW) {
-                    detail.remove();
-                } else {
-                    if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
-                        paDetailRemoved.add(item);
-                    }
-                    item.setValue("cReversex", PurchaseOrderReceivingStatus.Reverse.EXCLUDE);
+                detail.remove();
+                if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
+                    paDetailRemoved.add(item);
                 }
+                //TODO
+//                if (item.getEditMode() == EditMode.ADDNEW) {
+//                    detail.remove();
+//                } else {
+//                    if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
+//                        paDetailRemoved.add(item);
+//                    }
+//                    item.setValue("cReversex", PurchaseOrderReceivingStatus.Reverse.EXCLUDE);
+//                }
+            } else {
+                item.setValue("cReversex", PurchaseOrderReceivingStatus.Reverse.INCLUDE); //TODO
             }
             lsQuantity = "0.00";
         }
@@ -4706,13 +4708,13 @@ public class PurchaseOrderReceiving extends Transaction {
                 //set Receive qty in Purchase Order detail
                 if(lnRecQty <= 0){
                     lnRecQty = 0;
-                    paPurchaseOrderReturn.get(lnList).Detail(lnRow).setQuantity(0);
+                    paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(0);
                 } else {
                     if(lnRecQty > paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
-                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setQuantity(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity());
+                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity());
                         lnRecQty = lnRecQty - paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue();
                     } else {
-                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setQuantity(lnRecQty);
+                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(lnRecQty);
                         lnRecQty = 0;
                     }
                 }
@@ -4776,7 +4778,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     //1. Save Purchase Order exist in PO Receiving Detail 
                     for (lnCtr = 0; lnCtr <= paPurchaseOrder.size() - 1; lnCtr++) {
                         if(PurchaseOrderReceivingStatus.CONFIRMED.equals(status)){
-                            paPurchaseOrder.get(lnCtr).Master().setProcessed(true);
+                            paPurchaseOrder.get(lnCtr).Master().setProcessed(true); //when processed is true it will not go back to unprocessed.
                         }
                         paPurchaseOrder.get(lnCtr).Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                         paPurchaseOrder.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
@@ -4793,7 +4795,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     //1. Save Purchase Order Return exist in PO Receiving Detail 
                     for (lnCtr = 0; lnCtr <= paPurchaseOrderReturn.size() - 1; lnCtr++) {
                         if(PurchaseOrderReceivingStatus.CONFIRMED.equals(status)){
-                            paPurchaseOrderReturn.get(lnCtr).Master().isProcessed(true);
+                            paPurchaseOrderReturn.get(lnCtr).Master().isProcessed(true); //when processed is true it will not go back to unprocessed.
                         }
                         paPurchaseOrderReturn.get(lnCtr).Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                         paPurchaseOrderReturn.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());

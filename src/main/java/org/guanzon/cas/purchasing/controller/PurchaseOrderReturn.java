@@ -1256,17 +1256,17 @@ public class PurchaseOrderReturn extends Transaction{
 
             if ("".equals((String) item.getValue("sStockIDx"))
                     || Double.valueOf(lsQuantity) <= 0.00) {
-//                detail.remove();
-//                paDetailRemoved.add(item);
+                detail.remove();
+                paDetailRemoved.add(item);
                 //TODO
-                if (item.getEditMode() == EditMode.ADDNEW) {
-                    detail.remove();
-                } else {
-                    if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
-                        paDetailRemoved.add(item);
-                    }
-                    item.setValue("cReversex", PurchaseOrderReturnStatus.Reverse.EXCLUDE);
-                }
+//                if (item.getEditMode() == EditMode.ADDNEW) {
+//                    detail.remove();
+//                } else {
+//                    if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
+//                        paDetailRemoved.add(item);
+//                    }
+//                    item.setValue("cReversex", PurchaseOrderReturnStatus.Reverse.EXCLUDE);
+//                }
             }
             
             lsQuantity = "0.00";
@@ -1301,7 +1301,7 @@ public class PurchaseOrderReturn extends Transaction{
             }
             
             //seek approval when user changed trasanction date
-            if(!pbIsPrint || !pbWthParent){
+            if(!pbIsPrint && !pbWthParent){
                 if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
                     if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);
