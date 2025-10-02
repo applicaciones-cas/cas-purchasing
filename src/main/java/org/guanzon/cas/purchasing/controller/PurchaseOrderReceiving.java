@@ -104,7 +104,7 @@ public class PurchaseOrderReceiving extends Transaction {
     private boolean pbIsWithDiscount = false;
     private boolean pbIsWithDiscountRate = false;
     private boolean pbIsFinance = false;
-    private boolean pbIsReplacement = false;
+    private String psPurpose = PurchaseOrderReceivingStatus.Purpose.REGULAR;
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
@@ -817,13 +817,29 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
             }
         }
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+        switch(psPurpose){
+            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+            break; 
+        }
 
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
                 + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
-                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId()));
+                + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId())
+                + lsPurpose );
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -866,6 +882,22 @@ public class PurchaseOrderReceiving extends Transaction {
             companyId = psCompanyId;
         }
         
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+        switch(psPurpose){
+            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+            break; 
+        }
+        
         poJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat != null) {
@@ -885,7 +917,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
                 + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
-                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
+                + lsPurpose);
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -931,6 +964,22 @@ public class PurchaseOrderReceiving extends Transaction {
             companyId = psCompanyId;
         }
         
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+        switch(psPurpose){
+            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+            break; 
+        }
+        
         poJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat != null) {
@@ -950,7 +999,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
                 + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
-                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
+                + lsPurpose);
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1001,6 +1051,22 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
             }
         }
+        
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+        switch(psPurpose){
+            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+            break;
+            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+            break; 
+        }
 
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
@@ -1009,7 +1075,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sBranchCD = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + transactionNo)
-                + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo));
+                + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                + lsPurpose);
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1800,6 +1867,22 @@ public class PurchaseOrderReceiving extends Transaction {
             if (referenceNo == null) {
                 referenceNo = "";
             }
+            
+            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+            switch(psPurpose){
+                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+                break; 
+            }
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     " a.sCompnyID = " + SQLUtil.toSQL(companyId)
@@ -1807,6 +1890,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + lsPurpose
             );
             switch (formName) {
                 case "confirmation":
@@ -1883,6 +1967,22 @@ public class PurchaseOrderReceiving extends Transaction {
             if (referenceNo == null) {
                 referenceNo = "";
             }
+            
+            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
+            switch(psPurpose){
+                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
+                break;
+                case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
+                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
+                break; 
+            }
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     " a.sCompnyID = " + SQLUtil.toSQL(companyId)
@@ -1890,6 +1990,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND a.sBranchCd LIKE " + SQLUtil.toSQL("%" + branchCode)
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + lsPurpose
             );
             switch (formName) {
                 case "siposting":
@@ -3721,8 +3822,8 @@ public class PurchaseOrderReceiving extends Transaction {
         pbIsFinance = isFinance;
     }
 
-    public void isReplacement(boolean isReplacement) {
-        pbIsReplacement = isReplacement;
+    public void setPurpose(String fsPurpose) {
+        psPurpose = fsPurpose;
     }
     
     public double getQuantity(int row){
@@ -5026,10 +5127,7 @@ public class PurchaseOrderReceiving extends Transaction {
             Master().setTermCode(getTermCode());
             Master().setTransactionStatus(PurchaseOrderReceivingStatus.OPEN);
             Master().setPurpose(PurchaseOrderReceivingStatus.Purpose.REGULAR); //Default
-            
-            if(pbIsReplacement){
-                Master().setPurpose(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-            }
+            Master().setPurpose(psPurpose);
 
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
@@ -5157,7 +5255,8 @@ public class PurchaseOrderReceiving extends Transaction {
 
     public JSONObject printRecord(Runnable onPrintedCallback) {
         poJSON = new JSONObject();
-        String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
+        String watermarkPath = System.getProperty("sys.default.path.config") + "/Reports//images/draft.png"; //set draft as default
+        
         psTransactionNo = Master().getTransactionNo();
         try {
             
@@ -5187,9 +5286,9 @@ public class PurchaseOrderReceiving extends Transaction {
                 case PurchaseOrderReceivingStatus.PAID:
                 case PurchaseOrderReceivingStatus.POSTED:
                     if("1".equals(Master().getPrint())){
-                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approvedreprint.png";
+                        watermarkPath = System.getProperty("sys.default.path.config") + "/Reports//images/approvedreprint.png";
                     } else {
-                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+                        watermarkPath = System.getProperty("sys.default.path.config") + "/Reports//images/approved.png";
                     }
                     break;
 //                case PurchaseOrderReceivingStatus.CANCELLED:
@@ -5200,7 +5299,10 @@ public class PurchaseOrderReceiving extends Transaction {
             parameters.put("watermarkImagePath", watermarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();
             
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving.jrxml";
+            String jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/PurchaseOrderReceiving.jrxml";
+            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+                jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/PurchaseOrderReplacement.jrxml";
+            }
             double lnTotal = 0.0;
             int lnRow = 1;
             String lsDescription = "";
@@ -5258,7 +5360,10 @@ public class PurchaseOrderReceiving extends Transaction {
                                 + " " + Detail(lnCtr).Inventory().getDescription(); 
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
                                 lsBarcode, lsDescription, lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
-                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReceiving_Food.jrxml";
+                        jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/PurchaseOrderReceiving_Food.jrxml";
+                        if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+                            jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/PurchaseOrderReplacement_Food.jrxml";
+                        }
                     break;
                     case PurchaseOrderReceivingStatus.SPCAR :       //case "0006":  CAR SP       
                     case PurchaseOrderReceivingStatus.SPMC  :       //case "0004":  Motorcycle SP
