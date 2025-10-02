@@ -817,22 +817,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
             }
         }
-        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-        switch(psPurpose){
-            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-            break; 
-        }
-
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                 + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
@@ -882,21 +867,7 @@ public class PurchaseOrderReceiving extends Transaction {
             companyId = psCompanyId;
         }
         
-        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-        switch(psPurpose){
-            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-            break; 
-        }
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
         
         poJSON = new JSONObject();
         String lsTransStat = "";
@@ -964,21 +935,8 @@ public class PurchaseOrderReceiving extends Transaction {
             companyId = psCompanyId;
         }
         
-        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-        switch(psPurpose){
-            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-            break; 
-        }
+        
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
         
         poJSON = new JSONObject();
         String lsTransStat = "";
@@ -1052,21 +1010,8 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
         
-        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-        switch(psPurpose){
-            case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-            break;
-            case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-            break; 
-        }
+        
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
 
         initSQL();
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " a.sIndstCdx = " + SQLUtil.toSQL(industryId)
@@ -1868,21 +1813,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 referenceNo = "";
             }
             
-            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-            switch(psPurpose){
-                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-                break; 
-            }
+            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     " a.sCompnyID = " + SQLUtil.toSQL(companyId)
@@ -1968,21 +1899,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 referenceNo = "";
             }
             
-            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR);
-            switch(psPurpose){
-                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.CONSIGNMENT);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.SUPPLIER_GIVEAWAY);
-                break;
-                case PurchaseOrderReceivingStatus.Purpose.WARRANTY:
-                    lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.WARRANTY);
-                break; 
-            }
+            String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
             initSQL();
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     " a.sCompnyID = " + SQLUtil.toSQL(companyId)
