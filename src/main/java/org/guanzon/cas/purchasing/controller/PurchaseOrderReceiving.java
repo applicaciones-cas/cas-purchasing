@@ -1527,6 +1527,96 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
     
+//    public JSONObject computeFields()
+//            throws SQLException,
+//            GuanzonException {
+//        poJSON = new JSONObject();
+//
+//        //Compute Term Due Date
+//        LocalDate ldReferenceDate = strToDate(xsDateShort(Master().getReferenceDate()));
+//        Long lnTerm = Math.round(Double.parseDouble(Master().Term().getTermValue().toString()));
+//        Date ldTermDue = java.util.Date.from(ldReferenceDate.plusDays(lnTerm).atStartOfDay(ZoneId.systemDefault()).toInstant());
+//        Master().setDueDate(ldTermDue);
+//        Master().setTermDueDate(ldTermDue);
+//        
+//        //Compute Transaction Total
+//        Double ldblTotal = 0.00;
+//        Double ldblDiscount = Master().getDiscount().doubleValue();
+//        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+//        
+//        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+//            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+//        }
+//        poJSON = Master().setTransactionTotal(ldblTotal); //Sum of purchase amount
+//        if(ldblDiscountRate > 0){
+//            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+//        }
+//        
+//        /*Compute VAT Amount*/
+//        if(pbIsFinance){
+//            double ldblVatSales = 0.0000;
+//            double ldblVatAmount = 0.0000;
+//            double ldblVatExemptSales = 0.0000;
+//            
+//            double ldblDetailVatAmount = 0.0000;
+//            double ldblDetailVatSales = 0.0000;
+//            double ldblDetailTotal = 0.0000;
+//            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+//                if(Detail(lnCtr).isVatable()){
+////                    ldblDetailVatAmount = (Detail(lnCtr).getUnitPrce().doubleValue() * 0.12) * Detail(lnCtr).getQuantity().doubleValue();
+////                    ldblDetailVatSales = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue()) - ldblDetailVatAmount;
+//                    ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
+//                    ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
+//                    ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
+//                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount;
+//                    ldblVatSales = ldblVatSales + ldblDetailVatSales;
+//                } else {
+//                    ldblVatExemptSales += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+//                }
+//            }
+//            
+//            poJSON = Master().setVatSales(ldblVatSales);
+//            poJSON = Master().setVatAmount(ldblVatAmount);
+//            poJSON = Master().setVatExemptSales(ldblVatExemptSales);
+//            poJSON = Master().setZeroVatSales(0.00); //TODO
+//            if(Master().getVatRate().doubleValue() == 0.00){
+//                if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
+//                    poJSON = Master().setVatRate(0.00); //Set default value
+//                } else {
+//                    poJSON = Master().setVatRate(12.00); //Set default value
+//                }
+//            }
+//            
+//        }
+//        return poJSON;
+//    }
+    
+//    //TODO
+//    public Double getNetTotal(){
+//         //Net Total = Vat Amount - Tax Amount
+//        Double ldblNetTotal = 0.00;
+//        Double ldblTotal =  Master().getTransactionTotal().doubleValue();
+//        Double ldblDiscount = Master().getDiscount().doubleValue();
+//        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+//        if(ldblDiscountRate > 0){
+//            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+//        }
+//        ldblDiscount = ldblDiscount + ldblDiscountRate;
+//        if (Master().isVatTaxable()) {
+//            ldblNetTotal = Master().getVatSales().doubleValue()
+//                        + Master().getVatAmount().doubleValue()
+//                        + Master().getVatExemptSales().doubleValue();
+//        } else {
+//            ldblNetTotal = ldblTotal + Master().getVatAmount().doubleValue();
+//        }
+//        
+//        ldblNetTotal = (ldblNetTotal - ldblDiscount) ;
+//        
+//        return ldblNetTotal;
+//    }
+    
+    
+    
     public JSONObject computeFields()
             throws SQLException,
             GuanzonException {
@@ -1558,23 +1648,51 @@ public class PurchaseOrderReceiving extends Transaction {
             double ldblVatAmount = 0.0000;
             double ldblVatExemptSales = 0.0000;
             
+            double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
+            double ldblDiscountVatAmount = 0.0000;
+            double ldblFreightVatSales = Master().getFreight().doubleValue();
+            double ldblFreightVatAmount = 0.0000;
             double ldblDetailVatAmount = 0.0000;
             double ldblDetailVatSales = 0.0000;
             double ldblDetailTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 if(Detail(lnCtr).isVatable()){
-//                    ldblDetailVatAmount = (Detail(lnCtr).getUnitPrce().doubleValue() * 0.12) * Detail(lnCtr).getQuantity().doubleValue();
-//                    ldblDetailVatSales = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue()) - ldblDetailVatAmount;
                     ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
-                    ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
-                    ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
+                    if(Master().isVatTaxable()){
+                        ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
+                    } else {
+                        ldblDetailVatAmount = ldblDetailTotal * 0.12;
+                    }
+                    
                     ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount;
+                    ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
                     ldblVatSales = ldblVatSales + ldblDetailVatSales;
                 } else {
                     ldblVatExemptSales += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
                 }
             }
             
+            System.out.println("Detail Vat Amount " + ldblVatAmount );
+            System.out.println("Detail Vat Sales " + ldblVatSales );
+            
+            if(Master().isVatTaxable()){
+                ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
+            } else {
+                ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+                ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
+            }
+            
+            System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
+            System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
+            System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
+            System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
+            
+            ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+            ldblVatSales = (ldblVatSales 
+                            + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+                            - (ldblDiscountTotal - ldblDiscountVatAmount);
+                    
             poJSON = Master().setVatSales(ldblVatSales);
             poJSON = Master().setVatAmount(ldblVatAmount);
             poJSON = Master().setVatExemptSales(ldblVatExemptSales);
@@ -1589,6 +1707,31 @@ public class PurchaseOrderReceiving extends Transaction {
             
         }
         return poJSON;
+    }
+    
+    //TODO
+    public Double getNetTotal(){
+         //Net Total = Vat Amount - Tax Amount
+        Double ldblNetTotal = 0.00;
+        Double ldblTotal =  Master().getTransactionTotal().doubleValue();
+        Double ldblDiscount = Master().getDiscount().doubleValue();
+        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+        Double ldblDiscountVatAmount = 0.0000;
+        if(ldblDiscountRate > 0){
+            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+        }
+        ldblDiscount = ldblDiscount + ldblDiscountRate;
+        if (Master().isVatTaxable()) {
+//            ldblDiscountVatAmount = ldblDiscount - (ldblDiscount / 1.12);
+            ldblNetTotal = (Master().getVatSales().doubleValue()
+                        + Master().getVatAmount().doubleValue()
+                        + Master().getVatExemptSales().doubleValue());
+        } else {
+//            ldblDiscountVatAmount = ldblDiscount * 0.12;
+            ldblNetTotal = (ldblTotal + Master().getVatAmount().doubleValue() + Master().getFreight().doubleValue()) - ldblDiscount;
+        }
+        
+        return ldblNetTotal;
     }
     
     public Double getAdvancePayment() {
@@ -1610,30 +1753,6 @@ public class PurchaseOrderReceiving extends Transaction {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
         }
         return ldblAdvPaymentTotal;
-    }
-    
-    //TODO
-    public Double getNetTotal(){
-         //Net Total = Vat Amount - Tax Amount
-        Double ldblNetTotal = 0.00;
-        Double ldblTotal =  Master().getTransactionTotal().doubleValue();
-        Double ldblDiscount = Master().getDiscount().doubleValue();
-        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-        if(ldblDiscountRate > 0){
-            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
-        }
-        ldblDiscount = ldblDiscount + ldblDiscountRate;
-        if (Master().isVatTaxable()) {
-            ldblNetTotal = Master().getVatSales().doubleValue()
-                        + Master().getVatAmount().doubleValue()
-                        + Master().getVatExemptSales().doubleValue();
-        } else {
-            ldblNetTotal = ldblTotal + Master().getVatAmount().doubleValue();
-        }
-        
-        ldblNetTotal = (ldblNetTotal - ldblDiscount) + Master().getFreight().doubleValue();
-        
-        return ldblNetTotal;
     }
 
     /*Convert Date to String*/
@@ -2465,9 +2584,9 @@ public class PurchaseOrderReceiving extends Transaction {
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized());
                             
                             //autoadd serial
-                            if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
-                                populatePurchaseOrderReceivingSerial(getDetailCount() - 1, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
-                            }
+//                            if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
+//                                populatePurchaseOrderReceivingSerial(getDetailCount() - 1, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
+//                            }
                             
                             AddDetail();
                             lbReceived = true;
@@ -2486,9 +2605,9 @@ public class PurchaseOrderReceiving extends Transaction {
                         lbReceived = true;
                         
                         //autoadd serial
-                        if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
-                            populatePurchaseOrderReceivingSerial(lnRow, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
-                        }
+//                        if(loTrans.PurchaseOrderReturn().Detail(lnCtr).Inventory().isSerialized()){
+//                            populatePurchaseOrderReceivingSerial(lnRow, loTrans.PurchaseOrderReturn().Detail(lnCtr).getSerialId());
+//                        }
                     }
                     
                     lbExist = false;
@@ -4783,7 +4902,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         paPurchaseOrder.get(lnCtr).Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                         paPurchaseOrder.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
                         paPurchaseOrder.get(lnCtr).setWithParent(true);
-                        paPurchaseOrderReturn.get(lnCtr).setWithUI(false);
+                        paPurchaseOrder.get(lnCtr).setWithUI(false);
                         poJSON = paPurchaseOrder.get(lnCtr).SaveTransaction();
                         if ("error".equals((String) poJSON.get("result"))) {
                             System.out.println("Purchase Order Saving " + (String) poJSON.get("message"));
