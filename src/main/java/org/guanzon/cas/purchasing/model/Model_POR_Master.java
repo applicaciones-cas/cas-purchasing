@@ -74,6 +74,7 @@ public class Model_POR_Master extends Model {
             poEntity.updateString("cPrintxxx", Logical.NO);
             poEntity.updateString("cProcessd", Logical.NO);
             poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
+            poEntity.updateString("cPurposex", PurchaseOrderReceivingStatus.Purpose.REGULAR);
             //end - assign default values
 
             poEntity.insertRow();

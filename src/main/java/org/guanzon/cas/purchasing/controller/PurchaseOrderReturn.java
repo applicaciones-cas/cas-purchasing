@@ -921,6 +921,7 @@ public class PurchaseOrderReturn extends Transaction{
         String lsStockId = "";
         String lsUnitType = "";
         String lsDescription = "";
+        String lsSourceNo = "";
         Double ldblUnitPrice = 0.00;
         
         if(stockId == null){
@@ -942,7 +943,7 @@ public class PurchaseOrderReturn extends Transaction{
             lsDescription = object.getSerial().Inventory().getDescription();
             lsUnitType = object.getSerial().PurchaseOrderReceivingDetails().getUnitType();
             ldblUnitPrice = object.getSerial().PurchaseOrderReceivingDetails().getUnitPrce().doubleValue();
-
+            lsSourceNo = object.getSerial().PurchaseOrderReceivingDetails().getOrderNo();
         } else {
             poJSON = object.getDetail().openRecord(Master().getSourceNo(), stockId);
             if ("error".equals((String) poJSON.get("result"))) {
@@ -959,6 +960,7 @@ public class PurchaseOrderReturn extends Transaction{
             lsUnitType = object.getDetail().getUnitType();
             lsDescription = object.getDetail().Inventory().getDescription();
             ldblUnitPrice = object.getDetail().getUnitPrce().doubleValue();
+            lsSourceNo = object.getDetail().getOrderNo();
         }
 
         poJSON = checkExistingStock(lsStockId, lsSerialId,lsDescription, row, false);
@@ -970,6 +972,7 @@ public class PurchaseOrderReturn extends Transaction{
         Detail(row).setStockId(lsStockId);
         Detail(row).setUnitPrce(ldblUnitPrice);
         Detail(row).setUnitType(lsUnitType);
+        Detail(row).setSourceNo(lsSourceNo);
         
         poJSON.put("result", "success");
         return poJSON;
@@ -1255,6 +1258,15 @@ public class PurchaseOrderReturn extends Transaction{
                     || Double.valueOf(lsQuantity) <= 0.00) {
                 detail.remove();
                 paDetailRemoved.add(item);
+                //TODO
+//                if (item.getEditMode() == EditMode.ADDNEW) {
+//                    detail.remove();
+//                } else {
+//                    if (!"".equals((String) item.getValue("sOrderNox")) && (String) item.getValue("sOrderNox") != null) {
+//                        paDetailRemoved.add(item);
+//                    }
+//                    item.setValue("cReversex", PurchaseOrderReturnStatus.Reverse.EXCLUDE);
+//                }
             }
             
             lsQuantity = "0.00";
@@ -1289,7 +1301,7 @@ public class PurchaseOrderReturn extends Transaction{
             }
             
             //seek approval when user changed trasanction date
-            if(!pbIsPrint){
+            if(!pbIsPrint && !pbWthParent){
                 if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
                     if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                         poJSON = ShowDialogFX.getUserApproval(poGRider);

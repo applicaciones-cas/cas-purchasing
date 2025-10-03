@@ -16,6 +16,7 @@ import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.model.Model_Inv_Serial_Registration;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -30,6 +31,7 @@ public class Model_POReturn_Detail extends Model{
     Model_Inventory poInventory;
     Model_Inv_Serial poInvSerial;
     Model_Inv_Serial_Registration poInvSerialRegistration;
+    Model_PO_Master poPurchaseOrder;
     
     @Override
     public void initialize() {
@@ -45,8 +47,10 @@ public class Model_POReturn_Detail extends Model{
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateObject("nQuantity", 0.00);
+            poEntity.updateObject("nReceived", 0.00);
             poEntity.updateObject("nUnitPrce", 0.0000);
             poEntity.updateObject("nFreightx", 0.00);
+            poEntity.updateObject("cReversex", "+");
             //end - assign default values
 
             poEntity.insertRow();
@@ -61,6 +65,9 @@ public class Model_POReturn_Detail extends Model{
             poInventory = invModel.Inventory();
             poInvSerial = invModel.InventorySerial();
             poInvSerialRegistration = invModel.InventorySerialRegistration();
+            
+            Model_PO_Master purchaseOrderModel = new PurchaseOrderModels(poGRider).PurchaseOrderMaster(); 
+            poPurchaseOrder = purchaseOrderModel;
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -121,6 +128,17 @@ public class Model_POReturn_Detail extends Model{
         return (Number) getValue("nQuantity");
     }
     
+    public JSONObject setReceivedQty(Number receivedQuantity){
+        return setValue("nReceived", receivedQuantity);
+    }
+    
+    public Number getReceivedQty(){
+        if(getValue("nReceived") == null || "".equals(getValue("nReceived"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nReceived");
+    }
+    
     public JSONObject setUnitPrce(Number unitPrce){
         return setValue("nUnitPrce", unitPrce);
     }
@@ -157,6 +175,14 @@ public class Model_POReturn_Detail extends Model{
     
     public String getBatchNo(){
         return (String) getValue("sBatchNox");
+    }
+    
+    public JSONObject isReverse(boolean isReverse) {
+        return setValue("cReversex", isReverse ? "+" : "-");
+    }
+
+    public boolean isReverse() {
+        return ((String) getValue("cReversex")).equals("+");
     }
     
     public JSONObject setModifiedDate(Date modifiedDate){
@@ -234,6 +260,27 @@ public class Model_POReturn_Detail extends Model{
             poInvSerialRegistration.initialize();
             return poInvSerialRegistration;
         }
+    }
+    
+    public Model_PO_Master PurchaseOrderMaster() throws SQLException, GuanzonException {
+            if (!"".equals((String) getValue("sSourceNo"))) {
+                if (poPurchaseOrder.getEditMode() == EditMode.READY
+                        && poPurchaseOrder.getTransactionNo().equals((String) getValue("sSourceNo"))) {
+                    return poPurchaseOrder;
+                } else {
+                    poJSON = poPurchaseOrder.openRecord((String) getValue("sSourceNo"));
+
+                    if ("success".equals((String) poJSON.get("result"))) {
+                        return poPurchaseOrder;
+                    } else {
+                        poPurchaseOrder.initialize();
+                        return poPurchaseOrder;
+                    }
+                }
+            } else {
+                poPurchaseOrder.initialize();
+                return poPurchaseOrder;
+            }
     }
     
     //end reference object models

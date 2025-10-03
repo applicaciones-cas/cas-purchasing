@@ -31,4 +31,17 @@ public class PurchaseOrderReceivingStatus {
     public static final String FOOD        = "0008";   //Food         
     public static final String HOSPITALITY = "0009";   //Hospitality  
     
+    public static class Reverse  {
+        public static final  String INCLUDE = "+"; 
+        public static final  String EXCLUDE = "-"; 
+    }
+    
+    public static class Purpose  {
+        public static final  String REGULAR = "0"; 
+        public static final  String CONSIGNMENT = "1"; 
+        public static final  String REPLACEMENT = "2"; 
+        public static final  String WARRANTY = "3"; 
+        public static final  String SUPPLIER_GIVEAWAY = "4"; 
+    }
+    //0->Regular;1->Consignment;2->Replacement;3->Warranty;4->Supplier Giveaway;
 }
