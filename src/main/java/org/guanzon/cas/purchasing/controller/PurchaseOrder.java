@@ -441,7 +441,7 @@ public class PurchaseOrder extends Transaction {
         }
 
         poJSON = generatePRF();
-        if (!"success".equals((String) poJSON.get("result"))) {
+         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
@@ -939,7 +939,7 @@ public class PurchaseOrder extends Transaction {
                 poPaymentRequest.PaymentRequest().InitTransaction();
                 poPaymentRequest.PaymentRequest().NewTransaction();
 
-                SearchPayee(Master().getSupplierID(), PurchaseOrderStaticData.PurchaseOrder, true);
+                SearchPayee(Master().getSupplierID());
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
                 poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
@@ -966,11 +966,15 @@ public class PurchaseOrder extends Transaction {
 
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
+                poPaymentRequest.PaymentRequest().Master().setIndustryID(poGRider.getIndustry());
+                poPaymentRequest.PaymentRequest().Master().setCompanyID(poGRider.getCompnyId());
+                poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
                 poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
                 poPaymentRequest.PaymentRequest().Master().setPayeeID(PayeeID); //Master().getSupplierID()
                 poPaymentRequest.PaymentRequest().Master().setEntryNo(1);
                 poPaymentRequest.PaymentRequest().Master().setSeriesNo(poPaymentRequest.PaymentRequest().getSeriesNoByBranch());
                 poPaymentRequest.PaymentRequest().Master().setTranTotal(totalAdv);
+                poPaymentRequest.PaymentRequest().Master().setNetTotal(totalAdv);
                 poPaymentRequest.PaymentRequest().Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
 
                 poPaymentRequest.PaymentRequest().Detail(0).setEntryNo((int) 1);
@@ -1357,14 +1361,14 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SearchPayee(String value, String ParticularID, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+    public JSONObject SearchPayee(String value) throws ExceptionInInitializerError, SQLException, GuanzonException {
         Payee object = new CashflowControllers(poGRider, logwrapr).Payee();
         object.setRecordStatus("1");
 
-        poJSON = object.searchRecordbyClient(value, ParticularID, byCode);
+        poJSON = object.searchPayee(value);
 
         if ("success".equals((String) poJSON.get("result"))) {
-            PayeeID = object.getModel().getPayeeID();
+            PayeeID = (String) poJSON.get("sPayeeIDx");
 //            Master().setPayeeID(object.getModel().getPayeeID());
         }
 
