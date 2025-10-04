@@ -1658,6 +1658,88 @@ public class PurchaseOrderReceiving extends Transaction {
         return foJSON;
     }
     
+    //For Car
+    public JSONObject SearchSerialRegistration(String value, int row){
+        JSONObject foJSON = new JSONObject();
+        String  lsHeader = "Engine No»Frame No»Description»Conduction Sticker»Plate No";
+        String lsCriteria = "a.sSerial01»a.sSerial02»b.sDescript»c.sCStckrNo»c.sPlateNoP";
+        String lsSQL = "";
+        if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+            lsCriteria = "b.sSerial01»b.sSerial02»c.sDescript";
+            lsSQL = MiscUtil.addCondition( getPOReturnSerial(),
+                    " ( b.sSerial01 LIKE " + SQLUtil.toSQL("%"+PurchaseOrderReceivingSerialList(row).getSerial01())
+                            + " OR b.sSerial02 LIKE " + SQLUtil.toSQL("%"+PurchaseOrderReceivingSerialList(row).getSerial02())
+                            + " ) "
+                                    + " AND ( d.sCStckrNo LIKE " + SQLUtil.toSQL("%"+value)
+                            + " OR d.sPlateNoP LIKE " + SQLUtil.toSQL("%"+value)
+                            + " ) "
+                                    + " AND c.sIndstCdx LIKE " + SQLUtil.toSQL("%"+Master().getIndustryId()) //TODO a.sIndstCdx
+                            + " AND a.sTransNox = " + SQLUtil.toSQL(Detail(PurchaseOrderReceivingSerialList(row).getEntryNo()-1).getOrderNo()) 
+                            + " AND a.sStockIDx = " + SQLUtil.toSQL(Detail(PurchaseOrderReceivingSerialList(row).getEntryNo()-1).getStockId()) );
+        } else {
+            lsSQL = MiscUtil.addCondition( getInvSerial(),
+                    " ( a.sSerial01  LIKE " + SQLUtil.toSQL("%"+PurchaseOrderReceivingSerialList(row).getSerial01())
+                            + " OR a.sSerial02  LIKE " + SQLUtil.toSQL("%"+PurchaseOrderReceivingSerialList(row).getSerial02())
+                            + " ) "
+                                    + " AND ( c.sCStckrNo LIKE " + SQLUtil.toSQL("%"+value)
+                            + " OR c.sPlateNoP LIKE " + SQLUtil.toSQL("%"+value)
+                            + " ) "
+                                    + " AND b.sIndstCdx LIKE " + SQLUtil.toSQL("%"+Master().getIndustryId()) //TODO a.sIndstCdx
+                            + " AND a.sStockIDx = " + SQLUtil.toSQL(Detail(PurchaseOrderReceivingSerialList(row).getEntryNo()-1).getStockId()) );
+        }
+        System.out.println("Executing SQL: " + lsSQL);
+        foJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                lsHeader,
+                "sSerial01»sSerial02»sDescript»sCStckrNo»sPlateNoP",
+                lsCriteria,
+                1);
+        if (foJSON != null) {
+            JSONObject loJSON = new JSONObject();
+            //Check Serial 1
+            loJSON = checkExistingSerialNo(row, "serial01", (String) foJSON.get("sSerial01"));
+            if ("error".equals((String) loJSON.get("result"))) {
+                return loJSON;
+            }
+            //Check Serial 2
+            loJSON = checkExistingSerialNo(row, "serial02", (String) foJSON.get("sSerial02"));
+            if ("error".equals((String) loJSON.get("result"))) {
+                return loJSON;
+            }
+            //Check Cs No
+            loJSON = checkExistingSerialNo(row, "csno", (String) foJSON.get("sCStckrNo"));
+            if ("error".equals((String) loJSON.get("result"))) {
+                return loJSON;
+            }
+            //Check Plate No
+            loJSON = checkExistingSerialNo(row, "plateno", (String) foJSON.get("sPlateNoP"));
+            if ("error".equals((String) loJSON.get("result"))) {
+                return loJSON;
+            }
+            //Check Exisiting Receiving
+            loJSON = checkExistingPOR(row, (String) foJSON.get("sSerialID"));
+            if ("error".equals((String) loJSON.get("result"))) {
+                return loJSON;
+            }
+            
+            PurchaseOrderReceivingSerialList(row).setSerialId((String) foJSON.get("sSerialID"));
+            PurchaseOrderReceivingSerialList(row).setSerial01((String) foJSON.get("sSerial01"));
+            PurchaseOrderReceivingSerialList(row).setSerial02((String) foJSON.get("sSerial02"));
+            PurchaseOrderReceivingSerialList(row).setConductionStickerNo((String) foJSON.get("sCStckrNo"));
+            PurchaseOrderReceivingSerialList(row).setPlateNo((String) foJSON.get("sPlateNoP"));
+        } else {
+            foJSON = new JSONObject();
+            foJSON.put("result", "error");
+            foJSON.put("message", "No record loaded.");
+            return foJSON;
+        }
+        
+        foJSON.put("result", "success");
+        foJSON.put("message", "Record loaded successfully.");
+        return foJSON;
+    }
+    
     private JSONObject checkExistingPOR(int row, String fsSerialId){
         poJSON = new JSONObject();
         if(fsSerialId == null || "".equals(fsSerialId)){
@@ -6112,9 +6194,12 @@ public class PurchaseOrderReceiving extends Transaction {
             + "  , b.sSerial02 "
             + "  , b.sStockIDx "
             + "  , c.sDescript "
+            + "  , d.sCStckrNo "  
+            + "  , d.sPlateNoP "  
             + " FROM po_return_detail a "
             + " LEFT JOIN inv_serial b ON a.sSerialID = b.sSerialID "
-            + " LEFT JOIN inventory c ON c.sStockIDx = b.sStockIDx ";
+            + " LEFT JOIN inventory c ON c.sStockIDx = b.sStockIDx "
+            + " LEFT JOIN inv_serial_registration d ON d.sSerialID = a.sSerialID ";
     }
     
     private String getInvSerial(){
@@ -6130,9 +6215,12 @@ public class PurchaseOrderReceiving extends Transaction {
             + "  , a.sCompnyID " 
             + "  , a.sIndstCdx "                                      
             + "  , a.sWarranty " 
-            + "  , b.sDescript "                                         
+            + "  , b.sDescript "  
+            + "  , c.sCStckrNo "  
+            + "  , c.sPlateNoP "                                          
             + " FROM Inv_Serial a "                                  
-            + " LEFT JOIN Inventory b ON b.sStockIDx = a.sStockIDx ";
+            + " LEFT JOIN Inventory b ON b.sStockIDx = a.sStockIDx "
+            + " LEFT JOIN inv_serial_registration c ON c.sSerialID = a.sSerialID ";
     }
     
     
