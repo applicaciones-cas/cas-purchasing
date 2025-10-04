@@ -3502,12 +3502,10 @@ public class PurchaseOrderReceiving extends Transaction {
             }
 
             //3. Check for serial Id: Do not allow to remove if exist
-            int lnCheckQty = 0;
             detail = PurchaseOrderReceivingSerialList().iterator();
             while (detail.hasNext()) {
                 Model_POR_Serial item = detail.next();
                 if (item.getEntryNo() == entryNo) {
-                    lnCheckQty++;
                     if (item.getSerialId() != null && !"".equals(item.getSerialId())) {
                         if(item.getEditMode() == EditMode.ADDNEW){
                             detail.remove();
@@ -3515,9 +3513,6 @@ public class PurchaseOrderReceiving extends Transaction {
                             lbChecked = true;
                             break;
                         } else {
-                            if(lnCheckQty < Detail(item.getEntryNo()-1).getQuantity().intValue()){
-                                continue; //skip the row update mode
-                            }
                             poJSON.put("result", "error");
                             poJSON.put("message", "Serial ID already exist, cannot be deleted.");
                             return poJSON;
@@ -4455,7 +4450,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         for (int lnCtr = 0; lnCtr <= loRecord.getDetailCount() - 1; lnCtr++) {
                             lbUpdated = loRecord.Detail(lnCtr).getStockId().equals(Detail(lnCtr).getStockId());
                             if (lbUpdated) {
-                                lbUpdated = loRecord.Detail(lnCtr).getQuantity().equals(Detail(lnCtr).getQuantity());
+                                lbUpdated = loRecord.Detail(lnCtr).getQuantity().doubleValue() == Detail(lnCtr).getQuantity().doubleValue();
                             } 
 
                             if (!lbUpdated) {
