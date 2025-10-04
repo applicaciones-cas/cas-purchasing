@@ -4441,6 +4441,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     if (lbUpdated) {
                         lbUpdated = loRecord.Master().getTermCode().equals(Master().getTermCode());
                     }
+                    if (lbUpdated) {
+                        lbUpdated = loRecord.Master().getTruckingId().equals(Master().getTruckingId());
+                    }
 
                     if (lbUpdated) {
                         lbUpdated = loRecord.Master().getRemarks().equals(Master().getRemarks());
