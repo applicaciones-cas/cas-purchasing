@@ -1774,7 +1774,7 @@ public class PurchaseOrderReceiving extends Transaction {
             
             if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
                 lsSQL = MiscUtil.addCondition( getPOReturnSerial(),
-                                " b.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
+                                " c.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
                             + " AND b.sSerial01 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial01())
                             + " AND b.sSerial02 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial02())
                             + " AND d.sCStckrNo = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getConductionStickerNo())
@@ -1804,8 +1804,14 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         try {
+            String lsPurpose = "Receiving";
+            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+                lsPurpose = "Replacement";
+            }
+            
             String lsSQL = MiscUtil.addCondition( getSerialPORecieving(),
                                 " b.sSerialID = " + SQLUtil.toSQL(fsSerialId)
+                                + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo())
                                 + " AND a.sIndstCdx LIKE " + SQLUtil.toSQL(Master().getIndustryId())
                                 + " AND c.sOrderNox = " + SQLUtil.toSQL(Detail(PurchaseOrderReceivingSerialList(row).getEntryNo()-1).getOrderNo()) 
                                 + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.OPEN)
@@ -1821,7 +1827,7 @@ public class PurchaseOrderReceiving extends Transaction {
             if (MiscUtil.RecordCount(loRS) >= 0) {
                 if (loRS.next()) {
                     poJSON.put("result", "error");
-                    poJSON.put("message", "Found existing PO Receiving for serial "+loRS.getString("sSerial01")+" of entry no "+PurchaseOrderReceivingSerialList(row).getEntryNo()+".\n\n"
+                    poJSON.put("message", "Found existing Purchase Order "+lsPurpose+" for serial "+loRS.getString("sSerial01")+" of entry no "+PurchaseOrderReceivingSerialList(row).getEntryNo()+".\n\n"
                                     + "Check Transaction No. " +  loRS.getString("sTransNox")
                                     + " dated on " +  loRS.getDate("dTransact"));
                 }
@@ -4524,7 +4530,9 @@ public class PurchaseOrderReceiving extends Transaction {
             Detail(lnCtr).setModifiedDate(poGRider.getServerDate());
 
             //POR Serial
-            if(!pbIsFinance){ //Validate POR Serial only in PO Receiving Form
+            if(!pbIsFinance){ 
+                String lsSerialId = "";
+                //Validate POR Serial only in PO Receiving Form
                 //Mobile Phone : 01 Motorcycle   : 02 Vehicle      : 03
                 //Mobile Phone : 0001 Motorcycle   : 0010 Vehicle      : 0015
                 if(Detail(lnCtr).isSerialized()){ 
@@ -4567,6 +4575,24 @@ public class PurchaseOrderReceiving extends Transaction {
                                 if("error".equals((String) poJSON.get("result"))){
                                     return poJSON;
                                 }
+                            } else if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+                                if (PurchaseOrderReceivingSerialList(lnList).getSerialId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerialId())) {
+                                    lsSerialId = getSerialId(lnList);
+                                    if(!lsSerialId.isEmpty()){
+                                        PurchaseOrderReceivingSerialList(lnList).setSerialId(lsSerialId);
+                                    } else {
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message",  "Please select serial that exists in Purchase Order Return transaction at row "+PurchaseOrderReceivingSerialList(lnList).getEntryNo()+".");
+                                        return poJSON;
+                                    }
+                                    break;
+                                }
+                                
+                                poJSON = checkExistingPOR(lnList, PurchaseOrderReceivingSerialList(lnList).getSerialId());
+                                if ("error".equals((String) poJSON.get("result"))) {
+                                    return poJSON;
+                                }
+                                lsSerialId = "";
                             }
                             
                             //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
