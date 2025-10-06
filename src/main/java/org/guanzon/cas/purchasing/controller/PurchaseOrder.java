@@ -67,6 +67,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import ph.com.guanzongroup.cas.cashflow.Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
+import ph.com.guanzongroup.cas.purchasing.t2.services.QuotationControllers;
+import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
 
 public class PurchaseOrder extends Transaction {
 
@@ -1431,8 +1433,8 @@ public class PurchaseOrder extends Transaction {
                 category
         );
 
-        if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
+        if ("success".equals((String) poJSON.get("result"))) { 
+           for (int lnRow = 0; lnRow <= getDetailCount() - 1; lnRow++) {
                 if (lnRow != row) {
                     if ((Detail(lnRow).getSouceNo().equals("") || Detail(lnRow).getSouceNo() == null)
                             && (Detail(lnRow).getStockID().equals(object.getModel().getStockId()))) {
@@ -1449,18 +1451,9 @@ public class PurchaseOrder extends Transaction {
         }
         return poJSON;
     }
-
-    public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
-
-        String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
-                " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
-                " (g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()) + " OR g.sSupplier IS NULL )",
-                " b.nApproved > 0 ",
-                " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
-                " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
-                " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
-                " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
-        String lsSQL = "SELECT"
+    
+    private String getInvStockRequest_SQL(){
+        return  "SELECT"
                 + "  a.sTransNox,"
                 + "  e.sBranchNm,"
                 + "  a.sBranchCd,"
@@ -1470,7 +1463,8 @@ public class PurchaseOrder extends Transaction {
                 + "  a.cTranStat,"
                 + "  a.sIndstCdx,"
                 + "  COUNT(DISTINCT b.sStockIDx) AS total_details,"
-                + "  SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) AS total_request"
+                + "  SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) AS total_request,"
+                + " '" +PurchaseOrderStatus.SourceCode.STOCKREQUEST+"' AS request_type"
                 + " FROM inv_stock_request_master a"
                 + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
                 + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
@@ -1478,15 +1472,66 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
                 + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
                 + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
-        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+    }
+    
+    private String getPOQuotation_SQL(){
+        return  "SELECT"
+                + "  a.sTransNox,"
+                + "  e.sBranchNm,"
+                + "  a.sBranchCd,"
+                + "  a.cTranStat,"
+                + "  a.dTransact,"
+                + "  a.sReferNox,"
+                + "  a.cTranStat,"
+                + "  a.sIndstCdx,"
+                + "  COUNT(DISTINCT b.sStockIDx) AS total_details,"
+                + "  SUM(b.nQuantity) AS total_request,"
+                + "  '"+PurchaseOrderStatus.SourceCode.POQUOTATION+"' AS request_type"
+                + " FROM po_quotation_master a"
+                + " LEFT JOIN po_quotation_detail b ON a.sTransNox = b.sTransNox"
+                + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
+                + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
+                + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
+    }
 
+    public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
+        String lsSQL = getInvStockRequest_SQL();
+        String lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " (g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()) + " OR g.sSupplier IS NULL )",
+                " b.nApproved > 0 ",
+                " a.cProcessd = " + SQLUtil.toSQL(Logical.NO),
+                " b.nApproved <> (b.nIssueQty + b.nOrderQty) ",
+                " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
+                " a.cTranStat = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED));
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
         if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
             lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
-                + " ORDER BY a.dTransact,a.sTransNox DESC";
+                + " UNION ";
+        lsSQL = lsSQL + getPOQuotation_SQL();
+        lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()),
+                " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
+                " a.cTranStat = " + SQLUtil.toSQL(POQuotationStatus.APPROVED));
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+        }
+        lsSQL = lsSQL + " AND a.sTransNox NOT IN ( SELECT bb.sSourceNo FROM po_master aa LEFT JOIN po_detail bb ON bb.sTransNox = aa.sTransNox "
+                    + " WHERE ( aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID)
+                    + " AND aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
+                    + " ) AND bb.sSourceNo = a.sTransNox "
+                    + " AND bb.sSourceCd = "+SQLUtil.toSQL(PurchaseOrderStatus.SourceCode.POQUOTATION)+ " ) ";
+        lsSQL = lsSQL + " GROUP BY a.sTransNox ";
+        lsSQL = lsSQL + " ORDER BY dTransact, sTransNox DESC";
+        
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         JSONArray dataArray = new JSONArray();
@@ -1511,6 +1556,7 @@ public class PurchaseOrder extends Transaction {
                     request.put("cTranStat", loRS.getString("cTranStat"));
                     request.put("sBranchNm", loRS.getString("sBranchNm"));
                     request.put("total_details", loRS.getInt("total_details"));
+                    request.put("request_type", loRS.getString("request_type"));
 
                     dataArray.add(request);
                     lnctr++;
@@ -1646,6 +1692,112 @@ public class PurchaseOrder extends Transaction {
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
                 if (Detail(lnRow).getSouceNo().equals(loTrans.StockRequest().Detail(lnCtr).getTransactionNo())
                         && Detail(lnRow).getStockID().equals(loTrans.StockRequest().Detail(lnCtr).getStockId()
+                        )) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public JSONObject addPOQuotationToPODetail(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        QuotationControllers loTrans = new QuotationControllers(poGRider, logwrapr);
+        poJSON = loTrans.POQuotation().InitTransaction();
+
+        if (!"success".equals(poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+            return poJSON;
+        }
+
+        poJSON = loTrans.POQuotation().OpenTransaction(transactionNo);
+        if (!"success".equals(poJSON.get("result"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+            return poJSON;
+        }
+
+        if (areAllQuotationControllerIsInPODetail(loTrans)) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "All PO Quotation details are already in purchase order detail.");
+            return poJSON;
+        }
+
+        String detailQuery = " SELECT b.sSourceNo, b.sSourceCd "
+                + " FROM po_master a "
+                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox ";
+
+        String lsFilterCondition = String.join(" AND ",
+                    " b.sSourceNo = " + SQLUtil.toSQL(transactionNo),
+                    " b.sSourceCd = " + SQLUtil.toSQL(loTrans.POQuotation().getSourceCode()),
+                    " a.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID),
+                    " a.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
+                    );
+
+        detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition);
+        System.out.println("Executing SQL: " + detailQuery);
+        try (ResultSet rsDetail = poGRider.executeQuery(detailQuery)) {
+            if (rsDetail == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Query execution failed.");
+                return poJSON;
+            }
+            if (rsDetail.next()) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Selected PO Quotation already have an existing Purchase Order.");
+                return poJSON;
+            }
+        }
+        
+        boolean allProcessed = true;
+        for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
+            boolean exists = false;
+            for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
+                if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                        && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId())) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) {
+                AddDetail();
+                int lnLastIndex = getDetailCount() - 1;
+                Detail(lnLastIndex).setSouceNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setTransactionNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
+                Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getStockId());
+                Detail(lnLastIndex).setRecordOrder(0);
+                Detail(lnLastIndex).setUnitPrice(loTrans.POQuotation().Detail(lnCtr).getUnitPrice());
+                Detail(lnLastIndex).setQuantity(0);
+                Detail(lnLastIndex).setSouceCode(loTrans.POQuotation().getSourceCode());
+            }
+        }
+
+        // ✅ Only check `allProcessed` **after** the loop
+        if (allProcessed) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "All records are already processed!");
+            return poJSON;
+        }
+
+        poJSON.put("result", "success");
+        poJSON.put("message", "Record loaded successfully.");
+        return poJSON;
+    }
+
+    private boolean areAllQuotationControllerIsInPODetail(QuotationControllers loTrans) {
+        for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
+            boolean found = false;
+
+            for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
+                if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                        && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId()
                         )) {
                     found = true;
                     break;

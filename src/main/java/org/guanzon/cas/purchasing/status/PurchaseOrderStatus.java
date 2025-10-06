@@ -10,4 +10,14 @@ public class PurchaseOrderStatus {
     public static final String APPROVED = "5";
     public static final String POSTED = "6";
     public static final String RETURNED = "7";
+    
+    public static class Reverse  {
+        public static final  String INCLUDE = "+"; 
+        public static final  String EXCLUDE = "-"; 
+    }
+    
+    public static class SourceCode  {
+        public static final  String STOCKREQUEST = "InvR"; 
+        public static final  String POQUOTATION = "POQT"; 
+    }
 }
