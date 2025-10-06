@@ -67,6 +67,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import ph.com.guanzongroup.cas.cashflow.Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
+import ph.com.guanzongroup.cas.purchasing.t2.POQuotation;
 import ph.com.guanzongroup.cas.purchasing.t2.services.QuotationControllers;
 import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
 
@@ -75,6 +76,9 @@ public class PurchaseOrder extends Transaction {
     List<Model_Inv_Stock_Request_Master> paStockRequest;
     List<Model_PO_Master> paPOMaster;
     List<StockRequest> poStockRequest;
+    List<POQuotation> poPOQuotation;
+    List<POQuotation> poPOQuotationStatus;
+    List<POQuotation> poPOQuotationRemovedStatus;
     List<Model> paDetailRemoved;
     CashflowControllers poPaymentRequest;
     String PayeeID;
@@ -86,6 +90,9 @@ public class PurchaseOrder extends Transaction {
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();
         poStockRequest = new ArrayList<>();
+        poPOQuotation = new ArrayList<>();
+        poPOQuotationStatus = new ArrayList<>();
+        poPOQuotationRemovedStatus = new ArrayList<>();
 
         return initialize();
     }
@@ -113,6 +120,10 @@ public class PurchaseOrder extends Transaction {
 
     private StockRequest StockRequest() {
         return new InvWarehouseControllers(poGRider, logwrapr).StockRequest();
+    }
+    
+    private POQuotation POQuotation() {
+        return new QuotationControllers(poGRider, logwrapr).POQuotation();
     }
 
     public Model_Inv_Stock_Request_Master InvStockRequestMaster(int row) {
@@ -388,9 +399,9 @@ public class PurchaseOrder extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
-
+        
         poGRider.commitTrans();
-
+       
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
@@ -668,9 +679,9 @@ public class PurchaseOrder extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
-
+        
         poGRider.commitTrans();
-
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
 
@@ -798,6 +809,9 @@ public class PurchaseOrder extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         poStockRequest = new ArrayList<>();
+        poPOQuotation = new ArrayList<>();
+        poPOQuotationStatus = new ArrayList<>();
+        poPOQuotationRemovedStatus = new ArrayList<>();
         int lnCtr;
 
         //Update Purchase Order exist in PO Receiving Detail
@@ -809,52 +823,105 @@ public class PurchaseOrder extends Transaction {
             System.out.println("------------------------------------------------------------------ ");
             if (Detail(lnCtr).getSouceNo() != null && !"".equals(Detail(lnCtr).getSouceNo())) {
                 double totalRequest = 0.00;
-                totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved());
-//                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
-//                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+                switch(Detail(lnCtr).getSouceCode()){
+                    case PurchaseOrderStatus.SourceCode.STOCKREQUEST:
+                        totalRequest = (Detail(lnCtr).InvStockRequestDetail().getApproved());
+        //                        - (Detail(lnCtr).InvStockRequestDetail().getIssued()
+        //                        + Detail(lnCtr).InvStockRequestDetail().getPurchase()));
 
-                //1. Check discrepancy if the order quantity is not greater than request
-                
-                if (!Detail(lnCtr).getSouceNo().isEmpty()) {
-//                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
+                        //1. Check discrepancy if the order quantity is not greater than request
 
-                   if (status.equals(PurchaseOrderStatus.CONFIRMED) ||
-                           status.equals(PurchaseOrderStatus.APPROVED)) {
-                        double remaining = 0.0000;
-                            remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
-                                    (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
-                                    Detail(lnCtr).InvStockRequestDetail().getIssued() + 
-                                    Detail(lnCtr).InvStockRequestDetail().getPurchase()));
-                        if (remaining == 0.00) {
-                            poJSON.put("result", "error");
-                            poJSON.put("message", "Discrepancy: Stock requests related to this order number have already been processed.");
+                        if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+        //                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
+
+                           if (status.equals(PurchaseOrderStatus.CONFIRMED) ||
+                                   status.equals(PurchaseOrderStatus.APPROVED)) {
+                                double remaining = 0.0000;
+                                    remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
+                                            (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
+                                            Detail(lnCtr).InvStockRequestDetail().getIssued() + 
+                                            Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+                                if (remaining == 0.00) {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "Discrepancy: Stock requests related to this order number have already been processed.");
+                                    return poJSON;
+                                }
+                            }
+
+                            if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
+                                return poJSON;
+                            }
+                        }
+
+                        //1. Check for discrepancy
+                        if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
+                            System.out.println("Require Approval");
+                            pbApproval = true;
+                        }
+
+                        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
+
+                            if (totalRequest == 0) {
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "All stock requests related to this order number have already been processed.");
+                                return poJSON;
+                            }
+                        }
+
+                        updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), Detail(lnCtr).getQuantity().doubleValue());
+                    break;
+                    case PurchaseOrderStatus.SourceCode.POQUOTATION: 
+                        //TODO Validate
+                        poJSON = checkExistingPO(Detail(lnCtr).getSouceNo(),Detail(lnCtr).getSouceCode());
+                        if ("error".equals((String) poJSON.get("result"))) {
                             return poJSON;
                         }
-                    }
-                    
-                    if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
-                        return poJSON;
-                    }
+                        //TODO UPDATING OF DETAILS
+//                        totalRequest = (Detail(lnCtr).POQuotationDetail().getQuantity());
+                        //1. Check discrepancy if the order quantity is not greater than request
+//                        if (!Detail(lnCtr).getSouceNo().isEmpty()) {
+//        //                    remaining = nApproved - (nCancelld + nIssueQty + nOrderQty)
+//
+//                           if (status.equals(PurchaseOrderStatus.CONFIRMED) ||
+//                                   status.equals(PurchaseOrderStatus.APPROVED)) {
+//                                double remaining = 0.0000;
+//                                    remaining = (Detail(lnCtr).InvStockRequestDetail().getApproved() -
+//                                            (Detail(lnCtr).InvStockRequestDetail().getCancelled() + 
+//                                            Detail(lnCtr).InvStockRequestDetail().getIssued() + 
+//                                            Detail(lnCtr).InvStockRequestDetail().getPurchase()));
+//                                if (remaining == 0.00) {
+//                                    poJSON.put("result", "error");
+//                                    poJSON.put("message", "Discrepancy: Stock requests related to this order number have already been processed.");
+//                                    return poJSON;
+//                                }
+//                            }
+//
+//                            if (Detail(lnCtr).getQuantity().doubleValue() > totalRequest) {
+//                                poJSON.put("result", "error");
+//                                poJSON.put("message", "Discrepancy: Order Quantity cannot greater than request quantity, please enter valid order quantity.");
+//                                return poJSON;
+//                            }
+//                        }
+//
+//                        //1. Check for discrepancy
+//                        if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
+//                            System.out.println("Require Approval");
+//                            pbApproval = true;
+//                        }
+//
+//                        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
+//                            if (totalRequest == 0) {
+//                                poJSON.put("result", "error");
+//                                poJSON.put("message", "All stock requests related to this order number have already been processed.");
+//                                return poJSON;
+//                            }
+//                        }
+
+                        updatePOQuotation(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), Detail(lnCtr).getQuantity().doubleValue(),false );
+                    break;
                 }
-
-                //1. Check for discrepancy
-                if (Detail(lnCtr).getQuantity().doubleValue() != Detail(lnCtr).InvStockRequestDetail().getQuantity()) {
-                    System.out.println("Require Approval");
-                    pbApproval = true;
-                }
-
-                if (Master().getTransactionStatus().equals(PurchaseOrderStatus.RETURNED)) {
-
-                    if (totalRequest == 0) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "All stock requests related to this order number have already been processed.");
-                        return poJSON;
-                    }
-                }
-
-                updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), Detail(lnCtr).getQuantity().doubleValue());
                 
             } else {
                 //Require approve for all po receiving without po
@@ -864,11 +931,90 @@ public class PurchaseOrder extends Transaction {
         }
         //Update stock request removed in purchase order
         for (lnCtr = 0; lnCtr <= getDetailRemovedCount() - 1; lnCtr++) {
-            //Purchase Order
-            updateInvStockRequest(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(), DetailRemove(lnCtr).getQuantity().doubleValue());
+            switch(Detail(lnCtr).getSouceCode()){
+                case PurchaseOrderStatus.SourceCode.STOCKREQUEST:
+                    updateInvStockRequest(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(), DetailRemove(lnCtr).getQuantity().doubleValue());
+                break;
+                case PurchaseOrderStatus.SourceCode.POQUOTATION:
+                    updatePOQuotation(status, DetailRemove(lnCtr).getSouceNo(), DetailRemove(lnCtr).getStockID(), DetailRemove(lnCtr).getQuantity().doubleValue(), true);
+                break;
+            }
         }
         poJSON.put("result", "success");
         return poJSON;
+    }
+    
+    //TODO
+    private void updatePOQuotation(String status, String orderNo, String stockId, double quantity, boolean isRemoved)
+            throws GuanzonException,
+            SQLException,
+            CloneNotSupportedException {
+        int lnRow, lnList;
+        double lnRecQty = 0.00;
+        boolean lbExist = false;
+        //2.check if order no is already exist in purchase order array list
+        for (lnRow = 0; lnRow <= poPOQuotation.size() - 1; lnRow++) {
+            if (poPOQuotation.get(lnRow).Master().getTransactionNo() != null) {
+                if (orderNo.equals(poPOQuotation.get(lnRow).Master().getTransactionNo())) {
+                    lbExist = true;
+                    break;
+                }
+            }
+        }
+
+        if (!lbExist) {
+            //Populate updating of status
+            if(isRemoved){
+                poPOQuotationRemovedStatus.add(POQuotation());
+                poPOQuotationRemovedStatus.get(poPOQuotationRemovedStatus.size() - 1).InitTransaction();
+                poPOQuotationRemovedStatus.get(poPOQuotationRemovedStatus.size() - 1).OpenTransaction(orderNo);
+            } else {
+                poPOQuotationStatus.add(POQuotation());
+                poPOQuotationStatus.get(poPOQuotationStatus.size() - 1).InitTransaction();
+                poPOQuotationStatus.get(poPOQuotationStatus.size() - 1).OpenTransaction(orderNo);
+            }
+            
+            poPOQuotation.add(POQuotation());
+            poPOQuotation.get(poPOQuotation.size() - 1).InitTransaction();
+            poPOQuotation.get(poPOQuotation.size() - 1).OpenTransaction(orderNo);
+            //Update PO Quotation
+            poPOQuotation.get(poPOQuotation.size() - 1).UpdateTransaction();
+            lnList = poPOQuotation.size() - 1;
+        } else {
+            //if already exist, get the row no of purchase order
+            lnList = lnRow;
+        }
+        //TODO UPDATING OF DETAILS
+//        for (lnRow = 0; lnRow <= poPOQuotation.get(lnList).getDetailCount() - 1; lnRow++) {
+//            if (stockId.equals(poPOQuotation.get(lnList).Detail(lnRow).getStockId())) {
+//
+//                switch (status) {
+//                    case PurchaseOrderStatus.CONFIRMED:
+////                        poPOQuotation.get(lnList).Master().setTransactionStatus(POQuotationStatus.POSTED);
+//                        lnRecQty = getRequestQty(orderNo, stockId, true,poPOQuotation.get(lnList).getSourceCode());
+//                        lnRecQty = lnRecQty + quantity;
+//                        break;
+//                    case PurchaseOrderStatus.APPROVED:
+//                        lnRecQty = poPOQuotation.get(lnList).Detail(lnRow).getQuantity();
+////                        poPOQuotation.get(lnList).Master().setTransactionStatus(POQuotationStatus.POSTED);
+//                        poPOQuotation.get(lnList).Master().setModifiedDate(poGRider.getServerDate());
+//                        poPOQuotation.get(lnList).Master().setModifyingId(poGRider.getUserID());
+//                        break;
+//                    case PurchaseOrderStatus.VOID:
+//                    case PurchaseOrderStatus.RETURNED:
+////                        poPOQuotation.get(lnList).Master().setTransactionStatus(POQuotationStatus.APPROVED); //TODO
+//                        lnRecQty = getRequestQty(orderNo, stockId, false,poPOQuotation.get(lnList).getSourceCode());
+//                        lnRecQty = lnRecQty - quantity;
+//                        break;
+//                }
+//                if (lnRecQty < 0) {
+//                    lnRecQty = 0;
+//                }
+////                poPOQuotation.get(lnList).Detail(lnRow).setPurchase(lnRecQty);
+//                poPOQuotation.get(lnList).Detail(lnRow).setModifiedDate(poGRider.getServerDate());
+//                break;
+//            }
+//        }
     }
 
     private void updateInvStockRequest(String status, String orderNo, String stockId, double quantity)
@@ -904,7 +1050,7 @@ public class PurchaseOrder extends Transaction {
 
                 switch (status) {
                     case PurchaseOrderStatus.CONFIRMED:
-                        lnRecQty = getRequestQty(orderNo, stockId, true);
+                        lnRecQty = getRequestQty(orderNo, stockId, true,poStockRequest.get(lnList).getSourceCode());
                         lnRecQty = lnRecQty + quantity;
                         break;
                     case PurchaseOrderStatus.APPROVED:
@@ -915,7 +1061,7 @@ public class PurchaseOrder extends Transaction {
                         break;
                     case PurchaseOrderStatus.VOID:
                     case PurchaseOrderStatus.RETURNED:
-                        lnRecQty = getRequestQty(orderNo, stockId, false);
+                        lnRecQty = getRequestQty(orderNo, stockId, false,poStockRequest.get(lnList).getSourceCode());
                         lnRecQty = lnRecQty - quantity;
                         break;
                 }
@@ -999,7 +1145,7 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
 
-    private int getRequestQty(String orderNo, String stockId, boolean isAdd) throws SQLException, GuanzonException {
+    private int getRequestQty(String orderNo, String stockId, boolean isAdd, String sourceCode) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         int lnRecQty = 0;
         String lsSQL = "SELECT b.nQuantity AS nQuantity "
@@ -1010,7 +1156,9 @@ public class PurchaseOrder extends Transaction {
                 + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
                 + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
                 + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED)
-                + " ) ");
+                + " ) "
+                + " AND b.sSourceCd = " + SQLUtil.toSQL(sourceCode)
+                );
         if (isAdd) {
             lsSQL = lsSQL + " AND a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo());
         }
@@ -1074,15 +1222,103 @@ public class PurchaseOrder extends Transaction {
 
                 }
             }
+            
+            for (lnCtr = 0; lnCtr <= poPOQuotation.size() - 1; lnCtr++) {
+                poPOQuotation.get(lnCtr).Master().setModifyingId(poGRider.getUserID());
+                poPOQuotation.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
+                poPOQuotation.get(lnCtr).setWithParent(true);
+                poJSON = poPOQuotation.get(lnCtr).SaveTransaction();
+                if ("error".equals((String) poJSON.get("result"))) {
+                    System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+                    return poJSON;
+                }
+            }
+            
+            poJSON = updatePOQuotationStatus(status);
+            if ("error".equals((String) poJSON.get("result"))) {
+                System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+                return poJSON;
+            }
 
-        } catch (SQLException | GuanzonException ex) {
+        } catch (SQLException | GuanzonException | ParseException ex) {
             Logger.getLogger(PurchaseOrder.class
                     .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
             return poJSON;
-        }
+        } 
         poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject updatePOQuotationStatus(String fsStatus) throws CloneNotSupportedException, SQLException, GuanzonException, ParseException{
+        for ( int lnCtr = 0; lnCtr <= poPOQuotationStatus.size() - 1; lnCtr++) {
+           switch(fsStatus){
+            case PurchaseOrderStatus.CONFIRMED:
+                    poPOQuotationStatus.get(lnCtr).setWithParent(true);
+                    poJSON = poPOQuotationStatus.get(lnCtr).PostTransaction("");
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        System.out.println("PO Quotation Posting " + (String) poJSON.get("message"));
+                        return poJSON;
+                    }
+            break;
+            case PurchaseOrderStatus.RETURNED:
+            case PurchaseOrderStatus.VOID:
+            case PurchaseOrderStatus.CANCELLED:
+                poJSON = checkExistingPO(poPOQuotationStatus.get(lnCtr).Master().getTransactionNo(),PurchaseOrderStatus.SourceCode.POQUOTATION);
+                if ("success".equals((String) poJSON.get("result"))) {
+                    poPOQuotationStatus.get(lnCtr).setWithParent(true);
+                    poJSON = poPOQuotationStatus.get(lnCtr).ApproveTransaction("");
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        System.out.println("PO Quotation Approving " + (String) poJSON.get("message"));
+                        return poJSON;
+                    }
+                }
+            break;
+            }
+        }
+        
+        for ( int lnCtr = 0; lnCtr <= poPOQuotationRemovedStatus.size() - 1; lnCtr++) {
+            poJSON = checkExistingPO(poPOQuotationRemovedStatus.get(lnCtr).Master().getTransactionNo(),PurchaseOrderStatus.SourceCode.POQUOTATION);
+            if ("success".equals((String) poJSON.get("result"))) {
+                poPOQuotationRemovedStatus.get(lnCtr).setWithParent(true);
+                poJSON = poPOQuotationRemovedStatus.get(lnCtr).ApproveTransaction("");
+                if ("error".equals((String) poJSON.get("result"))) {
+                    System.out.println("PO Quotation Approving " + (String) poJSON.get("message"));
+                    return poJSON;
+                }
+            }
+        }
+    
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject checkExistingPO(String fsSourceNo, String fsSourceCode) throws SQLException{
+        String detailQuery = " SELECT b.sSourceNo, b.sSourceCd "
+                + " FROM po_master a "
+                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox ";
+
+        String lsFilterCondition = String.join(" AND ",
+                    " b.sSourceNo = " + SQLUtil.toSQL(fsSourceNo),
+                    " b.sSourceCd = " + SQLUtil.toSQL(fsSourceCode),
+                    " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED),
+                    " a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo())
+                    );
+
+        detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition);
+        System.out.println("Executing SQL: " + detailQuery);
+        ResultSet loRS = poGRider.executeQuery(detailQuery);
+        if (MiscUtil.RecordCount(loRS) >= 0) {
+            if(loRS.next()) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Selected PO Quotation already have an existing Purchase Order.");
+                return poJSON;
+            }
+        }
+        
+        poJSON.put("result", "success");
+        poJSON.put("message", "No Record Found."); //Allow to set / update
         return poJSON;
     }
 
@@ -1520,15 +1756,15 @@ public class PurchaseOrder extends Transaction {
                 " g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()),
                 " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
                 " a.cTranStat = " + SQLUtil.toSQL(POQuotationStatus.APPROVED));
-        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+        lsSQL = lsSQL + " WHERE " + lsFilterCondition;
         if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
             lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
-        lsSQL = lsSQL + " AND a.sTransNox NOT IN ( SELECT bb.sSourceNo FROM po_master aa LEFT JOIN po_detail bb ON bb.sTransNox = aa.sTransNox "
-                    + " WHERE ( aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID)
-                    + " AND aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
-                    + " ) AND bb.sSourceNo = a.sTransNox "
-                    + " AND bb.sSourceCd = "+SQLUtil.toSQL(PurchaseOrderStatus.SourceCode.POQUOTATION)+ " ) ";
+//        lsSQL = lsSQL + " AND a.sTransNox NOT IN ( SELECT bb.sSourceNo FROM po_master aa LEFT JOIN po_detail bb ON bb.sTransNox = aa.sTransNox "
+//                    + " WHERE ( aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID)
+//                    + " AND aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
+//                    + " ) AND bb.sSourceNo = a.sTransNox "
+//                    + " AND bb.sSourceCd = "+SQLUtil.toSQL(PurchaseOrderStatus.SourceCode.POQUOTATION)+ " ) ";
         lsSQL = lsSQL + " GROUP BY a.sTransNox ";
         lsSQL = lsSQL + " ORDER BY dTransact, sTransNox DESC";
         
@@ -1729,30 +1965,9 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        String detailQuery = " SELECT b.sSourceNo, b.sSourceCd "
-                + " FROM po_master a "
-                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox ";
-
-        String lsFilterCondition = String.join(" AND ",
-                    " b.sSourceNo = " + SQLUtil.toSQL(transactionNo),
-                    " b.sSourceCd = " + SQLUtil.toSQL(loTrans.POQuotation().getSourceCode()),
-                    " a.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID),
-                    " a.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
-                    );
-
-        detailQuery = MiscUtil.addCondition(detailQuery, lsFilterCondition);
-        System.out.println("Executing SQL: " + detailQuery);
-        try (ResultSet rsDetail = poGRider.executeQuery(detailQuery)) {
-            if (rsDetail == null) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Query execution failed.");
-                return poJSON;
-            }
-            if (rsDetail.next()) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Selected PO Quotation already have an existing Purchase Order.");
-                return poJSON;
-            }
+        poJSON = checkExistingPO(transactionNo,loTrans.POQuotation().getSourceCode());
+        if ("error".equals(poJSON.get("result"))) {
+            return poJSON;
         }
         
 //        boolean allProcessed = true;
