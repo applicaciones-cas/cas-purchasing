@@ -1336,8 +1336,7 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
                 + " LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier"
-                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID"
-                + ", category f ";
+                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
     }
 
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
