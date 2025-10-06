@@ -855,7 +855,7 @@ public class PurchaseOrder extends Transaction {
                 }
 
                 updateInvStockRequest(status, Detail(lnCtr).getSouceNo(), Detail(lnCtr).getStockID(), Detail(lnCtr).getQuantity().doubleValue());
-
+                
             } else {
                 //Require approve for all po receiving without po
                 System.out.println("Require Approval");
@@ -1755,7 +1755,7 @@ public class PurchaseOrder extends Transaction {
             }
         }
         
-        boolean allProcessed = true;
+//        boolean allProcessed = true;
         for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
             boolean exists = false;
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
@@ -1767,24 +1767,24 @@ public class PurchaseOrder extends Transaction {
             }
 
             if (!exists) {
-                AddDetail();
                 int lnLastIndex = getDetailCount() - 1;
                 Detail(lnLastIndex).setSouceNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
                 Detail(lnLastIndex).setTransactionNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
                 Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getStockId());
-                Detail(lnLastIndex).setRecordOrder(0);
+                Detail(lnLastIndex).setRecordOrder(loTrans.POQuotation().Detail(lnCtr).getQuantity());
                 Detail(lnLastIndex).setUnitPrice(loTrans.POQuotation().Detail(lnCtr).getUnitPrice());
-                Detail(lnLastIndex).setQuantity(0);
+                Detail(lnLastIndex).setQuantity(loTrans.POQuotation().Detail(lnCtr).getQuantity());
                 Detail(lnLastIndex).setSouceCode(loTrans.POQuotation().getSourceCode());
+                AddDetail();
             }
         }
 
         // ✅ Only check `allProcessed` **after** the loop
-        if (allProcessed) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "All records are already processed!");
-            return poJSON;
-        }
+//        if (allProcessed) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "All records are already processed!");
+//            return poJSON;
+//        }
 
         poJSON.put("result", "success");
         poJSON.put("message", "Record loaded successfully.");

@@ -26,6 +26,9 @@ import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.purchasing.t2.model.Model_PO_Quotation_Detail;
+import ph.com.guanzongroup.cas.purchasing.t2.model.Model_PO_Quotation_Master;
+import ph.com.guanzongroup.cas.purchasing.t2.services.QuotationModels;
 
 public class Model_PO_Detail extends Model {
 
@@ -44,6 +47,8 @@ public class Model_PO_Detail extends Model {
     Model_Inv_Stock_Request_Detail poInvStockDetail;
     Model_Inventory poInventory;
     Model_Inv_Master poInventoryMaster;
+    Model_PO_Quotation_Master poPOQuotationMaster;
+    Model_PO_Quotation_Detail poPOQuotationDetail;
 
     @Override
     public void initialize() {
@@ -94,6 +99,11 @@ public class Model_PO_Detail extends Model {
             InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
             poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
             poInvStockDetail = invWarehouseModel.InventoryStockRequestDetail();
+            
+            QuotationModels QuotationModel = new QuotationModels(poGRider);
+            poPOQuotationMaster = QuotationModel.POQuotationMaster();
+            poPOQuotationDetail = QuotationModel.POQuotationDetails();
+            
             //end - initialize reference objects
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -547,6 +557,46 @@ public class Model_PO_Detail extends Model {
         } else {
             poInvStockDetail.initialize();
             return poInvStockDetail;
+        }
+    }
+    
+    public Model_PO_Quotation_Master POQuotationMaster() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sSourceNo"))) {
+            if (poPOQuotationMaster.getEditMode() == EditMode.READY
+                    && poPOQuotationMaster.getTransactionNo().equals((String) getValue("sSourceNo"))) {
+                return poPOQuotationMaster;
+            } else {
+                poJSON = poPOQuotationMaster.openRecord((String) getValue("sSourceNo"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poPOQuotationMaster;
+                } else {
+                    poPOQuotationMaster.initialize();
+                    return poPOQuotationMaster;
+                }
+            }
+        } else {
+            poPOQuotationMaster.initialize();
+            return poPOQuotationMaster;
+        }
+    }
+
+    public Model_PO_Quotation_Detail POQuotationDetail() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sSourceNo"))) {
+            if (poPOQuotationDetail.getEditMode() == EditMode.READY
+                    && poPOQuotationDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
+                return poPOQuotationDetail;
+            } else {
+                poJSON = poPOQuotationDetail.openRecord((String) getValue("sSourceNo"), getValue("sStockIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poPOQuotationDetail;
+                } else {
+                    poPOQuotationDetail.initialize();
+                    return poPOQuotationDetail;
+                }
+            }
+        } else {
+            poPOQuotationDetail.initialize();
+            return poPOQuotationDetail;
         }
     }
 }
