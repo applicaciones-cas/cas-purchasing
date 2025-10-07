@@ -400,6 +400,13 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         
+        //Update Transaction Status of PO Quotation
+        poJSON = updatePOQuotationStatus(lsStatus);
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+        
         poGRider.commitTrans();
        
         poJSON = new JSONObject();
@@ -1318,7 +1325,8 @@ public class PurchaseOrder extends Transaction {
         String lsFilterCondition = String.join(" AND ",
                     " b.sSourceNo = " + SQLUtil.toSQL(fsSourceNo),
                     " b.sSourceCd = " + SQLUtil.toSQL(fsSourceCode),
-                    " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED),
+                    " ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED)
+                    + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) + " ) ",
                     " a.sTransNox <> " + SQLUtil.toSQL(Master().getTransactionNo())
                     );
 
@@ -1988,22 +1996,37 @@ public class PurchaseOrder extends Transaction {
         for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
             boolean exists = false;
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
-                if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
-                        && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId())) {
-                    exists = true;
-                    break;
-                }
+                if(loTrans.POQuotation().Detail(lnCtr).getReplaceId() != null && !"".equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId())){
+                    if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                            && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId())) {
+                        exists = true;
+                        break;
+                    }
+                } else {
+                    if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                            && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId())) {
+                        exists = true;
+                        break;
+                    }
+                } 
+                
+                
             }
 
             if (!exists) {
                 int lnLastIndex = getDetailCount() - 1;
                 Detail(lnLastIndex).setSouceNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
                 Detail(lnLastIndex).setTransactionNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
-                Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getStockId());
                 Detail(lnLastIndex).setRecordOrder(loTrans.POQuotation().Detail(lnCtr).getQuantity());
                 Detail(lnLastIndex).setUnitPrice(loTrans.POQuotation().Detail(lnCtr).getUnitPrice());
                 Detail(lnLastIndex).setQuantity(loTrans.POQuotation().Detail(lnCtr).getQuantity());
                 Detail(lnLastIndex).setSouceCode(loTrans.POQuotation().getSourceCode());
+                
+                if(loTrans.POQuotation().Detail(lnCtr).getReplaceId() != null && !"".equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId())){
+                    Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getReplaceId());
+                } else {
+                    Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getStockId());
+                }                
                 AddDetail();
             }
         }
@@ -2025,11 +2048,20 @@ public class PurchaseOrder extends Transaction {
             boolean found = false;
 
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
-                if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
-                        && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId()
-                        )) {
-                    found = true;
-                    break;
+                if(loTrans.POQuotation().Detail(lnCtr).getReplaceId() != null && !"".equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId())){
+                    if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                            && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId()
+                            )) {
+                        found = true;
+                        break;
+                    }
+                } else {
+                    if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Detail(lnCtr).getTransactionNo())
+                            && Detail(lnRow).getStockID().equals(loTrans.POQuotation().Detail(lnCtr).getStockId()
+                            )) {
+                        found = true;
+                        break;
+                    }
                 }
             }
 

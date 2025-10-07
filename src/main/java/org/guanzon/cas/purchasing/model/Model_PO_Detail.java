@@ -586,7 +586,7 @@ public class Model_PO_Detail extends Model {
                     && poPOQuotationDetail.getTransactionNo().equals((String) getValue("sSourceNo"))) {
                 return poPOQuotationDetail;
             } else {
-                poJSON = poPOQuotationDetail.openRecord((String) getValue("sSourceNo"), getValue("sStockIDx"));
+                poJSON = poPOQuotationDetail.openRecord((String) getValue("sSourceNo"), (String) getValue("sStockIDx"));
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poPOQuotationDetail;
                 } else {
