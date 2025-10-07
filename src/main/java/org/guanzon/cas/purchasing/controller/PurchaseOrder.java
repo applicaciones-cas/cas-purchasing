@@ -612,6 +612,13 @@ public class PurchaseOrder extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        
+        //Update Transaction Status of PO Quotation
+        poJSON = updatePOQuotationStatus(lsStatus);
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+            return poJSON;
+        }
 
         poGRider.commitTrans();
         poJSON = new JSONObject();
@@ -680,6 +687,13 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         
+        //Update Transaction Status of PO Quotation
+        poJSON = updatePOQuotationStatus(lsStatus);
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+        
         poGRider.commitTrans();
         
         poJSON = new JSONObject();
@@ -744,6 +758,13 @@ public class PurchaseOrder extends Transaction {
         poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        //Update Transaction Status of PO Quotation
+        poJSON = updatePOQuotationStatus(lsStatus);
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
             return poJSON;
         }
 
@@ -1223,6 +1244,7 @@ public class PurchaseOrder extends Transaction {
                 }
             }
             
+            //TODO Save Ordered Quantity
             for (lnCtr = 0; lnCtr <= poPOQuotation.size() - 1; lnCtr++) {
                 poPOQuotation.get(lnCtr).Master().setModifyingId(poGRider.getUserID());
                 poPOQuotation.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
@@ -1233,14 +1255,8 @@ public class PurchaseOrder extends Transaction {
                     return poJSON;
                 }
             }
-            
-            poJSON = updatePOQuotationStatus(status);
-            if ("error".equals((String) poJSON.get("result"))) {
-                System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
-                return poJSON;
-            }
 
-        } catch (SQLException | GuanzonException | ParseException ex) {
+        } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(PurchaseOrder.class
                     .getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
@@ -1336,7 +1352,8 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
                 + " LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier"
-                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID";
+                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID"
+                + " , category f ";
     }
 
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -1747,24 +1764,22 @@ public class PurchaseOrder extends Transaction {
         }
         lsSQL = lsSQL
                 + " GROUP BY a.sTransNox "
-                + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 "
-                + " UNION ";
-        lsSQL = lsSQL + getPOQuotation_SQL();
-        lsFilterCondition = String.join(" AND ", " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
-                " e.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
-                " g.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()),
-                " c.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode()),
-                " a.cTranStat = " + SQLUtil.toSQL(POQuotationStatus.APPROVED));
-        lsSQL = lsSQL + " WHERE " + lsFilterCondition;
-        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-            lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+                + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 ";
+        //For General Only
+        if(Master().getIndustryID() == null || "".equals(Master().getIndustryID())){
+            lsSQL = lsSQL + " UNION " +  getPOQuotation_SQL();
+            lsFilterCondition = String.join(" AND ",  //" a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                    " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                    " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()),
+                    " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
+                    " a.cTranStat = " + SQLUtil.toSQL(POQuotationStatus.APPROVED));
+            lsSQL = lsSQL + " WHERE " + lsFilterCondition;
+            if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+                lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+            }
+            lsSQL = lsSQL + " GROUP BY a.sTransNox ";
         }
-//        lsSQL = lsSQL + " AND a.sTransNox NOT IN ( SELECT bb.sSourceNo FROM po_master aa LEFT JOIN po_detail bb ON bb.sTransNox = aa.sTransNox "
-//                    + " WHERE ( aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.VOID)
-//                    + " AND aa.cTranStat != " + SQLUtil.toSQL(PurchaseOrderStatus.CANCELLED)
-//                    + " ) AND bb.sSourceNo = a.sTransNox "
-//                    + " AND bb.sSourceCd = "+SQLUtil.toSQL(PurchaseOrderStatus.SourceCode.POQUOTATION)+ " ) ";
-        lsSQL = lsSQL + " GROUP BY a.sTransNox ";
+        
         lsSQL = lsSQL + " ORDER BY dTransact, sTransNox DESC";
         
         System.out.println("Executing SQL: " + lsSQL);
