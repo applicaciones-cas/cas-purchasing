@@ -84,7 +84,7 @@ public class PurchaseOrder_SP implements GValidator {
         LocalDate serverDate = new java.sql.Date(poGrider.getServerDate().getTime()).toLocalDate();
         LocalDate oneYearAgo = serverDate.minusYears(1);
 
-        if (poMaster.getSupplierID() == null || poMaster.getTermCode().isEmpty()) {
+        if (poMaster.getSupplierID() == null || poMaster.getSupplierID().isEmpty()) {
             poJSON.put("message", "Invalid Suuplier.");
             return poJSON;
         }
