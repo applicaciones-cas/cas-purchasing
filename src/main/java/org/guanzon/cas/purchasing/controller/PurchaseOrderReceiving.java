@@ -1964,19 +1964,20 @@ public class PurchaseOrderReceiving extends Transaction {
         
         /*Compute VAT Amount*/
         if(pbIsFinance){
+            boolean lbIsWithVat = false;
             double ldblVatSales = 0.0000;
             double ldblVatAmount = 0.0000;
             double ldblVatExemptSales = 0.0000;
             
             double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
             double ldblDiscountVatAmount = 0.0000;
-            double ldblFreightVatSales = Master().getFreight().doubleValue();
             double ldblFreightVatAmount = 0.0000;
             double ldblDetailVatAmount = 0.0000;
             double ldblDetailVatSales = 0.0000;
             double ldblDetailTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 if(Detail(lnCtr).isVatable()){
+                    lbIsWithVat = true;
                     ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                     if(Master().isVatTaxable()){
                         ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
@@ -1995,23 +1996,26 @@ public class PurchaseOrderReceiving extends Transaction {
             System.out.println("Detail Vat Amount " + ldblVatAmount );
             System.out.println("Detail Vat Sales " + ldblVatSales );
             
-            if(Master().isVatTaxable()){
-                ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
-                ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
-            } else {
-                ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
-                ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
-            }
+            //If all items are non vatable no vatable sales and vat amount will be computed.
+            if(lbIsWithVat){
+                if(Master().isVatTaxable()){
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                    ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
+                } else {
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+                    ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
+                }
             
-            System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
-            System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
-            System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
-            System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
-            
-            ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
-            ldblVatSales = (ldblVatSales 
-                            + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
-                            - (ldblDiscountTotal - ldblDiscountVatAmount);
+                System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
+                System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
+                System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
+                System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
+
+                ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                ldblVatSales = (ldblVatSales 
+                                + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+                                - (ldblDiscountTotal - ldblDiscountVatAmount);
+            } 
                     
             poJSON = Master().setVatSales(ldblVatSales);
             poJSON = Master().setVatAmount(ldblVatAmount);
