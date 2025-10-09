@@ -3571,17 +3571,20 @@ public class PurchaseOrderReceiving extends Transaction {
         //Populate Cache Payable detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
+//            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
             ldblGrossAmt += ldblDetTotal;
             
-            //If vat exclusive detail total + vat amount
-            if(!Master().isVatTaxable()){
+            if(Master().isVatTaxable()){
+                ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
+            } else {
+                //If vat exclusive detail total + vat amount
+                ldblVatAmountDetail = ldblDetTotal * 0.12;
                 if(Detail(lnCtr).isVatable()){
                     ldblDetTotal = ldblDetTotal + ldblVatAmountDetail;
                 }
             }
             
-            ldblTotal += ldblDetTotal;
+            ldblTotal = ldblDetTotal;
             
             //Check existing transaction type
             if(lnCtr > 0) {
@@ -3597,7 +3600,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poCachePayable.AddDetail();
                     lnCacheRow = poCachePayable.getDetailCount()-1;
                 }
-            }
+            } 
             
             //Cache Payable Detail
             if(poCachePayable.getDetailCount() < 0){
@@ -3606,8 +3609,9 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
-            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); //TODO
-            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); //TODO
+            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); 
+            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); 
+            lbExist = false;
         }
         
         //Update cache payable
@@ -3658,7 +3662,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
-        if(Master().getTruckingId() == null || "".equals(Master().getTruckingId())){
+        if((Master().getTruckingId() == null || "".equals(Master().getTruckingId())) 
+            || (Master().getSupplierId().equals(Master().getTruckingId())) ){
             poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
             poCachePayable.Master().setNetTotal(getNetTotal()); 
             poCachePayable.Master().setPayables(getNetTotal()); 
