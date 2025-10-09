@@ -56,6 +56,7 @@ public class Model_POR_Master extends Model {
             //assign default values
             poEntity.updateObject("dTransact", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dRefernce", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
+            poEntity.updateObject("dSalesInv", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTermDuex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dDueDatex", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dModified", SQLUtil.toDate("1900-01-01", SQLUtil.FORMAT_SHORT_DATE));
@@ -198,6 +199,14 @@ public class Model_POR_Master extends Model {
 
     public Date getReferenceDate() {
         return (Date) getValue("dRefernce");
+    }
+
+    public JSONObject setSalesInvoiceDate(Date salesInvoiceDate) {
+        return setValue("dSalesInv", salesInvoiceDate);
+    }
+
+    public Date getSalesInvoiceDate() {
+        return (Date) getValue("dSalesInv");
     }
 
     public JSONObject setTermCode(String termCode) {
