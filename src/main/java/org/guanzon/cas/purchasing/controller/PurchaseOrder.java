@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,6 +44,7 @@ import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.Inventory;
+import org.guanzon.cas.inv.InventoryTransaction;
 //import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.warehouse.StockRequest;
@@ -485,6 +487,17 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
+        //kalyptus - 2025.10.08 02:36pm
+        //save to inventory ledger
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        
+        for (Model loDetail : paDetail) {
+            Model_PO_Detail detail = (Model_PO_Detail) loDetail;
+            loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, (double)detail.getQuantity(), (double)detail.getUnitPrice());
+        }
+        loTrans.saveTransaction();
+        
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
@@ -609,6 +622,19 @@ public class PurchaseOrder extends Transaction {
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
 
+        //kalyptus-2025.10.08 02:52pm
+        //save to inventory ledger
+        if(PurchaseOrderStatus.APPROVED.equalsIgnoreCase((String) poMaster.getValue("cTranStat"))){
+            InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+            loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+
+            for (Model loDetail : paDetail) {
+                Model_PO_Detail detail = (Model_PO_Detail) loDetail;
+                loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, (double)detail.getQuantity(), (double)detail.getUnitPrice());
+            }
+            loTrans.saveTransaction();
+        }
+        
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
