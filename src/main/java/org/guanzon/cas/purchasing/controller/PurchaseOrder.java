@@ -1808,9 +1808,10 @@ public class PurchaseOrder extends Transaction {
                     " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
                     " a.cTranStat = " + SQLUtil.toSQL(POQuotationStatus.APPROVED));
             lsSQL = lsSQL + " WHERE " + lsFilterCondition;
-            if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
-                lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
-            }
+            //Do not include branch according to ma'am she 10082025
+//            if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+//                lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+//            }
             lsSQL = lsSQL + " GROUP BY a.sTransNox ";
         }
         

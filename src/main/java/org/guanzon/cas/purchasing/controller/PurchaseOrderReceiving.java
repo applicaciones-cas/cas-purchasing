@@ -2030,19 +2030,20 @@ public class PurchaseOrderReceiving extends Transaction {
         
         /*Compute VAT Amount*/
         if(pbIsFinance){
+            boolean lbIsWithVat = false;
             double ldblVatSales = 0.0000;
             double ldblVatAmount = 0.0000;
             double ldblVatExemptSales = 0.0000;
             
             double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
             double ldblDiscountVatAmount = 0.0000;
-            double ldblFreightVatSales = Master().getFreight().doubleValue();
             double ldblFreightVatAmount = 0.0000;
             double ldblDetailVatAmount = 0.0000;
             double ldblDetailVatSales = 0.0000;
             double ldblDetailTotal = 0.0000;
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 if(Detail(lnCtr).isVatable()){
+                    lbIsWithVat = true;
                     ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                     if(Master().isVatTaxable()){
                         ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
@@ -2061,23 +2062,26 @@ public class PurchaseOrderReceiving extends Transaction {
             System.out.println("Detail Vat Amount " + ldblVatAmount );
             System.out.println("Detail Vat Sales " + ldblVatSales );
             
-            if(Master().isVatTaxable()){
-                ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
-                ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
-            } else {
-                ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
-                ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
-            }
+            //If all items are non vatable no vatable sales and vat amount will be computed.
+            if(lbIsWithVat){
+                if(Master().isVatTaxable()){
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                    ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
+                } else {
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+                    ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
+                }
             
-            System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
-            System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
-            System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
-            System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
-            
-            ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
-            ldblVatSales = (ldblVatSales 
-                            + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
-                            - (ldblDiscountTotal - ldblDiscountVatAmount);
+                System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
+                System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
+                System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
+                System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
+
+                ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                ldblVatSales = (ldblVatSales 
+                                + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+                                - (ldblDiscountTotal - ldblDiscountVatAmount);
+            } 
                     
             poJSON = Master().setVatSales(ldblVatSales);
             poJSON = Master().setVatAmount(ldblVatAmount);
@@ -3633,17 +3637,20 @@ public class PurchaseOrderReceiving extends Transaction {
         //Populate Cache Payable detail
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
+//            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
             ldblGrossAmt += ldblDetTotal;
             
-            //If vat exclusive detail total + vat amount
-            if(!Master().isVatTaxable()){
+            if(Master().isVatTaxable()){
+                ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
+            } else {
+                //If vat exclusive detail total + vat amount
+                ldblVatAmountDetail = ldblDetTotal * 0.12;
                 if(Detail(lnCtr).isVatable()){
                     ldblDetTotal = ldblDetTotal + ldblVatAmountDetail;
                 }
             }
             
-            ldblTotal += ldblDetTotal;
+            ldblTotal = ldblDetTotal;
             
             //Check existing transaction type
             if(lnCtr > 0) {
@@ -3659,7 +3666,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poCachePayable.AddDetail();
                     lnCacheRow = poCachePayable.getDetailCount()-1;
                 }
-            }
+            } 
             
             //Cache Payable Detail
             if(poCachePayable.getDetailCount() < 0){
@@ -3668,8 +3675,9 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
-            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); //TODO
-            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); //TODO
+            poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); 
+            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); 
+            lbExist = false;
         }
         
         //Update cache payable
@@ -3720,7 +3728,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
-        if(Master().getTruckingId() == null || "".equals(Master().getTruckingId())){
+        if((Master().getTruckingId() == null || "".equals(Master().getTruckingId())) 
+            || (Master().getSupplierId().equals(Master().getTruckingId())) ){
             poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
             poCachePayable.Master().setNetTotal(getNetTotal()); 
             poCachePayable.Master().setPayables(getNetTotal()); 
