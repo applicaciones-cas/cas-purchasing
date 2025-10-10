@@ -23,8 +23,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javax.script.ScriptException;
 import javax.swing.JButton;
@@ -73,6 +75,7 @@ import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.model.Model_POR_Serial;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
@@ -247,19 +250,51 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
 
-        //Update Purchase Order, Inventory, Serial Ledger
+        //Update Purchase Order
         poJSON = saveUpdateOthers(PurchaseOrderReceivingStatus.CONFIRMED);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
         }
-        
-        //Update Inventory Serial
-        poJSON = saveUpdateInvSerial(PurchaseOrderReceivingStatus.CONFIRMED);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
+
+        //kalyptus - 2025.10.09 09:31
+        //Update the inventory for this Received Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+
+        for (Model loDetail : paDetail) {
+            Model_POR_Detail detail = (Model_POR_Detail) loDetail;
+            //why int when cSerialize supposedly be a character
+            if("1".equals((int) detail.getColumn("cSerialze"))){
+                String lsStockIDx = detail.getStockId();
+                List<Model_POR_Serial> laSerial =  paOthers.stream()
+                    .filter(p -> p.getStockId().equalsIgnoreCase(lsStockIDx)) 
+                    .collect(Collectors.toList()) ;
+                for(Model_POR_Serial loSerial : laSerial) {
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), (double)detail.getUnitPrce(), loSerial.getLocationId());
+                }
+            }
+            else{
+                //if replacement then adjust quantity to the stockid and adjust orderqty from replacement id
+                if(detail.getReplaceId().isEmpty()){
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), 0, (double)detail.getUnitPrce());
+                }
+                else{
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                }
+            }
         }
+        loTrans.saveTransaction();
+        
+//kalyptus - 2025.10.08 04:33pm 
+//will be handled by inventory transaction object
+//        //Update Inventory Serial
+//        poJSON = saveUpdateInvSerial(PurchaseOrderReceivingStatus.CONFIRMED);
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            poGRider.rollbackTrans();
+//            return poJSON;
+//        }
 
         poGRider.commitTrans();
 
@@ -666,20 +701,51 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
         }
-        
-        //Update Inventory Serial
-        poJSON = saveUpdateInvSerial(PurchaseOrderReceivingStatus.CANCELLED);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
+
+        //kalyptus - 2025.10.09 09:31
+        //Update the inventory for this Received Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+
+        for (Model loDetail : paDetail) {
+            Model_POR_Detail detail = (Model_POR_Detail) loDetail;
+            //why int when cSerialize supposedly be a character
+            if("1".equals((int) detail.getColumn("cSerialze"))){
+                String lsStockIDx = detail.getStockId();
+                List<Model_POR_Serial> laSerial =  paOthers.stream()
+                    .filter(p -> p.getStockId().equalsIgnoreCase(lsStockIDx)) 
+                    .collect(Collectors.toList()) ;
+                for(Model_POR_Serial loSerial : laSerial) {
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), (double)detail.getUnitPrce(), loSerial.getLocationId());
+                }
+            }
+            else{
+                //if replacement then adjust quantity to the stockid and adjust orderqty from replacement id
+                if(detail.getReplaceId().isEmpty()){
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), 0, (double)detail.getUnitPrce());
+                }
+                else{
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                }
+            }
         }
+        loTrans.saveTransaction();
+
         
-        //Delete Inventory Serial
+//        //Update Inventory Serial
+//        poJSON = saveUpdateInvSerial(PurchaseOrderReceivingStatus.CANCELLED);
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            poGRider.rollbackTrans();
+//            return poJSON;
+//        }
+// Delete Inventory Serial
 //        poJSON = deleteInvSerial();
 //        if (!"success".equals((String) poJSON.get("result"))) {
 //            poGRider.rollbackTrans();
 //            return poJSON;
 //        }
+
 
         poGRider.commitTrans();
         
@@ -5285,25 +5351,27 @@ public class PurchaseOrderReceiving extends Transaction {
 
             }
 
-            //2. Save Inventory Transaction TODO
-            for (lnCtr = 0; lnCtr <= paInventoryTransaction.size() - 1; lnCtr++) {
-//                paInventoryTransaction.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
-//                paInventoryTransaction.get(lnCtr).setWithParent(true);
-//                poJSON = paInventoryTransaction.get(lnCtr).SaveTransaction();
-                if ("error".equals((String) poJSON.get("result"))) {
-                    System.out.println("Purchase Order Saving " + (String) poJSON.get("message"));
-                    return poJSON;
-                }
-            }
-
-            //3. Save Inventory Serial Ledger TODO
-            if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                    || PurchaseOrderReceivingStatus.PAID.equals(Master().getTransactionStatus())
-                    || PurchaseOrderReceivingStatus.POSTED.equals(Master().getTransactionStatus())) {
-                //Save Inventory Serial Ledger
-                //InventoryTrans.POReceiving();
-                
-            }
+//kalyptus - 2025.10.08 04:31pm
+//Disable this part since inventory transaction ledger 
+//handling will be coded directly at the calling method
+//            //2. Save Inventory Transaction TODO
+//            for (lnCtr = 0; lnCtr <= paInventoryTransaction.size() - 1; lnCtr++) {
+////                paInventoryTransaction.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
+////                paInventoryTransaction.get(lnCtr).setWithParent(true);
+////                poJSON = paInventoryTransaction.get(lnCtr).SaveTransaction();
+//                if ("error".equals((String) poJSON.get("result"))) {
+//                    System.out.println("Purchase Order Saving " + (String) poJSON.get("message"));
+//                    return poJSON;
+//                }
+//            }
+//            //3. Save Inventory Serial Ledger TODO
+//            if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
+//                    || PurchaseOrderReceivingStatus.PAID.equals(Master().getTransactionStatus())
+//                    || PurchaseOrderReceivingStatus.POSTED.equals(Master().getTransactionStatus())) {
+//                //Save Inventory Serial Ledger
+//                //InventoryTrans.POReceiving();
+//                
+//            }
         } catch (SQLException | GuanzonException ex) {
             Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
