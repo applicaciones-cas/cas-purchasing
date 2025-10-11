@@ -224,22 +224,6 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
         }
-        
-        //if with discrepancy require approval
-//        if (pbApproval) {
-//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//                poJSON = ShowDialogFX.getUserApproval(poGRider);
-//                if (!"success".equals((String) poJSON.get("result"))) {
-//                    return poJSON;
-//                }
-//            }
-//        } else {
-//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//                poJSON.put("result", "error");
-//                poJSON.put("message", "You are not allow to confirm this transaction.");
-//                return poJSON;
-//            }
-//        }
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
@@ -271,17 +255,17 @@ public class PurchaseOrderReceiving extends Transaction {
                     .filter(p -> p.getStockId().equalsIgnoreCase(lsStockIDx)) 
                     .collect(Collectors.toList()) ;
                 for(Model_POR_Serial loSerial : laSerial) {
-                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), (double)detail.getUnitPrce(), loSerial.getLocationId());
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), detail.getUnitPrce().doubleValue(), loSerial.getLocationId());
                 }
             }
             else{
                 //if replacement then adjust quantity to the stockid and adjust orderqty from replacement id
-                if(detail.getReplaceId().isEmpty()){
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), 0, (double)detail.getUnitPrce());
+                if(!detail.getReplaceId().trim().isEmpty()){
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0,detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"), detail.getOrderQty().doubleValue(), 0, detail.getUnitPrce().doubleValue());
                 }
                 else{
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), detail.getOrderQty().doubleValue(), detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
                 }
             }
         }
@@ -424,32 +408,10 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
 
-        //Update purchase order
-        poJSON = setValueToOthers(lsStatus);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-//        if (pbApproval) {
-//            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//                poJSON = ShowDialogFX.getUserApproval(poGRider);
-//                if (!"success".equals((String) poJSON.get("result"))) {
-//                    return poJSON;
-//                }
-//            }
-//        }
-
         poGRider.beginTrans("UPDATE STATUS", "PaidTransaction", SOURCE_CODE, Master().getTransactionNo());
 
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPaid, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        //Update Purchase Order, Serial Ledger, Inventory
-        poJSON = saveUpdateOthers(PurchaseOrderReceivingStatus.PAID);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
@@ -716,17 +678,17 @@ public class PurchaseOrderReceiving extends Transaction {
                     .filter(p -> p.getStockId().equalsIgnoreCase(lsStockIDx)) 
                     .collect(Collectors.toList()) ;
                 for(Model_POR_Serial loSerial : laSerial) {
-                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), (double)detail.getUnitPrce(), loSerial.getLocationId());
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), loSerial.getSerialId(), !detail.getOrderNo().isEmpty(), detail.getUnitPrce().doubleValue(), loSerial.getLocationId());
                 }
             }
             else{
-                //if replacement then adjust quantity to the stockid and adjust orderqty from replacement id
-                if(detail.getReplaceId().isEmpty()){
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), 0, (double)detail.getUnitPrce());
+//                //if replacement then adjust quantity to the stockid and adjust orderqty from replacement id
+                if(!detail.getReplaceId().trim().isEmpty()){
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getReplaceId(), (String)poMaster.getValue("cPurposex"),detail.getOrderQty().doubleValue(), 0,detail.getUnitPrce().doubleValue());
                 }
                 else{
-                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), (double)detail.getOrderQty(), (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), detail.getOrderQty().doubleValue(), detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
                 }
             }
         }
@@ -5148,6 +5110,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
                 
                 break;
+            case PurchaseOrderReceivingStatus.CANCELLED:
             case PurchaseOrderReceivingStatus.VOID:
             case PurchaseOrderReceivingStatus.RETURNED:
                 //Get total received qty from other po receiving entry
@@ -5234,6 +5197,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
                 
                 break;
+            case PurchaseOrderReceivingStatus.CANCELLED:
             case PurchaseOrderReceivingStatus.VOID:
             case PurchaseOrderReceivingStatus.RETURNED:
                 //Get total received qty from other po receiving entry
@@ -5243,6 +5207,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 break;
         }
         
+        boolean lbMatch = false;
         for (lnRow = 0; lnRow <= paPurchaseOrderReturn.get(lnList).getDetailCount() - 1; lnRow++) {
             if (stockId.equals(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getStockId())) {
                 //set Receive qty in Purchase Order detail
@@ -5250,23 +5215,45 @@ public class PurchaseOrderReceiving extends Transaction {
                     lnRecQty = 0;
                     paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(0);
                 } else {
-                    if(lnRecQty > paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
-                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity());
-                        lnRecQty = lnRecQty - paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue();
+                    //If serialize
+                    if(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId() != null && !"".equals(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId())){
+                        for( int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1;lnCtr++){
+                            if(stockId.equals(paOthers.get(lnCtr).getStockId())){
+                                if(paOthers.get(lnCtr).getSerialId().equals(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId())){
+                                    paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(1);
+                                    lbMatch = true;
+                                }
+                            }
+                        }
+                        
+                        if(lbMatch){
+                            if(lnRecQty > paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
+                                lnRecQty = lnRecQty - paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue();
+                            } else {
+                                lnRecQty = 0;
+                            }
+                        }
                     } else {
-                        paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(lnRecQty);
-                        lnRecQty = 0;
+                    //If not serialize
+                        if(lnRecQty > paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
+                            paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity());
+                            lnRecQty = lnRecQty - paPurchaseOrderReturn.get(lnList).Detail(lnRow).getQuantity().doubleValue();
+                        } else {
+                            paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(lnRecQty);
+                            lnRecQty = 0;
+                        }
                     }
                 }
-
+                
                 paPurchaseOrderReturn.get(lnList).Detail(lnRow).setModifiedDate(poGRider.getServerDate());
             }
+            lbMatch = false;
         }
         
         poJSON.put("result", "success");
         return poJSON;
     }
-
+    
     //Open record for checking total receive qty per purchase order
     private Number getReceivedQty(String orderNo, String stockId, boolean isAdd)
             throws SQLException,
