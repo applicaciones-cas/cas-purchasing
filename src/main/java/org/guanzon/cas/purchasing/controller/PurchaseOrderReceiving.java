@@ -4774,113 +4774,113 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON; 
             }
             
-            int lnCtr, lnRow;
-            for (lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++) {        
-                System.out.println("SAVE INVENTORY SERIAL ROW : " + lnRow);
-                //Purchase Order Receiving Serial
-                InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
-                //1. Check for Serial ID
-                if ("".equals(paOthers.get(lnRow).getSerialId()) || paOthers.get(lnRow).getSerialId() == null) {
-                    //1.1 Create New Inventory Serial
-                    poJSON = loInvSerial.newRecord();
-                    System.out.println("inv serial new record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                } else {
-                    //1.2 Update Inventory Serial / Registration
-                    poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
-                    System.out.println("inv serial open record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                    System.out.println("inv serial edit mode : " +  loInvSerial.getEditMode());
-                    poJSON = loInvSerial.updateRecord();
-                    System.out.println("inv serial update record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                }
-                
-                //2. Update values for serial
-                if (loInvSerial.getEditMode() == EditMode.ADDNEW || loInvSerial.getEditMode() == EditMode.UPDATE) {
-//                    loInvSerial.getModel().setIndustry(Master().getIndustryId()); //TODO
-                    loInvSerial.getModel().setStockId(paOthers.get(lnRow).getStockId());
-                    loInvSerial.getModel().setSerial01(paOthers.get(lnRow).getSerial01());
-                    loInvSerial.getModel().setSerial02(paOthers.get(lnRow).getSerial02());
-                    loInvSerial.getModel().setUnitType(paOthers.get(lnRow).Inventory().getUnitType());
-                    
-//                    if(poGRider.isWarehouse()){
-//                        loInvSerial.getModel().setLocation("0"); 
-//                    } else {
-//                        loInvSerial.getModel().setLocation("1"); 
+//            int lnCtr, lnRow;
+//            for (lnRow = 0; lnRow <= getPurchaseOrderReceivingSerialCount() - 1; lnRow++) {        
+//                System.out.println("SAVE INVENTORY SERIAL ROW : " + lnRow);
+//                //Purchase Order Receiving Serial
+//                InvSerial loInvSerial = new InvControllers(poGRider, logwrapr).InventorySerial();
+//                //1. Check for Serial ID
+//                if ("".equals(paOthers.get(lnRow).getSerialId()) || paOthers.get(lnRow).getSerialId() == null) {
+//                    //1.1 Create New Inventory Serial
+//                    poJSON = loInvSerial.newRecord();
+//                    System.out.println("inv serial new record : " + (String) poJSON.get("message"));
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        return poJSON;
 //                    }
-                    
-                    //Only set location of inv serial into 1 when confirmed according to ma'am she 05152025
-                    if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-                        loInvSerial.getModel().setLocation("1"); 
-                    } else {
-                        loInvSerial.getModel().setLocation("0"); 
-                    }
-
-                    //2.1 Only set branch code and company id during creation of serial in por
-                    if (loInvSerial.getEditMode() == EditMode.ADDNEW) {
-                        loInvSerial.getModel().setBranchCode(poGRider.getBranchCode());
-                        loInvSerial.getModel().setCompnyId(Master().getCompanyId());
-                    }
-                    
-                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
-                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
-                    }
-                    
-                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
-                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
-                    }
-
-                    //3. Validation Serial
-                    poJSON = loInvSerial.isEntryOkay();
-                    System.out.println("inv serial validation : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-
-                    //4. Save Inventory Serial
-                    System.out.println("----------------------SAVE INV SERIAL---------------------- ");
-                    System.out.println("Serial ID  : " + loInvSerial.getModel().getSerialId());
-                    System.out.println("Serial 01  : " + loInvSerial.getModel().getSerial01());
-                    System.out.println("Serial 02  : " + loInvSerial.getModel().getSerial02());
-                    System.out.println("Location   : " + loInvSerial.getModel().getLocation());
-                    System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
-                    System.out.println("---------------------------------------------------------------------- ");
-                    loInvSerial.setWithParentClass(true);
-                    poJSON = loInvSerial.saveRecord();
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial saving" + (String) poJSON.get("message"));
-                        return poJSON;
-                    }
-                }
-                //5. Set serial id to por serial
-                if (paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null) {
-                    paOthers.get(lnRow).setSerialId(loInvSerial.getModel().getSerialId());
-                }
-                //6. Save Purchase Order Receiving Serial
-                System.out.println("----------------------SAVE PURCHASE ORDER RECEIVING SERIAL---------------------- ");
-                System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
-                System.out.println("Entry No  : " + paOthers.get(lnRow).getEntryNo());
-                System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
-                System.out.println("Location  : " + paOthers.get(lnRow).getLocationId());
-                System.out.println("Edit Mode : " + paOthers.get(lnRow).getEditMode());
-                System.out.println("---------------------------------------------------------------------- ");
-                paOthers.get(lnRow).setTransactionNo(Master().getTransactionNo());
-                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
-                poJSON = paOthers.get(lnRow).saveRecord();
-                if ("error".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
-            }
+//                } else {
+//                    //1.2 Update Inventory Serial / Registration
+//                    poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
+//                    System.out.println("inv serial open record : " + (String) poJSON.get("message"));
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        return poJSON;
+//                    }
+//                    System.out.println("inv serial edit mode : " +  loInvSerial.getEditMode());
+//                    poJSON = loInvSerial.updateRecord();
+//                    System.out.println("inv serial update record : " + (String) poJSON.get("message"));
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        return poJSON;
+//                    }
+//                }
+//                
+//                //2. Update values for serial
+//                if (loInvSerial.getEditMode() == EditMode.ADDNEW || loInvSerial.getEditMode() == EditMode.UPDATE) {
+////                    loInvSerial.getModel().setIndustry(Master().getIndustryId()); //TODO
+//                    loInvSerial.getModel().setStockId(paOthers.get(lnRow).getStockId());
+//                    loInvSerial.getModel().setSerial01(paOthers.get(lnRow).getSerial01());
+//                    loInvSerial.getModel().setSerial02(paOthers.get(lnRow).getSerial02());
+//                    loInvSerial.getModel().setUnitType(paOthers.get(lnRow).Inventory().getUnitType());
+//                    
+////                    if(poGRider.isWarehouse()){
+////                        loInvSerial.getModel().setLocation("0"); 
+////                    } else {
+////                        loInvSerial.getModel().setLocation("1"); 
+////                    }
+//                    
+//                    //Only set location of inv serial into 1 when confirmed according to ma'am she 05152025
+//                    if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
+//                        loInvSerial.getModel().setLocation("1"); 
+//                    } else {
+//                        loInvSerial.getModel().setLocation("0"); 
+//                    }
+//
+//                    //2.1 Only set branch code and company id during creation of serial in por
+//                    if (loInvSerial.getEditMode() == EditMode.ADDNEW) {
+//                        loInvSerial.getModel().setBranchCode(poGRider.getBranchCode());
+//                        loInvSerial.getModel().setCompnyId(Master().getCompanyId());
+//                    }
+//                    
+//                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
+//                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
+//                    }
+//                    
+//                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
+//                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+//                    }
+//
+//                    //3. Validation Serial
+//                    poJSON = loInvSerial.isEntryOkay();
+//                    System.out.println("inv serial validation : " + (String) poJSON.get("message"));
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        return poJSON;
+//                    }
+//
+//                    //4. Save Inventory Serial
+//                    System.out.println("----------------------SAVE INV SERIAL---------------------- ");
+//                    System.out.println("Serial ID  : " + loInvSerial.getModel().getSerialId());
+//                    System.out.println("Serial 01  : " + loInvSerial.getModel().getSerial01());
+//                    System.out.println("Serial 02  : " + loInvSerial.getModel().getSerial02());
+//                    System.out.println("Location   : " + loInvSerial.getModel().getLocation());
+//                    System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
+//                    System.out.println("---------------------------------------------------------------------- ");
+//                    loInvSerial.setWithParentClass(true);
+//                    poJSON = loInvSerial.saveRecord();
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        System.out.println("inv serial saving" + (String) poJSON.get("message"));
+//                        return poJSON;
+//                    }
+//                }
+//                //5. Set serial id to por serial
+//                if (paOthers.get(lnRow).getSerialId().equals("") || paOthers.get(lnRow).getSerialId() == null) {
+//                    paOthers.get(lnRow).setSerialId(loInvSerial.getModel().getSerialId());
+//                }
+//                //6. Save Purchase Order Receiving Serial
+//                System.out.println("----------------------SAVE PURCHASE ORDER RECEIVING SERIAL---------------------- ");
+//                System.out.println("Transaction No  : " + paOthers.get(lnRow).getTransactionNo());
+//                System.out.println("Entry No  : " + paOthers.get(lnRow).getEntryNo());
+//                System.out.println("Serial ID : " + paOthers.get(lnRow).getSerialId());
+//                System.out.println("Location  : " + paOthers.get(lnRow).getLocationId());
+//                System.out.println("Edit Mode : " + paOthers.get(lnRow).getEditMode());
+//                System.out.println("---------------------------------------------------------------------- ");
+//                paOthers.get(lnRow).setTransactionNo(Master().getTransactionNo());
+//                paOthers.get(lnRow).setModifiedDate(poGRider.getServerDate());
+//                poJSON = paOthers.get(lnRow).saveRecord();
+//                if ("error".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
+//            }
 
             //Save Attachments
-            for (lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
+            for (int lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
                 if (paAttachments.get(lnCtr).getEditMode() == EditMode.ADDNEW || paAttachments.get(lnCtr).getEditMode() == EditMode.UPDATE) {
                     paAttachments.get(lnCtr).getModel().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                     paAttachments.get(lnCtr).getModel().setModifiedDate(poGRider.getServerDate());

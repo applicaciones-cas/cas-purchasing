@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
@@ -52,6 +53,8 @@ import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.purchasing.model.Model_POR_Detail;
+import org.guanzon.cas.purchasing.model.Model_POR_Serial;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingControllers;
@@ -129,12 +132,14 @@ public class PurchaseOrderReturn extends Transaction{
         String lsStatus = PurchaseOrderReturnStatus.CONFIRMED;
         boolean lbConfirm = true;
 
+        //Make sure edit mode is ready
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
 
+        //Make sure status is not confirmed
         if (lsStatus.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already confirmed.");
@@ -168,20 +173,31 @@ public class PurchaseOrderReturn extends Transaction{
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
+        //kalyptus - 2025.10.10 09:31am
+        //Update the inventory for this Received Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+
+        for (Model loDetail : paDetail) {
+            Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
+            //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
+            if(detail.getSerialId().trim().length() > 0){
+                loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , (double)detail.getUnitPrce(), detail.InventorySerial().getLocation());
+            }
+            else{
+                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
+            }
+        }
+        loTrans.saveTransaction();
+
+
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
         }
-
-        //Update Inventory, Serial Ledger
-        poJSON = saveUpdateOthers(PurchaseOrderReturnStatus.CONFIRMED);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
+        
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
@@ -331,12 +347,14 @@ public class PurchaseOrderReturn extends Transaction{
         String lsStatus = PurchaseOrderReturnStatus.CANCELLED;
         boolean lbCancelled = true;
 
+        //Make sure that edit mode is ready
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
 
+        //Make sure that transaction status of transaction is not cancelled
         if (lsStatus.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already cancelled.");
@@ -348,7 +366,7 @@ public class PurchaseOrderReturn extends Transaction{
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        
+
         if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
             if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
@@ -372,6 +390,23 @@ public class PurchaseOrderReturn extends Transaction{
 
         poGRider.beginTrans("UPDATE STATUS", "CancelledTransaction", SOURCE_CODE, Master().getTransactionNo());
 
+        //kalyptus - 2025.10.10 09:31am
+        //Update the inventory for this Received Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+
+        for (Model loDetail : paDetail) {
+            Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
+            //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
+            if(detail.getSerialId().trim().length() > 0){
+                loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , (double)detail.getUnitPrce(), detail.InventorySerial().getLocation());
+            }
+            else{
+                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
+            }
+        }
+        loTrans.saveTransaction();
+
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbCancelled, true);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -379,15 +414,6 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
         
-        if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-            //Update Serial Ledger, Inventory
-            poJSON = saveUpdateOthers(PurchaseOrderReturnStatus.CANCELLED);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-        }
-
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
@@ -1651,7 +1677,6 @@ public class PurchaseOrderReturn extends Transaction{
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
         loValidator.setMaster(poMaster);
-//        loValidator.setDetail(paDetail);
 
         poJSON = loValidator.validate();
 
