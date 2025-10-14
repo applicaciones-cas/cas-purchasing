@@ -1,5 +1,6 @@
 package org.guanzon.cas.purchasing.model;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -99,11 +100,11 @@ public class Model_PO_Detail extends Model {
             InvWarehouseModels invWarehouseModel = new InvWarehouseModels(poGRider);
             poInvStockMaster = invWarehouseModel.InventoryStockRequestMaster();
             poInvStockDetail = invWarehouseModel.InventoryStockRequestDetail();
-            
+
             QuotationModels QuotationModel = new QuotationModels(poGRider);
             poPOQuotationMaster = QuotationModel.POQuotationMaster();
             poPOQuotationDetail = QuotationModel.POQuotationDetails();
-            
+
             //end - initialize reference objects
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -559,7 +560,7 @@ public class Model_PO_Detail extends Model {
             return poInvStockDetail;
         }
     }
-    
+
     public Model_PO_Quotation_Master POQuotationMaster() throws GuanzonException, SQLException {
         if (!"".equals((String) getValue("sSourceNo"))) {
             if (poPOQuotationMaster.getEditMode() == EditMode.READY
@@ -598,5 +599,44 @@ public class Model_PO_Detail extends Model {
             poPOQuotationDetail.initialize();
             return poPOQuotationDetail;
         }
+    }
+
+    public JSONObject openRecordByReference(String Id1, Object Id2) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+
+        String lsSQL = MiscUtil.makeSelect(this);
+
+        //replace the condition based on the primary key column of the record
+        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(Id1)
+                + " AND sStockIDx = " + SQLUtil.toSQL(Id2));
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        try {
+            if (loRS.next()) {
+                for (int lnCtr = 1; lnCtr <= loRS.getMetaData().getColumnCount(); lnCtr++) {
+                    setValue(lnCtr, loRS.getObject(lnCtr));
+                }
+
+                MiscUtil.close(loRS);
+
+                pnEditMode = EditMode.READY;
+
+                poJSON = new JSONObject();
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record to load.");
+            }
+        } catch (SQLException e) {
+//            logError(getCurrentMethodName() + "»" + e.getMessage());
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
     }
 }
