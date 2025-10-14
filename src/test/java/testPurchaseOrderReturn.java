@@ -106,6 +106,10 @@ public class testPurchaseOrderReturn {
             Assert.fail();
         } catch (CloneNotSupportedException ex) {
             Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

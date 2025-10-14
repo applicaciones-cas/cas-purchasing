@@ -156,7 +156,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -167,13 +167,13 @@ public class PurchaseOrderReceiving extends Transaction {
                    int lnUserLevl = Integer.parseInt(poJSON.get("nUserLevl").toString());
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
-                   //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
-                       ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "User is not an authorized approving officer..");
-                        return poJSON;
-                   }
+                    //if approving is not authorized then do not continue process
+                    if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
+                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
+                         poJSON.put("result", "error");
+                         poJSON.put("message", "User is not an authorized approving officer..");
+                         return poJSON;
+                    }
                 }
                 //needs authorization thru authorization matrix
                 else{
@@ -209,7 +209,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -221,7 +221,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                    if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -257,7 +257,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -269,7 +269,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                    if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -336,7 +336,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -348,7 +348,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                   if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -602,7 +602,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -614,7 +614,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                   if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -700,7 +700,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -712,7 +712,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                   if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -761,18 +761,18 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if (!"success".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//            if (!"success".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            } else {
+//                if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "User is not an authorized approving officer.");
+//                    return poJSON;
+//                }
+//            }
+//        }
         
         //populate cache payable
         poJSON = populateCachePayable();
@@ -910,7 +910,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -922,7 +922,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                   if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
@@ -1107,7 +1107,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //check if currenty user is authorized
             if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                //if not authorized, check the type type of authorization required 
-               if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+               if(((String)poJSON.get("code")).equalsIgnoreCase("regular")){
                    //show process need regular authorization
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                    //get authorization from authoried personnel
@@ -1119,7 +1119,7 @@ public class PurchaseOrderReceiving extends Transaction {
                    poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
                    //if approving is not authorized then do not continue process
-                   if(!((String)poJSON.get("code")).equalsIgnoreCase("regular")){
+                   if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                        ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                         poJSON.put("result", "error");
                         poJSON.put("message", "User is not an authorized approving officer..");
