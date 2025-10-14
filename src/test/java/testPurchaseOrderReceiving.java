@@ -166,6 +166,10 @@ public class testPurchaseOrderReceiving {
             Assert.fail();
         } catch (CloneNotSupportedException ex) {
             Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
