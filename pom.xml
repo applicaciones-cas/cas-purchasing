@@ -14,12 +14,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>appdriver-agent</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.1</version>
@@ -102,6 +96,11 @@
             <groupId>ph.com.guanzongroup</groupId>
             <artifactId>cas-purchasing-t2</artifactId>
             <version>0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>appdriver-agent</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
