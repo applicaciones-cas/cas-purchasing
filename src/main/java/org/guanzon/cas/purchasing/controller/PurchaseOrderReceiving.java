@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -73,9 +72,7 @@ import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.model.Model_POR_Serial;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
-import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
@@ -107,8 +104,6 @@ public class PurchaseOrderReceiving extends Transaction {
 
     private boolean pbApproval = false;
     private boolean pbIsPrint = false;
-    private boolean pbIsWithDiscount = false;
-    private boolean pbIsWithDiscountRate = false;
     private boolean pbIsFinance = false;
     private String psPurpose = PurchaseOrderReceivingStatus.Purpose.REGULAR;
     private String psIndustryId = "";
@@ -126,7 +121,6 @@ public class PurchaseOrderReceiving extends Transaction {
     List<Model_POR_Serial> paOthers;
     List<PurchaseOrder> paPurchaseOrder;
     List<PurchaseOrderReturn> paPurchaseOrderReturn;
-    List<InventoryTransaction> paInventoryTransaction;
     List<TransactionAttachment> paAttachments;
     List<Model> paDetailRemoved;
 
@@ -145,7 +139,6 @@ public class PurchaseOrderReceiving extends Transaction {
         paPOMaster = new ArrayList<>();
         paPurchaseOrder = new ArrayList<>();
         paPurchaseOrderReturn = new ArrayList<>();
-        paInventoryTransaction = new ArrayList<>();
 
         return initialize();
     }
@@ -2020,96 +2013,6 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
     
-//    public JSONObject computeFields()
-//            throws SQLException,
-//            GuanzonException {
-//        poJSON = new JSONObject();
-//
-//        //Compute Term Due Date
-//        LocalDate ldReferenceDate = strToDate(xsDateShort(Master().getReferenceDate()));
-//        Long lnTerm = Math.round(Double.parseDouble(Master().Term().getTermValue().toString()));
-//        Date ldTermDue = java.util.Date.from(ldReferenceDate.plusDays(lnTerm).atStartOfDay(ZoneId.systemDefault()).toInstant());
-//        Master().setDueDate(ldTermDue);
-//        Master().setTermDueDate(ldTermDue);
-//        
-//        //Compute Transaction Total
-//        Double ldblTotal = 0.00;
-//        Double ldblDiscount = Master().getDiscount().doubleValue();
-//        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-//        
-//        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-//            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-//        }
-//        poJSON = Master().setTransactionTotal(ldblTotal); //Sum of purchase amount
-//        if(ldblDiscountRate > 0){
-//            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
-//        }
-//        
-//        /*Compute VAT Amount*/
-//        if(pbIsFinance){
-//            double ldblVatSales = 0.0000;
-//            double ldblVatAmount = 0.0000;
-//            double ldblVatExemptSales = 0.0000;
-//            
-//            double ldblDetailVatAmount = 0.0000;
-//            double ldblDetailVatSales = 0.0000;
-//            double ldblDetailTotal = 0.0000;
-//            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-//                if(Detail(lnCtr).isVatable()){
-////                    ldblDetailVatAmount = (Detail(lnCtr).getUnitPrce().doubleValue() * 0.12) * Detail(lnCtr).getQuantity().doubleValue();
-////                    ldblDetailVatSales = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue()) - ldblDetailVatAmount;
-//                    ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
-//                    ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
-//                    ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
-//                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount;
-//                    ldblVatSales = ldblVatSales + ldblDetailVatSales;
-//                } else {
-//                    ldblVatExemptSales += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
-//                }
-//            }
-//            
-//            poJSON = Master().setVatSales(ldblVatSales);
-//            poJSON = Master().setVatAmount(ldblVatAmount);
-//            poJSON = Master().setVatExemptSales(ldblVatExemptSales);
-//            poJSON = Master().setZeroVatSales(0.00); //TODO
-//            if(Master().getVatRate().doubleValue() == 0.00){
-//                if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
-//                    poJSON = Master().setVatRate(0.00); //Set default value
-//                } else {
-//                    poJSON = Master().setVatRate(12.00); //Set default value
-//                }
-//            }
-//            
-//        }
-//        return poJSON;
-//    }
-    
-//    //TODO
-//    public Double getNetTotal(){
-//         //Net Total = Vat Amount - Tax Amount
-//        Double ldblNetTotal = 0.00;
-//        Double ldblTotal =  Master().getTransactionTotal().doubleValue();
-//        Double ldblDiscount = Master().getDiscount().doubleValue();
-//        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-//        if(ldblDiscountRate > 0){
-//            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
-//        }
-//        ldblDiscount = ldblDiscount + ldblDiscountRate;
-//        if (Master().isVatTaxable()) {
-//            ldblNetTotal = Master().getVatSales().doubleValue()
-//                        + Master().getVatAmount().doubleValue()
-//                        + Master().getVatExemptSales().doubleValue();
-//        } else {
-//            ldblNetTotal = ldblTotal + Master().getVatAmount().doubleValue();
-//        }
-//        
-//        ldblNetTotal = (ldblNetTotal - ldblDiscount) ;
-//        
-//        return ldblNetTotal;
-//    }
-    
-    
-    
     public JSONObject computeFields()
             throws SQLException,
             GuanzonException {
@@ -2284,11 +2187,6 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "Discount amount cannot be negative or exceed the transaction total.");
             return poJSON;
         } else {
-//            ldblDiscRate = (discount / ldblTotal) * 100;
-//            ldblDiscRate = (discount / ldblTotal);
-            //nettotal = total - discount - rate
-//            Master().setDiscountRate(ldblDiscRate);
-
             ldblTotal = ldblTotal - (discount + ((Master().getDiscountRate().doubleValue() / 100.00) * ldblTotal));
             if(ldblTotal < 0 ){
                 poJSON.put("result", "error");
@@ -2311,17 +2209,12 @@ public class PurchaseOrderReceiving extends Transaction {
         }
 
         if (discountRate < 0 || discountRate > 100.00) {
-//        if (discountRate < 0 || discountRate > 1.00) {
             Master().setDiscountRate(0.00);
             computeDiscount(0.00);
             poJSON.put("result", "error");
             poJSON.put("message", "Discount rate cannot be negative or exceed 100.00");
             return poJSON;
         } else {
-//            ldblDiscount = ldblTotal * (discountRate / 100.00);
-//            ldblDiscount = ldblTotal * discountRate;
-            //nettotal = total - discount - rate
-//            Master().setDiscount(ldblDiscount);
 
             ldblTotal = ldblTotal - (Master().getDiscount().doubleValue() + ((discountRate / 100.00) * ldblTotal));
             if(ldblTotal < 0 ){
@@ -2684,56 +2577,8 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
     
-//    private String getCategory(){
-//        switch(psIndustryId){
-//            case "01": //Mobile Phone
-//                if("0001".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd);
-//                } else {
-//                    return SQLUtil.toSQL("0005") + ", " +  SQLUtil.toSQL("0006");
-//                }
-//            case "02": //Motorcycle
-//                if("0010".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd);
-//                }
-//                //Spare Parts, Accessories , Giveaways
-//                if("0011".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd) + ", " + SQLUtil.toSQL("0012") + ", " +  SQLUtil.toSQL("0013");
-//                } else {
-//                    return SQLUtil.toSQL("0017") + ", " +  SQLUtil.toSQL("0018");
-//                }
-//            case "03": //Vehicle
-//                if("0015".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd);
-//                }
-//                //Spare Parts
-//                if("0016".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd);
-//                } else { //Accessories , Giveaways
-//                    return SQLUtil.toSQL("0017") + ", " +  SQLUtil.toSQL("0018");
-//                }
-//            case "04": //Hospitality
-//                if("0023".equals(psCategorCd)){
-//                    return SQLUtil.toSQL(psCategorCd);
-//                } else { // Food Service, Baked Goods TODO GENERAL
-//                    return SQLUtil.toSQL("0021") + ", " +  SQLUtil.toSQL("0022");
-//                }
-//            case "05": //Los Pedritos
-//                // Food Service, Baked Goods TODO GENERAL
-//                return SQLUtil.toSQL("0019") + ", " +  SQLUtil.toSQL("0020");
-//            case "06": //Main Office
-//                return SQLUtil.toSQL(psCategorCd);
-//        }
-//        
-//        return psCategorCd;
-//    }
-
     public JSONObject getApprovedPurchaseOrder() {
         try {
-//            String lsSupplier = Master().getSupplierId().isEmpty()
-//                    ? " (a.sSupplier = null OR TRIM(a.sSupplier) = '')"
-//                    : " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierId());
-
             paPOMaster = new ArrayList<>();
             String lsSQL = " SELECT "
                     + "   a.sTransNox "
@@ -3024,15 +2869,6 @@ public class PurchaseOrderReceiving extends Transaction {
                             }
                         }
                         
-//                        poJSON = loReceiving.PurchaseOrderReceiving().InitTransaction();
-//                        poJSON = loReceiving.PurchaseOrderReceiving().OpenTransaction(loReturn.PurchaseOrderReturn().Master().getSourceNo());
-//                        for(int lnRec = 0; lnRec <= loReceiving.PurchaseOrderReceiving().getDetailCount()-1;lnRec++){
-//                            if (loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo() != null && !"".equals(loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo())) {
-//                                lbReplacePreOwned = loReceiving.PurchaseOrderReceiving().Detail(lnRow).PurchaseOrderMaster().getPreOwned();
-//                                break;
-//                            }
-//                        }
-
                         //Check the return to be insert in detail
                         poJSON = loReturn.PurchaseOrderReturn().InitTransaction();
                         poJSON = loReturn.PurchaseOrderReturn().OpenTransaction(transactionNo);
@@ -3042,14 +2878,6 @@ public class PurchaseOrderReceiving extends Transaction {
                                 break;
                             }
                         }
-//                        poJSON = loReceiving.PurchaseOrderReceiving().InitTransaction();
-//                        poJSON = loReceiving.PurchaseOrderReceiving().OpenTransaction(loReturn.PurchaseOrderReturn().Master().getSourceNo());
-//                        for(int lnRec = 0; lnRec <= loReceiving.PurchaseOrderReceiving().getDetailCount()-1;lnRec++){
-//                            if (loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo() != null && !"".equals(loReceiving.PurchaseOrderReceiving().Detail(lnRow).getOrderNo())) {
-//                                lbReturnPreOwned = loReceiving.PurchaseOrderReceiving().Detail(lnRow).PurchaseOrderMaster().getPreOwned();
-//                                break;
-//                            }
-//                        }
                         
                         //check when pre-owned po is already exists in detail. 
                         //if exist only pre-owned purchase order will allow to insert in por detail 
@@ -4966,7 +4794,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 
                 //2. Update values for serial
                 if (loInvSerial.getEditMode() == EditMode.ADDNEW || loInvSerial.getEditMode() == EditMode.UPDATE) {
-//                    loInvSerial.getModel().setIndustry(Master().getIndustryId()); //TODO
+                    loInvSerial.getModel().setIndustryCode(Master().getIndustryId()); 
+                    loInvSerial.getModel().setCondition(Detail(paOthers.get(lnRow).getEntryNo()-1).PurchaseOrderMaster().getPreOwned() ? "1" : "0");
                     loInvSerial.getModel().setStockId(paOthers.get(lnRow).getStockId());
                     loInvSerial.getModel().setSerial01(paOthers.get(lnRow).getSerial01());
                     loInvSerial.getModel().setSerial02(paOthers.get(lnRow).getSerial02());
@@ -5114,9 +4943,6 @@ public class PurchaseOrderReceiving extends Transaction {
         return new PurchaseOrderReturnControllers(poGRider, logwrapr).PurchaseOrderReturn();
     }
 
-//    private InventoryTransaction InventoryTransaction(){
-//        return new InventoryTransactionControllers(poGRider, logwrapr).InventoryTransaction();
-//    }
     private JSONObject setValueToOthers(String status)
             throws CloneNotSupportedException,
             SQLException,
@@ -5124,7 +4950,6 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         paPurchaseOrder = new ArrayList<>();
         paPurchaseOrderReturn = new ArrayList<>();
-        paInventoryTransaction = new ArrayList<>();
         int lnCtr;
 
         //Update Purchase Order exist in PO Receiving Detail
@@ -5159,13 +4984,6 @@ public class PurchaseOrderReceiving extends Transaction {
                 
                 }
 
-                //Inventory Transaction
-//                if(Detail(lnCtr).getReplaceId() != null && !"".equals(Detail(lnCtr).getReplaceId())){
-//                    updateInventoryTransaction(status, Detail(lnCtr).getReplaceId(), Detail(lnCtr).getQuantity().doubleValue());
-//                } else {
-//                    updateInventoryTransaction(status, Detail(lnCtr).getStockId(), Detail(lnCtr).getQuantity().doubleValue());
-//                }
-
             } else {
                 //Require approve for all po receiving without po
                 System.out.println("Require Approval");
@@ -5194,12 +5012,6 @@ public class PurchaseOrderReceiving extends Transaction {
 
             }
             
-            //Inventory Transaction TODO
-//            if(DetailRemove(lnCtr).getReplaceId() != null && !"".equals(DetailRemove(lnCtr).getReplaceId())){
-//                updateInventoryTransaction(status, DetailRemove(lnCtr).getReplaceId(), DetailRemove(lnCtr).getQuantity().doubleValue());
-//            } else {
-//                updateInventoryTransaction(status, DetailRemove(lnCtr).getStockId(), DetailRemove(lnCtr).getQuantity().doubleValue());
-//            }
         }
 
         poJSON.put("result", "success");
@@ -5817,24 +5629,6 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " LEFT JOIN branch e ON e.sBranchCd = a.sBranchCd ";
     }
     
-//    @Override
-//    public void initSQL() {
-//        SQL_BROWSE = " SELECT "
-//                + " DISTINCT a.sTransNox  "
-//                + " , a.dTransact  "
-//                + " , a.sIndstCdx  "
-//                + " , a.sCompnyID  "
-//                + " , a.sSupplier  "
-//                + " , b.sCompnyNm  AS sSupplrNm"
-//                + " , c.sCompnyNm  AS sCompnyNm"
-//                + " , d.sDescript  AS sIndustry"
-//                + " FROM po_receiving_master a "
-//                + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
-//                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-//                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx "
-//                + " LEFT JOIN po_receiving_detail e ON e.sTransNox = a.sTransNox ";
-//    }
-
     @Override
     protected JSONObject isEntryOkay(String status) {
         GValidator loValidator = PurchaseOrderReceivingValidatorFactory.make(Master().getIndustryId());
@@ -6538,45 +6332,5 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " LEFT JOIN po_receiving_detail c ON c.sTransNox = a.sTransNox "
                 + " LEFT JOIN inv_serial d ON d.sSerialID = b.sSerialID ";
     }
-    
-//    private String getSQ_BrowseInvSerial(){
-//        return    " SELECT DISTINCT "                                                                  
-//                + "   a.sSerialID,  "                                                                  
-//                + "   j.sSerial01,  "                                                                  
-//                + "   j.sSerial02,  "                                                                  
-//                + "   k.sPlateNoP,  "                                                                  
-//                + "   k.sCStckrNo,  "                                                                  
-//                + "   a.sStockIDx,  "                                                                  
-//                + "   b.sBarCodex,  "                                                                  
-//                + "   b.sDescript,  "                                                                  
-//                + "   b.sCategCd1,  "                                                                  
-//                + "   IFNULL(c.sDescript, '') xBrandNme, "                                             
-//                + "   IFNULL(d.sDescript, '') xModelNme, "                                             
-//                + "   IFNULL(e.sDescript, '') xColorNme, "                                             
-//                + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
-//                + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
-//                + "   IFNULL(d.sModelCde, '') xModelCde "                                              
-//                + " FROM po_receiving_serial a  "                                                      
-//                + " LEFT JOIN Inventory b       "                                                      
-//                + "     ON b.sStockIDx = a.sStockIDx    "                                              
-//                + " LEFT JOIN Brand c                   "                                              
-//                + "     ON b.sBrandIDx = c.sBrandIDx    "                                              
-//                + " LEFT JOIN Model d                   "                                              
-//                + "     ON b.sModelIDx = d.sModelIDx    "                                              
-//                + " LEFT JOIN Color e                   "                                              
-//                + "     ON b.sColorIDx = e.sColorIDx    "                                              
-//                + " LEFT JOIN Measure f                 "                                              
-//                + "     ON b.sMeasurID = f.sMeasurID    "                                              
-//                + " LEFT JOIN Model_Variant g           "                                              
-//                + "     ON b.sVrntIDxx = g.sVrntIDxx    "                                              
-//                + " LEFT JOIN Inv_Supplier h            "                                              
-//                + "     ON b.sStockIDx = h.sStockIDx    "                                              
-//                + " INNER JOIN po_receiving_detail i     "                                              
-//                + "     ON i.sStockIDx = a.sStockIDx AND i.sTransNox = a.sTransNox   "                                              
-//                + " INNER JOIN inv_serial j              "                                              
-//                + "     ON j.sSerialID = a.sSerialID    "                                              
-//                + " LEFT JOIN inv_serial_registration k "                                              
-//                + "    ON k.sSerialID = a.sSerialID     "   ;
-//    }
     
 }
