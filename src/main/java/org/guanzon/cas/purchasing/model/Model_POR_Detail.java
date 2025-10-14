@@ -40,6 +40,7 @@ public class Model_POR_Detail extends Model{
     Model_Inv_Master poInventoryMaster;
     Model_PO_Master poPurchaseOrder;
     Model_POReturn_Master poPurchaseOrderReturn;
+    Model_POReturn_Detail poPurchaseOrderReturnDetail;
     
     @Override
     public void initialize() {
@@ -83,8 +84,9 @@ public class Model_POR_Detail extends Model{
             
             Model_PO_Master purchaseOrderModel = new PurchaseOrderModels(poGRider).PurchaseOrderMaster(); 
             poPurchaseOrder = purchaseOrderModel;
-            Model_POReturn_Master purchaseOrderReturnModel = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnMaster(); 
-            poPurchaseOrderReturn = purchaseOrderReturnModel;
+            PurchaseOrderReturnModels purchaseOrderReturnModel = new PurchaseOrderReturnModels(poGRider);
+            poPurchaseOrderReturn = purchaseOrderReturnModel.PurchaseOrderReturnMaster();
+            poPurchaseOrderReturnDetail = purchaseOrderReturnModel.PurchaseOrderReturnDetails();
             //end - initialize reference objects
             
             pnEditMode = EditMode.UNKNOWN;
@@ -389,6 +391,28 @@ public class Model_POR_Detail extends Model{
         } else {
             poPurchaseOrderReturn.initialize();
             return poPurchaseOrderReturn;
+        }
+    }
+    
+    public Model_POReturn_Detail PurchaseOrderReturnDetail() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sOrderNox"))) {
+            if (poPurchaseOrderReturnDetail.getEditMode() == EditMode.READY
+                    && poPurchaseOrderReturnDetail.getTransactionNo().equals((String) getValue("sOrderNox"))
+                    && poPurchaseOrderReturnDetail.getTransactionNo().equals((String) getValue("sStockIDx"))) {
+                return poPurchaseOrderReturnDetail;
+            } else {
+                poJSON = poPurchaseOrderReturnDetail.openRecord((String) getValue("sOrderNox"),(String) getValue("sStockIDx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poPurchaseOrderReturnDetail;
+                } else {
+                    poPurchaseOrderReturnDetail.initialize();
+                    return poPurchaseOrderReturnDetail;
+                }
+            }
+        } else {
+            poPurchaseOrderReturnDetail.initialize();
+            return poPurchaseOrderReturnDetail;
         }
     }
     
