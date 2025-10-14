@@ -667,7 +667,7 @@ public class PurchaseOrder extends Transaction {
         
         for (Model loDetail : paDetail) {
             Model_PO_Detail detail = (Model_PO_Detail) loDetail;
-            loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, (double)detail.getQuantity(), (double)detail.getUnitPrice());
+            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
         }
         loTrans.saveTransaction();
         
@@ -858,7 +858,7 @@ public class PurchaseOrder extends Transaction {
 
             for (Model loDetail : paDetail) {
                 Model_PO_Detail detail = (Model_PO_Detail) loDetail;
-                loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, (double)detail.getQuantity(), (double)detail.getUnitPrice());
+                loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
             }
             loTrans.saveTransaction();
         }
