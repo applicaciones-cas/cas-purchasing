@@ -2817,9 +2817,17 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
-            parameters.put("sApprval1", poGRider.getLogName());
-            parameters.put("sApprval2", "");    
-            parameters.put("sApprval3", "");
+            
+            //TODO
+            if(Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)){
+                parameters.put("sApprval1","MX0125024178 - Yambao, Jeffrey Torres" ); //poGRider.getLogName()
+                parameters.put("sApprval2", "MX0125024179 - Adversalo, Rex Soriano");    
+                parameters.put("sApprval3", "");
+            } else {
+                parameters.put("sApprval1",""); //poGRider.getLogName()
+                parameters.put("sApprval2", "");
+                parameters.put("sApprval3", "");
+            }
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
