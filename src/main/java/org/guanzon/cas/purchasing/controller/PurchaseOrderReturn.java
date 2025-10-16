@@ -427,7 +427,7 @@ public class PurchaseOrderReturn extends Transaction{
                 loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
             }
             else{
-                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), detail.PurchaseOrderMaster().getPreOwned() ? "1" : "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
+                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), detail.PurchaseOrderMaster().getPreOwned() ? "1" : "0", detail.getQuantity().doubleValue(), 0, detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
             }
         }
         loTrans.saveTransaction();
@@ -733,7 +733,7 @@ public class PurchaseOrderReturn extends Transaction{
                 loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
             }
             else{
-                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), Master().PurchaseOrderReceivingMaster().getPurpose(), 0, detail.getQuantity().doubleValue(), detail.getUnitPrce().doubleValue());
+                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), Master().PurchaseOrderReceivingMaster().getPurpose(), detail.getQuantity().doubleValue(),0 , detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
 //                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
             }
         }
