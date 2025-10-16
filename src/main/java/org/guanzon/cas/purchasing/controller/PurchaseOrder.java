@@ -2817,9 +2817,9 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
-            parameters.put("sApprval1", "John Doe");
-            parameters.put("sApprval2", "Lu Cifer");
-            parameters.put("sApprval3", "Le Min Hoo");
+            parameters.put("sApprval1", poGRider.getLogName());
+            parameters.put("sApprval2", "");    
+            parameters.put("sApprval3", "");
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
@@ -2844,21 +2844,26 @@ public class PurchaseOrder extends Transaction {
             List<OrderDetail> orderDetails = new ArrayList<>();
 
             double lnTotal = 0.0000;
+            
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
 
-                orderDetails.add(new OrderDetail(lnCtr + 1,
-                        String.valueOf(Detail(lnCtr).getSouceNo()),
-                        Detail(lnCtr).Inventory().getBarCode(),
-                        Detail(lnCtr).Inventory().Brand().getDescription(),
-                        Detail(lnCtr).Inventory().Variant().getDescription() + " " + Detail(lnCtr).Inventory().Variant().getYearModel(),
-                        Detail(lnCtr).Inventory().Model().getDescription(),
-                        Detail(lnCtr).Inventory().Measure().getDescription() != null ? Detail(lnCtr).Inventory().Measure().getDescription() : "",
-                        Detail(lnCtr).Inventory().Color().getDescription(),
-                        Detail(lnCtr).Inventory().getDescription(),
-                        Detail(lnCtr).getUnitPrice().doubleValue(),
-                        Detail(lnCtr).getQuantity().doubleValue(),
-                        lnTotal
+                
+                orderDetails.add(new OrderDetail(lnCtr + 1, // Line No.
+                        safeString(Detail(lnCtr).getSouceNo()), // Source No
+                        safeString(Detail(lnCtr).Inventory().getBarCode()), // Barcode
+                        safeString(Detail(lnCtr).Inventory().Brand().getDescription()), // Brand
+                        safeString(Detail(lnCtr).Inventory().Variant().getDescription()) + " "
+                        + safeString(Detail(lnCtr).Inventory().Variant().getYearModel()), // Variant + Year Model
+                        safeString(Detail(lnCtr).Inventory().Model().getDescription()), // Model
+                        safeString(Detail(lnCtr).Inventory().Measure().getDescription()),// Unit of Measure
+                        safeString(Detail(lnCtr).Inventory().Color().getDescription()), // Color
+                        safeString(Detail(lnCtr).Inventory().getDescription()), // Item Description
+                        Detail(lnCtr).getUnitPrice() != null
+                        ? Detail(lnCtr).getUnitPrice().doubleValue() : 0.00, // Unit Price
+                        Detail(lnCtr).getQuantity() != null
+                        ? Detail(lnCtr).getQuantity().doubleValue() : 0.00, // Quantity
+                        lnTotal // Line Total
                 ));
             }
 
@@ -2906,7 +2911,9 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
 
     }
-
+    private String safeString(Object value) {
+        return value == null ? "" : value.toString();
+    }
     public static class OrderDetail {
 
         private Integer nRowNo;
