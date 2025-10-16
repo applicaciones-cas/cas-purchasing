@@ -151,7 +151,7 @@ public class PurchaseOrderReceiving extends Transaction {
      * @throws SQLException
      * @throws GuanzonException 
      */
-    public JSONObject seekApproval() 
+    public JSONObject seekApproval()
             throws SQLException, SQLException, GuanzonException{
         poJSON = new JSONObject();
         //Moved only the script for seeking of approval - Arsiela 10-15-2025 - 14:11:01
@@ -3165,7 +3165,9 @@ public class PurchaseOrderReceiving extends Transaction {
                         for (int lnOrder = 0; lnOrder <= loTrans.PurchaseOrder().getDetailCount() - 1; lnOrder++) {
                             if(Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnOrder).getTransactionNo())){
                                 if(Detail(lnRow).getStockId().equals(loTrans.PurchaseOrder().Detail(lnOrder).getStockID())){
-                                    lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue());
+                                    if (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue()) {
+                                        lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue());
+                                    }
                                 }
                             }
                         }
@@ -4745,10 +4747,14 @@ public class PurchaseOrderReceiving extends Transaction {
         int lnNewEntryNo = 1;
         int lnPrevEntryNo = -1;
         boolean lbMatch = false;
-        
+        boolean lbRequireApproval = false;
         paOthers.sort(Comparator.comparingInt(item -> item.getEntryNo()));
-        
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            //Require approval when there is no Order no in detail
+            if(!lbRequireApproval){
+                lbRequireApproval = Detail(lnCtr).getOrderNo() == null || "".equals(Detail(lnCtr).getOrderNo());
+            }
+            
             if(Detail(lnCtr).getQuantity().doubleValue() > 0){ 
                 lnEntryNo = lnEntryNo + 1;
             }
@@ -4845,7 +4851,23 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "Invalid transaction net total.");
             return poJSON;
         }
-
+        
+        if ((PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus()) || lbRequireApproval)
+                && !pbIsFinance && !pbIsPrint) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                } else {
+                    if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
+                }
+            }
+        }
+                
         if (getEditMode() == EditMode.UPDATE) {
             PurchaseOrderReceiving loRecord = new PurchaseOrderReceivingControllers(poGRider, null).PurchaseOrderReceiving();
             loRecord.InitTransaction();
@@ -4867,8 +4889,8 @@ public class PurchaseOrderReceiving extends Transaction {
             }
             
             if(!pbIsPrint){
-                if (PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus())
-                        && !pbIsFinance) {
+//                if ((PurchaseOrderReceivingStatus.CONFIRMED.equals(Master().getTransactionStatus()) || lbRequireApproval)
+//                        && !pbIsFinance) {
 //                    if (poGRider.getUserLevel() <= UserRight.ENCODER) {
 //                        poJSON = ShowDialogFX.getUserApproval(poGRider);
 //                        if (!"success".equals((String) poJSON.get("result"))) {
@@ -4881,12 +4903,7 @@ public class PurchaseOrderReceiving extends Transaction {
 //                            }
 //                        }
 //                    }
-                    //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
-                    poJSON = seekApproval();
-                    if("error".equalsIgnoreCase((String)poJSON.get("result"))){
-                        return poJSON;
-                    }
-                }
+//                }
 
                 if (PurchaseOrderReceivingStatus.RETURNED.equals(Master().getTransactionStatus())) {
 

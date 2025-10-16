@@ -1706,22 +1706,17 @@ public class PurchaseOrderReturn extends Transaction{
             //seek approval when user changed trasanction date
             if(!pbIsPrint && !pbWthParent){
                 if(PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
-//                    if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-//                        poJSON = ShowDialogFX.getUserApproval(poGRider);
-//                        if (!"success".equals((String) poJSON.get("result"))) {
-//                            return poJSON;
-//                        } else {
-//                            if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
-//                                poJSON.put("result", "error");
-//                                poJSON.put("message", "User is not an authorized approving officer.");
-//                                return poJSON;
-//                            }
-//                        }
-//                    }
-                    //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
-                    poJSON = seekApproval();
-                    if("error".equalsIgnoreCase((String)poJSON.get("result"))){
-                        return poJSON;
+                    if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+                        poJSON = ShowDialogFX.getUserApproval(poGRider);
+                        if (!"success".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        } else {
+                            if(Integer.parseInt(poJSON.get("nUserLevl").toString())<= UserRight.ENCODER){
+                                poJSON.put("result", "error");
+                                poJSON.put("message", "User is not an authorized approving officer.");
+                                return poJSON;
+                            }
+                        }
                     }
                 }
             

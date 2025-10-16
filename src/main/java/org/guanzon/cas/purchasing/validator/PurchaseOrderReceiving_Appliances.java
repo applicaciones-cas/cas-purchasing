@@ -70,7 +70,7 @@ public class PurchaseOrderReceiving_Appliances implements GValidator{
     public JSONObject validate() {
         //validate status change request
         JSONObject loJson = StatusChangeValidator.validatePORcvdStatChange(poMaster, psTranStat);
-        if (!"success".equals((String) poJSON.get("result"))) {
+        if (!"success".equals((String) loJson.get("result"))) {
             return loJson;
         }
         

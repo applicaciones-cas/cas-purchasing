@@ -27,11 +27,12 @@ public class StatusChangeValidator {
                     poJson.put("message", "Transaction was already confirmed.");
                     return poJson;
                 }
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction confirmation failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReceivingStatus.POSTED:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -39,11 +40,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow confirmed to the the only transaction status to be posted
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction posting failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReceivingStatus.PAID:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -51,11 +53,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow posted to the the only transaction status to be paid
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.POSTED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.POSTED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction tagging to PAID failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReceivingStatus.CANCELLED:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -63,11 +66,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow confirmed to the the only transaction status to be cancelled
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction CANCELLATION failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReceivingStatus.VOID:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -75,11 +79,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow open to the the only transaction status to be cancelled
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction tagging to VOID failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
         }
 
         poJson.put("result", "success");
@@ -98,11 +103,12 @@ public class StatusChangeValidator {
                     poJson.put("message", "Transaction was already confirmed.");
                     return poJson;
                 }
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReturnStatus.OPEN)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReturnStatus.OPEN)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction confirmation failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReturnStatus.POSTED:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -110,11 +116,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow confirmed to the the only transaction status to be posted
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReturnStatus.CONFIRMED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReturnStatus.CONFIRMED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction posting failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReturnStatus.PAID:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -122,11 +129,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow posted to the the only transaction status to be paid
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReturnStatus.POSTED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReturnStatus.POSTED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction tagging to PAID failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReturnStatus.CANCELLED:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -134,11 +142,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow confirmed to the the only transaction status to be cancelled
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReturnStatus.CONFIRMED)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReturnStatus.CONFIRMED)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction CANCELLATION failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
             case PurchaseOrderReturnStatus.VOID:
                 if(psTranStat.equalsIgnoreCase(poMaster.getTransactionStatus())){
                     poJson.put("result", "error");
@@ -146,11 +155,12 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow open to the the only transaction status to be cancelled
-                else if(!psTranStat.equalsIgnoreCase(PurchaseOrderReturnStatus.OPEN)){
+                else if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReturnStatus.OPEN)){
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction tagging to VOID failed! Please check transaction status.");
                     return poJson;
                 }
+                break;
         }
 
         poJson.put("result", "success");
