@@ -65,7 +65,7 @@ public class PurchaseOrderReturn_LP implements GValidator{
     public JSONObject validate() {
         //validate status change request
         JSONObject loJson = StatusChangeValidator.validatePOReturnStatChange(poMaster, psTranStat);
-        if (!"success".equals((String) poJSON.get("result"))) {
+        if (!"success".equals((String) loJson.get("result"))) {
             return loJson;
         }
         
