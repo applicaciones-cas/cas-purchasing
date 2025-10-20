@@ -1427,6 +1427,76 @@ public class PurchaseOrderReceiving extends Transaction {
     }
     
     /**
+     * Search Transaction with parameter: for SI POSTING HISTORY
+     * @param supplier
+     * @param receivingBranch
+     * @param sReferenceNo
+     * @return JSON and open the selected transaction
+     * @throws CloneNotSupportedException
+     * @throws SQLException
+     * @throws GuanzonException 
+     */
+    public JSONObject searchTransaction( String supplier, String receivingBranch, String sReferenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        if(supplier == null){
+            supplier = "";
+        }
+        if(receivingBranch == null){
+            receivingBranch = "";
+        }
+        if(sReferenceNo == null){
+            sReferenceNo = "";
+        }
+        
+        String lsPurpose = " AND a.cPurposex = " + SQLUtil.toSQL(psPurpose);
+        
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE,
+                 " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+                + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
+                + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
+                + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
+                + lsPurpose);
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Industry»Company»Supplier»Receiving Branch",
+                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    /**
      * Search Transaction with parameter
      * @param industryId
      * @param companyId
@@ -2383,15 +2453,15 @@ public class PurchaseOrderReceiving extends Transaction {
                             + " AND c.sPlateNoP = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getPlateNo())
             );
             
-            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
-                lsSQL = MiscUtil.addCondition( getPOReturnSerial(),
-                                " c.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
-                            + " AND b.sSerial01 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial01())
-                            + " AND b.sSerial02 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial02())
-                            + " AND d.sCStckrNo = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getConductionStickerNo())
-                            + " AND d.sPlateNoP = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getPlateNo())
-                );
-            }
+//            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+//                lsSQL = MiscUtil.addCondition( getPOReturnSerial(),
+//                                " c.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId())
+//                            + " AND b.sSerial01 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial01())
+//                            + " AND b.sSerial02 = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getSerial02())
+//                            + " AND d.sCStckrNo = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getConductionStickerNo())
+//                            + " AND d.sPlateNoP = " + SQLUtil.toSQL(PurchaseOrderReceivingSerialList(row).getPlateNo())
+//                );
+//            }
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
             if (MiscUtil.RecordCount(loRS) >= 0) {
@@ -5061,30 +5131,40 @@ public class PurchaseOrderReceiving extends Transaction {
                             }
                             
                             //Set Serial ID
-                            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REGULAR)){
-                                poJSON = setSerialId(lnList);
-                                if("error".equals((String) poJSON.get("result"))){
-                                    return poJSON;
-                                }
-                            } else if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
-                                if (PurchaseOrderReceivingSerialList(lnList).getSerialId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerialId())) {
-                                    lsSerialId = getSerialId(lnList);
-                                    if(!lsSerialId.isEmpty()){
-                                        PurchaseOrderReceivingSerialList(lnList).setSerialId(lsSerialId);
-                                    } else {
-                                        poJSON.put("result", "error");
-                                        poJSON.put("message",  "Please select serial that exists in Purchase Order Return transaction at row "+PurchaseOrderReceivingSerialList(lnList).getEntryNo()+".");
+                            switch(Master().getPurpose()){
+                                case PurchaseOrderReceivingStatus.Purpose.REGULAR:
+                                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+                                    poJSON = setSerialId(lnList);
+                                    if("error".equals((String) poJSON.get("result"))){
                                         return poJSON;
                                     }
-                                    break;
-                                }
-                                
-                                poJSON = checkExistingPOR(lnList, PurchaseOrderReceivingSerialList(lnList).getSerialId());
-                                if ("error".equals((String) poJSON.get("result"))) {
-                                    return poJSON;
-                                }
-                                lsSerialId = "";
+                                break;
                             }
+                            
+//                            if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REGULAR)){
+//                                poJSON = setSerialId(lnList);
+//                                if("error".equals((String) poJSON.get("result"))){
+//                                    return poJSON;
+//                                }
+//                            } else if(Master().getPurpose().equals(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT)){
+//                                if (PurchaseOrderReceivingSerialList(lnList).getSerialId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerialId())) {
+//                                    lsSerialId = getSerialId(lnList);
+//                                    if(!lsSerialId.isEmpty()){
+//                                        PurchaseOrderReceivingSerialList(lnList).setSerialId(lsSerialId);
+//                                    } else {
+//                                        poJSON.put("result", "error");
+//                                        poJSON.put("message",  "Please select serial that exists in Purchase Order Return transaction at row "+PurchaseOrderReceivingSerialList(lnList).getEntryNo()+".");
+//                                        return poJSON;
+//                                    }
+//                                    break;
+//                                }
+//                                
+//                                poJSON = checkExistingPOR(lnList, PurchaseOrderReceivingSerialList(lnList).getSerialId());
+//                                if ("error".equals((String) poJSON.get("result"))) {
+//                                    return poJSON;
+//                                }
+//                                lsSerialId = "";
+//                            }
                             
                             //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
                             //Check for existing serial 01
@@ -5647,10 +5727,8 @@ public class PurchaseOrderReceiving extends Transaction {
                     if(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId() != null && !"".equals(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId())){
                         for( int lnCtr = 0; lnCtr <= getPurchaseOrderReceivingSerialCount()-1;lnCtr++){
                             if(stockId.equals(paOthers.get(lnCtr).getStockId())){
-                                if(paOthers.get(lnCtr).getSerialId().equals(paPurchaseOrderReturn.get(lnList).Detail(lnRow).getSerialId())){
-                                    paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(1);
-                                    lbMatch = true;
-                                }
+                                paPurchaseOrderReturn.get(lnList).Detail(lnRow).setReceivedQty(1);
+                                lbMatch = true;
                             }
                         }
                         
