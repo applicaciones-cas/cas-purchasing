@@ -384,8 +384,8 @@ public class PurchaseOrder extends Transaction {
                 poJSON.put("message", "No update has been made.");
                 return poJSON;
             }
-
-            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
+            //enable this settrans if saving of return stat will change the status to the last status
+//            Master().setTransactionStatus(PurchaseOrderStatus.OPEN); //If edited update trasaction status into open
         }
 
         //Allow the user to edit details but seek an approval from the approving officer
@@ -3164,5 +3164,14 @@ public class PurchaseOrder extends Transaction {
         }
 
     }
+    
+    
+//    private JSONObject getLastTransStatus(){
+//        poJSON = new JSONObject();
+//        
+//            poJSON = poGRider.g
+//        
+//        return poJSON;
+//    }
 
 }
