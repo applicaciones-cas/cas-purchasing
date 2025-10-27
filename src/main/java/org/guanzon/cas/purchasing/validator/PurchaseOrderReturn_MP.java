@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import ph.com.guanzongroup.cas.model.Model_POReturn_Detail;
+import ph.com.guanzongroup.cas.model.Model_POReturn_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
 

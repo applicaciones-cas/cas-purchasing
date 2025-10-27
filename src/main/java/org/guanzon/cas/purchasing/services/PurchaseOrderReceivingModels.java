@@ -7,9 +7,9 @@ package org.guanzon.cas.purchasing.services;
 
 import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.GRiderCAS;
-import org.guanzon.cas.purchasing.model.Model_POR_Detail;
-import org.guanzon.cas.purchasing.model.Model_POR_Master;
-import org.guanzon.cas.purchasing.model.Model_POR_Serial;
+import ph.com.guanzongroup.cas.model.Model_POR_Detail;
+import ph.com.guanzongroup.cas.model.Model_POR_Master;
+import ph.com.guanzongroup.cas.model.Model_POR_Serial;
 
 /**
  *

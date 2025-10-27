@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.guanzon</groupId>
     <artifactId>cas-purchasing</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,8 +16,17 @@
         <dependency>
             <groupId>org.guanzon</groupId>
             <artifactId>appdriver-agent</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ph.com.guanzongroup</groupId>
+            <artifactId>cas-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-client</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -63,45 +72,10 @@
             <version>4.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>cas-parameter</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>cas-client</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>cas-inv</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.guanzon</groupId>
-            <artifactId>cas-inv-warehouse</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1</version>
             <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>ph.com.guanzongroup</groupId>
-            <artifactId>cas-cashflow</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>ph.com.guanzongroup</groupId>
-            <artifactId>cas-purchasing-t2</artifactId>
-            <version>0.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

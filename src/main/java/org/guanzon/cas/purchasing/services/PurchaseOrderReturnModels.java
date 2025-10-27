@@ -6,8 +6,8 @@
 package org.guanzon.cas.purchasing.services;
 
 import org.guanzon.appdriver.base.GRiderCAS;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import ph.com.guanzongroup.cas.model.Model_POReturn_Detail;
+import ph.com.guanzongroup.cas.model.Model_POReturn_Master;
 
 /**
  *

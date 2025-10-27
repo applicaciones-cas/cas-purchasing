@@ -1,8 +1,8 @@
 package org.guanzon.cas.purchasing.services;
 
 import org.guanzon.appdriver.base.GRiderCAS;
-import org.guanzon.cas.purchasing.model.Model_PO_Detail;
-import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import ph.com.guanzongroup.cas.model.Model_PO_Detail;
+import ph.com.guanzongroup.cas.model.Model_PO_Master;
 
 public class PurchaseOrderModels {
 

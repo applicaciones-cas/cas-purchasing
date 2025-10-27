@@ -10,8 +10,8 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
-import org.guanzon.cas.purchasing.model.Model_PO_Detail;
-import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import ph.com.guanzongroup.cas.model.Model_PO_Detail;
+import ph.com.guanzongroup.cas.model.Model_PO_Master;
 import org.json.simple.JSONObject;
 
 public class PurchaseOrder_LP implements GValidator {

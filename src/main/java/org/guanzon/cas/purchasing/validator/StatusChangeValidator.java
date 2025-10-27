@@ -4,8 +4,8 @@
  */
 package org.guanzon.cas.purchasing.validator;
 
-import org.guanzon.cas.purchasing.model.Model_POR_Master;
-import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import ph.com.guanzongroup.cas.model.Model_POR_Master;
+import ph.com.guanzongroup.cas.model.Model_POReturn_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
