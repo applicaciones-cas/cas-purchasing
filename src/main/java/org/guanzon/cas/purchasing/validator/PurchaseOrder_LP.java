@@ -53,6 +53,12 @@ public class PurchaseOrder_LP implements GValidator {
 
     @Override
     public JSONObject validate() {
+        //validate status change request
+        JSONObject loJson = StatusChangeValidator.validatePOStatChange(poMaster, psTranStat);
+        if (!"success".equals((String) loJson.get("result"))) {
+            return loJson;
+        }
+
         try {
             switch (psTranStat) {
                 case PurchaseOrderStatus.OPEN:
