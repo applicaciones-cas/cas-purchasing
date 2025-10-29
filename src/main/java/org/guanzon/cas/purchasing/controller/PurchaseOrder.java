@@ -32,7 +32,8 @@ import net.sf.jasperreports.view.JasperViewer;
 import org.guanzon.appdriver.agent.ActionAuthManager;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
-import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.agent.impl.Transaction;
+import org.guanzon.appdriver.impl.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -87,6 +88,7 @@ public class PurchaseOrder extends Transaction {
     String PayeeID;
     private boolean pbApproval = false;
 
+    @Override
     public JSONObject InitTransaction() {
         SOURCE_CODE = "PO";
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();

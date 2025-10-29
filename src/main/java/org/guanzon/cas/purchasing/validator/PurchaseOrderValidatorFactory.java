@@ -1,6 +1,6 @@
 package org.guanzon.cas.purchasing.validator;
 
-import org.guanzon.appdriver.iface.GValidator;
+import ph.com.guanzongroup.cas.iface.GValidator;
 
 public class PurchaseOrderValidatorFactory {
 

@@ -1,30 +1,23 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.guanzon.cas.purchasing.validator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.guanzon.appdriver.base.GRider;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.appdriver.iface.GValidator;
 import ph.com.guanzongroup.cas.model.Model_POR_Detail;
 import ph.com.guanzongroup.cas.model.Model_POR_Master;
-import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
-import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
+import ph.com.guanzongroup.cas.constants.PurchaseOrderReceivingStatus;
+import ph.com.guanzongroup.cas.constants.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.iface.GValidator;
 
 /**
  *
