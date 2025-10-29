@@ -5,8 +5,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.guanzon.appdriver.agent.MatrixAuthManager;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
@@ -15,7 +17,7 @@ import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.json.simple.JSONObject;
 
 public class PurchaseOrder_General implements GValidator {
-
+    MatrixAuthManager poMatrix;
     GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
@@ -53,6 +55,12 @@ public class PurchaseOrder_General implements GValidator {
 
     @Override
     public JSONObject validate() {
+        //validate status change request
+        JSONObject loJson = StatusChangeValidator.validatePOStatChange(poMaster, psTranStat);
+        if (!"success".equals((String) loJson.get("result"))) {
+            return loJson;
+        }
+        
         try {
             switch (psTranStat) {
                 case PurchaseOrderStatus.OPEN:
@@ -73,6 +81,8 @@ public class PurchaseOrder_General implements GValidator {
             return poJSON;
         } catch (SQLException ex) {
             Logger.getLogger(PurchaseOrder_MP.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(PurchaseOrder_General.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -156,10 +166,35 @@ public class PurchaseOrder_General implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateApproved() {
+    private JSONObject validateApproved() throws SQLException, GuanzonException {
+        String lsRemarks;
         poJSON = new JSONObject();
+        
+        //TODO: Update this part if net total is the basis and not tran total
+        if(poMaster.getTranTotal().doubleValue() <= 30000.00){
+            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
+            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix.addAuthRequest("ENG.PO.SMALL", "", "", lsRemarks);
+        }
+        else if(poMaster.getTranTotal().doubleValue() <= 50000.00){
+            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
+            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix.addAuthRequest("ENG.PO.MEDIUM", "", "", lsRemarks);
+        }
+        else if(poMaster.getTranTotal().doubleValue() <= 100000.00){
+            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
+            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix.addAuthRequest("ENG.PO.LARGE", "", "", lsRemarks);
+        }
+        else{
+            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
+            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix.addAuthRequest("ENG.PO.XLARGE", "", "", lsRemarks);
+        }
+        
+        //This will create an authorization request for Validation
+        poJSON = poMatrix.processAuth();
 
-        poJSON.put("result", "success");
         return poJSON;
     }
 
