@@ -278,7 +278,7 @@ public class PurchaseOrderReturn extends Transaction{
                     if(!check.isAuthOkay()){
                         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -497,7 +497,7 @@ public class PurchaseOrderReturn extends Transaction{
                     if(!check.isAuthOkay()){
                         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -610,7 +610,7 @@ public class PurchaseOrderReturn extends Transaction{
                     if(!check.isAuthOkay()){
                         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbCancelled, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -752,7 +752,7 @@ public class PurchaseOrderReturn extends Transaction{
                     if(!check.isAuthOkay()){
                         poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbVoid, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();

@@ -105,7 +105,6 @@ public class PurchaseOrder extends Transaction {
      * Seek Approval method 
      * @return JSON
      * @throws SQLException
-     * @throws SQLException
      * @throws GuanzonException 
      */
     public JSONObject seekApproval() 
@@ -485,7 +484,7 @@ public class PurchaseOrder extends Transaction {
                         //check  the user level again then if he/she allow to confirm
                         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -615,7 +614,9 @@ public class PurchaseOrder extends Transaction {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Approve Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        System.out.println("Status: " + lsStatus);
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                        System.out.println("Status: " + lsStatus);
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -761,7 +762,7 @@ public class PurchaseOrder extends Transaction {
                         //check  the user level again then if he/she allow to confirm
                         poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPost, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -885,7 +886,7 @@ public class PurchaseOrder extends Transaction {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
@@ -1027,7 +1028,7 @@ public class PurchaseOrder extends Transaction {
                     if(!check.isAuthOkay()){
                         poGRider.beginTrans("UPDATE STATUS", "Void Transaction", SOURCE_CODE, Master().getTransactionNo());
 
-                        lsStatus = Character.toString((char)(65 + Integer.getInteger(lsStatus)));
+                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbVoid, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
