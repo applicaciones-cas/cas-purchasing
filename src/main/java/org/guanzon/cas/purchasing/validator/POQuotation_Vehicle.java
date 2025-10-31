@@ -17,7 +17,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Master;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
+import org.guanzon.cas.purchasing.status.POQuotationStatus;
 import org.json.simple.JSONObject;
 
 /**
@@ -62,6 +62,12 @@ public class POQuotation_Vehicle implements GValidator{
 
     @Override
     public JSONObject validate() {
+        //validate status change request
+        JSONObject loJson = StatusChangeValidator.validatePOQStatChange(poMaster, psTranStat);
+        if (!"success".equals((String) loJson.get("result"))) {
+            return loJson;
+        }
+        
         try {
             switch (psTranStat){
                 case POQuotationStatus.OPEN:

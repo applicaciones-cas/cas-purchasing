@@ -72,7 +72,7 @@ import org.json.simple.parser.ParseException;
 import ph.com.guanzongroup.cas.cashflow.Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 import org.guanzon.cas.purchasing.services.QuotationControllers;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
+import org.guanzon.cas.purchasing.status.POQuotationStatus;
 
 public class PurchaseOrder extends Transaction {
 
