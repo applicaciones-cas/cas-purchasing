@@ -26,7 +26,7 @@ import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import org.guanzon.cas.purchasing.services.QuotationModels;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
+import org.guanzon.cas.purchasing.status.POQuotationStatus;
 
 /**
  *

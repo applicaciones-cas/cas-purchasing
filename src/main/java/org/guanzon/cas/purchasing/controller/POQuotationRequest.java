@@ -56,7 +56,7 @@ import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Master;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Supplier;
 import org.guanzon.cas.purchasing.services.QuotationControllers;
 import org.guanzon.cas.purchasing.services.QuotationModels;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationRequestStatus;
+import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
 import org.guanzon.cas.purchasing.validator.POQuotationRequestValidatorFactory;
 
 /**

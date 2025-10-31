@@ -17,7 +17,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Master;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationRequestStatus;
+import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
 import org.json.simple.JSONObject;
 
 /**
