@@ -27,9 +27,7 @@ import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.purchasing.t2.model.Model_PO_Quotation_Detail;
-import ph.com.guanzongroup.cas.purchasing.t2.model.Model_PO_Quotation_Master;
-import ph.com.guanzongroup.cas.purchasing.t2.services.QuotationModels;
+import org.guanzon.cas.purchasing.services.QuotationModels;
 
 public class Model_PO_Detail extends Model {
 

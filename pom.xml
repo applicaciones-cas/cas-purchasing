@@ -93,14 +93,9 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>ph.com.guanzongroup</groupId>
-            <artifactId>cas-purchasing-t2</artifactId>
-            <version>0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.guanzon</groupId>
             <artifactId>appdriver-agent</artifactId>
-            <version>${project.version}</version>
+            <version>0.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
