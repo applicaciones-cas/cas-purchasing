@@ -71,8 +71,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import ph.com.guanzongroup.cas.cashflow.Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
-import ph.com.guanzongroup.cas.purchasing.t2.POQuotation;
-import ph.com.guanzongroup.cas.purchasing.t2.services.QuotationControllers;
+import org.guanzon.cas.purchasing.services.QuotationControllers;
 import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationStatus;
 
 public class PurchaseOrder extends Transaction {
