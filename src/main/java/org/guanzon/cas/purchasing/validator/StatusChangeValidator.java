@@ -25,7 +25,7 @@ public class StatusChangeValidator {
 
         lsCurrStat = lsCurrStat.toUpperCase();
         if("ABCDEFGHIJ".contains(lsCurrStat)){
-            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 65 + 1);
+            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 64);
         }
         
         switch (psTranStat){
@@ -107,10 +107,9 @@ public class StatusChangeValidator {
 
         lsCurrStat = lsCurrStat.toUpperCase();
         if("ABCDEFGHIJ".contains(lsCurrStat)){
-            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 65 + 1);
+            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 64);
         }
 
-        
         switch (psTranStat){
             case PurchaseOrderReturnStatus.CONFIRMED:
                 if(psTranStat.equalsIgnoreCase(lsCurrStat)){
@@ -190,7 +189,7 @@ public class StatusChangeValidator {
 
         lsCurrStat = lsCurrStat.toUpperCase();
         if("ABCDEFGHIJ".contains(lsCurrStat)){
-            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 65 + 1);
+            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 64);
         }
 
         switch (psTranStat){
