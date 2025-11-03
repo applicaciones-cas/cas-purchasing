@@ -20,7 +20,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.guanzon.cas.purchasing.controller.POQuotationRequest;
 import org.guanzon.cas.purchasing.services.QuotationControllers;
-import ph.com.guanzongroup.cas.purchasing.t2.status.POQuotationRequestStatus;
+import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
 /**
  *
  * @author Arsiela
@@ -40,7 +40,7 @@ public class testPOQuotationRequest {
     }
 
 //    @Test
-    public void testNewTransaction() {
+    public void testNewTransaction() throws SQLException, GuanzonException {
         String branchCd = instance.getBranchCode();
         String industryId = "05";
         String companyId = "";
