@@ -20,7 +20,7 @@ public class testInventory {
     static Inventory record;
 
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws SQLException, GuanzonException {
         System.setProperty("sys.default.path.metadata", "D:/GGC_Maven_Systems/config/metadata/new/");
 
         instance = MiscUtil.Connect();
