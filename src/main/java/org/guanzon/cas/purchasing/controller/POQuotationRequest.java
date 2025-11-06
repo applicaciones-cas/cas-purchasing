@@ -1129,7 +1129,7 @@ public class POQuotationRequest extends Transaction {
         
         CategoryLevel2 object = new ParamControllers(poGRider, logwrapr).CategoryLevel2();
         String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), "cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
-                                            + " AND (sIndstCdx = '' OR ISNULL(sIndstCdx))"); //+ SQLUtil.toSQL(Master().getIndustryId()));
+                                            + " AND (sIndstCdx = "+SQLUtil.toSQL(Master().getIndustryId())+" OR ISNULL(sIndstCdx))"); //+ SQLUtil.toSQL(Master().getIndustryId()));
         
         System.out.println("Executing SQL: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
@@ -1238,6 +1238,7 @@ public class POQuotationRequest extends Transaction {
                                                     ? " AND a.sCategCd2 = " + SQLUtil.toSQL(Master().getCategoryLevel2())
                                                     : "";
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
         String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), 
                                              //" a.cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
                                             " a.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode())
