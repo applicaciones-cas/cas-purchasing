@@ -1227,6 +1227,7 @@ public class POQuotation extends Transaction {
         }
         
         Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        object.setRecordStatus(RecordStatus.ACTIVE);
         String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), 
                                             " a.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode())
                                             + " AND a.sCategCd2 = " + SQLUtil.toSQL(Master().POQuotationRequest().getCategoryLevel2())
