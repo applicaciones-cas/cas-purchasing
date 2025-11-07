@@ -9,8 +9,10 @@ import org.guanzon.appdriver.agent.MatrixAuthManager;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
@@ -21,7 +23,8 @@ public class PurchaseOrder_General implements GValidator {
     GRiderCAS poGrider;
     String psTranStat;
     JSONObject poJSON;
-
+    String SOURCE_CD = InvTransCons.PURCHASE_ORDER;
+    
     Model_PO_Master poMaster;
     ArrayList<Model_PO_Detail> poDetail;
 
@@ -170,26 +173,28 @@ public class PurchaseOrder_General implements GValidator {
         String lsRemarks;
         poJSON = new JSONObject();
         
-        //TODO: Update this part if net total is the basis and not tran total
+        //crete a remarks for the Purchase Order Transaction
+        lsRemarks = poMaster.getBranchCode()  
+            + "/" + poMaster.getTransactionNo() 
+            + ";" + SQLUtil.dateFormat(poMaster.getTransactionDate(), "yyyy-MM-dd") 
+            + ";" + poMaster.getTranTotal().toString() 
+            + ";" + poMaster.getRemarks();
+
         if(poMaster.getTranTotal().doubleValue() <= 30000.00){
-            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
-            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("ENG.PO.SMALL", "", "", lsRemarks);
         }
         else if(poMaster.getTranTotal().doubleValue() <= 50000.00){
-            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
-            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("ENG.PO.MEDIUM", "", "", lsRemarks);
         }
         else if(poMaster.getTranTotal().doubleValue() <= 100000.00){
-            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
-            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
+            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("ENG.PO.LARGE", "", "", lsRemarks);
         }
         else{
-            poMatrix = new MatrixAuthManager(poGrider, "PO", poMaster.getTransactionNo());
-            lsRemarks = "Total PO for PO No:" + poMaster.getTransactionNo() + " is " + poMaster.getTranTotal().toString() + "!";
-            poMatrix.addAuthRequest("ENG.PO.XLARGE", "", "", lsRemarks);
+            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
+            poMatrix.addAuthRequest("ENG.PO.XL", "", "", lsRemarks);
         }
         
         //This will create an authorization request for Validation

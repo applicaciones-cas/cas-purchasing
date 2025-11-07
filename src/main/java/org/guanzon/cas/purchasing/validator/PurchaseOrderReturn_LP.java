@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
@@ -33,6 +34,8 @@ public class PurchaseOrderReturn_LP implements GValidator{
     Model_POReturn_Master poMaster;
     ArrayList<Model_POReturn_Detail> paDetail;
 
+    String SOURCE_CD = InvTransCons.PURCHASE_RETURN;
+    
     @Override
     public void setApplicationDriver(Object applicationDriver) {
         poGrider = (GRiderCAS) applicationDriver;

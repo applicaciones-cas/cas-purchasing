@@ -70,12 +70,6 @@
         </dependency>
         <dependency>
             <groupId>org.guanzon</groupId>
-            <artifactId>cas-inv</artifactId>
-            <version>0.2-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.guanzon</groupId>
             <artifactId>cas-inv-warehouse</artifactId>
             <version>0.2-SNAPSHOT</version>
             <type>jar</type>
@@ -96,6 +90,11 @@
             <groupId>org.guanzon</groupId>
             <artifactId>appdriver-agent</artifactId>
             <version>0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cas-inv</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

@@ -9,6 +9,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.json.simple.JSONObject;
 import org.guanzon.cas.purchasing.status.POCancellationStatus;
 import org.guanzon.cas.purchasing.model.Model_PO_Cancellation_Detail;
@@ -27,6 +28,8 @@ public class POCancellation_Car implements GValidator {
     Model_PO_Cancellation_Master poMaster;
     ArrayList<Model_PO_Cancellation_Detail> paDetail;
 
+    String SOURCE_CD = InvTransCons.PURCHASE_ORDER_CANCELLATION;
+    
     @Override
     public void setApplicationDriver(Object applicationDriver) {
         poGRider = (GRiderCAS) applicationDriver;
@@ -55,6 +58,12 @@ public class POCancellation_Car implements GValidator {
 
     @Override
     public JSONObject validate() {
+        //validate status change request
+        JSONObject loJson = StatusChangeValidator.validatePOCancellationStatChange(poMaster, psTranStat);
+        if (!"success".equals((String) loJson.get("result"))) {
+            return loJson;
+        }
+        
         try {
             switch (psTranStat) {
                 case POCancellationStatus.OPEN:

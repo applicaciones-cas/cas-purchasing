@@ -34,6 +34,7 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.parameter.Branch;
@@ -77,7 +78,7 @@ public class POQuotation extends Transaction {
     POQuotationRequest poQuoationRequest;
     
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "POQT";
+        SOURCE_CODE = InvTransCons.PURCHASE_ORDER_QUOTATION;
 
         poMaster = new QuotationModels(poGRider).POQuotationMaster();
         poDetail = new QuotationModels(poGRider).POQuotationDetails();

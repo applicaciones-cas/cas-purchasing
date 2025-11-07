@@ -20,6 +20,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
@@ -38,6 +39,8 @@ public class PurchaseOrderReceiving_Appliances implements GValidator{
     Model_POR_Master poMaster;
     ArrayList<Model_POR_Detail> poDetail;
 
+    String SOURCE_CD = InvTransCons.PURCHASE_RECEIVING;
+    
     @Override
     public void setApplicationDriver(Object applicationDriver) {
         poGRider = (GRiderCAS) applicationDriver;

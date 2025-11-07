@@ -53,6 +53,7 @@ import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvSerial;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
@@ -85,7 +86,7 @@ public class PurchaseOrderReturn extends Transaction{
     List<Model> paDetailRemoved;
     
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "PORt";
+        SOURCE_CODE = InvTransCons.PURCHASE_RETURN;
 
         poMaster = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnMaster();
         poDetail = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnDetails();
