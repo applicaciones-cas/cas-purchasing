@@ -6,6 +6,7 @@ package org.guanzon.cas.purchasing.validator;
 
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import org.guanzon.cas.purchasing.model.Model_PO_Cancellation_Master;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
@@ -393,5 +394,73 @@ public class StatusChangeValidator {
         return poJson;
     }
     
+    public static JSONObject validatePOCancellationStatChange(Model_PO_Cancellation_Master foMaster, String fsTranStat){
+        Model_PO_Cancellation_Master poMaster = foMaster;
+        String psTranStat = fsTranStat;
+        String lsCurrStat = poMaster.getTransactionStatus();
+        JSONObject poJson = new JSONObject();
+
+        lsCurrStat = lsCurrStat.toUpperCase();
+        if("ABCDEFGHIJ".contains(lsCurrStat)){
+            lsCurrStat = String.valueOf(lsCurrStat.getBytes()[0] - 64);
+        }
+
+        switch (psTranStat){
+            case POQuotationRequestStatus.CONFIRMED:
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already confirmed.");
+                    return poJson;
+                }
+                else if(!lsCurrStat.equalsIgnoreCase(POQuotationRequestStatus.OPEN)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction confirmation failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+            case POQuotationRequestStatus.POSTED:
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already posted.");
+                    return poJson;
+                }
+                //Allow confirmed to the the only transaction status to be posted
+                else if(!lsCurrStat.equalsIgnoreCase(POQuotationRequestStatus.CONFIRMED)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction posting failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+            case POQuotationRequestStatus.CANCELLED:
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already CANCELLED.");
+                    return poJson;
+                }
+                //Allow confirmed to the the only transaction status to be cancelled
+                else if(!lsCurrStat.equalsIgnoreCase(POQuotationRequestStatus.CONFIRMED)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction CANCELLATION failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+            case POQuotationRequestStatus.VOID:
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already tagged VOID.");
+                    return poJson;
+                }
+                //Allow open to the the only transaction status to be cancelled
+                else if(!lsCurrStat.equalsIgnoreCase(POQuotationRequestStatus.OPEN)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction tagging to VOID failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+        }
+
+        poJson.put("result", "success");
+        return poJson;
+    }
 }
 

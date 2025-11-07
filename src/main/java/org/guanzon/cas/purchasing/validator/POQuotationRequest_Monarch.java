@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Master;
 import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
@@ -32,6 +33,8 @@ public class POQuotationRequest_Monarch implements GValidator{
     Model_PO_Quotation_Request_Master poMaster;
     ArrayList<Model_PO_Quotation_Request_Detail> poDetail;
 
+    String SOURCE_CD = InvTransCons.PURCHASE_ORDER_QUOTATION_REQUEST;
+    
     @Override
     public void setApplicationDriver(Object applicationDriver) {
         poGRider = (GRiderCAS) applicationDriver;

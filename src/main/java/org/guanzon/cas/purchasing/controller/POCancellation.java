@@ -18,6 +18,7 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
@@ -158,7 +159,7 @@ public class POCancellation extends Transaction {
     }
     
     public JSONObject initTransaction() throws GuanzonException, SQLException {
-        SOURCE_CODE = "Dlvr";
+        SOURCE_CODE = InvTransCons.PURCHASE_ORDER_CANCELLATION;
 
         poMaster = new POModels(poGRider).POCancellationMaster();
         poDetail = new POModels(poGRider).POCancellationDetail();
@@ -203,7 +204,6 @@ public class POCancellation extends Transaction {
                 return poJSON;
             }
         }
-        
         
         poJSON = new JSONObject();
         poJSON = newTransaction();

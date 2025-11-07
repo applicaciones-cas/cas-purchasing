@@ -60,6 +60,7 @@ import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvSerial;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
@@ -127,7 +128,7 @@ public class PurchaseOrderReceiving extends Transaction {
     List<Model> paDetailRemoved;
 
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "PORc";
+        SOURCE_CODE = InvTransCons.PURCHASE_RECEIVING;
 
         poMaster = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
         poDetail = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();

@@ -45,6 +45,7 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
 //import org.guanzon.cas.inv.Inventory;
@@ -88,7 +89,7 @@ public class PurchaseOrder extends Transaction {
     private boolean pbApproval = false;
 
     public JSONObject InitTransaction() {
-        SOURCE_CODE = "PO";
+        SOURCE_CODE = InvTransCons.PURCHASE_ORDER;
         poMaster = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
         poDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
         paDetail = new ArrayList<>();

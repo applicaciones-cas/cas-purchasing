@@ -9,6 +9,7 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
@@ -23,6 +24,8 @@ public class PurchaseOrder_MP implements GValidator {
     Model_PO_Master poMaster;
     ArrayList<Model_PO_Detail> poDetail;
 
+    String SOURCE_CD = InvTransCons.PURCHASE_ORDER;
+    
     @Override
     public void setApplicationDriver(Object applicationDriver) {
         poGrider = (GRiderCAS) applicationDriver;
