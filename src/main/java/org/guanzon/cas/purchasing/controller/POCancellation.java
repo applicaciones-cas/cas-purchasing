@@ -414,7 +414,7 @@ public class POCancellation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -584,7 +584,7 @@ public class POCancellation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -708,7 +708,7 @@ public class POCancellation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -821,7 +821,7 @@ public class POCancellation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }

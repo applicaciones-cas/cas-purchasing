@@ -493,7 +493,7 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -625,7 +625,8 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
+                        
                         return poJSON;
                     }
                 }
@@ -680,7 +681,7 @@ public class PurchaseOrder extends Transaction {
             loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
         }
         loTrans.saveTransaction();
-        
+
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
@@ -771,7 +772,7 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -895,7 +896,7 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -1037,7 +1038,7 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }

@@ -345,7 +345,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -625,7 +625,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -754,7 +754,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -985,7 +985,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -1210,7 +1210,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
