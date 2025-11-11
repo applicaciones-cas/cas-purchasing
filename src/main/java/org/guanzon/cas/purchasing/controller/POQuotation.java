@@ -267,7 +267,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -375,7 +375,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -483,7 +483,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -592,7 +592,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -700,7 +700,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
@@ -808,7 +808,7 @@ public class POQuotation extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
+                        poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }

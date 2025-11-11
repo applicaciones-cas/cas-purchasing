@@ -63,7 +63,7 @@ public class PurchaseOrder_General implements GValidator {
         if (!"success".equals((String) loJson.get("result"))) {
             return loJson;
         }
-        
+
         try {
             switch (psTranStat) {
                 case PurchaseOrderStatus.OPEN:
