@@ -41,6 +41,7 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
+import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
@@ -1329,13 +1330,13 @@ public class POQuotationRequest extends Transaction {
     }
     
     public JSONObject SearchSupplier(String value, boolean byCode, int row) throws SQLException, GuanzonException {
-        Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setRecordStatus(RecordStatus.ACTIVE);
-        object.Master().setClientType("1");
-        poJSON = object.Master().searchRecord(value, byCode);
+        
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
             JSONObject loJSON = checkExistingSupplier(row,
-                    object.Master().getModel().getClientId(),
+                    object.getModel().getClientId(),
                     POQuotationRequestSupplierList(row).getCompanyId()
                     );
             if ("error".equals((String) loJSON.get("result"))) {
@@ -1356,9 +1357,9 @@ public class POQuotationRequest extends Transaction {
                 }
             }
             
-            POQuotationRequestSupplierList(row).setSupplierId(object.Master().getModel().getClientId());
-            POQuotationRequestSupplierList(row).setAddressId(object.ClientAddress().getModel().getAddressId());
-            POQuotationRequestSupplierList(row).setContactId(object.ClientInstitutionContact().getModel().getClientId());
+            POQuotationRequestSupplierList(row).setSupplierId(object.getModel().getClientId());
+            POQuotationRequestSupplierList(row).setAddressId(object.getModel().ClientAddress().getAddressId());
+            POQuotationRequestSupplierList(row).setContactId(object.getModel().ClientInstitutionContact().getContactPId());
         } else {
             poJSON = new JSONObject();
             poJSON.put("result", "error");

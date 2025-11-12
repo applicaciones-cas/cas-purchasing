@@ -44,6 +44,7 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
+import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
@@ -1750,9 +1751,11 @@ public class PurchaseOrder extends Transaction {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
                 lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            lsTransStat = " AND ( a.cTranStat IN (" + lsTransStat.substring(2) + ")"
+                        + " OR (ASCII(a.cTranStat) - 64) IN (" + lsTransStat.substring(2) + ") )";
         } else {
-            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            lsTransStat = " AND ( a.cTranStat = " + SQLUtil.toSQL(psTranStat)
+                        + " OR (ASCII(a.cTranStat) - 64) = " + SQLUtil.toSQL(psTranStat) +" ) ";
         }
 
         initSQL();
@@ -1987,15 +1990,15 @@ public class PurchaseOrder extends Transaction {
     }
 
     public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
-        Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setRecordStatus(RecordStatus.ACTIVE);
-        object.Master().setClientType("1");
-        poJSON = object.Master().searchRecord(value, byCode);
-
+        
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
-            Master().setSupplierID(object.Master().getModel().getClientId());
-            Master().setAddressID(object.ClientAddress().getModel().getAddressId());
-            Master().setContactID(object.ClientInstitutionContact().getModel().getClientId());
+            Master().setSupplierID(object.getModel().getClientId());
+            Master().setAddressID(object.getModel().ClientAddress().getAddressId()); 
+            Master().setContactID(object.getModel().ClientInstitutionContact().getContactPId()); 
+            Master().setTermCode(object.getModel().getTermId());
         }
 
         return poJSON;
@@ -2458,9 +2461,11 @@ public class PurchaseOrder extends Transaction {
             for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
                 lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
             }
-            lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            lsTransStat = " AND ( a.cTranStat IN (" + lsTransStat.substring(2) + ")"
+                        + " OR (ASCII(a.cTranStat) - 64) IN (" + lsTransStat.substring(2) + ") )";
         } else {
-            lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            lsTransStat = " AND ( a.cTranStat = " + SQLUtil.toSQL(psTranStat)
+                        + " OR (ASCII(a.cTranStat) - 64) = " + SQLUtil.toSQL(psTranStat) +" ) ";
         }
 
         String lsSQL = " SELECT "

@@ -51,6 +51,7 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
+import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.InvTransCons;
@@ -993,14 +994,14 @@ public class PurchaseOrderReturn extends Transaction{
             GuanzonException {
         poJSON = new JSONObject();
 
-        Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setRecordStatus(RecordStatus.ACTIVE);
-        object.Master().setClientType("1");
-        poJSON = object.Master().searchRecord(value, byCode);
+        
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
-            Master().setSupplierId(object.Master().getModel().getClientId());
-            Master().setAddressId(object.ClientAddress().getModel().getAddressId()); //TODO
-            Master().setContactId(object.ClientInstitutionContact().getModel().getClientId()); //TODO
+            Master().setSupplierId(object.getModel().getClientId());
+            Master().setAddressId(object.getModel().ClientAddress().getAddressId()); 
+            Master().setContactId(object.getModel().ClientInstitutionContact().getContactPId()); 
         }
 
         return poJSON;
