@@ -33,6 +33,7 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
+import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
@@ -1368,16 +1369,15 @@ public class POQuotation extends Transaction {
     }
 
     public JSONObject SearchSupplier(String value, boolean byCode, boolean isSearch) throws ExceptionInInitializerError, SQLException, GuanzonException {
-        Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setRecordStatus(RecordStatus.ACTIVE);
-        object.Master().setClientType("1");
-
-        poJSON = object.Master().searchRecord(value, byCode);
+        
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
             if(isSearch){
-                setSearchSupplier(object.Master().getModel().getCompanyName());
+                setSearchSupplier(object.getModel().Client().getCompanyName());
             } else {
-                Master().setSupplierId(object.Master().getModel().getClientId());
+                Master().setSupplierId(object.getModel().getClientId());
             }
         }
 

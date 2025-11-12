@@ -58,7 +58,9 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.Client;
+import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.inv.InvMaster;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
@@ -1688,15 +1690,14 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
 
-        Client object = new ClientControllers(poGRider, logwrapr).Client();
-        object.Master().setRecordStatus(RecordStatus.ACTIVE);
-        object.Master().setClientType("1");
-        poJSON = object.Master().searchRecord(value, byCode);
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
-            Master().setSupplierId(object.Master().getModel().getClientId());
-            Master().setAddressId(object.ClientAddress().getModel().getAddressId()); //TODO
-            Master().setContactId(object.ClientInstitutionContact().getModel().getClientId()); //TODO
-//            Master().setTermCode("");//TODO
+            Master().setSupplierId(object.getModel().getClientId());
+            Master().setAddressId(object.getModel().ClientAddress().getAddressId()); 
+            Master().setContactId(object.getModel().ClientInstitutionContact().getContactPId()); 
+            Master().setTermCode(object.getModel().getTermId());
         }
 
         return poJSON;
@@ -1786,8 +1787,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
         
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
@@ -1796,23 +1798,21 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         
         poJSON = object.searchRecord(value, byCode, 
-                Master().getSupplierId(),
-                lsBrand, 
-                lsIndustry,  
-                Master().getCategoryCode());
+                Master().getSupplierId(), 
+                lsIndustry,lsBrand);
         
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
 
             Detail(row).setStockId(object.getModel().getStockId());
-            Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+            Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
+            Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().Inventory().getCost().doubleValue());
         }
         
         System.out.println("StockID : " + Detail(row).Inventory().getStockId());
@@ -1836,32 +1836,31 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
         
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
             poJSON.put("message", "Supplier is not set.");
             return poJSON;
         }
-
+        
         poJSON = object.searchRecord(value, byCode, 
-                Master().getSupplierId(),
-                lsBrand, 
-                lsIndustry,  
-                Master().getCategoryCode());
+                Master().getSupplierId(), 
+                lsIndustry,lsBrand);
         
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
-
+            
             Detail(row).setStockId(object.getModel().getStockId());
-            Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+            Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
+            Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().Inventory().getCost().doubleValue());
         }
         
         
@@ -1931,8 +1930,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
         
         if(isWithSupplier){
             if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
@@ -1943,23 +1943,21 @@ public class PurchaseOrderReceiving extends Transaction {
         } 
         
         poJSON = object.searchRecord(value, byCode, 
-                isWithSupplier ? Master().getSupplierId() : null,
-                lsBrand, 
-                lsIndustry,  
-                Master().getCategoryCode());
+                 isWithSupplier ? Master().getSupplierId() : null,
+                lsIndustry,lsBrand);
         
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
 
             Detail(row).setStockId(object.getModel().getStockId());
-            Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+            Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
+            Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().Inventory().getCost().doubleValue());
         }
         
         System.out.println("StockID : " + Detail(row).Inventory().getStockId());
@@ -1974,8 +1972,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
         String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
         
         if(isWithSupplier){
             if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
@@ -1986,22 +1985,20 @@ public class PurchaseOrderReceiving extends Transaction {
         } 
         
         poJSON = object.searchRecord(value, byCode, 
-                isWithSupplier ? Master().getSupplierId() : null,
-                lsBrand, 
-                lsIndustry,  
-                Master().getCategoryCode());
+                 isWithSupplier ? Master().getSupplierId() : null,
+                lsIndustry,lsBrand);
         
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getBarCode(), "1900-01-01", row, false);
+            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
             if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
 
             Detail(row).setStockId(object.getModel().getStockId());
-            Detail(row).setUnitType(object.getModel().getUnitType());
-            Detail(row).isSerialized(object.getModel().isSerialized());
-            Detail(row).setUnitPrce(object.getModel().getCost().doubleValue());
+            Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
+            Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
+            Detail(row).setUnitPrce(object.getModel().Inventory().getCost().doubleValue());
         }
         
         
@@ -2016,8 +2013,9 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
         
         if(Detail(row).getStockId() == null || "".equals(Detail(row).getStockId())){
             poJSON.put("result", "error");
@@ -2031,9 +2029,10 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("message", "Supplier is not set.");
                 return poJSON;
             }
-            poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+            poJSON = object.searchRecord(value, byCode, 
+                     isWithSupplier ? Master().getSupplierId() : null);
         } else {
-            poJSON = object.searchRecord(value, byCode, null,null, null,  Master().getCategoryCode());
+            poJSON = object.searchRecord(value, byCode);
         }
 
         if ("success".equals((String) poJSON.get("result"))) {
