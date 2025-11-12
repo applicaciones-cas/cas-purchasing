@@ -463,21 +463,44 @@ public class Model_POR_Master extends Model {
         Double ldblTotal =  getTransactionTotal().doubleValue();
         Double ldblDiscount = getDiscount().doubleValue();
         Double ldblDiscountRate = getDiscountRate().doubleValue();
+        Double ldblDiscountVatAmount = 0.0000;
         if(ldblDiscountRate > 0){
             ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
         }
         ldblDiscount = ldblDiscount + ldblDiscountRate;
         if (isVatTaxable()) {
-            ldblNetTotal = getVatSales().doubleValue()
+//            ldblDiscountVatAmount = ldblDiscount - (ldblDiscount / 1.12);
+            ldblNetTotal = (getVatSales().doubleValue()
                         + getVatAmount().doubleValue()
-                        + getVatExemptSales().doubleValue();
+                        + getVatExemptSales().doubleValue());
         } else {
-            ldblNetTotal = ldblTotal + getVatAmount().doubleValue();
+//            ldblDiscountVatAmount = ldblDiscount * 0.12;
+            ldblNetTotal = (ldblTotal + getVatAmount().doubleValue() + getFreight().doubleValue()) - ldblDiscount;
         }
         
-        ldblNetTotal = (ldblNetTotal - ldblDiscount) + getFreight().doubleValue();
-        
         return ldblNetTotal;
+        
+        
+//         //Net Total = Vat Amount - Tax Amount
+//        Double ldblNetTotal = 0.00;
+//        Double ldblTotal =  getTransactionTotal().doubleValue();
+//        Double ldblDiscount = getDiscount().doubleValue();
+//        Double ldblDiscountRate = getDiscountRate().doubleValue();
+//        if(ldblDiscountRate > 0){
+//            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+//        }
+//        ldblDiscount = ldblDiscount + ldblDiscountRate;
+//        if (isVatTaxable()) {
+//            ldblNetTotal = getVatSales().doubleValue()
+//                        + getVatAmount().doubleValue()
+//                        + getVatExemptSales().doubleValue();
+//        } else {
+//            ldblNetTotal = ldblTotal + getVatAmount().doubleValue();
+//        }
+//        
+//        ldblNetTotal = (ldblNetTotal - ldblDiscount) + getFreight().doubleValue();
+//        
+//        return ldblNetTotal;
     }
     
     @Override

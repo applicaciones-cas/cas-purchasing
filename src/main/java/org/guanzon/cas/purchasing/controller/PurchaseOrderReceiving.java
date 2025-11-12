@@ -640,7 +640,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
 
-        poGRider.beginTrans("UPDATE STATUS", "PaidTransaction", SOURCE_CODE, Master().getTransactionNo());
+        //poGRider.beginTrans("UPDATE STATUS", "PaidTransaction", SOURCE_CODE, Master().getTransactionNo());
         
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPaid, true);
@@ -648,7 +648,7 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        poGRider.commitTrans();
+        //poGRider.commitTrans();
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -810,7 +810,7 @@ public class PurchaseOrderReceiving extends Transaction {
         if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
             && Master().getFreight().doubleValue() > 0.0000
             && !Master().getTruckingId().equals(Master().getSupplierId())){
-            if("".equals(getInvTypeCode("freight"))){
+            if("".equals(getInvTypeCode("freight charge"))){
                 poJSON.put("result", "error");
                 poJSON.put("message", "Freight transaction type cannot be empty.\nContact System Administrator to address the issue.");
                 return poJSON;
@@ -1295,7 +1295,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
                 + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + Master().getSupplierId())
-                + lsPurpose );
+                + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1371,7 +1371,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
-                + lsPurpose);
+                + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1441,7 +1441,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
-                + lsPurpose);
+                + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1522,7 +1522,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
-                + lsPurpose);
+                + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -1598,7 +1598,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                 + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + transactionNo)
                 + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
-                + lsPurpose);
+                + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
         }
@@ -2541,11 +2541,13 @@ public class PurchaseOrderReceiving extends Transaction {
                     ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                     if(Master().isVatTaxable()){
                         ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
+                        ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; //Added by arsiela 10302025
                     } else {
                         ldblDetailVatAmount = ldblDetailTotal * 0.12;
+                        ldblDetailVatSales = ldblDetailTotal;  //Added by arsiela 10302025
                     }
                     
-                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount;
+//                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; commented
                     ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
                     ldblVatSales = ldblVatSales + ldblDetailVatSales;
                 } else {
@@ -2561,20 +2563,28 @@ public class PurchaseOrderReceiving extends Transaction {
                 if(Master().isVatTaxable()){
                     ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
                     ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
+                    
+                    //Added by arsiela 10302025
+                    ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                    ldblVatSales = (ldblVatSales 
+                                    + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+                                    - (ldblDiscountTotal - ldblDiscountVatAmount);
                 } else {
                     ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
                     ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
+                    
+                    //Added by arsiela 10302025
+                    ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                    ldblVatSales = (ldblVatSales 
+                                    + Master().getFreight().doubleValue())
+                                    - (ldblDiscountTotal);
                 }
-            
-                System.out.println("Freight Vat Amount " + ldblFreightVatAmount );
-                System.out.println("Freight Vat Sales " +(Master().getFreight().doubleValue() - ldblFreightVatAmount));
-                System.out.println("Discount Vat Amount " + ldblDiscountVatAmount );
-                System.out.println("Discount Vat Sales " +(ldblDiscountTotal - ldblDiscountVatAmount));
-
-                ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
-                ldblVatSales = (ldblVatSales 
-                                + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
-                                - (ldblDiscountTotal - ldblDiscountVatAmount);
+                
+                //Commented by Arsiela 10302025
+//                ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+//                ldblVatSales = (ldblVatSales 
+//                                + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+//                                - (ldblDiscountTotal - ldblDiscountVatAmount);
             } 
                     
             poJSON = Master().setVatSales(ldblVatSales);
@@ -4037,6 +4047,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private Double pdblAdvPayment = 0.0000;
     private Double pdblTotalDiscAmt = 0.0000;
+    private boolean pbVatableExist = false;
     private JSONObject populateCachePayable() throws SQLException, GuanzonException, CloneNotSupportedException{
         pdblAdvPayment = getAdvancePayment();
         pdblTotalDiscAmt = Master().getDiscount().doubleValue() + (Master().getTransactionTotal().doubleValue() * (Master().getDiscountRate().doubleValue() / 100));
@@ -4061,13 +4072,13 @@ public class PurchaseOrderReceiving extends Transaction {
 //            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
             ldblGrossAmt += ldblDetTotal;
             
-            if(Master().isVatTaxable()){
-                ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
-            } else {
-                //If vat exclusive detail total + vat amount
-                ldblVatAmountDetail = ldblDetTotal * 0.12;
-                if(Detail(lnCtr).isVatable()){
-                    ldblDetTotal = ldblDetTotal + ldblVatAmountDetail;
+            if(Detail(lnCtr).isVatable()){
+                pbVatableExist = true;
+                if(Master().isVatTaxable()){
+                    ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
+                } else {
+                    ldblVatAmountDetail = ldblDetTotal * 0.12;
+                    ldblDetTotal = ldblDetTotal + ldblVatAmountDetail; //Added by arsiela 10302025
                 }
             }
             
@@ -4125,7 +4136,39 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
         }
-       
+        
+        Double ldblVatAmount = 0.0000;
+        Double ldblVatSales = 0.0000;
+        Double ldblNetTotal = 0.0000;
+        Double ldblFreight = 0.0000;
+        Double ldblFreightVatAmount = 0.0000;
+        if((Master().getTruckingId() == null || "".equals(Master().getTruckingId())) 
+            || (Master().getSupplierId().equals(Master().getTruckingId())) ){
+            ldblVatAmount = Master().getVatAmount().doubleValue();
+            ldblVatSales = Master().getVatSales().doubleValue();
+            ldblFreight = Master().getFreight().doubleValue();
+            ldblNetTotal = getNetTotal();
+            
+        } else {
+            //If all items are non vatable no vatable sales and vat amount will be computed.
+            if(pbVatableExist){
+                if(Master().isVatTaxable()){
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                    ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
+                    ldblVatSales = Master().getVatSales().doubleValue() - ( Master().getFreight().doubleValue() - ldblFreightVatAmount);
+//                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() - ldblFreightVatAmount);
+                    ldblNetTotal =  getNetTotal() - Master().getFreight().doubleValue();
+                } else {
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+                    ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
+                    ldblVatSales = Master().getVatSales().doubleValue() - Master().getFreight().doubleValue();
+                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() + ldblFreightVatAmount);
+                }
+            } else {
+                ldblNetTotal = getNetTotal() - Master().getFreight().doubleValue();
+            }
+        }
+        
         //Cache Payable Master
         Double ldblTotalDiscAmt =  Master().getDiscount().doubleValue() + (ldblGrossAmt * (Master().getDiscountRate().doubleValue() / 100));
         poCachePayable.Master().setIndustryCode(Master().getIndustryId());
@@ -4138,26 +4181,19 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setSourceNo(Master().getTransactionNo());
         poCachePayable.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
-        poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt); 
-        poCachePayable.Master().setVATSales(Master().getVatSales().doubleValue());
-        poCachePayable.Master().setVATAmount(Master().getVatAmount().doubleValue());
+        poCachePayable.Master().setDiscountAmount(ldblTotalDiscAmt);
+        poCachePayable.Master().setAmountPaid(getAdvancePayment());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
-        poCachePayable.Master().setAmountPaid(getAdvancePayment());
+        poCachePayable.Master().setFreight(ldblFreight);
+        poCachePayable.Master().setVATSales(ldblVatSales);
+        poCachePayable.Master().setVATAmount(ldblVatAmount);
+        poCachePayable.Master().setNetTotal(ldblNetTotal); 
+        poCachePayable.Master().setPayables(ldblNetTotal); 
         poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
-        
-        if((Master().getTruckingId() == null || "".equals(Master().getTruckingId())) 
-            || (Master().getSupplierId().equals(Master().getTruckingId())) ){
-            poCachePayable.Master().setFreight(Master().getFreight().doubleValue());
-            poCachePayable.Master().setNetTotal(getNetTotal()); 
-            poCachePayable.Master().setPayables(getNetTotal()); 
-        } else {
-            poCachePayable.Master().setNetTotal(getNetTotal() - Master().getFreight().doubleValue()); 
-            poCachePayable.Master().setPayables(getNetTotal() - Master().getFreight().doubleValue()); 
-        }
         
         Master().setAmountPaid(getAdvancePayment());
         
@@ -4177,36 +4213,30 @@ public class PurchaseOrderReceiving extends Transaction {
             poCachePayableTrucking.AddDetail();
         }
 
+        
+        Double ldblVatAmount = 0.0000;
+        Double ldblVatSales = 0.0000;
+        Double ldblNetTotal = 0.0000;
+        //If all items are non vatable no vatable sales and vat amount will be computed.
+        if(pbVatableExist){
+            if(Master().isVatTaxable()){
+                ldblVatAmount =  Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                ldblVatSales = Master().getFreight().doubleValue() - ldblVatAmount;
+                ldblNetTotal = Master().getFreight().doubleValue(); // - ldblVatAmount;
+            } else {
+                ldblVatAmount = Master().getFreight().doubleValue() * 0.12;
+                ldblVatSales = Master().getFreight().doubleValue();
+                ldblNetTotal = Master().getFreight().doubleValue() + ldblVatAmount;
+            }
+        } else {
+            ldblNetTotal = Master().getFreight().doubleValue();
+        }
+        
+        
         int lnRow = poCachePayableTrucking.getDetailCount() - 1;
-        poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight")); //TODO
-        poCachePayableTrucking.Detail(lnRow).setGrossAmount(Master().getFreight());
-        poCachePayableTrucking.Detail(lnRow).setPayables(Master().getFreight()); 
-        
-        //get the excess advance payment and total discount amount
-//        Double ldblTotalDiscAmt =  pdblTotalDiscAmt;
-//        Double ldblAdvPayment =  pdblAdvPayment;
-        
-//        //Update AmountPaid
-//        if(pdblAdvPayment >= poCachePayableTrucking.Detail(lnRow).getPayables()){
-//            poCachePayableTrucking.Detail(lnRow).setAmountPaid(poCachePayableTrucking.Detail(lnRow).getPayables());
-//            pdblAdvPayment = pdblAdvPayment - poCachePayableTrucking.Detail(lnRow).getPayables();
-//        } else {
-//            if( pdblAdvPayment > 0.0000){
-//                poCachePayableTrucking.Detail(lnRow).setAmountPaid(pdblAdvPayment);
-//                pdblAdvPayment = 0.0000;
-//            }
-//        }
-//
-//        //Update Discount
-//        if(pdblTotalDiscAmt >= poCachePayableTrucking.Detail(lnRow).getPayables()){
-//            poCachePayableTrucking.Detail(lnRow).setDiscountAmount(poCachePayableTrucking.Detail(lnRow).getPayables());
-//            pdblTotalDiscAmt = pdblTotalDiscAmt - poCachePayableTrucking.Detail(lnRow).getPayables();
-//        } else {
-//            if( pdblTotalDiscAmt > 0.0000){
-//                poCachePayableTrucking.Detail(lnRow).setDiscountAmount(pdblTotalDiscAmt);
-//                pdblTotalDiscAmt = 0.0000;
-//            }
-//        }
+        poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight charge")); 
+        poCachePayableTrucking.Detail(lnRow).setGrossAmount(ldblNetTotal);
+        poCachePayableTrucking.Detail(lnRow).setPayables(ldblNetTotal); 
        
         //Cache Payable Trucking Master
         poCachePayableTrucking.Master().setIndustryCode(Master().getIndustryId());
@@ -4219,11 +4249,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setSourceNo(Master().getTransactionNo());
         poCachePayableTrucking.Master().setReferNo(Master().getReferenceNo()); 
         poCachePayableTrucking.Master().setGrossAmount(Master().getFreight().doubleValue()); 
-//        poCachePayableTrucking.Master().setFreight(Master().getFreight().doubleValue()); //Do not set the freight since detail has already a freight
-        poCachePayableTrucking.Master().setNetTotal(Master().getFreight().doubleValue()); 
-        poCachePayableTrucking.Master().setPayables(Master().getFreight().doubleValue()); 
-//        poCachePayableTrucking.Master().setDiscountAmount(ldblTotalDiscAmt); 
-//        poCachePayableTrucking.Master().setAmountPaid(ldblAdvPayment);
+        poCachePayableTrucking.Master().setFreight(0.0000); //Do not set the freight since detail has already a freight
+        poCachePayableTrucking.Master().setVATSales(ldblVatSales); 
+        poCachePayableTrucking.Master().setVATAmount(ldblVatAmount); 
+        poCachePayableTrucking.Master().setNetTotal(ldblNetTotal); 
+        poCachePayableTrucking.Master().setPayables(ldblNetTotal); 
         poCachePayableTrucking.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
@@ -4235,7 +4265,7 @@ public class PurchaseOrderReceiving extends Transaction {
         try {
             String lsSQL = "SELECT sInvTypCd, sDescript FROM inv_type ";
             lsSQL = MiscUtil.addCondition(lsSQL, " cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
-                                                + " AND lower(sDescript) LIKE " + SQLUtil.toSQL("%"+fsValue));
+                                                + " AND lower(sDescript) LIKE " + SQLUtil.toSQL("%"+fsValue+"%"));
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
             try {
@@ -5050,13 +5080,17 @@ public class PurchaseOrderReceiving extends Transaction {
                 //Set original quantity for WH Count when PO Receiving is modified after confirmation
                 if(Master().getTransactionStatus().equals(PurchaseOrderReceivingStatus.CONFIRMED)){
                     if(Detail(lnCtr).getWhCount().doubleValue() == 0.00) {
-                        Model_POR_Detail loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
-                        loObject.initialize();
-                        poJSON = loObject.openRecord(Detail(lnCtr).getTransactionNo(), Detail(lnCtr).getOrderNo(),Detail(lnCtr).getStockId());
-                        if ("error".equals((String) poJSON.get("result"))) {
-                            return poJSON;
+                        if(Detail(lnCtr).getEditMode() == EditMode.UPDATE){
+                            Model_POR_Detail loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingDetails();
+                            loObject.initialize();
+                            poJSON = loObject.openRecord(Detail(lnCtr).getTransactionNo(), Detail(lnCtr).getOrderNo(),Detail(lnCtr).getStockId());
+                            if ("error".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                            Detail(lnCtr).setWhCount(loObject.getQuantity());
+                        } else {
+                            Detail(lnCtr).setWhCount(Detail(lnCtr).getQuantity());
                         }
-                        Detail(lnCtr).setWhCount(loObject.getQuantity());
                     }
                 }
                 
