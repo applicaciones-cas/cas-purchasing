@@ -207,6 +207,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -220,7 +222,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -294,6 +296,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction confirmed successfully.");
@@ -315,6 +321,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -328,7 +336,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -403,6 +411,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction approved successfully.");
@@ -424,6 +436,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -437,7 +451,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -511,6 +525,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction posted successfully.");
@@ -533,6 +551,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -546,7 +566,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -620,6 +640,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction voided successfully.");
@@ -641,6 +665,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -654,7 +680,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -728,6 +754,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction cancelled successfully.");
@@ -749,6 +779,8 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -762,7 +794,7 @@ public class POQuotationRequest extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -836,6 +868,10 @@ public class POQuotationRequest extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction dis-approved successfully.");

@@ -226,6 +226,8 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -239,7 +241,7 @@ public class PurchaseOrderReturn extends Transaction{
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -334,6 +336,10 @@ public class PurchaseOrderReturn extends Transaction{
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
+        }
+
+        if(check != null){
+            check.postAuth();
         }
         
         poGRider.commitTrans();
@@ -445,6 +451,8 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -458,7 +466,7 @@ public class PurchaseOrderReturn extends Transaction{
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -530,6 +538,10 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         if (lbPosted) {
@@ -558,6 +570,8 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -571,7 +585,7 @@ public class PurchaseOrderReturn extends Transaction{
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -670,6 +684,10 @@ public class PurchaseOrderReturn extends Transaction{
             poGRider.rollbackTrans();
             return poJSON;
         }
+
+        if(check != null){
+            check.postAuth();
+        }
         
         poGRider.commitTrans();
 
@@ -700,6 +718,8 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -713,7 +733,7 @@ public class PurchaseOrderReturn extends Transaction{
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -793,6 +813,10 @@ public class PurchaseOrderReturn extends Transaction{
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
+        }
+
+        if(check != null){
+            check.postAuth();
         }
         
         poGRider.commitTrans();

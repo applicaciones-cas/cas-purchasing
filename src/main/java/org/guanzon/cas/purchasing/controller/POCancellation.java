@@ -348,6 +348,8 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -361,7 +363,7 @@ public class POCancellation extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -431,15 +433,6 @@ public class POCancellation extends Transaction {
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
-        poJSON = statusChange(poMaster.getTable(),
-                (String) poMaster.getValue("sTransNox"),
-                "ConfirmTransaction",
-                POCancellationStatus.CONFIRMED,
-                false, true);
-        if ("error".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             Model_PO_Cancellation_Detail loDetail = (Model_PO_Cancellation_Detail) paDetail.get(lnCtr);
 
@@ -459,6 +452,21 @@ public class POCancellation extends Transaction {
                 }
             }
         }
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "ConfirmTransaction",
+                POCancellationStatus.CONFIRMED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+        
+        if(check != null){
+            check.postAuth();
+        }
+
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -518,6 +526,8 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -531,7 +541,7 @@ public class POCancellation extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -621,6 +631,10 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -642,6 +656,8 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -655,7 +671,7 @@ public class POCancellation extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -735,6 +751,10 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        if(check != null){
+            check.postAuth();
+        }
+        
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -755,6 +775,8 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
+        MatrixAuthChecker check = null; 
+        
         if(!pbWthParent){
             //validator
             poJSON = isEntryOkay(lsStatus);
@@ -768,7 +790,7 @@ public class POCancellation extends Transaction {
             //Check if there is a authorization request
             if(loMatrix != null){
                 //initialized MatrixAuthChecker object
-                MatrixAuthChecker check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
+                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
                 poJSON = check.loadAuth();
 
@@ -836,11 +858,11 @@ public class POCancellation extends Transaction {
             }
         }
 
-        //validator
-        poJSON = isEntryOkay(POCancellationStatus.VOID);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+//        //validator
+//        poJSON = isEntryOkay(POCancellationStatus.VOID);
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
 
         poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
@@ -872,6 +894,10 @@ public class POCancellation extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
             return poJSON;
+        }
+
+        if(check != null){
+            check.postAuth();
         }
         
         poGRider.commitTrans();
