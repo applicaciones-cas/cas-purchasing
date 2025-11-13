@@ -1697,7 +1697,9 @@ public class PurchaseOrderReceiving extends Transaction {
             Master().setSupplierId(object.getModel().getClientId());
             Master().setAddressId(object.getModel().ClientAddress().getAddressId()); 
             Master().setContactId(object.getModel().ClientInstitutionContact().getContactPId()); 
-            Master().setTermCode(object.getModel().getTermId());
+            if(object.getModel().getTermId() != null && !"".equals(object.getModel().getTermId())){
+                Master().setTermCode(object.getModel().getTermId());
+            }
         }
 
         return poJSON;
