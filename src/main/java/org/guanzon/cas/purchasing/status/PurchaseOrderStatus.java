@@ -18,6 +18,6 @@ public class PurchaseOrderStatus {
     
     public static class SourceCode  {
         public static final  String STOCKREQUEST = "InvR"; 
-        public static final  String POQUOTATION = "POQT"; 
+        public static final  String POQUOTATION = "POQt"; 
     }
 }
