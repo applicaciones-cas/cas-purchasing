@@ -9,6 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -2784,7 +2786,10 @@ public class POQuotation extends Transaction {
             Master().setCategoryCode(psCategorCd);
             Master().setTransactionDate(poGRider.getServerDate());
             Master().setTransactionStatus(POQuotationStatus.OPEN);
-            
+            Master().setReferenceDate(poGRider.getServerDate());
+            LocalDateTime ldt = poGRider.getServerDate().toLocalDateTime().plusMonths(1);
+            Master().setValidityDate( Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()));
+            System.out.println("Validity Date : " + Master().getValidityDate());
         } catch (SQLException ex) {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");

@@ -136,6 +136,10 @@ public class Model_POR_Serial extends Model {
     }
 
     public String getSerial01() {
+        if(poInvSerial.getSerial01() == null){
+            return "";
+        }
+        
         return poInvSerial.getSerial01();
     }
 
@@ -144,6 +148,9 @@ public class Model_POR_Serial extends Model {
     }
 
     public String getSerial02() {
+        if(poInvSerial.getSerial02() == null){
+            return "";
+        }
         return poInvSerial.getSerial02();
     }
 
@@ -152,7 +159,12 @@ public class Model_POR_Serial extends Model {
     }
 
     public String getConductionStickerNo() {
+        if(poInvSerialRegistration.getConductionStickerNo() == null){
+            return "";
+        } 
+        
         return poInvSerialRegistration.getConductionStickerNo();
+        
     }
 
     public JSONObject setPlateNo(String plateNo) {
@@ -160,6 +172,9 @@ public class Model_POR_Serial extends Model {
     }
 
     public String getPlateNo() {
+        if(poInvSerialRegistration.getPlateNoP() == null){
+            return "";
+        } 
         return poInvSerialRegistration.getPlateNoP();
     }
     

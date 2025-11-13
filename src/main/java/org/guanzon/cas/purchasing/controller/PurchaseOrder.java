@@ -2034,7 +2034,9 @@ public class PurchaseOrder extends Transaction {
             Master().setSupplierID(object.getModel().getClientId());
             Master().setAddressID(object.getModel().ClientAddress().getAddressId()); 
             Master().setContactID(object.getModel().ClientInstitutionContact().getContactPId()); 
-            Master().setTermCode(object.getModel().getTermId());
+            if(object.getModel().getTermId() != null && !"".equals(object.getModel().getTermId())){
+                Master().setTermCode(object.getModel().getTermId());
+            }
         }
 
         return poJSON;
@@ -2191,9 +2193,9 @@ public class PurchaseOrder extends Transaction {
                 + " GROUP BY a.sTransNox "
                 + " HAVING SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) > 0 ";
         //For General Only
-        if(Master().getIndustryID() == null || "".equals(Master().getIndustryID())){
+//        if(Master().getIndustryID() == null || "".equals(Master().getIndustryID())){
             lsSQL = lsSQL + " UNION " +  getPOQuotation_SQL();
-            lsFilterCondition = String.join(" AND ",  //" a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+            lsFilterCondition = String.join(" AND ",  " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                     " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                     " a.sSupplier = " + SQLUtil.toSQL(Master().getSupplierID()),
                     " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
@@ -2204,7 +2206,7 @@ public class PurchaseOrder extends Transaction {
 //                lsSQL = lsSQL + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
 //            }
             lsSQL = lsSQL + " GROUP BY a.sTransNox ";
-        }
+//        }
         
         lsSQL = lsSQL + " ORDER BY dTransact, sTransNox DESC";
         
