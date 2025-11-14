@@ -635,7 +635,7 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "matrix");
+                        poJSON.put("result", "success");
                         
                         return poJSON;
                     }
