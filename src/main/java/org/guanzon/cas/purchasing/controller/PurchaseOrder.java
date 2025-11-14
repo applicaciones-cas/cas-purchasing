@@ -627,7 +627,7 @@ public class PurchaseOrder extends Transaction {
                         System.out.println("Status: " + lsStatus);
                         lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         System.out.println("Status: " + lsStatus);
-                        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove, true);
+                        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), "Approval matrix", lsStatus, !lbApprove, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
                             poGRider.rollbackTrans();
                             return poJSON;
