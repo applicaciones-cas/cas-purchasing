@@ -349,6 +349,10 @@ public class Model_PO_Master extends Model {
     }
 
     public String getTransactionStatus() {
+        return (String) getValue("cTranStat");
+    }
+    
+    public String getConvertedTransactionStatus() {
         if("ABCDEFGHIJ".contains((String) getValue("cTranStat"))){
             return String.valueOf(((String) getValue("cTranStat")).getBytes()[0] - 64);
         }
