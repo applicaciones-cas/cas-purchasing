@@ -1775,7 +1775,7 @@ public class PurchaseOrder extends Transaction {
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
                 + " LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier"
-                + " LEFT JOIN client_master e ON d.sSupplier = e.sClientID"
+                + " LEFT JOIN client_master e ON a.sSupplier = e.sClientID"
                 + " , category f ";
     }
 
@@ -2777,7 +2777,37 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
-
+    
+    public List<String> getApprover() throws SQLException{
+        List<String> lsList = new ArrayList<String>();
+            String lsSQL =   " SELECT "
+                        + "     a.sSourceCD "
+                        + " ,	a.sSourceNo "
+                        + " ,	a.cTranStat "
+                        + " ,	d.sCompnyNm "
+                        + " ,	c.dApproved "
+                        + " ,   CONCAT(c.sEmployID, ' - ',d.sCompnyNm,' ',c.dApproved) AS sApprover "
+                        + " FROM Transaction_Authorization_Master a  "
+                        + " ,	transaction_authorization_detail b     "
+                        + " ,	Transaction_Authorization_Recipient c  "
+                        + " LEFT JOIN client_master d ON c.sEmployID = d.sClientID "
+                        + " WHERE a.sTransNox = b.sSourceNo AND b.sSourceNo = c.sSourceNo    "
+                        + " AND a.sSourceCD = " + SQLUtil.toSQL(getSourceCode())
+                        + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getTransactionNo())
+                        + " AND a.cTranStat = '2' "
+                        + " AND c.cTranStat = '1' ";
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                while (loRS.next()) {
+                    lsList.add(loRS.getString("sApprover"));
+                }
+                MiscUtil.close(loRS);
+            }
+            
+        return lsList;
+    }
+    
     public JSONObject printTransaction(String jasperType) {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
@@ -2788,17 +2818,20 @@ public class PurchaseOrder extends Transaction {
             parameters.put("sCompnyNm", poGRider.getClientName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
+            parameters.put("sCompany", Master().Company().getCompanyName());
             
-            //TODO
+            //set default value
+            parameters.put("sApprval1",""); 
+            parameters.put("sApprval2", "");
+            parameters.put("sApprval3", "");
+            //Update value when approved
             if(Master().getTransactionStatus().equals(PurchaseOrderStatus.APPROVED)){
-                parameters.put("sApprval1","MX0125024178 - Yambao, Jeffrey Torres" ); //poGRider.getLogName()
-                parameters.put("sApprval2", "MX0125024179 - Adversalo, Rex Soriano");    
-                parameters.put("sApprval3", "");
-            } else {
-                parameters.put("sApprval1",""); //poGRider.getLogName()
-                parameters.put("sApprval2", "");
-                parameters.put("sApprval3", "");
+                List<String> lsList = getApprover();
+                for(int lnCtr = 0;lnCtr <= lsList.size() - 1;lnCtr++){
+                    parameters.put("sApprval"+(lnCtr+1),lsList.get(lnCtr)); 
+                }
             }
+            
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
