@@ -3113,7 +3113,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " LEFT JOIN po_detail b on b.sTransNox = a.sTransNox "
                     + " LEFT JOIN client_master c ON c.sClientID = a.sSupplier ";
             
-            if(poGRider.isMainOffice() || poGRider.isWarehouse()){
+            if(poGRider.isMainOffice() || poGRider.isWarehouse() || "09".equals(psIndustryId)){
                 lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                         + " AND a.sCompnyID LIKE " + SQLUtil.toSQL("%" + psCompanyId)
                         + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%"+ Master().getSupplierId())
@@ -3288,7 +3288,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " LEFT JOIN po_return_detail b on b.sTransNox = a.sTransNox "
                     + " LEFT JOIN client_master c ON c.sClientID = a.sSupplier ";
             
-            if(poGRider.isMainOffice() || poGRider.isWarehouse()){
+            if(poGRider.isMainOffice() || poGRider.isWarehouse() || "09".equals(psIndustryId)){
                 lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                         + " AND a.sCompnyID LIKE " + SQLUtil.toSQL("%" + psCompanyId)
                         + " AND c.sCompnyNm LIKE " + SQLUtil.toSQL("%"+ fsSupplier)
