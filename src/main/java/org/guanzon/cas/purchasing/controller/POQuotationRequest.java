@@ -1284,7 +1284,7 @@ public class POQuotationRequest extends Transaction {
                                             + lsBrand
                                             + lsModel
                                             );
-        
+        lsSQL = lsSQL + " GROUP BY a.sStockIDx ";
         System.out.println("Executing SQL: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
