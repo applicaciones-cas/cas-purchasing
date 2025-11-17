@@ -3109,9 +3109,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     + "   a.sTransNox "
                     + " , a.dTransact "
                     + " , c.sCompnyNm AS sSupplier "
-                    + " FROM po_master a "
-                    + " LEFT JOIN po_detail b on b.sTransNox = a.sTransNox "
-                    + " LEFT JOIN client_master c ON c.sClientID = a.sSupplier ";
+                    + " FROM PO_Master a "
+                    + " LEFT JOIN PO_Detail b on b.sTransNox = a.sTransNox "
+                    + " LEFT JOIN Client_Master c ON c.sClientID = a.sSupplier ";
             
             if(poGRider.isMainOffice() || poGRider.isWarehouse() || "09".equals(psIndustryId)){
                 lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
@@ -3284,9 +3284,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     + "   a.sTransNox "
                     + " , a.dTransact "
                     + " , c.sCompnyNm AS sSupplier "
-                    + " FROM po_return_master a "
-                    + " LEFT JOIN po_return_detail b on b.sTransNox = a.sTransNox "
-                    + " LEFT JOIN client_master c ON c.sClientID = a.sSupplier ";
+                    + " FROM PO_Return_Master a "
+                    + " LEFT JOIN PO_Return_Detail b on b.sTransNox = a.sTransNox "
+                    + " LEFT JOIN Client_Master c ON c.sClientID = a.sSupplier ";
             
             if(poGRider.isMainOffice() || poGRider.isWarehouse() || "09".equals(psIndustryId)){
                 lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
@@ -3491,7 +3491,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + "    sTransNox "
                     + " ,  nEntryNox "
                     + " ,  sSerialID "
-                    + " FROM po_receiving_serial ";
+                    + " FROM PO_Receiving_Serial ";
 
             lsSQL = MiscUtil.addCondition(lsSQL, " sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())
                     + " AND nEntryNox = " + SQLUtil.toSQL(entryNo)
@@ -3805,8 +3805,8 @@ public class PurchaseOrderReceiving extends Transaction {
                         + " , a.sStockIDx "                                                    
                         + " , b.sCStckrNo "                                                   
                         + " , b.sPlateNoP "                                                   
-                        + " FROM inv_serial a  "                                              
-                        + " LEFT JOIN inv_serial_registration b ON b.sSerialID = a.sSerialID ";
+                        + " FROM Inv_Serial a  "                                              
+                        + " LEFT JOIN Inv_Serial_Registration b ON b.sSerialID = a.sSerialID ";
         
         switch(columnName){
             case "serial01":
@@ -3862,9 +3862,9 @@ public class PurchaseOrderReceiving extends Transaction {
                         + " , b.sPlateNoP "                                                  
                         + " , a.sIndstCdx "                                                  
                         + " , c.sIndstCdx "                                                   
-                        + " FROM inv_serial a  "                                              
-                        + " LEFT JOIN inv_serial_registration b ON b.sSerialID = a.sSerialID "
-                        + " LEFT JOIN inventory c ON c.sStockIDx = a.sStockIDx ";
+                        + " FROM Inv_Serial a  "                                              
+                        + " LEFT JOIN Inv_Serial_Registration b ON b.sSerialID = a.sSerialID "
+                        + " LEFT JOIN Inventory c ON c.sStockIDx = a.sStockIDx ";
         
 //        lsSQL = MiscUtil.addCondition(lsSQL, " a.sStockIDx = " + SQLUtil.toSQL(paOthers.get(row).getStockId())
 //                                                + " AND a.sSerialID <> " +  SQLUtil.toSQL(paOthers.get(row).getSerialId()) 
@@ -4294,7 +4294,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     private String getInvTypeCode(String fsValue){
         try {
-            String lsSQL = "SELECT sInvTypCd, sDescript FROM inv_type ";
+            String lsSQL = "SELECT sInvTypCd, sDescript FROM Inv_Type ";
             lsSQL = MiscUtil.addCondition(lsSQL, " cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
                                                 + " AND lower(sDescript) LIKE " + SQLUtil.toSQL("%"+fsValue+"%"));
             System.out.println("Executing SQL: " + lsSQL);
@@ -5802,8 +5802,8 @@ public class PurchaseOrderReceiving extends Transaction {
         double lnRecQty = 0;
         String lsSQL = " SELECT "
                 + " b.nQuantity AS nQuantity "
-                + " FROM po_receiving_master a "
-                + " LEFT JOIN po_receiving_detail b ON b.sTransNox = a.sTransNox ";
+                + " FROM PO_Receiving_Master a "
+                + " LEFT JOIN PO_Receiving_Detail b ON b.sTransNox = a.sTransNox ";
         lsSQL = MiscUtil.addCondition(lsSQL, " b.sStockIDx = " + SQLUtil.toSQL(stockId)
                 + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
                 + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
@@ -6132,7 +6132,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
     public String getTermCode()
             throws SQLException { //Default 45 Days
-        String lsSQL = "SELECT sTermCode FROM term ";
+        String lsSQL = "SELECT sTermCode FROM Term ";
         lsSQL = MiscUtil.addCondition(lsSQL, " sDescript LIKE " + SQLUtil.toSQL("45 %"));
 
         System.out.println("Executing SQL: " + lsSQL);
@@ -6149,7 +6149,7 @@ public class PurchaseOrderReceiving extends Transaction {
     
     public String getInventoryTypeCode()
             throws SQLException {
-        String lsSQL = "SELECT sInvTypCd FROM category ";
+        String lsSQL = "SELECT sInvTypCd FROM Category ";
 //        lsSQL = MiscUtil.addCondition(lsSQL, " sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
 //                                                +  " AND sCategrCd = " + SQLUtil.toSQL(psCategorCd));
         lsSQL = MiscUtil.addCondition(lsSQL, " sCategrCd = " + SQLUtil.toSQL(psCategorCd));
@@ -6169,7 +6169,7 @@ public class PurchaseOrderReceiving extends Transaction {
     public String getCompanyId() {
         String lsCompanyId = "";
         try {
-            String lsSQL = "SELECT sCompnyID FROM branch ";
+            String lsSQL = "SELECT sCompnyID FROM Branch ";
             lsSQL = MiscUtil.addCondition(lsSQL, " sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
 
             System.out.println("Executing SQL: " + lsSQL);
@@ -6201,11 +6201,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
-                + " FROM po_receiving_master a "
-                + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
-                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx "
-                + " LEFT JOIN branch e ON e.sBranchCd = a.sBranchCd ";
+                + " FROM PO_Receiving_Master a "
+                + " LEFT JOIN Client_Master b ON b.sClientID = a.sSupplier "
+                + " LEFT JOIN Company c ON c.sCompnyID = a.sCompnyID "
+                + " LEFT JOIN Industry d ON d.sIndstCdx = a.sIndstCdx "
+                + " LEFT JOIN Branch e ON e.sBranchCd = a.sBranchCd ";
     }
     
     @Override
@@ -6795,7 +6795,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "   IFNULL(f.sDescript, '') xMeasurNm, "                                             
                 + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, ''))) xVrntName, " 
                 + "   IFNULL(d.sModelCde, '') xModelCde "                                              
-                + " FROM po_receiving_detail a "                                                       
+                + " FROM PO_Receiving_Detail a "                                                       
                 + " LEFT JOIN Inventory b            "                                                 
                 + "     ON b.sStockIDx = a.sStockIDx "                                                 
                 + " LEFT JOIN Brand c                "                                                 
@@ -6831,7 +6831,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "   IFNULL(f.sDescript, '')    xMeasurNm, "                                            
                 + "   TRIM(CONCAT(IFNULL(g.sDescript, ''), ' ', IFNULL(g.nYearMdlx, '')))    xVrntName, "
                 + "   IFNULL(d.sModelCde, '')    xModelCde "                                              
-                + "   FROM po_receiving_detail a "                                                         
+                + "   FROM PO_Receiving_Detail a "                                                         
                 + "   LEFT JOIN Inventory b    "                                                         
                 + "     ON b.sStockIDx = a.sStockIDx  "                                                      
                 + "   LEFT JOIN Inventory bb    "                                                         
@@ -6848,11 +6848,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 + "     ON b.sVrntIDxx = g.sVrntIDxx  "                                                  
                 + "   LEFT JOIN Inv_Supplier h        "                                                  
                 + "     ON b.sStockIDx = h.sStockIDx  "                                                  
-                + "   LEFT JOIN po_receiving_serial i "                                                  
+                + "   LEFT JOIN PO_Receiving_Serial i "                                                  
                 + "     ON i.sStockIDx = a.sStockIDx AND i.sTransNox = a.sTransNox "                     
-                + "   LEFT JOIN inv_serial j "                                                           
+                + "   LEFT JOIN Inv_Serial j "                                                           
                 + "     ON j.sSerialID = i.sSerialID "                                                   
-                + "   LEFT JOIN inv_serial_registration k "                                              
+                + "   LEFT JOIN Inv_Serial_Registration k "                                              
                 + "     ON k.sSerialID = i.sSerialID "   ;
     }
     
@@ -6867,10 +6867,10 @@ public class PurchaseOrderReceiving extends Transaction {
             + "  , c.sDescript "
             + "  , d.sCStckrNo "  
             + "  , d.sPlateNoP "  
-            + " FROM po_return_detail a "
-            + " LEFT JOIN inv_serial b ON a.sSerialID = b.sSerialID "
-            + " LEFT JOIN inventory c ON c.sStockIDx = b.sStockIDx "
-            + " LEFT JOIN inv_serial_registration d ON d.sSerialID = a.sSerialID ";
+            + " FROM PO_Return_Detail a "
+            + " LEFT JOIN Inv_Serial b ON a.sSerialID = b.sSerialID "
+            + " LEFT JOIN Inventory c ON c.sStockIDx = b.sStockIDx "
+            + " LEFT JOIN Inv_Serial_Registration d ON d.sSerialID = a.sSerialID ";
     }
     
     private String getInvSerial(){
@@ -6891,7 +6891,7 @@ public class PurchaseOrderReceiving extends Transaction {
             + "  , c.sPlateNoP "                                          
             + " FROM Inv_Serial a "                                  
             + " LEFT JOIN Inventory b ON b.sStockIDx = a.sStockIDx "
-            + " LEFT JOIN inv_serial_registration c ON c.sSerialID = a.sSerialID ";
+            + " LEFT JOIN Inv_Serial_Registration c ON c.sSerialID = a.sSerialID ";
     }
     
     
@@ -6906,9 +6906,9 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , c.sOrderNox "                                                
                 + " , d.sSerial01 "                                                
                 + " , d.sSerial02 "                                              
-                + " FROM po_receiving_master a "                                  
-                + " LEFT JOIN po_receiving_serial b ON b.sTransNox = a.sTransNox "
-                + " LEFT JOIN po_receiving_detail c ON c.sTransNox = a.sTransNox "
+                + " FROM PO_Receiving_Master a "                                  
+                + " LEFT JOIN PO_Receiving_Serial b ON b.sTransNox = a.sTransNox "
+                + " LEFT JOIN PO_Receiving_Detail c ON c.sTransNox = a.sTransNox "
                 + " LEFT JOIN inv_serial d ON d.sSerialID = b.sSerialID ";
     }
     

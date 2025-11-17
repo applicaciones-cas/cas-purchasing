@@ -1345,7 +1345,7 @@ public class PurchaseOrderReturn extends Transaction{
             
             String lsSQL = " SELECT "
                     + " a.nQuantity AS nQuantity "
-                    + " FROM po_receiving_detail a " ;
+                    + " FROM PO_Receiving_Detail a " ;
             lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getSourceNo())
                                                     + " AND (a.sStockIDx = " + SQLUtil.toSQL(Detail(row).getStockId())
                                                     + " OR a.sReplacID = " + SQLUtil.toSQL(Detail(row).getStockId()) + " ) "
@@ -1386,8 +1386,8 @@ public class PurchaseOrderReturn extends Transaction{
         String lsSQL = " SELECT "
                 + "  a.sTransNox "
                 + " ,b.nQuantity AS nQuantity "
-                + " FROM po_return_master a "
-                + " LEFT JOIN po_return_detail b ON b.sTransNox = a.sTransNox " ;
+                + " FROM PO_Return_Master a "
+                + " LEFT JOIN PO_Return_Detail b ON b.sTransNox = a.sTransNox " ;
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                                 + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getSourceNo())
                                                 + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId));
@@ -1992,10 +1992,10 @@ public class PurchaseOrderReturn extends Transaction{
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
                 + " , d.sDescript  AS sIndustry"
-                + " FROM po_return_master a "
-                + " LEFT JOIN client_master b ON b.sClientID = a.sSupplier "
-                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN industry d ON d.sIndstCdx = a.sIndstCdx ";
+                + " FROM PO_Return_Master a "
+                + " LEFT JOIN Client_Master b ON b.sClientID = a.sSupplier "
+                + " LEFT JOIN Company c ON c.sCompnyID = a.sCompnyID "
+                + " LEFT JOIN Industry d ON d.sIndstCdx = a.sIndstCdx ";
     }
     
     @Override

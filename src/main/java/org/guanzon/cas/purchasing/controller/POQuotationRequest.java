@@ -1593,7 +1593,7 @@ public class POQuotationRequest extends Transaction {
             
             String lsApproval = "";
             if(isApproval){
-                lsApproval = " AND a.sTransNox NOT IN (SELECT q.sSourceNo FROM po_quotation_master q WHERE q.sSourceNo = a.sTransNox ) ";
+                lsApproval = " AND a.sTransNox NOT IN (SELECT q.sSourceNo FROM PO_Quotation_Master q WHERE q.sSourceNo = a.sTransNox ) ";
             }
 
             String lsTransStat = "";
@@ -2279,12 +2279,12 @@ public class POQuotationRequest extends Transaction {
                     + "  , d.sDeptName AS Department "
                     + "  , e.sDescript AS Category   "
                     + "  , f.sDescript AS Category2  "
-                    + " FROM po_quotation_request_master a "
-                    + " LEFT JOIN industry b ON b.sIndstCdx = a.sIndstCdx        "
-                    + " LEFT JOIN branch c ON c.sBranchCd = a.sBranchCd          "
-                    + " LEFT JOIN department d ON d.sDeptIDxx = a.sDeptIDxx      "
-                    + " LEFT JOIN category e ON e.sCategrCd = a.sCategrCd        "
-                    + " LEFT JOIN category_level2 f ON f.sCategrCd = a.sCategCd2 " ;
+                    + " FROM PO_Quotation_Request_Master a "
+                    + " LEFT JOIN Industry b ON b.sIndstCdx = a.sIndstCdx        "
+                    + " LEFT JOIN Branch c ON c.sBranchCd = a.sBranchCd          "
+                    + " LEFT JOIN Department d ON d.sDeptIDxx = a.sDeptIDxx      "
+                    + " LEFT JOIN Category e ON e.sCategrCd = a.sCategrCd        "
+                    + " LEFT JOIN Category_Level2 f ON f.sCategrCd = a.sCategCd2 " ;
         
     }
     
