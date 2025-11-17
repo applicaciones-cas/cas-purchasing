@@ -5,7 +5,6 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -1592,8 +1591,8 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         int lnRecQty = 0;
         String lsSQL = "SELECT b.nQuantity AS nQuantity "
-                + "FROM po_master a "
-                + "LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox ";
+                + "FROM PO_Master a "
+                + "LEFT JOIN PO_Detail b ON b.sTransNox = a.sTransNox ";
 
         lsSQL = MiscUtil.addCondition(lsSQL, " b.sSourceNo = " + SQLUtil.toSQL(orderNo)
                 + " AND b.sStockIDx = " + SQLUtil.toSQL(stockId)
@@ -1734,8 +1733,8 @@ public class PurchaseOrder extends Transaction {
     
     private JSONObject checkExistingPO(String fsSourceNo, String fsSourceCode) throws SQLException{
         String detailQuery = " SELECT b.sSourceNo, b.sSourceCd "
-                + " FROM po_master a "
-                + " LEFT JOIN po_detail b ON a.sTransNox = b.sTransNox ";
+                + " FROM PO_Master a "
+                + " LEFT JOIN PO_Detail b ON a.sTransNox = b.sTransNox ";
 
         String lsFilterCondition = String.join(" AND ",
                     " b.sSourceNo = " + SQLUtil.toSQL(fsSourceNo),
@@ -1771,12 +1770,12 @@ public class PurchaseOrder extends Transaction {
                 + "  e.sCompnyNm, "
                 + "  f.sDescript,"
                 + "  a.sBranchCd"
-                + " FROM po_master a "
+                + " FROM PO_Master a "
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
-                + " LEFT JOIN company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN inv_supplier d ON a.sSupplier = d.sSupplier"
-                + " LEFT JOIN client_master e ON a.sSupplier = e.sClientID"
-                + " , category f ";
+                + " LEFT JOIN Company c ON c.sCompnyID = a.sCompnyID "
+                + " LEFT JOIN Inv_Supplier d ON a.sSupplier = d.sSupplier"
+                + " LEFT JOIN Client_Master e ON a.sSupplier = e.sClientID"
+                + " , Category f ";
     }
 
     public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -2144,13 +2143,13 @@ public class PurchaseOrder extends Transaction {
                 + "  COUNT(DISTINCT b.sStockIDx) AS total_details,"
                 + "  SUM(b.nApproved - (b.nIssueQty + b.nOrderQty)) AS total_request,"
                 + " '" +PurchaseOrderStatus.SourceCode.STOCKREQUEST+"' AS request_type"
-                + " FROM inv_stock_request_master a"
-                + " LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox"
-                + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
-                + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
-                + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
+                + " FROM Inv_Stock_Request_Master a"
+                + " LEFT JOIN Inv_Stock_Request_Detail b ON a.sTransNox = b.sTransNox"
+                + " LEFT JOIN Inventory c ON b.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN Branch e ON a.sBranchCd = e.sBranchCd"
+                + " LEFT JOIN Industry f ON a.sIndstCdx = f.sIndstCdx"
+                + " LEFT JOIN Inv_Supplier g ON g.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN Category h ON c.sCategCd1 = h.sCategrCd";
     }
     
     private String getPOQuotation_SQL(){
@@ -2166,13 +2165,13 @@ public class PurchaseOrder extends Transaction {
                 + "  COUNT(DISTINCT b.sStockIDx) AS total_details,"
                 + "  SUM(b.nQuantity) AS total_request,"
                 + "  '"+PurchaseOrderStatus.SourceCode.POQUOTATION+"' AS request_type"
-                + " FROM po_quotation_master a"
-                + " LEFT JOIN po_quotation_detail b ON a.sTransNox = b.sTransNox"
-                + " LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd"
-                + " LEFT JOIN industry f ON a.sIndstCdx = f.sIndstCdx"
-                + " LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx"
-                + " LEFT JOIN category h ON c.sCategCd1 = h.sCategrCd";
+                + " FROM PO_Quotation_Master a"
+                + " LEFT JOIN PO_Quotation_Detail b ON a.sTransNox = b.sTransNox"
+                + " LEFT JOIN Inventory c ON b.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN Branch e ON a.sBranchCd = e.sBranchCd"
+                + " LEFT JOIN Industry f ON a.sIndstCdx = f.sIndstCdx"
+                + " LEFT JOIN Inv_Supplier g ON g.sStockIDx = c.sStockIDx"
+                + " LEFT JOIN Category h ON c.sCategCd1 = h.sCategrCd";
     }
 
     public JSONObject getApprovedStockRequests() throws SQLException, GuanzonException {
@@ -2280,12 +2279,12 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         String detailQuery = "SELECT b.sStockIDx "
-                + "FROM inv_stock_request_master a "
-                + "LEFT JOIN branch e ON a.sBranchCd = e.sBranchCd "
-                + "LEFT JOIN inv_stock_request_detail b ON a.sTransNox = b.sTransNox "
-                + "LEFT JOIN inventory c ON b.sStockIDx = c.sStockIDx "
-                + "LEFT JOIN inv_supplier g ON g.sStockIDx = c.sStockIDx "
-                + "LEFT JOIN category h ON h.sCategrCd = c.sCategCd1";
+                + "FROM Inv_Stock_Request_Master a "
+                + "LEFT JOIN Branch e ON a.sBranchCd = e.sBranchCd "
+                + "LEFT JOIN Inv_Stock_Request_Detail b ON a.sTransNox = b.sTransNox "
+                + "LEFT JOIN Inventory c ON b.sStockIDx = c.sStockIDx "
+                + "LEFT JOIN Inv_Supplier g ON g.sStockIDx = c.sStockIDx "
+                + "LEFT JOIN Category h ON h.sCategrCd = c.sCategCd1";
 
         String lsFilterCondition = String.join(" AND ",
                 " a.sIndstCdx LIKE " + SQLUtil.toSQL("%" + Master().getIndustryID()),
@@ -2513,10 +2512,10 @@ public class PurchaseOrder extends Transaction {
                 + "  a.dTransact,"
                 + "  a.sTransNox,"
                 + "  a.cTranStat"
-                + " FROM po_master a "
-                + " LEFT JOIN po_detail b ON b.sTransNox = a.sTransNox"
-                + " LEFT JOIN branch c ON a.sBranchCd = c.sBranchCd"
-                + " LEFT JOIN industry d ON a.sIndstCdx = d.sIndstCdx";
+                + " FROM PO_Master a "
+                + " LEFT JOIN PO_Detail b ON b.sTransNox = a.sTransNox"
+                + " LEFT JOIN Branch c ON a.sBranchCd = c.sBranchCd"
+                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx";
         String lsFilterCondition = String.join(" AND ",
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
@@ -2564,7 +2563,7 @@ public class PurchaseOrder extends Transaction {
 
     public String getInventoryTypeCode() throws SQLException {
         String lsSQL = "SELECT a.sInvTypCd FROM category a"
-                + " LEFT JOIN inv_type b ON a.sInvTypCd = b.sInvTypCd";
+                + " LEFT JOIN Inv_Type b ON a.sInvTypCd = b.sInvTypCd";
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode())));
 
@@ -2788,9 +2787,9 @@ public class PurchaseOrder extends Transaction {
                         + " ,	c.dApproved "
                         + " ,   CONCAT(c.sEmployID, ' - ',d.sCompnyNm,' ',c.dApproved) AS sApprover "
                         + " FROM Transaction_Authorization_Master a  "
-                        + " ,	transaction_authorization_detail b     "
+                        + " ,	Transaction_Authorization_Detail b     "
                         + " ,	Transaction_Authorization_Recipient c  "
-                        + " LEFT JOIN client_master d ON c.sEmployID = d.sClientID "
+                        + " LEFT JOIN Client_Master d ON c.sEmployID = d.sClientID "
                         + " WHERE a.sTransNox = b.sSourceNo AND b.sSourceNo = c.sSourceNo    "
                         + " AND a.sSourceCD = " + SQLUtil.toSQL(getSourceCode())
                         + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getTransactionNo())
@@ -3166,16 +3165,6 @@ public class PurchaseOrder extends Transaction {
             }
             return null;
         }
-
     }
-    
-    
-//    private JSONObject getLastTransStatus(){
-//        poJSON = new JSONObject();
-//        
-//            poJSON = poGRider.g
-//        
-//        return poJSON;
-//    }
 
 }
