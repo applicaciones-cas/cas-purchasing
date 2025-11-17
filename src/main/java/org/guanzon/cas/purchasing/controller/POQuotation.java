@@ -1903,7 +1903,7 @@ public class POQuotation extends Transaction {
             //LOAD only PO Quotation that is not yet linked to po_detail whether po is cancelled as long as it was already linked to PO it should not be include in retrieval
             String lsApproval = "";
             if(isApproval){
-                lsApproval =  " AND a.sTransNox NOT IN (SELECT po_detail.sSourceNo from po_detail WHERE po_detail.sSourceNo = a.sTransNox AND po_detail.sSourceCd = "+SQLUtil.toSQL(getSourceCode())+" ) ";
+                lsApproval =  " AND a.sTransNox NOT IN (SELECT PO_Detail.sSourceNo from PO_Detail WHERE PO_Detail.sSourceNo = a.sTransNox AND PO_Detail.sSourceCd = "+SQLUtil.toSQL(getSourceCode())+" ) ";
             }
 
             String lsTransStat = "";
@@ -2028,7 +2028,7 @@ public class POQuotation extends Transaction {
                     + " AND g.sDescript LIKE " + SQLUtil.toSQL("%" + category2) 
                     + " AND b.cTranStat = " + SQLUtil.toSQL(POQuotationRequestStatus.APPROVED)
                     + " AND a.cReversex = "+SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE)
-                    + " AND a.sTransNox NOT IN (SELECT q.sSourceNo FROM po_quotation_master q "
+                    + " AND a.sTransNox NOT IN (SELECT q.sSourceNo FROM PO_Quotation_Master q "
                             + " WHERE q.sSourceNo = a.sTransNox AND q.sCompnyID = a.sCompnyID AND q.sSupplier = a.sSupplier "
                             + " AND (q.cTranStat != "+SQLUtil.toSQL(POQuotationStatus.CANCELLED) +" AND q.cTranStat != "+SQLUtil.toSQL(POQuotationStatus.VOID)+")) "
             );
@@ -2832,15 +2832,15 @@ public class POQuotation extends Transaction {
                     + "   , f.sDescript AS Category2     "
                     + "   , h.sDeptName AS Department    "
                     + "   , i.sCompnyNm AS SpplierNm  "
-                    + "  FROM po_quotation_master a      "
-                    + "  LEFT JOIN industry b ON b.sIndstCdx = a.sIndstCdx          "
-                    + "  LEFT JOIN branch c ON c.sBranchCd = a.sBranchCd            "
-                    + "  LEFT JOIN company d ON d.sCompnyID = a.sCompnyID           "
-                    + "  LEFT JOIN category e ON e.sCategrCd = a.sCategrCd          "
-                    + "  LEFT JOIN po_quotation_request_master g ON g.sTransNox = a.sSourceNo "
-                    + "  LEFT JOIN category_level2 f ON f.sCategrCd = g.sCategCd2   "
-                    + "  LEFT JOIN department h ON h.sDeptIDxx = g.sDeptIDxx        "
-                    + "  LEFT JOIN client_master i ON i.sClientID = a.sSupplier     ";
+                    + "  FROM PO_Quotation_master a      "
+                    + "  LEFT JOIN Industry b ON b.sIndstCdx = a.sIndstCdx          "
+                    + "  LEFT JOIN Branch c ON c.sBranchCd = a.sBranchCd            "
+                    + "  LEFT JOIN Company d ON d.sCompnyID = a.sCompnyID           "
+                    + "  LEFT JOIN Category e ON e.sCategrCd = a.sCategrCd          "
+                    + "  LEFT JOIN PO_Quotation_Request_Master g ON g.sTransNox = a.sSourceNo "
+                    + "  LEFT JOIN Category_Level2 f ON f.sCategrCd = g.sCategCd2   "
+                    + "  LEFT JOIN Department h ON h.sDeptIDxx = g.sDeptIDxx        "
+                    + "  LEFT JOIN Client_Master i ON i.sClientID = a.sSupplier     ";
         
     }
     
@@ -2865,15 +2865,15 @@ public class POQuotation extends Transaction {
                 + " , f.sDescript AS Category   "
                 + " , g.sDescript AS Category2  "
                 + " , h.sCompnyNm AS  SpplierNm       "
-                + " FROM po_quotation_request_supplier a "
-                + " LEFT JOIN po_quotation_request_master b ON b.sTransNox = a.sTransNox "
-                + " LEFT JOIN industry c ON c.sIndstCdx = b.sIndstCdx                    "
-                + " LEFT JOIN branch d ON d.sBranchCd = b.sBranchCd                      "
-                + " LEFT JOIN department e ON e.sDeptIDxx = b.sDeptIDxx                  "
-                + " LEFT JOIN category f ON f.sCategrCd = b.sCategrCd                    "
-                + " LEFT JOIN category_level2 g ON g.sCategrCd = b.sCategCd2             "
-                + " LEFT JOIN client_master h ON h.sClientID = a.sSupplier               "
-                + " LEFT JOIN company i ON i.sCompnyID = a.sCompnyID                     ";
+                + " FROM PO_Quotation_Request_Supplier a "
+                + " LEFT JOIN PO_Quotation_Request_Master b ON b.sTransNox = a.sTransNox "
+                + " LEFT JOIN Industry c ON c.sIndstCdx = b.sIndstCdx                    "
+                + " LEFT JOIN Branch d ON d.sBranchCd = b.sBranchCd                      "
+                + " LEFT JOIN Department e ON e.sDeptIDxx = b.sDeptIDxx                  "
+                + " LEFT JOIN Category f ON f.sCategrCd = b.sCategrCd                    "
+                + " LEFT JOIN Category_Level2 g ON g.sCategrCd = b.sCategCd2             "
+                + " LEFT JOIN Client_Master h ON h.sClientID = a.sSupplier               "
+                + " LEFT JOIN Company i ON i.sCompnyID = a.sCompnyID                     ";
     
     }
 }
