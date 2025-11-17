@@ -2562,7 +2562,7 @@ public class PurchaseOrder extends Transaction {
     }
 
     public String getInventoryTypeCode() throws SQLException {
-        String lsSQL = "SELECT a.sInvTypCd FROM category a"
+        String lsSQL = "SELECT a.sInvTypCd FROM Category a"
                 + " LEFT JOIN Inv_Type b ON a.sInvTypCd = b.sInvTypCd";
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode())));
