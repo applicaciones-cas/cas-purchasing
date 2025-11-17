@@ -21,15 +21,15 @@ public class PurchaseOrderReceivingStatus {
     public static final  String GLCODE = "ACCOUNTS_PAYABLE";
     
     //Category
-    public static final String MOBILEPHONE = "0001";   //Cellphone    
-    public static final String APPLIANCES  = "0002";   //Appliances   
-    public static final String MOTORCYCLE  = "0003";   //Motorcycle   
-    public static final String SPMC        = "0004";   //Motorcycle SP
-    public static final String CAR         = "0005";   //CAR          
-    public static final String SPCAR       = "0006";   //CAR SP       
-    public static final String GENERAL     = "0007";   //General      
-    public static final String FOOD        = "0008";   //Food         
-    public static final String HOSPITALITY = "0009";   //Hospitality  
+    public static final String MOBILEPHONE = "0000001";   //Cellphone    
+    public static final String APPLIANCES  = "0000002";   //Appliances   
+    public static final String MOTORCYCLE  = "0000003";   //Motorcycle   
+    public static final String SPMC        = "0000004";   //Motorcycle SP
+    public static final String CAR         = "0000005";   //CAR          
+    public static final String SPCAR       = "0000006";   //CAR SP       
+    public static final String GENERAL     = "0000007";   //General      
+    public static final String FOOD        = "0000008";   //Food         
+    public static final String HOSPITALITY = "0000009";   //Hospitality  
     
     public static class Reverse  {
         public static final  String INCLUDE = "+"; 
