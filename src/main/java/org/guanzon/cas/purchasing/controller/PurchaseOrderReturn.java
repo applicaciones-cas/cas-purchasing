@@ -2073,10 +2073,10 @@ public class PurchaseOrderReturn extends Transaction{
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                 switch(Master().getCategoryCode()){
-                    case "0005": //CAR
-                    case "0003": //Motorcycle
-                    case "0001": //Cellphone   
-                    case "0002": //Appliances  
+                    case PurchaseOrderReturnStatus.Category.CAR: //"0005": //CAR
+                    case PurchaseOrderReturnStatus.Category.MOTORCYCLE: //"0003": //Motorcycle
+                    case PurchaseOrderReturnStatus.Category.MOBILEPHONE: //"0001": //Cellphone   
+                    case PurchaseOrderReturnStatus.Category.APPLIANCES: //"0002": //Appliances  
                         lsBarcode = Detail(lnCtr).Inventory().Brand().getDescription();
 
                         if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
@@ -2096,7 +2096,7 @@ public class PurchaseOrderReturn extends Transaction{
                                 lsDescription + "\n" + Detail(lnCtr).InventorySerial().getSerial01(), Detail(lnCtr).getUnitPrce().doubleValue(), 
                                 Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                     break;
-                    case "0008": // Food  
+                    case PurchaseOrderReturnStatus.Category.FOOD: //"0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
                                 + " " + Detail(lnCtr).Inventory().getDescription();
@@ -2108,10 +2108,10 @@ public class PurchaseOrderReturn extends Transaction{
                                 lsBarcode, lsDescription,lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                         jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn_Food.jrxml";
                     break;
-                    case "0006": // CAR SP
-                    case "0004": // Motorcycle SP
-                    case "0007": // General
-                    case "0009": // Hospitality
+                    case PurchaseOrderReturnStatus.Category.SPCAR: //"0006": // CAR SP
+                    case PurchaseOrderReturnStatus.Category.SPMC: //"0004": // Motorcycle SP
+                    case PurchaseOrderReturnStatus.Category.GENERAL: //"0007": // General
+                    case PurchaseOrderReturnStatus.Category.HOSPITALITY: //"0009": // Hospitality
                     default:
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().getDescription();   

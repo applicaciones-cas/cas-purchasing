@@ -8,7 +8,7 @@ public class PurchaseOrderStaticData {
     public static final double default_value_double = 0.00;
     
     //use for printing
-    public static final String Printing_CAR_MC_MPUnit_Appliance = "0001";
-    public static final String Printing_CARSp_MCSp_General = "0002";
-    public static final String Printing_Pedritos = "003";
+    public static final String Printing_CAR_MC_MPUnit_Appliance = "0000001";
+    public static final String Printing_CARSp_MCSp_General = "0000002";
+    public static final String Printing_Pedritos = "0000003";
 }
