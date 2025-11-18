@@ -1272,7 +1272,7 @@ public class POQuotation extends Transaction {
                                             " a.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode())
                                             + " AND a.sCategCd2 = " + SQLUtil.toSQL(Master().POQuotationRequest().getCategoryLevel2())
                                             );
-        
+        lsSQL = lsSQL + " GROUP BY a.sStockIDx ";
         System.out.println("Executing SQL: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
@@ -2832,7 +2832,7 @@ public class POQuotation extends Transaction {
                     + "   , f.sDescript AS Category2     "
                     + "   , h.sDeptName AS Department    "
                     + "   , i.sCompnyNm AS SpplierNm  "
-                    + "  FROM PO_Quotation_master a      "
+                    + "  FROM PO_Quotation_Master a      "
                     + "  LEFT JOIN Industry b ON b.sIndstCdx = a.sIndstCdx          "
                     + "  LEFT JOIN Branch c ON c.sBranchCd = a.sBranchCd            "
                     + "  LEFT JOIN Company d ON d.sCompnyID = a.sCompnyID           "

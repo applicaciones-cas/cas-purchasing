@@ -162,6 +162,9 @@ public class Model_PO_Quotation_Request_Detail extends Model {
     }
     
     public String getBrandId(){
+       if(psBrandId == null){
+           return "";
+       }
         return psBrandId;
     }
     
@@ -170,6 +173,9 @@ public class Model_PO_Quotation_Request_Detail extends Model {
     }
     
     public String getModelId(){
+       if(psModelId == null){
+           return "";
+       }
         return psModelId;
     }
 
@@ -187,7 +193,7 @@ public class Model_PO_Quotation_Request_Detail extends Model {
         
         if (!"".equals(getBrandId())) {
             if (poBrand.getEditMode() == EditMode.READY
-                    && poBrand.getBrandId().equals(getBrandId())) {
+                    && getBrandId().equals(poBrand.getBrandId())) {
                 return poBrand;
             } else {
                 poJSON = poBrand.openRecord(getBrandId());
@@ -212,7 +218,7 @@ public class Model_PO_Quotation_Request_Detail extends Model {
         
         if (!"".equals(getModelId())) {
             if (poModel.getEditMode() == EditMode.READY
-                    && poModel.getModelId().equals(getModelId())) {
+                    && getModelId().equals(poModel.getModelId())) {
                 return poModel;
             } else {
                 poJSON = poModel.openRecord(getModelId());
