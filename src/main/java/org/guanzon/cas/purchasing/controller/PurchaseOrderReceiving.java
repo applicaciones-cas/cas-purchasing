@@ -1898,11 +1898,13 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
 
 //        poJSON = object.searchRecord(value, byCode); //TODO
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, 
+                Master().getSupplierId());
         if ("success".equals((String) poJSON.get("result"))) {
             if(Detail(row).getStockId().equals(object.getModel().getStockId())){
                 poJSON.put("result", "error");
