@@ -3665,9 +3665,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     case "02":
                     case "03":
                         return "Engine No";
+                    default:
+                        return "Serial 1";
                 }
-                
-            break;
             case "serial02":
                 switch(Master().getIndustryId()){
                     case "01":
@@ -3675,8 +3675,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     case "02":
                     case "03":
                         return "Frame No";
+                    default:
+                        return "Serial 2";
                 }
-            break;
             case "csno":
                 if("03".equals(Master().getIndustryId())){
                     return "CS No ";
@@ -5391,14 +5392,22 @@ public class PurchaseOrderReceiving extends Transaction {
                     //1.2 Update Inventory Serial / Registration
                     poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
                     System.out.println("inv serial open record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
+                    //Removed this validation to not return when there is no opened serial in inv_serial_registration in general only
+                    if (!"09".equals(System.getProperty("user.selected.industry"))){
+                        if ("error".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
                     }
                     System.out.println("inv serial edit mode : " +  loInvSerial.getEditMode());
-                    poJSON = loInvSerial.updateRecord();
-                    System.out.println("inv serial update record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
+                    if(loInvSerial.getEditMode() == EditMode.READY){
+                        poJSON = loInvSerial.updateRecord();
+                        System.out.println("inv serial update record : " + (String) poJSON.get("message"));
+                        //Removed this validation to not return when there is no opened serial in inv_serial_registration in general only
+                        if (!"09".equals(System.getProperty("user.selected.industry"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                        }
                     }
                 }
                 
@@ -5417,13 +5426,17 @@ public class PurchaseOrderReceiving extends Transaction {
                         loInvSerial.getModel().setCompnyId(Master().getCompanyId());
                     }
                     
-                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
-                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
-                    }
+                    loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+                    loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
+                    loInvSerial.SerialRegistration().setIndustryCode(Master().getIndustryId());
                     
-                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
-                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
-                    }
+//                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
+//                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
+//                    }
+//                    
+//                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
+//                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+//                    }
 
                     //3. Validation Serial
                     poJSON = loInvSerial.isEntryOkay();
@@ -5440,10 +5453,16 @@ public class PurchaseOrderReceiving extends Transaction {
                     System.out.println("Location   : " + loInvSerial.getModel().getLocation());
                     System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
                     System.out.println("---------------------------------------------------------------------- ");
+                    System.out.println("----------------------SAVE INV SERIAL REGISTRATION---------------------- ");
+                    System.out.println("Serial ID  : " + loInvSerial.SerialRegistration().getSerialId());
+                    System.out.println("Plate No  : " + loInvSerial.SerialRegistration().getPlateNoP());
+                    System.out.println("CS No  : " + loInvSerial.SerialRegistration().getConductionStickerNo());
+                    System.out.println("Edit Mode  : " + loInvSerial.SerialRegistration().getEditMode());
+                    System.out.println("---------------------------------------------------------------------- ");
                     loInvSerial.setWithParentClass(true);
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial saving" + (String) poJSON.get("message"));
+                        System.out.println("inv serial saving : " + (String) poJSON.get("message"));
                         return poJSON;
                     }
                 }
