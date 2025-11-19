@@ -1898,11 +1898,13 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+        InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
+        object.setCategory(Master().getCategoryCode());
 
 //        poJSON = object.searchRecord(value, byCode); //TODO
-        poJSON = object.searchRecord(value, byCode, Master().getSupplierId(),null, null,  Master().getCategoryCode());
+        poJSON = object.searchRecord(value, byCode, 
+                Master().getSupplierId());
         if ("success".equals((String) poJSON.get("result"))) {
             if(Detail(row).getStockId().equals(object.getModel().getStockId())){
                 poJSON.put("result", "error");
@@ -2265,11 +2267,11 @@ public class PurchaseOrderReceiving extends Transaction {
             String lsHeader = "Serial 01»Serial 02»Description";
             String lsCriteria = "a.sSerial01»a.sSerial02»b.sDescript";
             switch(Master().getIndustryId()){
-                case PurchaseOrderReceivingStatus.MOBILEPHONE:
+                case PurchaseOrderReceivingStatus.Category.MOBILEPHONE:
                     lsHeader = "IMEI 1»IMEI02»Description";
                 break;
-                case PurchaseOrderReceivingStatus.CAR:
-                case PurchaseOrderReceivingStatus.MOTORCYCLE:
+                case PurchaseOrderReceivingStatus.Category.CAR:
+                case PurchaseOrderReceivingStatus.Category.MOTORCYCLE:
                     lsHeader = "Engine No»Frame No»Description";
                 break;
             }
@@ -3663,9 +3665,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     case "02":
                     case "03":
                         return "Engine No";
+                    default:
+                        return "Serial 1";
                 }
-                
-            break;
             case "serial02":
                 switch(Master().getIndustryId()){
                     case "01":
@@ -3673,8 +3675,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     case "02":
                     case "03":
                         return "Frame No";
+                    default:
+                        return "Serial 2";
                 }
-            break;
             case "csno":
                 if("03".equals(Master().getIndustryId())){
                     return "CS No ";
@@ -3743,7 +3746,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     poJSON.put("result", "error");
                 }
             }
-            if("03".equals(Master().getIndustryId())){
+            if(PurchaseOrderReceivingStatus.Category.CAR.equals(Master().getCategoryCode())){
                 if (value.equals(paOthers.get(lnSerialRow).getPlateNo()) ){
                     if(lnSerialRow == row){
                         if(!"plateno".equals(columnName)) {
@@ -5136,32 +5139,54 @@ public class PurchaseOrderReceiving extends Transaction {
                     //check serial list must be equal to por detail receive qty
                     for (int lnList = 0; lnList <= getPurchaseOrderReceivingSerialCount() - 1; lnList++) {
                         if (PurchaseOrderReceivingSerialList(lnList).getEntryNo() == Detail(lnCtr).getEntryNo()) {
-                            //If there a value for serial 1 do not allow saving when serial 2 and location is empty 
-                            if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
-                                    || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
-                                poJSON.put("result", "error");
-                                poJSON.put("message", "Serialized item found in transaction details."
-                                                    + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Serial cannot be empty.");
-                                return poJSON;
-                            }
+                            //If there's a value for serial 1 do not allow saving when serial 2 is empty 
+                            switch(Master().getCategoryCode()){
+                                case PurchaseOrderReceivingStatus.Category.CAR:
+                                case PurchaseOrderReceivingStatus.Category.MOTORCYCLE:
+                                    if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
+                                            || (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message", "Serialized item found in transaction details."
+                                                            + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Serial cannot be empty.");
+                                        return poJSON;
+                                    }
+                                    
+                                    if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message", "Serialized item found in transaction details."
+                                                        + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Location cannot be empty.");
+                                        return poJSON;
+                                    }
 
-                            if ("02".equals(Master().getIndustryId()) || "03".equals(Master().getIndustryId())) {
-                                if (PurchaseOrderReceivingSerialList(lnList).getLocationId() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getLocationId())) {
-                                    poJSON.put("result", "error");
-                                    poJSON.put("message", "Serialized item found in transaction details."
-                                                    + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Location cannot be empty.");
-                                    return poJSON;
-                                }
-                            }
-
-                            if ("03".equals(Master().getIndustryId())) {
-                                if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
-                                        && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
-                                    poJSON.put("result", "error");
-                                    poJSON.put("message", "Serialized item found in transaction details."
-                                                    + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": CS / Plate No cannot be empty.");
-                                    return poJSON;
-                                }
+                                    if (PurchaseOrderReceivingStatus.Category.CAR.equals(Master().getCategoryCode())) {
+                                        if ((PurchaseOrderReceivingSerialList(lnList).getPlateNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getPlateNo()))
+                                                && (PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getConductionStickerNo()))) {
+                                            poJSON.put("result", "error");
+                                            poJSON.put("message", "Serialized item found in transaction details."
+                                                            + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": CS / Plate No cannot be empty.");
+                                            return poJSON;
+                                        }
+                                    }
+                                break;
+                                case PurchaseOrderReceivingStatus.Category.APPLIANCES:
+                                case PurchaseOrderReceivingStatus.Category.MOBILEPHONE:
+                                    if ((PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01()))
+                                            && (PurchaseOrderReceivingSerialList(lnList).getSerial02() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02()))) {
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message", "Serialized item found in transaction details."
+                                                            + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Serial cannot be empty.");
+                                        return poJSON;
+                                    }
+                                break;
+                                case PurchaseOrderReceivingStatus.Category.GENERAL:
+                                default:
+                                    if (PurchaseOrderReceivingSerialList(lnList).getSerial01() == null || "".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01())) {
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message", "Serialized item found in transaction details."
+                                                            + "\n\nEntry No " + PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": Serial cannot be empty.");
+                                        return poJSON;
+                                    }
+                                break;
                             }
                             
                             //Set Serial ID
@@ -5202,29 +5227,34 @@ public class PurchaseOrderReceiving extends Transaction {
                             
                             //No need to validate Existing serial in DB: Inv_Serial Class will be the one to check it.
                             //Check for existing serial 01
-                            JSONObject loJSON = checkExistingSerialinDB(lnList, "serial01");
-                            lsColumnName = getColumnName("serial01");
-                            if("error".equals((String) loJSON.get("result"))){
-                                poJSON.put("result", "error");
-                                poJSON.put("message", "Serialized item found in transaction details."
-                                                    + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
-                                                    + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() 
-                                                    + " > already exists in the database." 
-                                                    +"\nPlease contact the System Administrator for assistance.");
-                                return poJSON;
-                            } 
+                            JSONObject loJSON = new JSONObject();
+                            if(PurchaseOrderReceivingSerialList(lnList).getSerial01() != null && !"".equals(PurchaseOrderReceivingSerialList(lnList).getSerial01())){
+                                loJSON = checkExistingSerialinDB(lnList, "serial01");
+                                lsColumnName = getColumnName("serial01");
+                                if("error".equals((String) loJSON.get("result"))){
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "Serialized item found in transaction details."
+                                                        + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
+                                                        + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial01() 
+                                                        + " > already exists in the database." 
+                                                        +"\nPlease contact the System Administrator for assistance.");
+                                    return poJSON;
+                                } 
+                            }
     
                             //Check for existing serial 02
-                            loJSON = checkExistingSerialinDB(lnList, "serial02");
-                            lsColumnName = getColumnName("serial02");
-                            if("error".equals((String) loJSON.get("result"))){
-                                poJSON.put("result", "error");
-                                poJSON.put("message", "Serialized item found in transaction details."
-                                                    + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
-                                                    + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() 
-                                                    + " > already exists in the database." 
-                                                    +"\nPlease contact the System Administrator for assistance.");
-                                return poJSON;
+                            if(PurchaseOrderReceivingSerialList(lnList).getSerial02() != null && !"".equals(PurchaseOrderReceivingSerialList(lnList).getSerial02())){
+                                loJSON = checkExistingSerialinDB(lnList, "serial02");
+                                lsColumnName = getColumnName("serial02");
+                                if("error".equals((String) loJSON.get("result"))){
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", "Serialized item found in transaction details."
+                                                        + "\n\nEntry No "+PurchaseOrderReceivingSerialList(lnList).getEntryNo() + ": " 
+                                                        + lsColumnName +" < "+ PurchaseOrderReceivingSerialList(lnList).getSerial02() 
+                                                        + " > already exists in the database." 
+                                                        +"\nPlease contact the System Administrator for assistance.");
+                                    return poJSON;
+                                }
                             }
 
                             //Check for existing CS No
@@ -5362,14 +5392,22 @@ public class PurchaseOrderReceiving extends Transaction {
                     //1.2 Update Inventory Serial / Registration
                     poJSON = loInvSerial.openRecord(paOthers.get(lnRow).getSerialId());
                     System.out.println("inv serial open record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
+                    //Removed this validation to not return when there is no opened serial in inv_serial_registration in general only
+                    if (!"09".equals(System.getProperty("user.selected.industry"))){
+                        if ("error".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
                     }
                     System.out.println("inv serial edit mode : " +  loInvSerial.getEditMode());
-                    poJSON = loInvSerial.updateRecord();
-                    System.out.println("inv serial update record : " + (String) poJSON.get("message"));
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
+                    if(loInvSerial.getEditMode() == EditMode.READY){
+                        poJSON = loInvSerial.updateRecord();
+                        System.out.println("inv serial update record : " + (String) poJSON.get("message"));
+                        //Removed this validation to not return when there is no opened serial in inv_serial_registration in general only
+                        if (!"09".equals(System.getProperty("user.selected.industry"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
+                                return poJSON;
+                            }
+                        }
                     }
                 }
                 
@@ -5388,13 +5426,17 @@ public class PurchaseOrderReceiving extends Transaction {
                         loInvSerial.getModel().setCompnyId(Master().getCompanyId());
                     }
                     
-                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
-                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
-                    }
+                    loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+                    loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
+                    loInvSerial.SerialRegistration().setIndustryCode(Master().getIndustryId());
                     
-                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
-                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
-                    }
+//                    if (!"".equals(paOthers.get(lnRow).getPlateNo()) && paOthers.get(lnRow).getPlateNo() != null) {
+//                        loInvSerial.SerialRegistration().setPlateNoP(paOthers.get(lnRow).getPlateNo());
+//                    }
+//                    
+//                    if (!"".equals(paOthers.get(lnRow).getConductionStickerNo()) && paOthers.get(lnRow).getConductionStickerNo() != null){
+//                        loInvSerial.SerialRegistration().setConductionStickerNo(paOthers.get(lnRow).getConductionStickerNo());
+//                    }
 
                     //3. Validation Serial
                     poJSON = loInvSerial.isEntryOkay();
@@ -5411,10 +5453,16 @@ public class PurchaseOrderReceiving extends Transaction {
                     System.out.println("Location   : " + loInvSerial.getModel().getLocation());
                     System.out.println("Edit Mode  : " + loInvSerial.getEditMode());
                     System.out.println("---------------------------------------------------------------------- ");
+                    System.out.println("----------------------SAVE INV SERIAL REGISTRATION---------------------- ");
+                    System.out.println("Serial ID  : " + loInvSerial.SerialRegistration().getSerialId());
+                    System.out.println("Plate No  : " + loInvSerial.SerialRegistration().getPlateNoP());
+                    System.out.println("CS No  : " + loInvSerial.SerialRegistration().getConductionStickerNo());
+                    System.out.println("Edit Mode  : " + loInvSerial.SerialRegistration().getEditMode());
+                    System.out.println("---------------------------------------------------------------------- ");
                     loInvSerial.setWithParentClass(true);
                     poJSON = loInvSerial.saveRecord();
                     if ("error".equals((String) poJSON.get("result"))) {
-                        System.out.println("inv serial saving" + (String) poJSON.get("message"));
+                        System.out.println("inv serial saving : " + (String) poJSON.get("message"));
                         return poJSON;
                     }
                 }
@@ -6298,10 +6346,10 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
                 
                 switch(Master().getCategoryCode()){
-                    case PurchaseOrderReceivingStatus.CAR : 		//"0005": CAR        
-                    case PurchaseOrderReceivingStatus.MOTORCYCLE :	//"0003": Motorcycle 
-                    case PurchaseOrderReceivingStatus.MOBILEPHONE :	//"0001": Cellphone  
-                    case PurchaseOrderReceivingStatus.APPLIANCES :	//"0002": Appliances 
+                    case PurchaseOrderReceivingStatus.Category.CAR : 		//"0005": CAR        
+                    case PurchaseOrderReceivingStatus.Category.MOTORCYCLE :	//"0003": Motorcycle 
+                    case PurchaseOrderReceivingStatus.Category.MOBILEPHONE :	//"0001": Cellphone  
+                    case PurchaseOrderReceivingStatus.Category.APPLIANCES :	//"0002": Appliances 
                         lsBarcode = Detail(lnCtr).Inventory().Brand().getDescription();
 
                         if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
@@ -6323,7 +6371,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         orderDetails.add(new OrderDetail(lnRow, String.valueOf(Detail(lnCtr).getOrderNo()), 
                                 lsBarcode, lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                     break;
-                    case PurchaseOrderReceivingStatus.FOOD : //"0008": // Food  
+                    case PurchaseOrderReceivingStatus.Category.FOOD : //"0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         if (Detail(lnCtr).Inventory().Measure().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Measure().getDescription())){
                             lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
@@ -6337,10 +6385,10 @@ public class PurchaseOrderReceiving extends Transaction {
                             jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/PurchaseOrderReplacement_Food.jrxml";
                         }
                     break;
-                    case PurchaseOrderReceivingStatus.SPCAR :       //case "0006":  CAR SP       
-                    case PurchaseOrderReceivingStatus.SPMC  :       //case "0004":  Motorcycle SP
-                    case PurchaseOrderReceivingStatus.GENERAL :     //case "0007":  General      
-                    case PurchaseOrderReceivingStatus.HOSPITALITY : //case "0009":  Hospitality                          
+                    case PurchaseOrderReceivingStatus.Category.SPCAR :       //case "0006":  CAR SP       
+                    case PurchaseOrderReceivingStatus.Category.SPMC  :       //case "0004":  Motorcycle SP
+                    case PurchaseOrderReceivingStatus.Category.GENERAL :     //case "0007":  General      
+                    case PurchaseOrderReceivingStatus.Category.HOSPITALITY : //case "0009":  Hospitality                          
                     default:
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().getDescription();   
