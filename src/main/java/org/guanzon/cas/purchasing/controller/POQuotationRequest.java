@@ -1214,7 +1214,7 @@ public class POQuotationRequest extends Transaction {
         object.setRecordStatus(RecordStatus.ACTIVE);
 
 //        poJSON = object.searchRecord(value, byCode, Master().getIndustryId());
-        poJSON = object.searchRecord(value, byCode, ""); //empPag nasa general empty yung industry according to ma'am she
+        poJSON = object.searchRecord(value, byCode,"09"); //Fix industry code "09" for GENERAL Only
         if ("success".equals((String) poJSON.get("result"))) {
             if (!object.getModel().getBrandId().equals(Detail(row).getBrandId())) {
                 Detail(row).setModelId("");
