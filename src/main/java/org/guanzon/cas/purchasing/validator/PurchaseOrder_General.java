@@ -182,19 +182,19 @@ public class PurchaseOrder_General implements GValidator {
 
         if(poMaster.getTranTotal().doubleValue() <= 30000.00){
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("ENG.PO.SMALL", "", "", lsRemarks);
+            poMatrix.addAuthRequest("PO*S", "", "", lsRemarks);
         }
         else if(poMaster.getTranTotal().doubleValue() <= 50000.00){
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("ENG.PO.MEDIUM", "", "", lsRemarks);
+            poMatrix.addAuthRequest("PO*M", "", "", lsRemarks);
         }
         else if(poMaster.getTranTotal().doubleValue() <= 100000.00){
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("ENG.PO.LARGE", "", "", lsRemarks);
+            poMatrix.addAuthRequest("PO*L", "", "", lsRemarks);
         }
         else{
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("ENG.PO.XL", "", "", lsRemarks);
+            poMatrix.addAuthRequest("PO*XL", "", "", lsRemarks);
         }
         
         //This will create an authorization request for Validation
