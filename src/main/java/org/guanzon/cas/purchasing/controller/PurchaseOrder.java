@@ -218,6 +218,45 @@ public class PurchaseOrder extends Transaction {
         }
         return addDetail();
     }
+    
+    public String getStatusValue(){
+        String lsStatus = Master().getConvertedTransactionStatus();
+        switch (lsStatus) {
+            case PurchaseOrderStatus.CONFIRMED:
+                lsStatus = "CONFIRMED";
+                break;
+            case PurchaseOrderStatus.APPROVED:
+                lsStatus = "APPROVED";
+                break;
+            case PurchaseOrderStatus.RETURNED:
+                lsStatus = "RETURNED";
+                break;
+            case PurchaseOrderStatus.CANCELLED:
+                lsStatus = "CANCELLED";
+                break;
+            case PurchaseOrderStatus.VOID:
+                lsStatus = "VOIDED";
+                break;
+            case PurchaseOrderStatus.PROCESSED:
+                lsStatus = "PROCESSED";
+                break;
+            case PurchaseOrderStatus.POSTED:
+                lsStatus = "POSTED";
+                break;
+            case PurchaseOrderStatus.OPEN:
+                lsStatus = "OPEN";
+                break;
+            default:
+                lsStatus = "UNKNOWN";
+                break;
+        }
+
+        if("ABCDEFGHIJ".contains(Master().getTransactionStatus())){
+            lsStatus = lsStatus + "+";
+        }
+        
+        return lsStatus;
+    }
 
     public JSONObject NewTransaction() throws CloneNotSupportedException, SQLException, GuanzonException {
         if(!pbWthParent){
@@ -593,7 +632,7 @@ public class PurchaseOrder extends Transaction {
                 //check if authorization request is already approved by all authorizing personnel
                 if(!check.isAuthOkay()){
                     //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
+                    if(check.isAllowSys()){
                         //extract the JSONObject from JSONArray
                         JSONObject loJson = (JSONObject)loMatrix.get(0);
 
