@@ -42,7 +42,6 @@ import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvTransCons;
@@ -2853,7 +2852,7 @@ public class PurchaseOrder extends Transaction {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sBranchNm", poGRider.getBranchName());
             parameters.put("sAddressx", poGRider.getAddress());
-            parameters.put("sCompnyNm", poGRider.getClientName());
+            parameters.put("sCompnyNm", "Prepared by: "+ poGRider.getLogName()+ " " + poGRider.getServerDate()); //poGRider.getClientName()
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
             parameters.put("sCompany", Master().Company().getCompanyName());
