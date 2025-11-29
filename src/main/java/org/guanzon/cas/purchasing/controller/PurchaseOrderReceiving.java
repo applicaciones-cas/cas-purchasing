@@ -4140,6 +4140,12 @@ public class PurchaseOrderReceiving extends Transaction {
                 lnCacheRow = 0;
             }
             
+            if(Detail(lnCtr).Inventory().getInventoryTypeId() == null || "".equals(Detail(lnCtr).Inventory().getInventoryTypeId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Inventory type cannot be empty at row "+(lnCtr+1)+".\nContact the system administrator for assistance.");
+                return poJSON;
+            }
+            
             poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
             poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); 
             poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); 
@@ -4268,7 +4274,7 @@ public class PurchaseOrderReceiving extends Transaction {
         
         
         int lnRow = poCachePayableTrucking.getDetailCount() - 1;
-        poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight charge")); 
+        poCachePayableTrucking.Detail(lnRow).setTransactionType(getInvTypeCode("freight")); 
         poCachePayableTrucking.Detail(lnRow).setGrossAmount(ldblNetTotal);
         poCachePayableTrucking.Detail(lnRow).setPayables(ldblNetTotal); 
        
