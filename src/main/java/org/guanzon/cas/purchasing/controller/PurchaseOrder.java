@@ -2852,10 +2852,13 @@ public class PurchaseOrder extends Transaction {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sBranchNm", poGRider.getBranchName());
             parameters.put("sAddressx", poGRider.getAddress());
+            System.out.println("Company Address : " + poGRider.getAddress());
             parameters.put("sCompnyNm", "Prepared by: "+ poGRider.getLogName()+ " " + poGRider.getServerDate()); //poGRider.getClientName()
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
             parameters.put("sCompany", Master().Company().getCompanyName());
+            parameters.put("sSupplier", Master().Supplier().getCompanyName());
+            parameters.put("sTerm", Master().Term().getDescription());
             
             //set default value
             parameters.put("sApprval1",""); 
