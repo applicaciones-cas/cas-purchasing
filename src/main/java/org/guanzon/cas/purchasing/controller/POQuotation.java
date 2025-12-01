@@ -1205,16 +1205,17 @@ public class POQuotation extends Transaction {
 //            poJSON.put("message", "Source No is not set.");
 //            return poJSON;
 
-            if(Master().getCategoryCode() == null || "".equals(Master().getCategoryCode())){
-                poJSON.put("result", "error");
-                poJSON.put("message", "Category Code is not set.");
-                return poJSON;
-            }
+//            if(psSearchCategory == null || "".equals(psSearchCategory)){
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "Category is not set.");
+//                return poJSON;
+//            }
                 
             Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
             object.setRecordStatus(RecordStatus.ACTIVE);
             String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), 
                                                 " a.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode())
+//                                                + " AND i.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchCategory)
                                                 );
             lsSQL = lsSQL + " GROUP BY a.sStockIDx ";
             System.out.println("Executing SQL: " + lsSQL);
@@ -1235,15 +1236,17 @@ public class POQuotation extends Transaction {
                             lnRow++;
                         }
                         if (lnCtr != row) {
-                            if(Detail(lnCtr).getStockId().equals((String) poJSON.get("sStockIDx"))
-                                && !Detail(lnCtr).isReverse()){
-                                Detail(lnCtr).isReverse(true);
-                                break;
-                            } else {
-                                poJSON.put("result", "error");
-                                poJSON.put("message", Detail(lnCtr).Inventory().getDescription() + " already exists at row"+lnRow+".");
-                                return poJSON;
-                            }
+                            if(Detail(lnCtr).getStockId().equals(object.getModel().getStockId())){
+                                if(!Detail(lnCtr).isReverse()){
+                                    Detail(lnCtr).isReverse(true);
+                                    break;
+                                } else {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", Detail(lnCtr).Inventory().getDescription() + " already exists at row"+lnRow+".");
+                                    poJSON.put("row", row);
+                                    return poJSON;
+                                }
+                            } 
                         }
                     }
                     Detail(row).setStockId(object.getModel().getStockId());
@@ -2202,6 +2205,13 @@ public class POQuotation extends Transaction {
         poJSON = new JSONObject();
         try {
             
+            if((Master().getSourceNo() == null || "".equals(Master().getSourceNo())) 
+                && (Detail(0).getStockId() != null && !"".equals(Detail(0).getStockId()) )){
+                poJSON.put("result", "error");
+                poJSON.put("message", "PO Quotation detail cannot be mixed with non quotation request.");
+                return poJSON;
+            }
+            
 //            if(!POQuotationRequestSupplierList(row).getTransactionNo().equals(Master().getSourceNo())){
 //                resetTransaction();
 //            }
@@ -2930,5 +2940,31 @@ public class POQuotation extends Transaction {
                 + " LEFT JOIN Client_Master h ON h.sClientID = a.sSupplier               "
                 + " LEFT JOIN Company i ON i.sCompnyID = a.sCompnyID                     ";
     
+    }
+    
+    private String getInventorySQL(){
+        return  " SELECT "
+            + "   a.sStockIDx, "
+            + "   a.sBarCodex, "
+            + "   a.sDescript, "
+            + "   a.sSupersed, "
+            + "   a.cRecdStat, "
+            + "   IFNULL(b.sDescript, '')    xBrandNme, "
+            + "   IFNULL(c.sDescript, '')    xModelNme, "
+            + "   IFNULL(d.sDescript, '')    xColorNme, "
+            + "   IFNULL(e.sDescript, '')    xMeasurNm, "
+            + "   TRIM(CONCAT(IFNULL(f.sDescript, ''), ' ', IFNULL(f.nYearMdlx, '')))    xVrntName, "
+            + "   IFNULL(c.sModelCde, '')    xModelCde, "
+            + "   IFNULL(h.sDescript, '')    xCategory, "
+            + "   IFNULL(i.sDescript, '')    xCategry2  "
+            + " FROM Inventory a                        "
+            + " LEFT JOIN Brand b ON a.sBrandIDx = b.sBrandIDx   "
+            + " LEFT JOIN Model c ON a.sModelIDx = c.sModelIDx   "
+            + " LEFT JOIN Color d ON a.sColorIDx = d.sColorIDx   "
+            + " LEFT JOIN Measure e ON a.sMeasurID = e.sMeasurID "
+            + " LEFT JOIN Model_Variant f ON a.sVrntIDxx = f.sVrntIDxx  "
+            + " LEFT JOIN Inv_Supplier g ON a.sStockIDx = g.sStockIDx   "
+            + " LEFT JOIN Category h ON h.sCategrCd = a.sCategCd1       "
+            + " LEFT JOIN Category_Level2 i ON i.sCategrCd = a.sCategCd2";
     }
 }
