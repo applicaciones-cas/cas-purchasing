@@ -1211,6 +1211,18 @@ public class POQuotation extends Transaction {
 //                return poJSON;
 //            }
                 
+            if(Master().getBranchCode() == null || "".equals(Master().getBranchCode())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Branch is not set.");
+                return poJSON;
+            }
+            
+            if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set.");
+                return poJSON;
+            }
+
             Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
             object.setRecordStatus(RecordStatus.ACTIVE);
             String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), 
