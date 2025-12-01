@@ -1250,7 +1250,7 @@ public class POQuotation extends Transaction {
                         if (lnCtr != row) {
                             if(Detail(lnCtr).getStockId().equals(object.getModel().getStockId())){
                                 if(!Detail(lnCtr).isReverse()){
-                                    Detail(lnCtr).isReverse(true);
+                                    row = lnCtr;
                                     break;
                                 } else {
                                     poJSON.put("result", "error");
@@ -1261,6 +1261,7 @@ public class POQuotation extends Transaction {
                             } 
                         }
                     }
+                    Detail(row).isReverse(true);
                     Detail(row).setStockId(object.getModel().getStockId());
                     Detail(row).setDescription(object.getModel().getDescription());
                 }
