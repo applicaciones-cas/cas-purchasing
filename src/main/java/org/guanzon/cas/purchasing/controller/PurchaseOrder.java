@@ -2857,21 +2857,27 @@ public class PurchaseOrder extends Transaction {
             System.out.println("Branch Town : " + Master().Branch().TownCity().getDescription());
             System.out.println("Branch Province " + Master().Branch().TownCity().Province().getDescription() );
             
-            String lsCompanyAddress = Master().Company().getCompanyAddress();
+            String lsCompanyAddress = "";
+            if(Master().Company().getCompanyAddress() != null && !"".equals(Master().Company().getCompanyAddress())){
+                lsCompanyAddress  = Master().Company().getCompanyAddress().trim();
+            }
             if(Master().Company().TownCity().getDescription() != null && !"".equals(Master().Company().TownCity().getDescription())){
-                lsCompanyAddress  =lsCompanyAddress + " " + Master().Company().TownCity().getDescription().trim();
+                lsCompanyAddress  = lsCompanyAddress + " " + Master().Company().TownCity().getDescription().trim();
             }
             if(Master().Company().TownCity().Province().getDescription() != null && !"".equals(Master().Company().TownCity().Province().getDescription())){
-                lsCompanyAddress  =lsCompanyAddress + ", " + Master().Company().TownCity().Province().getDescription().trim();
+                lsCompanyAddress  = lsCompanyAddress + ", " + Master().Company().TownCity().Province().getDescription().trim();
             }
             
             //Branch / Destination
-            String lsDestinationAddress = Master().Branch().getAddress();
+            String lsDestinationAddress = "";
+            if(Master().Branch().getAddress() != null && !"".equals(Master().Branch().getAddress())){
+                lsDestinationAddress = Master().Branch().getAddress().trim();
+            }
             if(Master().Branch().TownCity().getDescription() != null && !"".equals(Master().Branch().TownCity().getDescription())){
-                lsDestinationAddress  =lsDestinationAddress + " " + Master().Branch().TownCity().getDescription().trim();
+                lsDestinationAddress = lsDestinationAddress + " " + Master().Branch().TownCity().getDescription().trim();
             }
             if(Master().Branch().TownCity().Province().getDescription() != null && !"".equals(Master().Branch().TownCity().Province().getDescription())){
-                lsDestinationAddress  =lsDestinationAddress + ", " + Master().Branch().TownCity().Province().getDescription().trim();
+                lsDestinationAddress = lsDestinationAddress + ", " + Master().Branch().TownCity().Province().getDescription().trim();
             }
             
             Map<String, Object> parameters = new HashMap<>();
