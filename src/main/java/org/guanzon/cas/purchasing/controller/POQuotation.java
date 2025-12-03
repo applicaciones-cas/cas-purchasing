@@ -1201,48 +1201,119 @@ public class POQuotation extends Transaction {
         poJSON.put("row", row);
         
         if(Master().getSourceNo() == null || "".equals(Master().getSourceNo())){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Source No is not set.");
-            return poJSON;
-        }
-        
-        Model_PO_Quotation_Request_Detail object = new QuotationModels(poGRider).POQuotationRequestDetails();
-        String lsSQL = MiscUtil.addCondition( MiscUtil.makeSelect(object), 
-                                                " cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE)
-                                               + " AND sTransNox = " + SQLUtil.toSQL(Master().getSourceNo())); 
-        
-        System.out.println("Executing SQL: " + lsSQL);
-        poJSON = ShowDialogFX.Browse(poGRider,
-                lsSQL,
-                value,
-                "Transaction No»Description",
-                "sTransNox»sDescript",
-                "sTransNox»sDescript",
-                byCode ? 0 : 1);
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Source No is not set.");
+//            return poJSON;
 
-        if (poJSON != null) {
-            poJSON = object.openRecord((String) poJSON.get("sTransNox"), (String) poJSON.get("nEntryNox"));
-            if ("success".equals((String) poJSON.get("result"))) {
+//            if(psSearchCategory == null || "".equals(psSearchCategory)){
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "Category is not set.");
+//                return poJSON;
+//            }
                 
-                JSONObject loJSON = checkRequestItem(row,
-                        object.getDescription()
-                        );
-                if ("error".equals((String) loJSON.get("result"))) {
-                    if((boolean) loJSON.get("reverse")){
-                        return loJSON;
-                    } else {
-                        row = (int) loJSON.get("row");
-                        Detail(row).isReverse(true);
-                    }
-                }
-                
-                Detail(row).setStockId(object.getStockId());
-                Detail(row).setDescription(object.getDescription());
+            if(Master().getBranchCode() == null || "".equals(Master().getBranchCode())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Branch is not set.");
+                return poJSON;
             }
+            
+            if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Supplier is not set.");
+                return poJSON;
+            }
+
+            Inventory object = new InvControllers(poGRider, logwrapr).Inventory();
+            object.setRecordStatus(RecordStatus.ACTIVE);
+            String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), 
+                                                " a.sCategCd1 = " + SQLUtil.toSQL(Master().getCategoryCode())
+//                                                + " AND i.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchCategory)
+                                                );
+            lsSQL = lsSQL + " GROUP BY a.sStockIDx ";
+            System.out.println("Executing SQL: " + lsSQL);
+            poJSON = ShowDialogFX.Browse(poGRider,
+                    lsSQL,
+                    value,
+                    "Barcode»Description»Brand»Model»Variant»UOM",
+                    "sBarCodex»sDescript»xBrandNme»xModelNme»xVrntName»xMeasurNm",
+                    "a.sBarCodex»a.sDescript»IFNULL(b.sDescript, '')»IFNULL(c.sDescript, '')»IFNULL(f.sDescript, '')»IFNULL(e.sDescript, '')",
+                    byCode ? 0 : 1);
+
+            if (poJSON != null) {
+                poJSON = object.getModel().openRecord((String) poJSON.get("sStockIDx"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    int lnRow = 0;
+                    for (int lnCtr = 0; lnCtr <= getDetailCount()- 1; lnCtr++) {
+                        if(Detail(lnCtr).isReverse()){
+                            lnRow++;
+                        }
+                        if (lnCtr != row) {
+                            if(Detail(lnCtr).getStockId().equals(object.getModel().getStockId())){
+                                if(!Detail(lnCtr).isReverse()){
+                                    row = lnCtr;
+                                    break;
+                                } else {
+                                    poJSON.put("result", "error");
+                                    poJSON.put("message", Detail(lnCtr).Inventory().getDescription() + " already exists at row"+lnRow+".");
+                                    poJSON.put("row", row);
+                                    return poJSON;
+                                }
+                            } 
+                        }
+                    }
+                    Detail(row).isReverse(true);
+                    Detail(row).setStockId(object.getModel().getStockId());
+                    Detail(row).setDescription(object.getModel().getDescription());
+                }
+
+                System.out.println("Barcode : " + Detail(row).Inventory().getBarCode());
+                System.out.println("Description : " + Detail(row).Inventory().getDescription());
+
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record loaded.");
+            }
+
         } else {
-            poJSON = new JSONObject();
-            poJSON.put("result", "error");
-            poJSON.put("message", "No record loaded.");
+            Model_PO_Quotation_Request_Detail object = new QuotationModels(poGRider).POQuotationRequestDetails();
+            String lsSQL = MiscUtil.addCondition( MiscUtil.makeSelect(object), 
+                                                    " cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE)
+                                                   + " AND sTransNox = " + SQLUtil.toSQL(Master().getSourceNo())); 
+
+            System.out.println("Executing SQL: " + lsSQL);
+            poJSON = ShowDialogFX.Browse(poGRider,
+                    lsSQL,
+                    value,
+                    "Transaction No»Description",
+                    "sTransNox»sDescript",
+                    "sTransNox»sDescript",
+                    byCode ? 0 : 1);
+
+            if (poJSON != null) {
+                poJSON = object.openRecord((String) poJSON.get("sTransNox"), (String) poJSON.get("nEntryNox"));
+                if ("success".equals((String) poJSON.get("result"))) {
+
+                    JSONObject loJSON = checkRequestItem(row,
+                            object.getDescription()
+                            );
+                    if ("error".equals((String) loJSON.get("result"))) {
+                        if((boolean) loJSON.get("reverse")){
+                            return loJSON;
+                        } else {
+                            row = (int) loJSON.get("row");
+                            Detail(row).isReverse(true);
+                        }
+                    }
+
+                    Detail(row).setStockId(object.getStockId());
+                    Detail(row).setDescription(object.getDescription());
+                }
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record loaded.");
+            }
         }
         
         poJSON.put("row", row);
@@ -2147,6 +2218,13 @@ public class POQuotation extends Transaction {
         poJSON = new JSONObject();
         try {
             
+            if((Master().getSourceNo() == null || "".equals(Master().getSourceNo())) 
+                && (Detail(0).getStockId() != null && !"".equals(Detail(0).getStockId()) )){
+                poJSON.put("result", "error");
+                poJSON.put("message", "PO Quotation detail cannot be mixed with non quotation request.");
+                return poJSON;
+            }
+            
 //            if(!POQuotationRequestSupplierList(row).getTransactionNo().equals(Master().getSourceNo())){
 //                resetTransaction();
 //            }
@@ -2875,5 +2953,31 @@ public class POQuotation extends Transaction {
                 + " LEFT JOIN Client_Master h ON h.sClientID = a.sSupplier               "
                 + " LEFT JOIN Company i ON i.sCompnyID = a.sCompnyID                     ";
     
+    }
+    
+    private String getInventorySQL(){
+        return  " SELECT "
+            + "   a.sStockIDx, "
+            + "   a.sBarCodex, "
+            + "   a.sDescript, "
+            + "   a.sSupersed, "
+            + "   a.cRecdStat, "
+            + "   IFNULL(b.sDescript, '')    xBrandNme, "
+            + "   IFNULL(c.sDescript, '')    xModelNme, "
+            + "   IFNULL(d.sDescript, '')    xColorNme, "
+            + "   IFNULL(e.sDescript, '')    xMeasurNm, "
+            + "   TRIM(CONCAT(IFNULL(f.sDescript, ''), ' ', IFNULL(f.nYearMdlx, '')))    xVrntName, "
+            + "   IFNULL(c.sModelCde, '')    xModelCde, "
+            + "   IFNULL(h.sDescript, '')    xCategory, "
+            + "   IFNULL(i.sDescript, '')    xCategry2  "
+            + " FROM Inventory a                        "
+            + " LEFT JOIN Brand b ON a.sBrandIDx = b.sBrandIDx   "
+            + " LEFT JOIN Model c ON a.sModelIDx = c.sModelIDx   "
+            + " LEFT JOIN Color d ON a.sColorIDx = d.sColorIDx   "
+            + " LEFT JOIN Measure e ON a.sMeasurID = e.sMeasurID "
+            + " LEFT JOIN Model_Variant f ON a.sVrntIDxx = f.sVrntIDxx  "
+            + " LEFT JOIN Inv_Supplier g ON a.sStockIDx = g.sStockIDx   "
+            + " LEFT JOIN Category h ON h.sCategrCd = a.sCategCd1       "
+            + " LEFT JOIN Category_Level2 i ON i.sCategrCd = a.sCategCd2";
     }
 }

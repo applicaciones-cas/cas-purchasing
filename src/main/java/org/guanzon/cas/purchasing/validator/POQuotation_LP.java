@@ -148,14 +148,14 @@ public class POQuotation_LP implements GValidator{
             poJSON.put("message", "Branch is not set.");
             return poJSON;
         }
-        if (poMaster.getSourceNo()== null || "".equals(poMaster.getSourceNo())) {
-            poJSON.put("message", "Source No is not set.");
-            return poJSON;
-        }
-        if (poMaster.getSourceCode()== null || "".equals(poMaster.getSourceCode())) {
-            poJSON.put("message", "Source Code is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getSourceNo()== null || "".equals(poMaster.getSourceNo())) {
+//            poJSON.put("message", "Source No is not set.");
+//            return poJSON;
+//        }
+//        if (poMaster.getSourceCode()== null || "".equals(poMaster.getSourceCode())) {
+//            poJSON.put("message", "Source Code is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getSupplierId()== null || "".equals(poMaster.getSupplierId())) {
             poJSON.put("message", "Supplier is not set.");
             return poJSON;

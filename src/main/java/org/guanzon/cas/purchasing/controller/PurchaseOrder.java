@@ -2849,16 +2849,47 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
         try {
+            
+            System.out.println("Company Address : " + Master().Company().getCompanyAddress());
+            System.out.println("Company Town : " + Master().Company().TownCity().getDescription());
+            System.out.println("Company Province " + Master().Company().TownCity().Province().getDescription() );
+            System.out.println("Branch Address : " + Master().Branch().getAddress());
+            System.out.println("Branch Town : " + Master().Branch().TownCity().getDescription());
+            System.out.println("Branch Province " + Master().Branch().TownCity().Province().getDescription() );
+            
+            String lsCompanyAddress = "";
+            if(Master().Company().getCompanyAddress() != null && !"".equals(Master().Company().getCompanyAddress())){
+                lsCompanyAddress  = Master().Company().getCompanyAddress().trim();
+            }
+            if(Master().Company().TownCity().getDescription() != null && !"".equals(Master().Company().TownCity().getDescription())){
+                lsCompanyAddress  = lsCompanyAddress + " " + Master().Company().TownCity().getDescription().trim();
+            }
+            if(Master().Company().TownCity().Province().getDescription() != null && !"".equals(Master().Company().TownCity().Province().getDescription())){
+                lsCompanyAddress  = lsCompanyAddress + ", " + Master().Company().TownCity().Province().getDescription().trim();
+            }
+            
+            //Branch / Destination
+            String lsDestinationAddress = "";
+            if(Master().Branch().getAddress() != null && !"".equals(Master().Branch().getAddress())){
+                lsDestinationAddress = Master().Branch().getAddress().trim();
+            }
+            if(Master().Branch().TownCity().getDescription() != null && !"".equals(Master().Branch().TownCity().getDescription())){
+                lsDestinationAddress = lsDestinationAddress + " " + Master().Branch().TownCity().getDescription().trim();
+            }
+            if(Master().Branch().TownCity().Province().getDescription() != null && !"".equals(Master().Branch().TownCity().Province().getDescription())){
+                lsDestinationAddress = lsDestinationAddress + ", " + Master().Branch().TownCity().Province().getDescription().trim();
+            }
+            
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sBranchNm", poGRider.getBranchName());
-            parameters.put("sAddressx", poGRider.getAddress());
-            System.out.println("Company Address : " + poGRider.getAddress());
+            parameters.put("sAddressx", lsCompanyAddress);
             parameters.put("sCompnyNm", "Prepared by: "+ poGRider.getLogName()+ " " + poGRider.getServerDate()); //poGRider.getClientName()
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
             parameters.put("sCompany", Master().Company().getCompanyName());
             parameters.put("sSupplier", Master().Supplier().getCompanyName());
             parameters.put("sTerm", Master().Term().getDescription());
+            parameters.put("sDestinationAddress", lsDestinationAddress);
             
             //set default value
             parameters.put("sApprval1",""); 
