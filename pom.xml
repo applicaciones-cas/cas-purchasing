@@ -94,7 +94,8 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>cas-inv</artifactId>
-            <version>${project.version}</version>
+            <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 

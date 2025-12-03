@@ -59,7 +59,8 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("dExpected", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("dTransact", SQLUtil.toDate(xsDateShort(poGRider.getServerDate()), SQLUtil.FORMAT_SHORT_DATE));
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
-            poEntity.updateObject("sTermCode", "0000004");
+            poEntity.updateObject("sTermCode", "M0W1004");
+            poEntity.updateObject("sDestinat", poGRider.getBranchCode());
             poEntity.updateObject("nDiscount", 0.00);
             poEntity.updateObject("nAddDiscx", 0.0000);
             poEntity.updateObject("nTranTotl", 0.0000);
@@ -70,6 +71,7 @@ public class Model_PO_Master extends Model {
             poEntity.updateObject("cEmailSnt", Logical.NO);
             poEntity.updateObject("nEmailSnt", 0);
             poEntity.updateObject("cPrintxxx", Logical.NO);
+            
             poEntity.updateString("cTranStat", PurchaseOrderStatus.OPEN);
             //end - assign default values
 
