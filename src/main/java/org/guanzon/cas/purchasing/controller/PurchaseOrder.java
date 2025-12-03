@@ -718,7 +718,8 @@ public class PurchaseOrder extends Transaction {
 
         //kalyptus - 2025.10.08 02:36pm
         //save to inventory ledger
-        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        //InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider, psBranchCode);
         loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
         
         for (Model loDetail : paDetail) {
