@@ -2549,9 +2549,12 @@ public class POQuotation extends Transaction {
         /*Put system validations and other assignments here*/
         poJSON = new JSONObject();
         
-        poJSON = checkExistingQuotation(0, false);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
+        //Only trigger this validation when source no is not null or not empty.
+        if(Master().getSourceNo() != null && !"".equals(Master().getSourceNo())){
+            poJSON = checkExistingQuotation(0, false);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
         
         //if current status is Return check changes
@@ -2681,17 +2684,20 @@ public class POQuotation extends Transaction {
         boolean lbCheck = false;
         Iterator<Model> detail = Detail().iterator();
         
-        //check if there is not empty replacement if true all request description must have a replacement description value
-        for(int lnCtr = 0; lnCtr <= getDetailCount()-1; lnCtr++){
-            lbReplaceID = (Detail(lnCtr).getReplaceId() == null || "".equals(Detail(lnCtr).getReplaceId()));
-            lbReplaceDesc = (Detail(lnCtr).getReplaceDescription() == null || "".equals(Detail(lnCtr).getReplaceDescription()));
-            
-            if(validateReplacement(Detail(lnCtr).getDescription())){
-                if((lbReplaceID || lbReplaceDesc) && Detail(lnCtr).isReverse()){ 
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Found request description <"+Detail(lnCtr).getDescription()+"> with matching replacement.\n\nReplacement Description for row "+(lnCtr+1)+" must not be empty." );
-                    return poJSON;
-                    
+        //Only trigger this validation when source no is not null or not empty.
+        if(Master().getSourceNo() != null && !"".equals(Master().getSourceNo())){
+            //check if there is not empty replacement if true all request description must have a replacement description value
+            for(int lnCtr = 0; lnCtr <= getDetailCount()-1; lnCtr++){
+                lbReplaceID = (Detail(lnCtr).getReplaceId() == null || "".equals(Detail(lnCtr).getReplaceId()));
+                lbReplaceDesc = (Detail(lnCtr).getReplaceDescription() == null || "".equals(Detail(lnCtr).getReplaceDescription()));
+
+                if(validateReplacement(Detail(lnCtr).getDescription())){
+                    if((lbReplaceID || lbReplaceDesc) && Detail(lnCtr).isReverse()){ 
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Found request description <"+Detail(lnCtr).getDescription()+"> with matching replacement.\n\nReplacement Description for row "+(lnCtr+1)+" must not be empty." );
+                        return poJSON;
+
+                    }
                 }
             }
         }
@@ -2975,8 +2981,8 @@ public class POQuotation extends Transaction {
             + " LEFT JOIN Model c ON a.sModelIDx = c.sModelIDx   "
             + " LEFT JOIN Color d ON a.sColorIDx = d.sColorIDx   "
             + " LEFT JOIN Measure e ON a.sMeasurID = e.sMeasurID "
-            + " LEFT JOIN Model_Variant f ON a.sVrntIDxx = f.sVrntIDxx  "
-            + " LEFT JOIN Inv_Supplier g ON a.sStockIDx = g.sStockIDx   "
+            + " LEFT JOIN Model_Variant f ON a.sVrntIDxx = f.sVrntIDxx  " 
+           + " LEFT JOIN Inv_Supplier g ON a.sStockIDx = g.sStockIDx   "
             + " LEFT JOIN Category h ON h.sCategrCd = a.sCategCd1       "
             + " LEFT JOIN Category_Level2 i ON i.sCategrCd = a.sCategCd2";
     }
