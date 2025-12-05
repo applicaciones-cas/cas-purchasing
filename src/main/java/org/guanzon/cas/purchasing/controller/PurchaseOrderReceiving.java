@@ -1792,7 +1792,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
-        
+        object.setBranchCode(poGRider.getBranchCode());
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
             poJSON.put("message", "Supplier is not set.");
@@ -1841,6 +1841,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setBranchCode(poGRider.getBranchCode());
         
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
@@ -1901,6 +1902,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setBranchCode(poGRider.getBranchCode());
 
 //        poJSON = object.searchRecord(value, byCode); //TODO
         poJSON = object.searchRecord(value, byCode, 
@@ -1937,6 +1939,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setBranchCode(poGRider.getBranchCode());
         
         if(isWithSupplier){
             if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
@@ -1979,6 +1982,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setBranchCode(poGRider.getBranchCode());
         
         if(isWithSupplier){
             if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
@@ -2020,6 +2024,7 @@ public class PurchaseOrderReceiving extends Transaction {
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setBranchCode(poGRider.getBranchCode());
         
         if(Detail(row).getStockId() == null || "".equals(Detail(row).getStockId())){
             poJSON.put("result", "error");
