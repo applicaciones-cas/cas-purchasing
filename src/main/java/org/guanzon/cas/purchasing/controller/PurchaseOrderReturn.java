@@ -1580,7 +1580,7 @@ public class PurchaseOrderReturn extends Transaction{
             Master().setTransactionNo(Master().getNextCode());
         }
         
-        Master().setModifyingId(poGRider.getUserID());
+        Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         Master().setModifiedDate(poGRider.getServerDate());
         
         boolean lbHasQty = false;

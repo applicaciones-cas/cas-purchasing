@@ -5,6 +5,8 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,7 +45,9 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.account.AP_Client_Master;
+import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
@@ -1693,7 +1697,7 @@ public class PurchaseOrder extends Transaction {
                 if (PurchaseOrderStatus.APPROVED.equals(status)) {
                     poStockRequest.get(lnCtr).Master().setProcessed(true);
                 }
-                poStockRequest.get(lnCtr).Master().setModifyingId(poGRider.getUserID());
+                poStockRequest.get(lnCtr).Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                 poStockRequest.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
                 poStockRequest.get(lnCtr).setWithParent(true);
                 poJSON = poStockRequest.get(lnCtr).SaveTransaction();
@@ -1706,7 +1710,7 @@ public class PurchaseOrder extends Transaction {
             
             //TODO Save Ordered Quantity
             for (lnCtr = 0; lnCtr <= poPOQuotation.size() - 1; lnCtr++) {
-                poPOQuotation.get(lnCtr).Master().setModifyingId(poGRider.getUserID());
+                poPOQuotation.get(lnCtr).Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                 poPOQuotation.get(lnCtr).Master().setModifiedDate(poGRider.getServerDate());
                 poPOQuotation.get(lnCtr).setWithParent(true);
                 poJSON = poPOQuotation.get(lnCtr).SaveTransaction();
@@ -2846,6 +2850,95 @@ public class PurchaseOrder extends Transaction {
         return lsList;
     }
     
+    public String getSysUser(String fsId) throws SQLException, GuanzonException {
+        String lsEntry = "";
+        String lsSQL =   " SELECT b.sCompnyNm from xxxSysUser a " 
+                       + " LEFT JOIN Client_Master b ON b.sClientID = a.sEmployNo ";
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sUserIDxx =  " + SQLUtil.toSQL(fsId)) ;
+        System.out.println("SQL " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+          if (MiscUtil.RecordCount(loRS) > 0L) {
+            if (loRS.next()) {
+                lsEntry = loRS.getString("sCompnyNm");
+            } 
+          }
+          MiscUtil.close(loRS);
+        } catch (SQLException e) {
+          poJSON.put("result", "error");
+          poJSON.put("message", e.getMessage());
+        } 
+        return lsEntry;
+    }
+    
+    public JSONObject getEntryBy() throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        String lsEntry = "";
+        String lsEntryDate = "";
+        String lsSQL =  " SELECT b.sModified, b.dModified " 
+                        + " FROM PO_Master a "
+                        + " LEFT JOIN xxxAuditLogMaster b ON b.sSourceNo = a.sTransNox AND b.sEventNme LIKE 'ADD%NEW' AND b.sRemarksx = " + SQLUtil.toSQL(Master().getTable());
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox =  " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        System.out.println("Execute SQL : " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+          if (MiscUtil.RecordCount(loRS) > 0L) {
+            if (loRS.next()) {
+                lsEntry = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))); 
+                // Get the LocalDateTime from your result set
+                LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                lsEntryDate =  dModified.format(formatter);
+            } 
+          }
+          MiscUtil.close(loRS);
+        } catch (SQLException e) {
+          poJSON.put("result", "error");
+          poJSON.put("message", e.getMessage());
+          return poJSON;
+        } 
+        
+        poJSON.put("result", "success");
+        poJSON.put("sCompnyNm", lsEntry);
+        poJSON.put("sEntryDte", lsEntryDate);
+        return poJSON;
+    }
+    
+    public JSONObject getConfirmedBy() throws SQLException, GuanzonException {
+        String lsConfirm = "";
+        String lsDate = "";
+        String lsSQL = "SELECT b.sModified,b.dModified FROM PO_Master a "
+                     + " LEFT JOIN Transaction_Status_History b ON b.sSourceNo = a.sTransNox AND b.sTableNme = 'PO_Master' "
+                     + " AND ( b.cRefrStat = "+ SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED) 
+                     + " OR (ASCII(b.cRefrStat) - 64)  = "+ SQLUtil.toSQL(PurchaseOrderStatus.CONFIRMED) + " )";
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        System.out.println("Execute SQL : " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+          if (MiscUtil.RecordCount(loRS) > 0L) {
+            if (loRS.next()) {
+                if(loRS.getString("sModified") != null && !"".equals(loRS.getString("sModified"))){
+                    lsConfirm = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))) ;
+                    // Get the LocalDateTime from your result set
+                    LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                    lsDate =  dModified.format(formatter);
+                }
+            } 
+          }
+          MiscUtil.close(loRS);
+        } catch (SQLException e) {
+          poJSON.put("result", "error");
+          poJSON.put("message", e.getMessage());
+          return poJSON;
+        } 
+        
+        poJSON.put("result", "success");
+        poJSON.put("sConfirmed", lsConfirm);
+        poJSON.put("sConfrmDte", lsDate);
+        return poJSON;
+    }
+    
     public JSONObject printTransaction(String jasperType) {
         poJSON = new JSONObject();
         String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
@@ -2882,16 +2975,33 @@ public class PurchaseOrder extends Transaction {
             }
             
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sConfirmed", ""); 
+            
+            JSONObject loJSONEntry = getEntryBy();
+            if("error".equals((String) loJSONEntry.get("result"))){
+                return loJSONEntry;
+            }
+            
+            parameters.put("sCompnyNm", "Prepared by: "+ loJSONEntry.get("sCompnyNm") + " " + loJSONEntry.get("sEntryDte")); 
+            
+            JSONObject loJSONConfirm = getConfirmedBy();
+            if("error".equals((String) loJSONConfirm.get("result"))){
+                return loJSONConfirm;
+            } else {
+                if((String) loJSONConfirm.get("sConfirmed") != null && !"".equals((String) loJSONConfirm.get("sConfirmed"))){
+                    parameters.put("sConfirmed", "Confirmed by: "+ (String) loJSONConfirm.get("sConfirmed") + " " + String.valueOf((String) loJSONConfirm.get("sConfrmDte"))); 
+                }
+            }
+            
             parameters.put("sBranchNm", poGRider.getBranchName());
             parameters.put("sAddressx", lsCompanyAddress);
-            parameters.put("sCompnyNm", "Prepared by: "+ poGRider.getLogName()+ " " + poGRider.getServerDate()); //poGRider.getClientName()
+//            parameters.put("sCompnyNm", "Prepared by: "+ poGRider.getLogName()+ " " + poGRider.getServerDate()); //poGRider.getClientName()
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("sDestination", Master().Branch().getBranchName());
             parameters.put("sCompany", Master().Company().getCompanyName());
             parameters.put("sSupplier", Master().Supplier().getCompanyName());
             parameters.put("sTerm", Master().Term().getDescription());
             parameters.put("sDestinationAddress", lsDestinationAddress);
-            
             //set default value
             parameters.put("sApprval1",""); 
             parameters.put("sApprval2", "");
