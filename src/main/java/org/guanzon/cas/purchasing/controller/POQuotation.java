@@ -2656,7 +2656,7 @@ public class POQuotation extends Transaction {
         if(Master().getEditMode() == EditMode.ADDNEW){
             System.out.println("Will Save : " + Master().getNextCode());
             Master().setTransactionNo(Master().getNextCode());
-            Master().setPrepared(poGRider.getUserID());
+            Master().setPrepared(poGRider.Encrypt(poGRider.getUserID()));
         }
         
         Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
