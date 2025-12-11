@@ -2884,11 +2884,17 @@ public class PurchaseOrder extends Transaction {
         try {
           if (MiscUtil.RecordCount(loRS) > 0L) {
             if (loRS.next()) {
-                lsEntry = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))); 
-                // Get the LocalDateTime from your result set
-                LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
-                lsEntryDate =  dModified.format(formatter);
+                if(loRS.getString("sModified") != null && !"".equals(loRS.getString("sModified"))){
+                    if(loRS.getString("sModified").length() > 10){
+                        lsEntry = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))); 
+                    } else {
+                        lsEntry = getSysUser(loRS.getString("sModified")); 
+                    }
+                    // Get the LocalDateTime from your result set
+                    LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                    lsEntryDate =  dModified.format(formatter);
+                }
             } 
           }
           MiscUtil.close(loRS);
@@ -2918,7 +2924,11 @@ public class PurchaseOrder extends Transaction {
           if (MiscUtil.RecordCount(loRS) > 0L) {
             if (loRS.next()) {
                 if(loRS.getString("sModified") != null && !"".equals(loRS.getString("sModified"))){
-                    lsConfirm = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))) ;
+                    if(loRS.getString("sModified").length() > 10){
+                        lsConfirm = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))); 
+                    } else {
+                        lsConfirm = getSysUser(loRS.getString("sModified")); 
+                    }
                     // Get the LocalDateTime from your result set
                     LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
@@ -2975,6 +2985,7 @@ public class PurchaseOrder extends Transaction {
             }
             
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sCompnyNm", ""); 
             parameters.put("sConfirmed", ""); 
             
             JSONObject loJSONEntry = getEntryBy();
@@ -2982,7 +2993,9 @@ public class PurchaseOrder extends Transaction {
                 return loJSONEntry;
             }
             
-            parameters.put("sCompnyNm", "Prepared by: "+ loJSONEntry.get("sCompnyNm") + " " + loJSONEntry.get("sEntryDte")); 
+            if((String) loJSONEntry.get("sCompnyNm") != null && !"".equals((String) loJSONEntry.get("sCompnyNm"))){
+                parameters.put("sCompnyNm", "Prepared by: "+ (String) loJSONEntry.get("sCompnyNm") + " " + String.valueOf((String) loJSONEntry.get("sEntryDte"))); 
+            }
             
             JSONObject loJSONConfirm = getConfirmedBy();
             if("error".equals((String) loJSONConfirm.get("result"))){
