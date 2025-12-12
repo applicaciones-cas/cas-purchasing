@@ -10,6 +10,10 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -5526,6 +5530,26 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         poJSON.put("result", "success");
         return poJSON;
+    }
+    
+    public void copyFile(String fsPath){
+        Path source = Paths.get(fsPath);
+        Path targetDir = Paths.get(System.getProperty("sys.default.path.temp") + "/Attachments");
+
+        try {
+            // Ensure target directory exists
+            if (!Files.exists(targetDir)) {
+                Files.createDirectories(targetDir);
+            }
+
+            // Copy file into the target directory
+            Files.copy(source, targetDir.resolve(source.getFileName()),
+                       StandardCopyOption.REPLACE_EXISTING);
+
+            System.out.println("File copied successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     private JSONObject validateJournal(){
