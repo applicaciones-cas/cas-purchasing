@@ -18,8 +18,6 @@ public class PurchaseOrderReceivingStatus {
     public static final  String PAID = "5"; //posted > paid
     public static final  String RETURNED = "6";
     
-    public static final  String GLCODE = "ACCOUNTS_PAYABLE";
-    
     //Category
     public static class Category  {
         public static final String MOBILEPHONE = "0000001";   //Cellphone    
