@@ -173,10 +173,10 @@ public class POQuotation_Vehicle implements GValidator{
             return poJSON;
         }
         
-        if (poMaster.getReferenceNo()== null || "".equals(poMaster.getReferenceNo())) {
-            poJSON.put("message", "Reference No is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getReferenceNo()== null || "".equals(poMaster.getReferenceNo())) {
+//            poJSON.put("message", "Reference No is not set.");
+//            return poJSON;
+//        }
         if(poMaster.getGrossAmount() <= 0.0000){
             poJSON.put("result","error"); 
             poJSON.put("message", "Invalid transaction total.");

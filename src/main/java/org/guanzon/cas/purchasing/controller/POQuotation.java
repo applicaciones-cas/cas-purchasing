@@ -2557,6 +2557,11 @@ public class POQuotation extends Transaction {
             }
         }
         
+        //Prevent null in reference no
+        if(Master().getReferenceNo() == null){
+            Master().setReferenceNo("");
+        }
+        
         //if current status is Return check changes
         if(POQuotationRequestStatus.RETURNED.equals(Master().getTransactionStatus())){
             boolean lbUpdated = false;
@@ -2870,6 +2875,7 @@ public class POQuotation extends Transaction {
             Master().setCategoryCode(psCategorCd);
             Master().setTransactionDate(poGRider.getServerDate());
             Master().setTransactionStatus(POQuotationStatus.OPEN);
+            Master().setReferenceNo(""); //prevent null
             Master().setReferenceDate(poGRider.getServerDate());
             LocalDateTime ldt = poGRider.getServerDate().toLocalDateTime().plusMonths(1);
             Master().setValidityDate( Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()));
