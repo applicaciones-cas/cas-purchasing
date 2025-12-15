@@ -2446,9 +2446,12 @@ public class POQuotation extends Transaction {
         return poJSON;
     }
     
-    public void removeAttachment(int fnRow) throws GuanzonException, SQLException{
+    public JSONObject removeAttachment(int fnRow) throws GuanzonException, SQLException{
+        poJSON = new JSONObject();
         if(getTransactionAttachmentCount() <= 0){
-            return;
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transaction attachment to be removed.");
+            return poJSON;
         }
         
         if(paAttachments.get(fnRow).getEditMode() == EditMode.ADDNEW){
@@ -2458,6 +2461,9 @@ public class POQuotation extends Transaction {
             paAttachments.get(fnRow).getModel().setRecordStatus(RecordStatus.INACTIVE);
             System.out.println("Attachment :"+ fnRow+" Deactivate");
         }
+        
+        poJSON.put("result", "success");
+        return poJSON;
     }
     
     public int addAttachment(String fFileName) throws SQLException, GuanzonException{
