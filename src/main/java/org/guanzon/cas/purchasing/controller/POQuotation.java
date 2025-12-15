@@ -29,6 +29,7 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
+import org.guanzon.appdriver.agent.systables.Model_Transaction_Attachment;
 import org.guanzon.appdriver.agent.systables.SysTableContollers;
 import org.guanzon.appdriver.agent.systables.TransactionAttachment;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -50,6 +51,7 @@ import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
@@ -2439,10 +2441,39 @@ public class POQuotation extends Transaction {
                 return poJSON;
             }
         }
-
+        paAttachments.get(getTransactionAttachmentCount() - 1).setRecordStatus(RecordStatus.ACTIVE);
         poJSON.put("result", "success");
         return poJSON;
-
+    }
+    
+    public void removeAttachment(int fnRow) throws GuanzonException, SQLException{
+        if(getTransactionAttachmentCount() <= 0){
+            return;
+        }
+        
+        if(paAttachments.get(fnRow).getEditMode() == EditMode.ADDNEW){
+            paAttachments.remove(fnRow);
+            System.out.println("Attachment :"+ fnRow+" Removed");
+        } else {
+            paAttachments.get(fnRow).getModel().setRecordStatus(RecordStatus.INACTIVE);
+            System.out.println("Attachment :"+ fnRow+" Deactivate");
+        }
+    }
+    
+    public int addAttachment(String fFileName) throws SQLException, GuanzonException{
+        for(int lnCtr = 0;lnCtr <= getTransactionAttachmentCount() - 1;lnCtr++){
+            if(fFileName.equals(paAttachments.get(lnCtr).getModel().getFileName())
+                && RecordStatus.INACTIVE.equals(paAttachments.get(lnCtr).getModel().getRecordStatus())){
+                paAttachments.get(lnCtr).getModel().setRecordStatus(RecordStatus.ACTIVE);
+                System.out.println("Attachment :"+ lnCtr+" Activate");
+                return lnCtr;
+            }
+        }
+        
+        addAttachment();
+        paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setFileName(fFileName);
+        paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setSourceNo(Master().getTransactionNo());
+        return getTransactionAttachmentCount() - 1;
     }
     
     public void copyFile(String fsPath){
