@@ -2441,7 +2441,6 @@ public class POQuotation extends Transaction {
                 return poJSON;
             }
         }
-        paAttachments.get(getTransactionAttachmentCount() - 1).setRecordStatus(RecordStatus.ACTIVE);
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -2479,6 +2478,7 @@ public class POQuotation extends Transaction {
         addAttachment();
         paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setFileName(fFileName);
         paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setSourceNo(Master().getTransactionNo());
+        paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setRecordStatus(RecordStatus.ACTIVE);
         return getTransactionAttachmentCount() - 1;
     }
     

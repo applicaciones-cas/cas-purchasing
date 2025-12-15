@@ -4744,6 +4744,7 @@ public class PurchaseOrderReceiving extends Transaction {
         addAttachment();
         paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setFileName(fFileName);
         paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setSourceNo(Master().getTransactionNo());
+        paAttachments.get(getTransactionAttachmentCount() - 1).getModel().setRecordStatus(RecordStatus.ACTIVE);
         return getTransactionAttachmentCount() - 1;
     }
     
