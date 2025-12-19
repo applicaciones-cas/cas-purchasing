@@ -1802,10 +1802,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
             poJSON.put("result", "error");
@@ -1851,10 +1852,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
         
         if(Master().getSupplierId() == null || "".equals(Master().getSupplierId())){
@@ -1913,11 +1915,13 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
-
+        
 //        poJSON = object.searchRecord(value, byCode); //TODO
         poJSON = object.searchRecord(value, byCode, 
                 Master().getSupplierId());
@@ -1949,10 +1953,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
         
         if(isWithSupplier){
@@ -1992,10 +1997,11 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         poJSON.put("row", row);
         String lsBrand = (Detail(row).getBrandId() != null && !Detail(row).getBrandId().isEmpty()) ? Detail(row).getBrandId() : null;
-        String lsIndustry = Master().getIndustryId().isEmpty() ? null : Master().getIndustryId();
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
         
         if(isWithSupplier){
@@ -2035,9 +2041,11 @@ public class PurchaseOrderReceiving extends Transaction {
             GuanzonException {
         poJSON = new JSONObject();
         
+        String lsIndustry = Master().getIndustryId().isEmpty() ? psIndustryId : Master().getIndustryId();
         InvMaster object = new InvControllers(poGRider, logwrapr).InventoryMaster();
         object.setRecordStatus(RecordStatus.ACTIVE);
         object.setCategory(Master().getCategoryCode());
+        object.setIndustryID(lsIndustry);
         object.setBranchCode(poGRider.getBranchCode());
         
         if(Detail(row).getStockId() == null || "".equals(Detail(row).getStockId())){
