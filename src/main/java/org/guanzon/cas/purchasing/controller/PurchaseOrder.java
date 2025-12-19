@@ -282,7 +282,12 @@ public class PurchaseOrder extends Transaction {
         /* Put system validations and other assignments here */
         poJSON = new JSONObject();
         boolean lbUpdated = false;
-
+        
+        if(Master().getEditMode() == EditMode.ADDNEW){
+            System.out.println("Will Save : " + Master().getNextCode());
+            Master().setTransactionNo(Master().getNextCode());
+        }
+        
         if (Master().getTransactionStatus().equals(PurchaseOrderStatus.CONFIRMED) && pnEditMode == EditMode.UPDATE) {
             if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 poJSON = ShowDialogFX.getUserApproval(poGRider);
