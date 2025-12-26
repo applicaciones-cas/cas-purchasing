@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -1350,9 +1352,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 "",
-                "Transaction Date»Transaction No»Industry»Company»Supplier",
-                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
-                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                "Transaction Date»Transaction No»Reference No»Industry»Company»Supplier",
+                "dTransact»sTransNox»sReferNox»sIndustry»sCompnyNm»sSupplrNm",
+                "a.dTransact»a.sTransNox»a.sReferNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
                 1);
 
         if (poJSON != null) {
@@ -1426,9 +1428,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 "",
-                "Transaction Date»Transaction No»Industry»Company»Supplier",
-                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
-                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                "Transaction Date»Transaction No»Reference No»Industry»Company»Supplier",
+                "dTransact»sTransNox»sReferNox»sIndustry»sCompnyNm»sSupplrNm",
+                "a.dTransact»a.sTransNox»a.sReferNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
                 1);
 
         if (poJSON != null) {
@@ -1486,7 +1488,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd)
                 + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + receivingBranch)
                 + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
-                + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
+                + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo)
                 + (pbIsFinance ? "" : lsPurpose));
         if (psTranStat != null && !"".equals(psTranStat)) {
             lsSQL = lsSQL + lsTransStat;
@@ -1496,9 +1498,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 "",
-                "Transaction Date»Transaction No»Industry»Company»Supplier»Receiving Branch",
-                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
-                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
+                "Transaction Date»Transaction No»Reference No»Industry»Company»Supplier»Receiving Branch",
+                "dTransact»sTransNox»sReferNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
+                "a.dTransact»a.sTransNox»a.sReferNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
                 1);
 
         if (poJSON != null) {
@@ -1577,9 +1579,9 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 "",
-                "Transaction Date»Transaction No»Industry»Company»Supplier»Receiving Branch",
-                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
-                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
+                "Transaction Date»Transaction No»Reference No»Industry»Company»Supplier»Receiving Branch",
+                "dTransact»sTransNox»sReferNox»sIndustry»sCompnyNm»sSupplrNm»sBranchNm",
+                "a.dTransact»a.sTransNox»a.sReferNox»d.sDescript»c.sCompnyNm»b.sCompnyNm»e.sBranchNm",
                 1);
 
         if (poJSON != null) {
@@ -3053,7 +3055,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
                     + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
                     + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
-                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
                     + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
             );
             
@@ -5493,6 +5495,18 @@ public class PurchaseOrderReceiving extends Transaction {
                         }
                     }
                 }
+                
+                //Upload Attachment when send status is 0
+                try {
+                    if("0".equals(TransactionAttachmentList(lnCtr).getModel().getSendStatus())){
+                        poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr);
+                        if ("error".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
+                    }
+                } catch (Exception ex) {
+                    Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             //Allow the user to edit details but seek an approval from the approving officer
@@ -5660,15 +5674,6 @@ public class PurchaseOrderReceiving extends Transaction {
             //Save Attachments
             for (lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
                 if (paAttachments.get(lnCtr).getEditMode() == EditMode.ADDNEW || paAttachments.get(lnCtr).getEditMode() == EditMode.UPDATE) {
-                    
-                    //Upload Attachment when send status is 0
-                    if("0".equals(TransactionAttachmentList(lnCtr).getModel().getSendStatus())){
-                        poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr);
-                        if ("error".equals((String) poJSON.get("result"))) {
-                            return poJSON;
-                        }
-                    }
-                    
                     paAttachments.get(lnCtr).getModel().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                     paAttachments.get(lnCtr).getModel().setModifiedDate(poGRider.getServerDate());
                     paAttachments.get(lnCtr).setWithParentClass(true);
@@ -5811,7 +5816,12 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "Invalid journal entry credit amount.");
             return poJSON;
         }
-        
+        ldblDebitAmt = BigDecimal.valueOf(ldblDebitAmt)
+                .setScale(4, RoundingMode.HALF_UP)
+                .doubleValue();
+        ldblCreditAmt = BigDecimal.valueOf(ldblCreditAmt)
+                .setScale(4, RoundingMode.HALF_UP)
+                .doubleValue();
         if(ldblDebitAmt < ldblCreditAmt || ldblDebitAmt > ldblCreditAmt){
             poJSON.put("result", "error");
             poJSON.put("message", "Debit should be equal to credit amount.");

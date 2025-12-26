@@ -2953,6 +2953,18 @@ public class POQuotation extends Transaction {
                 }
             }
             
+            //Upload Attachment when send status is 0
+            try {
+                if("0".equals(TransactionAttachmentList(lnCtr).getModel().getSendStatus())){
+                    poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr);
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(PurchaseOrderReceiving.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
         }
         
         //Recompute amount
@@ -2982,15 +2994,6 @@ public class POQuotation extends Transaction {
             //Save Attachments
             for (int lnCtr = 0; lnCtr <= getTransactionAttachmentCount() - 1; lnCtr++) {
                 if (paAttachments.get(lnCtr).getEditMode() == EditMode.ADDNEW || paAttachments.get(lnCtr).getEditMode() == EditMode.UPDATE) {
-                    
-                    //Upload Attachment when send status is 0
-                    if("0".equals(TransactionAttachmentList(lnCtr).getModel().getSendStatus())){
-                        poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr);
-                        if ("error".equals((String) poJSON.get("result"))) {
-                            return poJSON;
-                        }
-                    }
-                    
                     paAttachments.get(lnCtr).getModel().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
                     paAttachments.get(lnCtr).getModel().setModifiedDate(poGRider.getServerDate());
                     paAttachments.get(lnCtr).setWithParentClass(true);
