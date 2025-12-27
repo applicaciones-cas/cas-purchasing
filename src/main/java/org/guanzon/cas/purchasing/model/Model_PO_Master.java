@@ -273,6 +273,36 @@ public class Model_PO_Master extends Model {
     public Number getNetTotal() {
         return (Number) getValue("nNetTotal");
     }
+    
+    public JSONObject setVatRate(Double vatRate) {
+        return setValue("nVATRatex", vatRate);
+    }
+
+    public Double getVatRate() {
+        if (getValue("nVATRatex") == null || "".equals(getValue("nVATRatex"))) {
+            return 0.00;
+        }
+        return Double.valueOf(getValue("nVATRatex").toString());
+    }
+    
+    public JSONObject setVatAmount(Double vatAmount) {
+        return setValue("nVATAmtxx", vatAmount);
+    }
+
+    public Double getVatAmount() {
+        if (getValue("nVATAmtxx") == null || "".equals(getValue("nVATAmtxx"))) {
+            return 0.0000;
+        }
+        return Double.valueOf(getValue("nVATAmtxx").toString());
+    }
+    
+    public JSONObject isVatable(boolean isVatable) {
+        return setValue("cVATAdded", isVatable ? "1" : "0");
+    }
+
+    public boolean isVatable() {
+        return ((String) getValue("cVATAdded")).equals("1");
+    }
 
     public JSONObject setRemarks(String industryId) {
         return setValue("sRemarksx", industryId);

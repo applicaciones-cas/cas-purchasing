@@ -2805,9 +2805,29 @@ public class PurchaseOrder extends Transaction {
 //        double totalDownPayment = downPaymentAmountFromRate + downPaymentAmount;
         // Final net total
 //        double netTotal = totalAmount - totalDiscount - totalDownPayment;
-//
-        double netTotal = totalAmount - totalDiscount;
+
+        //double netTotal = totalAmount - totalDiscount;
+        double netTotal = 0.0000;
+        //VAT Sales : (Vatable Total + Freight Amount) - Discount Amount
+        double ldblVatSales = Master().getTranTotal().doubleValue() - totalDiscount;
+        //VAT Amount : VAT Sales - (VAT Sales / 1.12)
+        double ldblVatAmount = ldblVatSales - ( ldblVatSales / 1.12);
+
+        if(Master().isVatable()){ //Add VAT
+            //Net VAT Sales : VAT Sales - VAT Amount
+            netTotal = ldblVatSales + ldblVatAmount;
+        } else {
+            netTotal = ldblVatSales;
+        } 
         Master().setNetTotal(netTotal);
+        Master().setVatAmount(ldblVatAmount);
+        if(Master().getVatRate() == 0.00){
+            if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
+                poJSON = Master().setVatRate(0.00); //Set default value
+            } else {
+                poJSON = Master().setVatRate(12.00); //Set default value
+            }
+        }
 
     }
 
