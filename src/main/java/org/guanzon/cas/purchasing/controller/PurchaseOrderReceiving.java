@@ -398,7 +398,11 @@ public class PurchaseOrderReceiving extends Transaction {
         //kalyptus - 2025.10.09 09:31
         //Update the inventory for this Received Purchase
         InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            loTrans.PurchaseReplacement((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        } else {
+            loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        }
         String lsCondition  = "0"; //Added by Arsiela 10-14-2025 11:52:00
         for (Model loDetail : paDetail) {
             Model_POR_Detail detail = (Model_POR_Detail) loDetail;
@@ -1090,7 +1094,11 @@ public class PurchaseOrderReceiving extends Transaction {
         //kalyptus - 2025.10.09 09:31
         //Update the inventory for this Received Purchase
         InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            loTrans.PurchaseReplacement((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        } else {
+            loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        }
         String lsCondition = "0"; //Added by Arsiela 10-14-2025 11:52:00
         for (Model loDetail : paDetail) {
             Model_POR_Detail detail = (Model_POR_Detail) loDetail;
@@ -4538,7 +4546,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
         }
-    
+        poJSON.put("row", fnRow);
         poJSON.put("result", "success");
         return poJSON;
     }
