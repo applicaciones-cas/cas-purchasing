@@ -7314,8 +7314,11 @@ public class PurchaseOrderReceiving extends Transaction {
             entryBy = (String) loJSON.get("sCompnyNm");
             entryDate = (String) loJSON.get("sEntryDte");
         }
-        
-        showStatusHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            showStatusHistoryUI("Purchase Order Replacement", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        } else {
+            showStatusHistoryUI("Purchase Order Receiving", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        }
     }
     
     public JSONObject getEntryBy() throws SQLException, GuanzonException {
