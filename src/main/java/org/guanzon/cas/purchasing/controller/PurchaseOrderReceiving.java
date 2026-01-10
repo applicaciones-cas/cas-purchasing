@@ -400,7 +400,11 @@ public class PurchaseOrderReceiving extends Transaction {
         //kalyptus - 2025.10.09 09:31
         //Update the inventory for this Received Purchase
         InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            loTrans.PurchaseReplacement((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        } else {
+            loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+        }
         String lsCondition  = "0"; //Added by Arsiela 10-14-2025 11:52:00
         for (Model loDetail : paDetail) {
             Model_POR_Detail detail = (Model_POR_Detail) loDetail;
@@ -1092,7 +1096,11 @@ public class PurchaseOrderReceiving extends Transaction {
         //kalyptus - 2025.10.09 09:31
         //Update the inventory for this Received Purchase
         InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            loTrans.PurchaseReplacement((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        } else {
+            loTrans.PurchaseReceiving((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        }
         String lsCondition = "0"; //Added by Arsiela 10-14-2025 11:52:00
         for (Model loDetail : paDetail) {
             Model_POR_Detail detail = (Model_POR_Detail) loDetail;
@@ -4540,7 +4548,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
         }
-    
+        poJSON.put("row", fnRow);
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -7306,8 +7314,11 @@ public class PurchaseOrderReceiving extends Transaction {
             entryBy = (String) loJSON.get("sCompnyNm");
             entryDate = (String) loJSON.get("sEntryDte");
         }
-        
-        showStatusHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            showStatusHistoryUI("Purchase Order Replacement", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        } else {
+            showStatusHistoryUI("Purchase Order Receiving", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
+        }
     }
     
     public JSONObject getEntryBy() throws SQLException, GuanzonException {
