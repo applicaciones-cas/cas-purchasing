@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javax.sql.rowset.CachedRowSet;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import net.sf.jasperreports.engine.JRException;
@@ -2952,6 +2953,86 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("sConfirmed", lsConfirm);
         poJSON.put("sConfrmDte", lsDate);
         return poJSON;
+    }
+    
+    public void ShowStatusHistory() throws SQLException, GuanzonException, Exception{
+        CachedRowSet crs = getStatusHistory();
+        
+        crs.beforeFirst();
+        
+        while(crs.next()){
+            switch (crs.getString("cRefrStat")){
+                case "":
+                    crs.updateString("cRefrStat", "-");
+                    break;
+                case PurchaseOrderStatus.OPEN:
+                    crs.updateString("cRefrStat", "OPEN");
+                    break;
+                case PurchaseOrderStatus.CONFIRMED:
+                    crs.updateString("cRefrStat", "CONFIRMED");
+                    break;
+                case PurchaseOrderStatus.PROCESSED:
+                    crs.updateString("cRefrStat", "PROCESSED");
+                    break;
+                case PurchaseOrderStatus.CANCELLED:
+                    crs.updateString("cRefrStat", "CANCELLED");
+                    break;
+                case PurchaseOrderStatus.VOID:
+                    crs.updateString("cRefrStat", "VOID");
+                    break;
+                case PurchaseOrderStatus.APPROVED:
+                    crs.updateString("cRefrStat", "APPROVED");
+                    break;
+                case PurchaseOrderStatus.POSTED:
+                    crs.updateString("cRefrStat", "POSTED");
+                    break;
+                case PurchaseOrderStatus.RETURNED:
+                    crs.updateString("cRefrStat", "RETURNED");
+                    break;
+                default:
+                    char ch = crs.getString("cRefrStat").charAt(0);
+                    String stat = String.valueOf((int) ch - 64);
+                    
+                    switch (stat){
+                    case PurchaseOrderStatus.OPEN:
+                        crs.updateString("cRefrStat", "OPEN");
+                        break;
+                    case PurchaseOrderStatus.CONFIRMED:
+                        crs.updateString("cRefrStat", "CONFIRMED");
+                        break;
+                    case PurchaseOrderStatus.PROCESSED:
+                        crs.updateString("cRefrStat", "PROCESSED");
+                        break;
+                    case PurchaseOrderStatus.CANCELLED:
+                        crs.updateString("cRefrStat", "CANCELLED");
+                        break;
+                    case PurchaseOrderStatus.VOID:
+                        crs.updateString("cRefrStat", "VOID");
+                        break;
+                    case PurchaseOrderStatus.APPROVED:
+                        crs.updateString("cRefrStat", "APPROVED");
+                        break;
+                    case PurchaseOrderStatus.POSTED:
+                        crs.updateString("cRefrStat", "POSTED");
+                        break;
+                    case PurchaseOrderStatus.RETURNED:
+                        crs.updateString("cRefrStat", "RETURNED");
+                        break;
+                    }
+            }
+            crs.updateRow(); 
+        }
+        
+        JSONObject loJSON  = getEntryBy();
+        String entryBy = "";
+        String entryDate = "";
+        
+        if ("success".equals((String) loJSON.get("result"))){
+            entryBy = (String) loJSON.get("sCompnyNm");
+            entryDate = (String) loJSON.get("sEntryDte");
+        }
+        
+        showStatusHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, crs);
     }
     
     public JSONObject printTransaction(String jasperType) {
