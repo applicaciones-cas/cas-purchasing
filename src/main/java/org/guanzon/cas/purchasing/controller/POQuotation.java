@@ -1494,8 +1494,9 @@ public class POQuotation extends Transaction {
         
         
         CategoryLevel2 object = new ParamControllers(poGRider, logwrapr).CategoryLevel2();
-        String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(), "cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
-                                            + " AND (sIndstCdx = '' OR ISNULL(sIndstCdx))"); //+ SQLUtil.toSQL(Master().getIndustryId()));
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        String lsSQL = MiscUtil.addCondition(object.getSQ_Browse(),  " sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryId()));
+//                                            + " AND (sIndstCdx = '' OR ISNULL(sIndstCdx))"); //+ SQLUtil.toSQL(Master().getIndustryId()));
         
         System.out.println("Executing SQL: " + lsSQL);
         poJSON = ShowDialogFX.Browse(poGRider,
