@@ -2105,9 +2105,10 @@ public class POQuotation extends Transaction {
                     System.out.println("poJSON success: " +  poJSON.toJSONString());
                     System.out.println("File downloaded succesfully.");
                 } else {
-                    System.out.println("poJSON error: " + poJSON.toJSONString());
+                    poJSON = (JSONObject) poJSON.get("error");
                     poJSON.put("result", "error");
-                    poJSON.put("message", "Unable to download file.");
+                    System.out.println("ERROR WebFile.DownloadFile: " + poJSON.get("message"));
+                    System.out.println("poJSON error WebFile.DownloadFile: " + poJSON.toJSONString());
                 }
                 
             } else {
