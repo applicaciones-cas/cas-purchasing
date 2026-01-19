@@ -2290,6 +2290,88 @@ public class POQuotationRequest extends Transaction {
         
     }
     
+//    public List<String> getApprover() throws SQLException{
+//        List<String> lsList = new ArrayList<String>();
+//            String lsSQL =   " SELECT "
+//                        + "     a.sSourceCD "
+//                        + " ,	a.sSourceNo "
+//                        + " ,	a.cTranStat "
+//                        + " ,	d.sCompnyNm "
+//                        + " ,	c.dApproved "
+//                        + " ,   CONCAT(c.sEmployID, ' - ',d.sCompnyNm,' ',c.dApproved) AS sApprover "
+//                        + " FROM Transaction_Authorization_Master a  "
+//                        + " ,	Transaction_Authorization_Detail b     "
+//                        + " ,	Transaction_Authorization_Recipient c  "
+//                        + " LEFT JOIN Client_Master d ON c.sEmployID = d.sClientID "
+//                        + " WHERE a.sTransNox = b.sSourceNo AND b.sSourceNo = c.sSourceNo    "
+//                        + " AND a.sSourceCD = " + SQLUtil.toSQL(getSourceCode())
+//                        + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getTransactionNo())
+//                        + " AND a.cTranStat = '2' "
+//                        + " AND c.cTranStat = '1' ";
+//            System.out.println("Executing SQL: " + lsSQL);
+//            ResultSet loRS = poGRider.executeQuery(lsSQL);
+//            if (MiscUtil.RecordCount(loRS) >= 0) {
+//                while (loRS.next()) {
+//                    lsList.add(loRS.getString("sApprover"));
+//                }
+//                MiscUtil.close(loRS);
+//            }
+//            
+//        return lsList;
+//    }
+    
+    public JSONObject getApprover() throws SQLException{
+        JSONObject loJSON = new JSONObject();
+        loJSON.put("sModified", "");
+        loJSON.put("dModified", "");
+        String lsSQL =   " SELECT "
+                    + "     a.sModified"
+                    + " ,   a.dModified"
+                    + " FROM Transaction_Status_History a  "
+                    + " WHERE a.sTableNme = " + SQLUtil.toSQL(Master().getTable())
+                    + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getTransactionNo())
+                    + " AND a.cRefrStat = " + SQLUtil.toSQL(POQuotationRequestStatus.APPROVED)
+                    + " AND a.cTranStat = '1' ";
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        if (MiscUtil.RecordCount(loRS) >= 0) {
+            while (loRS.next()) {
+                // Get the LocalDateTime from your result set
+                LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                loJSON.put("sModified", loRS.getString("sModified"));
+                loJSON.put("dModified", dModified.format(formatter));
+                loJSON.put("result", "success");
+                return loJSON;
+            }
+            MiscUtil.close(loRS);
+        }
+        
+        loJSON.put("result", "error");
+        return loJSON;
+    }
+    
+    public String getPreparedDate() throws SQLException, GuanzonException {
+        String lsSQL = MiscUtil.addCondition(MiscUtil.makeSelect(Master()), " sTransNox =  " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        System.out.println("SQL " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+          if (MiscUtil.RecordCount(loRS) > 0L) {
+            if (loRS.next()) {
+                // Get the LocalDateTime from your result set
+                LocalDateTime dModified = loRS.getObject("dPrepared", LocalDateTime.class);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                return dModified.format(formatter);
+            } 
+          }
+          MiscUtil.close(loRS);
+        } catch (SQLException e) {
+          poJSON.put("result", "error");
+          poJSON.put("message", e.getMessage());
+        } 
+        return "";
+    }
+    
     /*EXPORT FILE*/
     private JSONObject sentEmail(){
         poJSON = new JSONObject();
@@ -2364,11 +2446,47 @@ public class POQuotationRequest extends Transaction {
             parameters.put("sSupplierNm", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Supplier().getCompanyName()); 
             parameters.put("sSupplierAddress", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Address().getAddress()); 
             parameters.put("sContactNo", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Contact().getMobileNo()); 
-            
+            if(Master().Department().getDescription() != null && !"".equals(Master().Department().getDescription())){
+                parameters.put("sDestination", Master().Destination().getBranchName() + " - " + Master().Department().getDescription());
+            } else {
+                parameters.put("sDestination", Master().Destination().getBranchName());
+            }
             parameters.put("sBranchNm", Master().Branch().getBranchName());
             parameters.put("sAddressx", Master().Branch().getAddress());
             parameters.put("sCompnyNm", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Company().getCompanyName());
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
+            parameters.put("sCompany", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Company().getCompanyName());
+            parameters.put("sPreparedBy","");
+            parameters.put("sApprovedBy","");
+            
+            String lsPreparedBy = "";
+            if(Master().getPrepared().length() > 10){
+                lsPreparedBy = getSysUser(poGRider.Decrypt(Master().getPrepared())); 
+            } else {
+                lsPreparedBy = getSysUser(Master().getPrepared()); 
+            }
+            
+            // Get the LocalDateTime from your result set
+            System.out.println("PREPARED DATE : " + Master().getPreparedDate());//Always returning NULL 
+            System.out.println("PREPARED DATE MANUAL QUERY: " + getPreparedDate()); 
+            parameters.put("sPreparedBy", "Prepared by : "+ lsPreparedBy + " " + getPreparedDate()); 
+            
+            if(Master().getTransactionStatus().equals(POQuotationRequestStatus.APPROVED)){
+                //Update value when approved
+                JSONObject loJSON = getApprover();
+                if("success".equals((String) loJSON.get("result"))){
+                    String lsApprover = (String) loJSON.get("sModified");
+                    if(lsApprover != null && !"".equals(lsApprover)){
+                        if(lsApprover.length() > 10){
+                            lsApprover = getSysUser(poGRider.Decrypt(lsApprover)); 
+                        } else {
+                            lsApprover = getSysUser(lsApprover); 
+                        }
+                        parameters.put("sApprovedBy","Approved by: " + lsApprover  + " " + String.valueOf((String) loJSON.get("dModified"))); 
+                    }
+                }
+            }
+            
             parameters.put("watermarkImagePath", lsWaterMarkPath);
             List<OrderDetail> orderDetails = new ArrayList<>();
             

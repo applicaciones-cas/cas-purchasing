@@ -218,7 +218,7 @@ public class Model_PO_Quotation_Request_Master extends Model {
         return setValue("dPrepared", preparedDate);
     }
 
-    public Date setPreparedDate() {
+    public Date getPreparedDate() {
         return (Date) getValue("dPrepared");
     }
 
