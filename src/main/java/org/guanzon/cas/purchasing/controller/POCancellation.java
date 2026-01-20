@@ -3,6 +3,7 @@ package org.guanzon.cas.purchasing.controller;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,6 +20,7 @@ import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.InvTransCons;
+import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.purchasing.controller.PurchaseOrder;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
@@ -452,6 +454,17 @@ public class POCancellation extends Transaction {
                 }
             }
         }
+        
+        //kalyptus - 2025.10.10 09:31am
+        //Update the inventory for this Cancelled Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseOrder_Cancellation((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+
+        for (Model loDetail : paDetail) {
+            Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
+            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), "CONDITION", detail.getQuantity(),0 , detail.getUnitPrice()); 
+        }
+        loTrans.saveTransaction();
 
         poJSON = statusChange(poMaster.getTable(),
                 (String) poMaster.getValue("sTransNox"),
@@ -740,7 +753,18 @@ public class POCancellation extends Transaction {
         }
 
         poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+        
+        //kalyptus - 2025.10.10 09:31am
+        //Update the inventory for this Cancelled Purchase
+        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+        loTrans.PurchaseOrder_Cancellation((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
 
+        for (Model loDetail : paDetail) {
+            Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
+            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String) poMaster.getValue("sTransNox"), detail.getQuantity(),0 , detail.getUnitPrice()); 
+        }
+        loTrans.saveTransaction();
+        
         poJSON = statusChange(poMaster.getTable(),
                 (String) poMaster.getValue("sTransNox"),
                 "CancelTransaction",
