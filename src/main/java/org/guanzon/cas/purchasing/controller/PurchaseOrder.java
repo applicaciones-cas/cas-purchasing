@@ -1822,7 +1822,6 @@ public class PurchaseOrder extends Transaction {
                 + " FROM PO_Master a "
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN Company c ON c.sCompnyID = a.sCompnyID "
-                + " LEFT JOIN Inv_Supplier d ON a.sSupplier = d.sSupplier"
                 + " LEFT JOIN Client_Master e ON a.sSupplier = e.sClientID"
                 + " , Category f ";
     }
@@ -1844,6 +1843,7 @@ public class PurchaseOrder extends Transaction {
 
         initSQL();
         String lsFilterCondition = String.join(" AND ", "a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+         " a.sCategrCd = f.sCategrCd ",
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
                 " a.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
