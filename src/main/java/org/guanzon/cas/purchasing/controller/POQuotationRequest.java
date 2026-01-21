@@ -2442,6 +2442,11 @@ public class POQuotationRequest extends Transaction {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
+            if(Master().getExpectedPurchaseDate() != null){
+                parameters.put("dExpPrchseDte", new java.text.SimpleDateFormat("MMMM dd, yyyy").format((java.util.Date) Master().getExpectedPurchaseDate()));
+            } else {
+                parameters.put("dExpPrchseDte", "");
+            }
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("sSupplierNm", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Supplier().getCompanyName()); 
             parameters.put("sSupplierAddress", POQuotationRequestSupplierList(POQuotationRequestSupplierRow).Address().getAddress()); 
@@ -2492,13 +2497,47 @@ public class POQuotationRequest extends Transaction {
             
             int lnRow = 1;
             String lsDescription = "";
+            String lsBrand = "";
+            String lsModel = "";
+            String lsMeasure = "";
+            String lsColor = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 if(Detail(lnCtr).isReverse()){
+                    
                     lsDescription = Detail(lnCtr).getDescription();
-                    orderDetails.add(new OrderDetail(lnRow, lsDescription, Detail(lnCtr).getQuantity()));
+                    
+                    if(Detail(lnCtr).getStockId() != null && !"".equals(Detail(lnCtr).getStockId())){
+                        lsBrand = Detail(lnCtr).Inventory().Brand().getDescription();
+                        lsModel = Detail(lnCtr).Inventory().Model().getDescription();
+                        lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
+                        lsColor = Detail(lnCtr).Inventory().Color().getDescription();
+                    } 
+                        
+                    if(lsBrand == null || "".equals(lsBrand)){ 
+                        lsBrand = ""; 
+                    } else {
+                        lsBrand = lsBrand.toUpperCase();
+                    }  
+                    if(lsModel == null || "".equals(lsModel)){ 
+                        lsModel = ""; 
+                    } else {
+                        lsModel = lsModel.toUpperCase();
+                    }  
+                    if(lsMeasure == null || "".equals(lsMeasure)){ 
+                        lsMeasure = ""; 
+                    } else {
+                        lsMeasure = lsMeasure.toUpperCase();
+                    }  
+                    if(lsColor == null || "".equals(lsColor)){ 
+                        lsColor = ""; 
+                    } else {
+                        lsColor = lsColor.toUpperCase();
+                    }
+                    
+                    orderDetails.add(new OrderDetail(lnRow, lsDescription, lsBrand,lsModel,lsMeasure,lsColor,Detail(lnCtr).getQuantity()));
                     lnRow++;
                 }
-                lsDescription = "";
+                lsDescription = "";lsBrand = "";lsModel = "";lsMeasure = "";lsColor = "";
             }
             
             File file = new File(lsReportPath);
@@ -2541,11 +2580,19 @@ public class POQuotationRequest extends Transaction {
 
         private Integer nRowNo;
         private String sDescription;
+        private String sBrand;
+        private String sModel;
+        private String sMeasure;
+        private String sColor;
         private double nOrder;
 
-        public OrderDetail(Integer rowNo, String description, double order) {
+        public OrderDetail(Integer rowNo, String description, String brand, String model, String measure, String color, double order) {
             this.nRowNo = rowNo;
             this.sDescription = description;
+            this.sBrand = brand;
+            this.sModel = model;
+            this.sMeasure = measure;
+            this.sColor = color;
             this.nOrder = order;
         }
 
@@ -2555,6 +2602,22 @@ public class POQuotationRequest extends Transaction {
 
         public String getsDescription() {
             return sDescription;
+        }
+
+        public String getsBrand() {
+            return sBrand;
+        }
+
+        public String getsModel() {
+            return sModel;
+        }
+
+        public String getsMeasure() {
+            return sMeasure;
+        }
+
+        public String getsColor() {
+            return sColor;
         }
 
         public double getnOrder() {
