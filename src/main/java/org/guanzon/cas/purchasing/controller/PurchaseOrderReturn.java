@@ -315,46 +315,53 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
+        try {
+            //kalyptus - 2025.10.10 09:31am
+            //Update the inventory for this Received Purchase
+            InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+            loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
 
-        //kalyptus - 2025.10.10 09:31am
-        //Update the inventory for this Received Purchase
-        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
-
-        for (Model loDetail : paDetail) {
-            Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
-            //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
-            if(detail.getSerialId().trim().length() > 0){
-                loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
+            for (Model loDetail : paDetail) {
+                Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
+                //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
+                if(detail.getSerialId().trim().length() > 0){
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
+                }
+                else{
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), detail.PurchaseOrderMaster().getPreOwned() ? "1" : "0", detail.getQuantity().doubleValue(), 0, detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
+                }
             }
-            else{
-                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), detail.PurchaseOrderMaster().getPreOwned() ? "1" : "0", detail.getQuantity().doubleValue(), 0, detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
+            loTrans.saveTransaction();
+
+
+            //change status
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
             }
-        }
-        loTrans.saveTransaction();
 
+            if(check != null){
+                check.postAuth();
+            }
 
-        //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
+            poGRider.commitTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+            if (lbConfirm) {
+                poJSON.put("message", "Transaction confirmed successfully.");
+            } else {
+                poJSON.put("message", "Transaction confirmation request submitted successfully.");
+            }
+            
+        } catch (GuanzonException | SQLException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        if(check != null){
-            check.postAuth();
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
         }
         
-        poGRider.commitTrans();
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        if (lbConfirm) {
-            poJSON.put("message", "Transaction confirmed successfully.");
-        } else {
-            poJSON.put("message", "Transaction confirmation request submitted successfully.");
-        }
-
         return poJSON;
     }
 
@@ -662,44 +669,52 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         poGRider.beginTrans("UPDATE STATUS", "CancelledTransaction", SOURCE_CODE, Master().getTransactionNo());
-
-        //kalyptus - 2025.10.10 09:31am
-        //Update the inventory for this Received Purchase
-        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
-
-        for (Model loDetail : paDetail) {
-            Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
-            //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
-            if(detail.getSerialId().trim().length() > 0){
-                loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
-            }
-            else{
-                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), Master().PurchaseOrderReceivingMaster().getPurpose(), detail.getQuantity().doubleValue(),0 , detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
-//                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
-            }
-        }
-        loTrans.saveTransaction();
-
-        //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbCancelled, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        if(check != null){
-            check.postAuth();
-        }
         
-        poGRider.commitTrans();
+        try {
+            //kalyptus - 2025.10.10 09:31am
+            //Update the inventory for this Received Purchase
+            InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+            loTrans.PurchaseReturn((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
 
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        if (lbCancelled) {
-            poJSON.put("message", "Transaction cancelled successfully.");
-        } else {
-            poJSON.put("message", "Transaction cancellation request submitted successfully.");
+            for (Model loDetail : paDetail) {
+                Model_POReturn_Detail detail = (Model_POReturn_Detail) loDetail;
+                //TODO: make sure to replace the detail.InventorySerial().getLocation() with detail.InventorySerial().getWarehouseID
+                if(detail.getSerialId().trim().length() > 0){
+                    loTrans.addSerial((String)poMaster.getValue("sIndstCdx"), detail.getSerialId(), false , detail.getUnitPrce().doubleValue(), detail.InventorySerial().getLocation());
+                }
+                else{
+                    loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), Master().PurchaseOrderReceivingMaster().getPurpose(), detail.getQuantity().doubleValue(),0 , detail.getUnitPrce().doubleValue()); //FIX: Changed passing of quantity value and order quantity Arsiela 10-16-2025 14:22:00
+    //                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String)poMaster.getValue("cPurposex"), 0, (double)detail.getQuantity(), (double)detail.getUnitPrce());
+                }
+            }
+            loTrans.saveTransaction();
+
+            //change status
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbCancelled, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(check != null){
+                check.postAuth();
+            }
+
+            poGRider.commitTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+            if (lbCancelled) {
+                poJSON.put("message", "Transaction cancelled successfully.");
+            } else {
+                poJSON.put("message", "Transaction cancellation request submitted successfully.");
+            }
+        
+        } catch (GuanzonException | SQLException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poGRider.rollbackTrans();
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
         }
 
         return poJSON;
@@ -2014,6 +2029,45 @@ public class PurchaseOrderReturn extends Transaction{
         return poJSON;
     }
     
+    public JSONObject getConfirmedBy() throws SQLException, GuanzonException {
+        String lsConfirm = "";
+        String lsDate = "";
+        String lsSQL = "SELECT b.sModified,b.dModified FROM " + Master().getTable() +" a "
+                     + " LEFT JOIN Transaction_Status_History b ON b.sSourceNo = a.sTransNox AND b.sTableNme = "+ SQLUtil.toSQL(Master().getTable()) 
+                     + " AND ( b.cRefrStat = "+ SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) 
+                     + " OR (ASCII(b.cRefrStat) - 64)  = "+ SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) + " )";
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        System.out.println("Execute SQL : " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+          if (MiscUtil.RecordCount(loRS) > 0L) {
+            if (loRS.next()) {
+                if(loRS.getString("sModified") != null && !"".equals(loRS.getString("sModified"))){
+                    if(loRS.getString("sModified").length() > 10){
+                        lsConfirm = getSysUser(poGRider.Decrypt(loRS.getString("sModified"))); 
+                    } else {
+                        lsConfirm = getSysUser(loRS.getString("sModified")); 
+                    }
+                    // Get the LocalDateTime from your result set
+                    LocalDateTime dModified = loRS.getObject("dModified", LocalDateTime.class);
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+                    lsDate =  dModified.format(formatter);
+                }
+            } 
+          }
+          MiscUtil.close(loRS);
+        } catch (SQLException e) {
+          poJSON.put("result", "error");
+          poJSON.put("message", e.getMessage());
+          return poJSON;
+        } 
+        
+        poJSON.put("result", "success");
+        poJSON.put("sConfirmed", lsConfirm);
+        poJSON.put("sConfrmDte", lsDate);
+        return poJSON;
+    }
+    
     private CustomJasperViewer poViewer = null;
     private String psTransactionNo = "";
 
@@ -2037,16 +2091,33 @@ public class PurchaseOrderReturn extends Transaction{
             parameters.put("sSupplierNm", Master().Supplier().getCompanyName());
             parameters.put("sBranchNm", poGRider.getBranchName());
             parameters.put("sAddressx", poGRider.getAddress());
-            parameters.put("sCompnyNm", poGRider.getClientName());
+            parameters.put("sCompnyNm", Master().Company().getCompanyName());
             parameters.put("sTransNox", Master().getTransactionNo());
             parameters.put("dReferDte", Master().PurchaseOrderReceivingMaster().getTransactionDate());
             parameters.put("sReferNox", Master().getSourceNo());
-//            parameters.put("sApprval1", "Jane Smith");
-//            parameters.put("sApprval2", "Mike Johnson");
-//            parameters.put("sApprval3", "Sarah Williams");
             parameters.put("sRemarks", Master().getRemarks());
             parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
             parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
+            parameters.put("sPreparedBy", "");
+            parameters.put("sApprovedBy", "");
+            
+            JSONObject loJSONEntry = getEntryBy();
+            if("error".equals((String) loJSONEntry.get("result"))){
+                return loJSONEntry;
+            }
+            
+            if((String) loJSONEntry.get("sCompnyNm") != null && !"".equals((String) loJSONEntry.get("sCompnyNm"))){
+                parameters.put("sPreparedBy", "Prepared by: "+ (String) loJSONEntry.get("sCompnyNm") + " " + String.valueOf((String) loJSONEntry.get("sEntryDte"))); 
+            }
+            
+            JSONObject loJSONConfirm = getConfirmedBy();
+            if("error".equals((String) loJSONConfirm.get("result"))){
+                return loJSONConfirm;
+            } else {
+                if((String) loJSONConfirm.get("sConfirmed") != null && !"".equals((String) loJSONConfirm.get("sConfirmed"))){
+                    parameters.put("sApprovedBy", "Confirmed by: "+ (String) loJSONConfirm.get("sConfirmed") + " " + String.valueOf((String) loJSONConfirm.get("sConfrmDte"))); 
+                }
+            }
 
             // Set watermark based on approval status
             switch (Master().getTransactionStatus()) {
@@ -2066,7 +2137,7 @@ public class PurchaseOrderReturn extends Transaction{
 
             parameters.put("watermarkImagePath", watermarkPath);
             List<TransactionDetail> transDetails = new ArrayList<>();
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn.jrxml";
+            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn.jrxml";//Food and Non Serialize
 
             double lnTotal = 0.0;
             int lnRow = 1;
@@ -2075,6 +2146,19 @@ public class PurchaseOrderReturn extends Transaction{
             String lsMeasure = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
                 lnTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
+                
+                System.out.println("--------------------------------------------------------------------");
+                System.out.println("DETAIL ROW : " + lnCtr + 1);
+                System.out.println("BARCODE : " + Detail(lnCtr).Inventory().getBarCode());
+                System.out.println("BRAND : " + Detail(lnCtr).Inventory().Brand().getDescription());
+                System.out.println("MODEL : " + Detail(lnCtr).Inventory().Model().getDescription());
+                System.out.println("COLOR : " + Detail(lnCtr).Inventory().Color().getDescription());
+                System.out.println("MEASURE : " + Detail(lnCtr).Inventory().Measure().getDescription());
+                System.out.println("DESCRIPTION : " + Detail(lnCtr).Inventory().getDescription());
+                System.out.println("VARIANT : " + Detail(lnCtr).Inventory().Variant().getDescription());
+                System.out.println("YEAR MODEL : " + Detail(lnCtr).Inventory().Variant().getYearModel());
+                System.out.println("--------------------------------------------------------------------");
+                
                 switch(Master().getCategoryCode()){
                     case PurchaseOrderReturnStatus.Category.CAR: //"0005": //CAR
                     case PurchaseOrderReturnStatus.Category.MOTORCYCLE: //"0003": //Motorcycle
@@ -2094,22 +2178,28 @@ public class PurchaseOrderReturn extends Transaction{
                         if(Detail(lnCtr).Inventory().Color().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Color().getDescription())){
                             lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Color().getDescription();
                         }
+                        if(lsDescription != null){
+                            lsDescription = lsDescription.trim();
+                        }
                         
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
                                 lsDescription + "\n" + Detail(lnCtr).InventorySerial().getSerial01(), Detail(lnCtr).getUnitPrce().doubleValue(), 
                                 Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
+                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn_Serialize.jrxml";
                     break;
                     case PurchaseOrderReturnStatus.Category.FOOD: //"0008": // Food  
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
                         lsDescription = Detail(lnCtr).Inventory().Brand().getDescription() 
                                 + " " + Detail(lnCtr).Inventory().getDescription();
+                        if(lsDescription != null){
+                            lsDescription = lsDescription.trim().toUpperCase();
+                        }
                         if (Detail(lnCtr).Inventory().Measure().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Measure().getDescription())){
                             lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
                         }
                         
                         transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), 
                                 lsBarcode, lsDescription,lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
-                        jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderReturn_Food.jrxml";
                     break;
                     case PurchaseOrderReturnStatus.Category.SPCAR: //"0006": // CAR SP
                     case PurchaseOrderReturnStatus.Category.SPMC: //"0004": // Motorcycle SP
@@ -2117,10 +2207,34 @@ public class PurchaseOrderReturn extends Transaction{
                     case PurchaseOrderReturnStatus.Category.HOSPITALITY: //"0009": // Hospitality
                     default:
                         lsBarcode = Detail(lnCtr).Inventory().getBarCode();
-                        lsDescription = Detail(lnCtr).Inventory().getDescription();   
-                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
-                                lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), 
-                                Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
+                        
+                        //Concat Description
+                        if(Detail(lnCtr).Inventory().Brand().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Brand().getDescription())){
+                            lsDescription = Detail(lnCtr).Inventory().Brand().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Model().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Model().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Model().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().Color().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Color().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().Color().getDescription();
+                        }
+                        if(Detail(lnCtr).Inventory().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().getDescription())){
+                            lsDescription = lsDescription + " " + Detail(lnCtr).Inventory().getDescription();
+                        }
+                        
+                        if(lsDescription != null){
+                            lsDescription = lsDescription.trim().toUpperCase();
+                        }
+                        
+                        if (Detail(lnCtr).Inventory().Measure().getDescription() != null && !"".equals(Detail(lnCtr).Inventory().Measure().getDescription())){
+                            lsMeasure = Detail(lnCtr).Inventory().Measure().getDescription();
+                        }
+                        
+                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), 
+                                lsBarcode, lsDescription,lsMeasure ,Detail(lnCtr).getUnitPrce().doubleValue(), Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
+//                        transDetails.add(new TransactionDetail(lnRow, Master().getSourceNo(), lsBarcode, 
+//                                lsDescription, Detail(lnCtr).getUnitPrce().doubleValue(), 
+//                                Detail(lnCtr).getQuantity().doubleValue(), lnTotal));
                         break;
                 }
                 
