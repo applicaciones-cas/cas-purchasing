@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ActionAuthManager;
 import org.guanzon.appdriver.agent.MatrixAuthChecker;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -35,6 +37,7 @@ import org.guanzon.cas.purchasing.model.Model_PO_Cancellation_Master;
 import org.guanzon.cas.purchasing.services.POModels;
 import org.guanzon.cas.purchasing.validator.POCancellationValidatorFactory;
 import org.json.simple.JSONArray;
+import org.json.simple.parser.ParseException;
 
 public class POCancellation extends Transaction {
 
@@ -116,29 +119,29 @@ public class POCancellation extends Transaction {
         return (List<Model_PO_Master>) (List<?>) paPurchaseOrder;
     }
 
-    
     /**
-     * Seek Approval method 
+     * Seek Approval method
+     *
      * @return JSON
      * @throws SQLException
-     * @throws GuanzonException 
+     * @throws GuanzonException
      */
-    public JSONObject seekApproval() 
-            throws SQLException, SQLException, GuanzonException{
+    public JSONObject seekApproval()
+            throws SQLException, SQLException, GuanzonException {
         poJSON = new JSONObject();
         //Moved only the script for seeking of approval - Arsiela 10-15-2025 - 14:11:01
-            
+
         //load authorization manager that evaluates current users authority for this process
         ActionAuthManager loAuth = new ActionAuthManager(poGRider, "cas-purchasing");
         poJSON = loAuth.isAuthorized();
 
         //check if currenty user is authorized
-        if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
+        if (!((String) poJSON.get("result")).equalsIgnoreCase("true")) {
             //show process needs authorization
-            ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
+            ShowMessageFX.Warning((String) poJSON.get("warning"), "Authorization Required", null);
             //get authorization from authoried personnel
             poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if("error".equals((String)poJSON.get("result"))){
+            if ("error".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
 
@@ -148,18 +151,18 @@ public class POCancellation extends Transaction {
             poJSON = loAuth.isAuthorized(lsUserIDxx, lnUserLevl);
 
             //if approving is not authorized then do not continue process
-            if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
-                ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
-                 poJSON.put("result", "error");
-                 poJSON.put("message", "User is not an authorized approving officer..");
-                 return poJSON;
+            if (!((String) poJSON.get("result")).equalsIgnoreCase("true")) {
+                ShowMessageFX.Warning((String) poJSON.get("warning"), "Authorization Required", null);
+                poJSON.put("result", "error");
+                poJSON.put("message", "User is not an authorized approving officer..");
+                return poJSON;
             }
-        }  
-        
+        }
+
         poJSON.put("result", "success");
         return poJSON;
     }
-    
+
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = InvTransCons.PURCHASE_ORDER_CANCELLATION;
 
@@ -187,26 +190,26 @@ public class POCancellation extends Transaction {
     }
 
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
-        if(!pbWthParent){
+        if (!pbWthParent) {
             //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
             poJSON = seekApproval();
-            if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                 return poJSON;
             }
         }
-        
+
         return openTransaction(transactionNo);
     }
 
     public JSONObject NewTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
-        if(!pbWthParent){
+        if (!pbWthParent) {
             //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
             poJSON = seekApproval();
-            if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                 return poJSON;
             }
         }
-        
+
         poJSON = new JSONObject();
         poJSON = newTransaction();
         if ("error".equals((String) poJSON.get("result"))) {
@@ -247,14 +250,14 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        if(!pbWthParent){
+        if (!pbWthParent) {
             //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
             poJSON = seekApproval();
-            if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                 return poJSON;
             }
         }
-        
+
         return updateTransaction();
     }
 
@@ -350,9 +353,9 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        MatrixAuthChecker check = null; 
-        
-        if(!pbWthParent){
+        MatrixAuthChecker check = null;
+
+        if (!pbWthParent) {
             //validator
             poJSON = isEntryOkay(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -363,7 +366,7 @@ public class POCancellation extends Transaction {
             JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
             //Check if there is a authorization request
-            if(loMatrix != null){
+            if (loMatrix != null) {
                 //initialized MatrixAuthChecker object
                 check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
@@ -375,19 +378,19 @@ public class POCancellation extends Transaction {
                 }
 
                 //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
+                if (!check.isAuthOkay()) {
                     //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
+                    if (!check.isAllowSys()) {
                         //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+                        JSONObject loJson = (JSONObject) loMatrix.get(0);
 
                         //check if current user is authorized to approved this transaction
                         poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                        
+
                         //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                        if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                             poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
 
@@ -396,19 +399,19 @@ public class POCancellation extends Transaction {
                             //check if current user is authorized to approved this transaction
                             poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
                             //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                            if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
                         }
                     }
 
                     //check if authorization request is already approved by all authorizing personnel
-                    if(!check.isAuthOkay()){
+                    if (!check.isAuthOkay()) {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Close Transaction", SOURCE_CODE, getMaster().getTransactionNo());
 
                         System.out.println("Status: " + lsStatus);
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                        lsStatus = Character.toString((char) (64 + Integer.parseInt(lsStatus)));
                         System.out.println("Status: " + lsStatus);
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), "Close Transaction", lsStatus, false, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -417,69 +420,76 @@ public class POCancellation extends Transaction {
                         }
 
                         poGRider.commitTrans();
-                        
+
                         poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
-            }
-            //there are no authorization event request
-            else{
+            } //there are no authorization event request
+            else {
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
                 poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                     return poJSON;
                 }
             }
         }
 
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+        try {
+            for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+                Model_PO_Cancellation_Detail loDetail = (Model_PO_Cancellation_Detail) paDetail.get(lnCtr);
 
-        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            Model_PO_Cancellation_Detail loDetail = (Model_PO_Cancellation_Detail) paDetail.get(lnCtr);
+                if (loDetail.getOrderNo() != null) {
+                    if (!loDetail.getOrderNo().isEmpty()) {
+                        if (loDetail.getStockId() != null) {
+                            if (!loDetail.getStockId().isEmpty()) {
+                                poJSON = new JSONObject();
+                                poJSON = TagPODetail(lnCtr);
 
-            if (loDetail.getOrderNo() != null) {
-                if (!loDetail.getOrderNo().isEmpty()) {
-                    if (loDetail.getStockId() != null) {
-                        if (!loDetail.getStockId().isEmpty()) {
-                            poJSON = new JSONObject();
-                            poJSON = TagPODetail(lnCtr);
-
-                            if (!"success".equals((String) poJSON.get("result"))) {
-                                poGRider.rollbackTrans();
-                                return poJSON;
+                                if (!"success".equals((String) poJSON.get("result"))) {
+                                    poGRider.rollbackTrans();
+                                    return poJSON;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        
-        //kalyptus - 2025.10.10 09:31am
-        //Update the inventory for this Cancelled Purchase
-        InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseOrder_Cancellation((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
 
-        for (Model loDetail : paDetail) {
-            Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
-            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), "CONDITION", detail.getQuantity(),0 , detail.getUnitPrice()); 
-        }
-        loTrans.saveTransaction();
+            //kalyptus - 2025.10.10 09:31am
+            //Update the inventory for this Cancelled Purchase
+            InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+            loTrans.PurchaseOrder_Cancellation((String) poMaster.getValue("sTransNox"), (Date) poMaster.getValue("dTransact"), false);
 
-        poJSON = statusChange(poMaster.getTable(),
-                (String) poMaster.getValue("sTransNox"),
-                "ConfirmTransaction",
-                POCancellationStatus.CONFIRMED,
-                false, true);
-        if ("error".equals((String) poJSON.get("result"))) {
+            for (Model loDetail : paDetail) {
+                Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
+                loTrans.addDetail((String) poMaster.getValue("sIndstCdx"), detail.getStockId(), "CONDITION", detail.getQuantity(), 0, detail.getUnitPrice());
+            }
+            loTrans.saveTransaction();
+
+            poJSON = statusChange(poMaster.getTable(),
+                    (String) poMaster.getValue("sTransNox"),
+                    "ConfirmTransaction",
+                    POCancellationStatus.CONFIRMED,
+                    false, true);
+            if ("error".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if (check != null) {
+                check.postAuth();
+            }
+        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
             poGRider.rollbackTrans();
             return poJSON;
-        }
-        
-        if(check != null){
-            check.postAuth();
-        }
 
+        }
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -539,9 +549,9 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        MatrixAuthChecker check = null; 
-        
-        if(!pbWthParent){
+        MatrixAuthChecker check = null;
+
+        if (!pbWthParent) {
             //validator
             poJSON = isEntryOkay(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -552,7 +562,7 @@ public class POCancellation extends Transaction {
             JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
             //Check if there is a authorization request
-            if(loMatrix != null){
+            if (loMatrix != null) {
                 //initialized MatrixAuthChecker object
                 check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
@@ -564,19 +574,19 @@ public class POCancellation extends Transaction {
                 }
 
                 //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
+                if (!check.isAuthOkay()) {
                     //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
+                    if (!check.isAllowSys()) {
                         //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+                        JSONObject loJson = (JSONObject) loMatrix.get(0);
 
                         //check if current user is authorized to approved this transaction
                         poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                        
+
                         //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                        if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                             poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
 
@@ -585,19 +595,19 @@ public class POCancellation extends Transaction {
                             //check if current user is authorized to approved this transaction
                             poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
                             //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                            if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
                         }
                     }
 
                     //check if authorization request is already approved by all authorizing personnel
-                    if(!check.isAuthOkay()){
+                    if (!check.isAuthOkay()) {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, getMaster().getTransactionNo());
 
                         System.out.println("Status: " + lsStatus);
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                        lsStatus = Character.toString((char) (64 + Integer.parseInt(lsStatus)));
                         System.out.println("Status: " + lsStatus);
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), "Post Transaction", lsStatus, false, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -606,17 +616,16 @@ public class POCancellation extends Transaction {
                         }
 
                         poGRider.commitTrans();
-                        
+
                         poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
-            }
-            //there are no authorization event request
-            else{
+            } //there are no authorization event request
+            else {
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
                 poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                     return poJSON;
                 }
             }
@@ -628,7 +637,7 @@ public class POCancellation extends Transaction {
         }
 
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
-        
+
         poJSON = SaveTransaction();
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -644,10 +653,10 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        if(check != null){
+        if (check != null) {
             check.postAuth();
         }
-        
+
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -660,18 +669,18 @@ public class POCancellation extends Transaction {
 
     public JSONObject CancelTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
-        
+
         String lsStatus = POCancellationStatus.CANCELLED;
-        
+
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Edit Mode");
             return poJSON;
         }
 
-        MatrixAuthChecker check = null; 
-        
-        if(!pbWthParent){
+        MatrixAuthChecker check = null;
+
+        if (!pbWthParent) {
             //validator
             poJSON = isEntryOkay(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -682,7 +691,7 @@ public class POCancellation extends Transaction {
             JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
             //Check if there is a authorization request
-            if(loMatrix != null){
+            if (loMatrix != null) {
                 //initialized MatrixAuthChecker object
                 check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
@@ -694,19 +703,19 @@ public class POCancellation extends Transaction {
                 }
 
                 //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
+                if (!check.isAuthOkay()) {
                     //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
+                    if (!check.isAllowSys()) {
                         //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+                        JSONObject loJson = (JSONObject) loMatrix.get(0);
 
                         //check if current user is authorized to approved this transaction
                         poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                        
+
                         //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                        if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                             poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
 
@@ -715,19 +724,19 @@ public class POCancellation extends Transaction {
                             //check if current user is authorized to approved this transaction
                             poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
                             //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                            if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
                         }
                     }
 
                     //check if authorization request is already approved by all authorizing personnel
-                    if(!check.isAuthOkay()){
+                    if (!check.isAuthOkay()) {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, getMaster().getTransactionNo());
 
                         System.out.println("Status: " + lsStatus);
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                        lsStatus = Character.toString((char) (64 + Integer.parseInt(lsStatus)));
                         System.out.println("Status: " + lsStatus);
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), "Cancel Transaction", lsStatus, false, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -736,35 +745,34 @@ public class POCancellation extends Transaction {
                         }
 
                         poGRider.commitTrans();
-                        
+
                         poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
-            }
-            //there are no authorization event request
-            else{
+            } //there are no authorization event request
+            else {
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
                 poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                     return poJSON;
                 }
             }
         }
 
         poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, getMaster().getTransactionNo());
-        
+
         //kalyptus - 2025.10.10 09:31am
         //Update the inventory for this Cancelled Purchase
         InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        loTrans.PurchaseOrder_Cancellation((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
+        loTrans.PurchaseOrder_Cancellation((String) poMaster.getValue("sTransNox"), (Date) poMaster.getValue("dTransact"), true);
 
         for (Model loDetail : paDetail) {
             Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
-            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockId(), (String) poMaster.getValue("sTransNox"), detail.getQuantity(),0 , detail.getUnitPrice()); 
+            loTrans.addDetail((String) poMaster.getValue("sIndstCdx"), detail.getStockId(), (String) poMaster.getValue("sTransNox"), detail.getQuantity(), 0, detail.getUnitPrice());
         }
         loTrans.saveTransaction();
-        
+
         poJSON = statusChange(poMaster.getTable(),
                 (String) poMaster.getValue("sTransNox"),
                 "CancelTransaction",
@@ -775,10 +783,10 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        if(check != null){
+        if (check != null) {
             check.postAuth();
         }
-        
+
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -799,9 +807,9 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        MatrixAuthChecker check = null; 
-        
-        if(!pbWthParent){
+        MatrixAuthChecker check = null;
+
+        if (!pbWthParent) {
             //validator
             poJSON = isEntryOkay(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -812,7 +820,7 @@ public class POCancellation extends Transaction {
             JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
             //Check if there is a authorization request
-            if(loMatrix != null){
+            if (loMatrix != null) {
                 //initialized MatrixAuthChecker object
                 check = new MatrixAuthChecker(poGRider, SOURCE_CODE, getMaster().getTransactionNo());
                 //load the current autorization matrix request
@@ -824,19 +832,19 @@ public class POCancellation extends Transaction {
                 }
 
                 //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
+                if (!check.isAuthOkay()) {
                     //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
+                    if (!check.isAllowSys()) {
                         //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+                        JSONObject loJson = (JSONObject) loMatrix.get(0);
 
                         //check if current user is authorized to approved this transaction
                         poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                        
+
                         //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                        if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                             poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
+                            if ("error".equals((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
 
@@ -845,19 +853,19 @@ public class POCancellation extends Transaction {
                             //check if current user is authorized to approved this transaction
                             poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
                             //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                            if (!"success".equalsIgnoreCase((String) poJSON.get("result"))) {
                                 return poJSON;
                             }
                         }
                     }
 
                     //check if authorization request is already approved by all authorizing personnel
-                    if(!check.isAuthOkay()){
+                    if (!check.isAuthOkay()) {
                         //check  the user level again then if he/she allow to approve
                         poGRider.beginTrans("UPDATE STATUS", "Void Transaction", SOURCE_CODE, getMaster().getTransactionNo());
 
                         System.out.println("Status: " + lsStatus);
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                        lsStatus = Character.toString((char) (64 + Integer.parseInt(lsStatus)));
                         System.out.println("Status: " + lsStatus);
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), "Void Transaction", lsStatus, false, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -866,17 +874,16 @@ public class POCancellation extends Transaction {
                         }
 
                         poGRider.commitTrans();
-                        
+
                         poJSON.put("result", "matrix");
                         return poJSON;
                     }
                 }
-            }
-            //there are no authorization event request
-            else{
+            } //there are no authorization event request
+            else {
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
                 poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
                     return poJSON;
                 }
             }
@@ -887,7 +894,6 @@ public class POCancellation extends Transaction {
 //        if ("error".equals((String) poJSON.get("result"))) {
 //            return poJSON;
 //        }
-
         poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
@@ -909,7 +915,7 @@ public class POCancellation extends Transaction {
                 }
             }
         }
-        
+
         poJSON = statusChange(poMaster.getTable(),
                 (String) poMaster.getValue("sTransNox"),
                 "VoidTransaction",
@@ -920,10 +926,10 @@ public class POCancellation extends Transaction {
             return poJSON;
         }
 
-        if(check != null){
+        if (check != null) {
             check.postAuth();
         }
-        
+
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
