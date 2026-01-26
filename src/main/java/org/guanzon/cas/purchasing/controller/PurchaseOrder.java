@@ -1051,7 +1051,6 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
         }
-
         return poJSON;
     }
 
