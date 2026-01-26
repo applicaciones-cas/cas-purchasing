@@ -464,7 +464,7 @@ public class POCancellation extends Transaction {
 
             for (Model loDetail : paDetail) {
                 Model_PO_Cancellation_Detail detail = (Model_PO_Cancellation_Detail) loDetail;
-                loTrans.addDetail((String) poMaster.getValue("sIndstCdx"), detail.getStockId(), "CONDITION", detail.getQuantity(), 0, detail.getUnitPrice());
+                loTrans.addDetail((String) poMaster.getValue("sIndstCdx"), detail.getStockId(), "0", detail.getQuantity(), 0, detail.getUnitPrice());
             }
             loTrans.saveTransaction();
 

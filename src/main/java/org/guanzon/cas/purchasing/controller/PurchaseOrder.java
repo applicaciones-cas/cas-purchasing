@@ -996,7 +996,6 @@ public class PurchaseOrder extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        try {
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
         try {
@@ -1052,14 +1051,6 @@ public class PurchaseOrder extends Transaction {
             poJSON.put("result", "error");
             poJSON.put("message", MiscUtil.getException(ex));
         }
-        }catch (ParseException | SQLException| GuanzonException| CloneNotSupportedException ex){
-        Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
-            
-        poJSON.put("result", "success");
-        poJSON.put("messagge", MiscUtil.getException(ex));
-        
-        }
-
         return poJSON;
     }
 
