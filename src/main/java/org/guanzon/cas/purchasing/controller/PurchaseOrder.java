@@ -712,54 +712,60 @@ public class PurchaseOrder extends Transaction {
 
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Approve Transaction", SOURCE_CODE, Master().getTransactionNo());
+        try {
+            System.out.println("poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED)");
+            poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
 
-        System.out.println("poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED)");
-        poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
-        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON = savePRF();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            //kalyptus - 2025.10.08 02:36pm
+            //save to inventory ledger
+            //InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+            InventoryTransaction loTrans = new InventoryTransaction(poGRider, psBranchCode);
+            loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
+
+            for (Model loDetail : paDetail) {
+                Model_PO_Detail detail = (Model_PO_Detail) loDetail;
+                loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
+            }
+            loTrans.saveTransaction();
+
+            System.out.println("poJSON = statusChange(");
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(check != null){
+                check.postAuth();
+            }
+
+            poGRider.commitTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+
+            if (lbApprove) {
+                poJSON.put("message", "Transaction approved successfully.");
+            } else {
+                poJSON.put("message", "Transaction approving request submitted successfully.");
+            }
+
+        } catch (GuanzonException | SQLException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poGRider.rollbackTrans();
-            return poJSON;
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
         }
-
-        poJSON = savePRF();
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        //kalyptus - 2025.10.08 02:36pm
-        //save to inventory ledger
-        //InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-        InventoryTransaction loTrans = new InventoryTransaction(poGRider, psBranchCode);
-        loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), false);
-        
-        for (Model loDetail : paDetail) {
-            Model_PO_Detail detail = (Model_PO_Detail) loDetail;
-            loTrans.addDetail((String)poMaster.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
-        }
-        loTrans.saveTransaction();
-
-        System.out.println("poJSON = statusChange(");
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbApprove, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        if(check != null){
-            check.postAuth();
-        }
-        
-        poGRider.commitTrans();
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-
-        if (lbApprove) {
-            poJSON.put("message", "Transaction approved successfully.");
-        } else {
-            poJSON.put("message", "Transaction approving request submitted successfully.");
-        }
-
         return poJSON;
     }
 
@@ -993,51 +999,58 @@ public class PurchaseOrder extends Transaction {
         try {
         //check  the user level again then if he/she allow to approve
         poGRider.beginTrans("UPDATE STATUS", "Cancel Transaction", SOURCE_CODE, Master().getTransactionNo());
+        try {
+            //kalyptus-2025.10.08 02:52pm
+            //save to inventory ledger
+            if(PurchaseOrderStatus.APPROVED.equalsIgnoreCase((String) poMaster.getValue("cTranStat"))){
+                InventoryTransaction loTrans = new InventoryTransaction(poGRider);
+                loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
 
-        //kalyptus-2025.10.08 02:52pm
-        //save to inventory ledger
-        if(PurchaseOrderStatus.APPROVED.equalsIgnoreCase((String) poMaster.getValue("cTranStat"))){
-            InventoryTransaction loTrans = new InventoryTransaction(poGRider);
-            loTrans.PurchaseOrder((String)poMaster.getValue("sTransNox"), (Date)poMaster.getValue("dTransact"), true);
-
-            for (Model loDetail : paDetail) {
-                Model_PO_Detail detail = (Model_PO_Detail) loDetail;
-                loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
+                for (Model loDetail : paDetail) {
+                    Model_PO_Detail detail = (Model_PO_Detail) loDetail;
+                    loTrans.addDetail((String)detail.getValue("sIndstCdx"), detail.getStockID(), "0", 0, detail.getQuantity().doubleValue(), detail.getUnitPrice().doubleValue());
+                }
+                loTrans.saveTransaction();
             }
-            loTrans.saveTransaction();
-        }
+
+            poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            //Update Transaction Status of PO Quotation
+            poJSON = updatePOQuotationStatus(lsStatus);
+            if ("error".equals((String) poJSON.get("result"))) {
+                System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+                return poJSON;
+            }
+
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(check != null){
+                check.postAuth();
+            }
+
+            poGRider.commitTrans();
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+
+            if (lnCancel) {
+                poJSON.put("message", "Transaction cancelled successfully.");
+            } else {
+                poJSON.put("message", "Transaction cancellation request submitted successfully.");
+            }
         
-        poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
-        if (!"success".equals((String) poJSON.get("result"))) {
+        } catch (GuanzonException | SQLException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        //Update Transaction Status of PO Quotation
-        poJSON = updatePOQuotationStatus(lsStatus);
-        if ("error".equals((String) poJSON.get("result"))) {
-            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
-            return poJSON;
-        }
-
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lnCancel, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        if(check != null){
-            check.postAuth();
-        }
-        
-        poGRider.commitTrans();
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-
-        if (lnCancel) {
-            poJSON.put("message", "Transaction cancelled successfully.");
-        } else {
-            poJSON.put("message", "Transaction cancellation request submitted successfully.");
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
         }
         }catch (ParseException | SQLException| GuanzonException| CloneNotSupportedException ex){
         Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
