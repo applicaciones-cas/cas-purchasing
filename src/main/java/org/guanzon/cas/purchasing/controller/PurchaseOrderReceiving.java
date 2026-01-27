@@ -3079,7 +3079,9 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
                     + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                     + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
-                    + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
+                    + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
+                    + " OR a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+                    + " ) "
             );
             
             if(psIndustryId == null || "".equals(psIndustryId)){
