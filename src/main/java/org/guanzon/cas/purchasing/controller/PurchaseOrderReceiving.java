@@ -112,6 +112,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.rmj.cas.core.APTransaction;
+import org.rmj.cas.core.GLTransaction;
 import ph.com.guanzongroup.cas.cashflow.CachePayable;
 import ph.com.guanzongroup.cas.cashflow.Journal;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
@@ -913,6 +915,26 @@ public class PurchaseOrderReceiving extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+        
+        System.out.println("----------AP CLIENT MASTER----------");
+        //Insert AP Client
+        APTransaction loAPTrans = new APTransaction(poGRider, Master().getBranchCode());
+        if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+            loAPTrans.PurchaseReplacement(Master().getSupplierId(), Master().getCategoryCode(),Master().getTransactionNo(),Master().getTransactionDate(),  Master().getNetTotal(), false);
+        } else {
+            loAPTrans.Purchase(Master().getSupplierId(), Master().getCategoryCode(),Master().getTransactionNo(),Master().getTransactionDate(),  Master().getNetTotal(), false);
+        }
+        System.out.println("-----------------------------------");
+        
+        System.out.println("----------ACCOUNT MASTER / LEDGER----------");
+        //GL Transaction Account Ledger
+        GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
+        loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
+        for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
+            loGLTrans.addDetail(Journal().Master().getBranchCode(), Journal().Detail(lnCtr).getAccountCode(),SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , Journal().Detail(lnCtr).getDebitAmount(), Journal().Detail(lnCtr).getCreditAmount());
+        }
+        loGLTrans.saveTransaction();
+        System.out.println("-----------------------------------");
         
         //change status
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
