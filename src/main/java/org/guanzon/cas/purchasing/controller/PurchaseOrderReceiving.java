@@ -920,9 +920,19 @@ public class PurchaseOrderReceiving extends Transaction {
         //Insert AP Client
         APTransaction loAPTrans = new APTransaction(poGRider, Master().getBranchCode());
         if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
-            loAPTrans.PurchaseReplacement(Master().getSupplierId(), Master().getCategoryCode(),Master().getTransactionNo(),Master().getTransactionDate(),  Master().getNetTotal(), false);
+            loAPTrans.PurchaseReplacement(Master().getSupplierId(), 
+                    Master().getCategoryCode(),
+                    Master().getTransactionNo(),
+                    Master().getTransactionDate(),  
+                    Master().getNetTotal(), 
+                    false);
         } else {
-            loAPTrans.Purchase(Master().getSupplierId(), Master().getCategoryCode(),Master().getTransactionNo(),Master().getTransactionDate(),  Master().getNetTotal(), false);
+            loAPTrans.Purchase(Master().getSupplierId(), 
+                    Master().getCategoryCode(),
+                    Master().getTransactionNo(),
+                    Master().getTransactionDate(),  
+                    Master().getNetTotal(), 
+                    false);
         }
         System.out.println("-----------------------------------");
         
@@ -931,7 +941,11 @@ public class PurchaseOrderReceiving extends Transaction {
         GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
         loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
         for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
-            loGLTrans.addDetail(Journal().Master().getBranchCode(), Journal().Detail(lnCtr).getAccountCode(),SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , Journal().Detail(lnCtr).getDebitAmount(), Journal().Detail(lnCtr).getCreditAmount());
+            loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+                    Journal().Detail(lnCtr).getAccountCode(),
+                    SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+                    Journal().Detail(lnCtr).getDebitAmount(), 
+                    Journal().Detail(lnCtr).getCreditAmount());
         }
         loGLTrans.saveTransaction();
         System.out.println("-----------------------------------");
