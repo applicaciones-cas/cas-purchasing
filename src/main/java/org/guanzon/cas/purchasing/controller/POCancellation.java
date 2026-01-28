@@ -158,7 +158,7 @@ public class POCancellation extends Transaction {
                 return poJSON;
             }
         }
-
+        poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -976,10 +976,11 @@ public class POCancellation extends Transaction {
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
+                if ("error".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
                 return openTransaction((String) poJSON.get("sTransNox"));
 
-//            } else if ("error".equals((String) poJSON.get("result"))) {
-//                return poJSON;
             } else {
                 poJSON = new JSONObject();
                 poJSON.put("result", "error");
