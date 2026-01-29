@@ -79,6 +79,7 @@ import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvMaster;
 import org.guanzon.cas.inv.InvSerial;
+import org.guanzon.cas.inv.InvSupplierPrice;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.InventoryTransaction;
@@ -112,6 +113,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.rmj.cas.core.APTransaction;
+import org.rmj.cas.core.GLTransaction;
 import ph.com.guanzongroup.cas.cashflow.CachePayable;
 import ph.com.guanzongroup.cas.cashflow.Journal;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
@@ -867,72 +870,134 @@ public class PurchaseOrderReceiving extends Transaction {
         
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
         
-        //Update process in PO Receiving Master
-        poJSON = Master().openRecord(Master().getTransactionNo());
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        poJSON = Master().updateRecord();
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        Master().isProcessed(true);
-        Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
-        Master().setModifiedDate(poGRider.getServerDate());
-        poJSON = Master().saveRecord();
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        poCachePayable.setWithParent(true);
-        poJSON = poCachePayable.SaveTransaction();
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
-            && Master().getFreight().doubleValue() > 0.0000
-            && !Master().getTruckingId().equals(Master().getSupplierId())){
-            poCachePayableTrucking.setWithParent(true);
-            poJSON = poCachePayableTrucking.SaveTransaction();
+        try {
+            //Update process in PO Receiving Master
+            poJSON = Master().openRecord(Master().getTransactionNo());
             if (!"success".equals((String) poJSON.get("result"))) {
                 poGRider.rollbackTrans();
                 return poJSON;
             }
-        }
-        
-        poJournal.setWithParent(true);
-        poJournal.setWithUI(false);
-        poJSON = poJournal.ConfirmTransaction("");
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-        
-        //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
 
-        if(check != null){
-            check.postAuth();
-        }
-        
-        poGRider.commitTrans();
-        
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        if (lbPosted) {
-            poJSON.put("message", "Transaction posted successfully.");
-        } else {
-            poJSON.put("message", "Transaction posting request submitted successfully.");
+            poJSON = Master().updateRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            Master().isProcessed(true);
+            Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+            Master().setModifiedDate(poGRider.getServerDate());
+            poJSON = Master().saveRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            poCachePayable.setWithParent(true);
+            poJSON = poCachePayable.SaveTransaction();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
+                && Master().getFreight().doubleValue() > 0.0000
+                && !Master().getTruckingId().equals(Master().getSupplierId())){
+                poCachePayableTrucking.setWithParent(true);
+                poJSON = poCachePayableTrucking.SaveTransaction();
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
+            }
+
+            poJournal.setWithParent(true);
+            poJournal.setWithUI(false);
+            poJSON = poJournal.ConfirmTransaction("");
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+
+            System.out.println("----------INVENTORY SUPPLIER----------");
+            InvSupplierPrice loTrans = new InvSupplierPrice(poGRider, Master().getBranchCode(), Master().getSupplierId(), poGRider.getUserID());
+            loTrans.initTransaction(Master().getTransactionNo());
+            for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+                loTrans.addDetail(Master().getIndustryId(), 
+                        Detail(lnCtr).getStockId(), 
+                        Detail(lnCtr).getQuantity().doubleValue(), 
+                        Detail(lnCtr).getUnitPrce().doubleValue());
+
+            }
+            loTrans.saveTransaction();
+            System.out.println("-----------------------------------");
+
+            System.out.println("----------AP CLIENT MASTER----------");
+            //Insert AP Client
+            APTransaction loAPTrans = new APTransaction(poGRider, Master().getBranchCode());
+            if(PurchaseOrderReceivingStatus.Purpose.REPLACEMENT.equals(Master().getPurpose())){
+                poJSON = loAPTrans.PurchaseReplacement(Master().getSupplierId(), 
+                        "",
+                        Master().getTransactionNo(),
+                        Master().getTransactionDate(),  
+                        Master().getNetTotal(), 
+                        false);
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
+            } else {
+                poJSON = loAPTrans.Purchase(Master().getSupplierId(), 
+                        "",
+                        Master().getTransactionNo(),
+                        Master().getTransactionDate(),  
+                        Master().getNetTotal(), 
+                        false);
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
+            }
+            System.out.println("-----------------------------------");
+
+            System.out.println("----------ACCOUNT MASTER / LEDGER----------");
+            //GL Transaction Account Ledger
+            GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
+            loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
+            for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
+                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+                        Journal().Detail(lnCtr).getAccountCode(),
+                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+                        Journal().Detail(lnCtr).getDebitAmount(), 
+                        Journal().Detail(lnCtr).getCreditAmount());
+            }
+            loGLTrans.saveTransaction();
+            System.out.println("-----------------------------------");
+
+            //change status
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(check != null){
+                check.postAuth();
+            }
+
+            poGRider.commitTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+            if (lbPosted) {
+                poJSON.put("message", "Transaction posted successfully.");
+            } else {
+                poJSON.put("message", "Transaction posting request submitted successfully.");
+            }
+        } catch (GuanzonException | SQLException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poGRider.rollbackTrans();
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
         }
 
         return poJSON;
