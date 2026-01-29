@@ -2473,6 +2473,20 @@ public class PurchaseOrder extends Transaction {
         }
         
 //        boolean allProcessed = true;
+        double ldblRemainingDiscount = 0.0000;
+        double ldblDiscountAmt = 0.0000;
+        double ldblDiscountRateAmt = 0.0000;
+        double ldblVATAmount = 0.0000;
+        if(loTrans.POQuotation().Master().getVatAmount() > 0.0000){
+            ldblVATAmount = loTrans.POQuotation().Master().getVatAmount() / loTrans.POQuotation().getDetailCount();
+        }
+        if(loTrans.POQuotation().Master().getAdditionalDiscountAmount() > 0.0000){
+            ldblDiscountAmt = loTrans.POQuotation().Master().getAdditionalDiscountAmount() / loTrans.POQuotation().getDetailCount();
+        }
+        if(loTrans.POQuotation().Master().getDiscountRate() > 0){
+            ldblDiscountRateAmt = loTrans.POQuotation().Master().getGrossAmount() * (loTrans.POQuotation().Master().getDiscountRate() / 100);
+            ldblDiscountRateAmt = ldblDiscountRateAmt / loTrans.POQuotation().getDetailCount();
+        } 
         for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
             boolean exists = false;
             for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
@@ -2489,10 +2503,9 @@ public class PurchaseOrder extends Transaction {
                         break;
                     }
                 } 
-                
-                
             }
-
+            double ldblMasterDiscount = 0.0000;
+            double ldblUnitPrice = 0.0000;
             if (!exists) {
                 int lnLastIndex = getDetailCount() - 1;
                 Detail(lnLastIndex).setSouceNo(loTrans.POQuotation().Detail(lnCtr).getTransactionNo());
@@ -2501,13 +2514,59 @@ public class PurchaseOrder extends Transaction {
                 Detail(lnLastIndex).setUnitPrice(loTrans.POQuotation().Detail(lnCtr).getUnitPrice());
                 Detail(lnLastIndex).setQuantity(loTrans.POQuotation().Detail(lnCtr).getQuantity());
                 Detail(lnLastIndex).setSouceCode(loTrans.POQuotation().getSourceCode());
-                
                 if(loTrans.POQuotation().Detail(lnCtr).getReplaceId() != null && !"".equals(loTrans.POQuotation().Detail(lnCtr).getReplaceId())){
                     Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getReplaceId());
                 } else {
                     Detail(lnLastIndex).setStockID(loTrans.POQuotation().Detail(lnCtr).getStockId());
-                }                
+                }    
+                
+                //subtract detail discount per item
+                double ldblDetailDiscountRate = 0.0000;
+                if(loTrans.POQuotation().Detail(lnCtr).getDiscountRate() > 0.00){
+                    ldblDetailDiscountRate = loTrans.POQuotation().Detail(lnCtr).getUnitPrice() * (loTrans.POQuotation().Detail(lnCtr).getDiscountRate() / 100);
+                }
+                ldblUnitPrice = loTrans.POQuotation().Detail(lnCtr).getUnitPrice() - (ldblDetailDiscountRate + loTrans.POQuotation().Detail(lnCtr).getDiscountAmount());
+                if(loTrans.POQuotation().Master().isVatable()){
+                    ldblUnitPrice = ldblUnitPrice + (ldblVATAmount / loTrans.POQuotation().Detail(lnCtr).getQuantity());
+                } 
+                //subtract master discount per item
+                ldblMasterDiscount = (ldblDiscountAmt + ldblDiscountRateAmt + ldblRemainingDiscount) / loTrans.POQuotation().Detail(lnCtr).getQuantity();
+                if(ldblMasterDiscount > ldblUnitPrice){
+                    ldblRemainingDiscount = (ldblDiscountAmt + ldblDiscountRateAmt + ldblRemainingDiscount) - (ldblUnitPrice * loTrans.POQuotation().Detail(lnCtr).getQuantity());
+                    ldblUnitPrice = 0.0000;
+                } else {
+                    ldblRemainingDiscount = 0.0000;
+                    ldblUnitPrice = ldblUnitPrice - ldblMasterDiscount;
+                }
+                
+                Detail(lnLastIndex).setUnitPrice(ldblUnitPrice);            
                 AddDetail();
+            }
+            
+            //check if last counter; disribute remaining discount amount to quotation detail with unit price
+            if(lnCtr == loTrans.POQuotation().getDetailCount()-1){
+                if(ldblRemainingDiscount > 0.0000){
+                    for (int lnRow = 0; lnRow < getDetailCount(); lnRow++) {
+                        if (Detail(lnRow).getSouceNo().equals(loTrans.POQuotation().Master().getTransactionNo())
+                                && Detail(lnRow).getSouceCode().equals(loTrans.POQuotation().getSourceCode())
+                                && Detail(lnRow).getUnitPrice().doubleValue() > 0.0000) {
+                            ldblUnitPrice = Detail(lnRow).getUnitPrice().doubleValue();
+                            ldblMasterDiscount = ldblRemainingDiscount / Detail(lnRow).getRecordOrder().doubleValue();
+                            if(ldblMasterDiscount > ldblUnitPrice){
+                                ldblRemainingDiscount = ldblRemainingDiscount - (ldblUnitPrice * Detail(lnRow).getRecordOrder().doubleValue());
+                                ldblUnitPrice = 0.0000;
+                            } else {
+                                ldblRemainingDiscount = 0.0000;
+                                ldblUnitPrice = ldblUnitPrice - ldblMasterDiscount;
+                            }
+
+                            Detail(lnRow).setUnitPrice(ldblUnitPrice);  
+                            if(ldblRemainingDiscount <= 0.0000){
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -2522,7 +2581,7 @@ public class PurchaseOrder extends Transaction {
         poJSON.put("message", "Record loaded successfully.");
         return poJSON;
     }
-
+    
     private boolean areAllQuotationControllerIsInPODetail(QuotationControllers loTrans) {
         for (int lnCtr = 0; lnCtr < loTrans.POQuotation().getDetailCount(); lnCtr++) {
             boolean found = false;
