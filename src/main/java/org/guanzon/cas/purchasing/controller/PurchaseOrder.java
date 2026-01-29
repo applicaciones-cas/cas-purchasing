@@ -2610,7 +2610,7 @@ public class PurchaseOrder extends Transaction {
         }
         return true;
     }
-
+    
     public JSONObject getPurchaseOrder(String fsSupplierID, String fsReferID) throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();
         String lsTransStat = "";
@@ -2623,6 +2623,76 @@ public class PurchaseOrder extends Transaction {
         } else {
             lsTransStat = " AND ( a.cTranStat = " + SQLUtil.toSQL(psTranStat)
                         + " OR (ASCII(a.cTranStat) - 64) = " + SQLUtil.toSQL(psTranStat) +" ) ";
+        }
+
+        String lsSQL = " SELECT "
+                + "  a.sTransNox,"
+                + "  c.sBranchNm,"
+                + "  a.sBranchCd,"
+                + "  a.dTransact,"
+                + "  a.sTransNox,"
+                + "  a.cTranStat"
+                + " FROM PO_Master a "
+                + " LEFT JOIN PO_Detail b ON b.sTransNox = a.sTransNox"
+                + " LEFT JOIN Branch c ON a.sBranchCd = c.sBranchCd"
+                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx";
+        String lsFilterCondition = String.join(" AND ",
+                " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
+                " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
+                " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
+                " a.sCategrCd = " + SQLUtil.toSQL(Master().getCategoryCode()),
+                " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
+        lsSQL = MiscUtil.addCondition(lsSQL, lsFilterCondition);
+        if (!psTranStat.isEmpty()) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+        if (!poGRider.isMainOffice() || !poGRider.isWarehouse()) {
+            lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
+        }
+        lsSQL = lsSQL + " GROUP BY  a.sTransNox"
+                + " ORDER BY dTransact ASC";
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        int lnCtr = 0;
+        if (MiscUtil.RecordCount(loRS) >= 0) {
+            paPOMaster = new ArrayList<>();
+            while (loRS.next()) {
+                // Print the result set
+                System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                System.out.println("dTransact: " + loRS.getDate("dTransact"));
+                System.out.println("------------------------------------------------------------------------------");
+
+                paPOMaster.add(POMasterList());
+                paPOMaster.get(paPOMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                lnCtr++;
+            }
+            System.out.println("Records found: " + lnCtr);
+            loJSON.put("result", "success");
+            loJSON.put("message", "Record loaded successfully.");
+        } else {
+            paPOMaster = new ArrayList<>();
+            paPOMaster.add(POMasterList());
+            loJSON.put("result", "error");
+            loJSON.put("continue", true);
+            loJSON.put("message", "No record found .");
+        }
+        MiscUtil.close(loRS);
+        return loJSON;
+    }
+    
+    public JSONObject getConfirmedPurchaseOrder(String fsSupplierID, String fsReferID) throws SQLException, GuanzonException {
+        JSONObject loJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+            }
+            lsTransStat = " AND ( a.cTranStat IN (" + lsTransStat.substring(2) + ")"
+                        + " OR (ASCII(a.cTranStat) - 64) = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) +" ) ";
+        } else {
+            lsTransStat = " AND ( a.cTranStat = " + SQLUtil.toSQL(psTranStat)
+                        + " OR (ASCII(a.cTranStat) - 64) = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED) +" ) ";
         }
 
         String lsSQL = " SELECT "
