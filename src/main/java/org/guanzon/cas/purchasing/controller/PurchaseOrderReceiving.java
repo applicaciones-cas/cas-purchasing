@@ -3268,7 +3268,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%"+ Master().getSupplierId())
                         + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED)
                         + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
-                        + " AND b.nQuantity > b.nReceived "
+                        + " AND (b.nQuantity-b.nCancelld) > b.nReceived "
                 );
             } else {
                 lsSQL = MiscUtil.addCondition(lsSQL, " a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
@@ -3277,7 +3277,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         + " AND a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode())
                         + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderStatus.APPROVED)
                         + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
-                        + " AND b.nQuantity > b.nReceived "
+                        + " AND (b.nQuantity-b.nCancelld) > b.nReceived "
                 );
             }
   
@@ -3374,15 +3374,17 @@ public class PurchaseOrderReceiving extends Transaction {
                         }
                     }
 
+                    double ldblQty = 0.00;
                     if (!lbExist) {
+                        ldblQty = (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue()-loTrans.PurchaseOrder().Detail(lnCtr).getCancelledQuantity().doubleValue());
                         //Only insert po detail that has item to receive
-                        if (loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue()) {
+                        if (ldblQty > loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue()) {
                             Detail(getDetailCount() - 1).setBrandId(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getBrandId());
                             Detail(getDetailCount() - 1).setOrderNo(loTrans.PurchaseOrder().Detail(lnCtr).getTransactionNo());
                             Detail(getDetailCount() - 1).setStockId(loTrans.PurchaseOrder().Detail(lnCtr).getStockID());
                             Detail(getDetailCount() - 1).setUnitType(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().getUnitType());
-                            Detail(getDetailCount() - 1).setOrderQty(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
-                            Detail(getDetailCount() - 1).setWhCount(loTrans.PurchaseOrder().Detail(lnCtr).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
+                            Detail(getDetailCount() - 1).setOrderQty(ldblQty - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
+                            Detail(getDetailCount() - 1).setWhCount(ldblQty - loTrans.PurchaseOrder().Detail(lnCtr).getReceivedQuantity().doubleValue());
                             Detail(getDetailCount() - 1).setUnitPrce(loTrans.PurchaseOrder().Detail(lnCtr).getUnitPrice());
                             Detail(getDetailCount() - 1).isSerialized(loTrans.PurchaseOrder().Detail(lnCtr).Inventory().isSerialized());
 
@@ -3394,15 +3396,18 @@ public class PurchaseOrderReceiving extends Transaction {
                         for (int lnOrder = 0; lnOrder <= loTrans.PurchaseOrder().getDetailCount() - 1; lnOrder++) {
                             if(Detail(lnRow).getOrderNo().equals(loTrans.PurchaseOrder().Detail(lnOrder).getTransactionNo())){
                                 if(Detail(lnRow).getStockId().equals(loTrans.PurchaseOrder().Detail(lnOrder).getStockID())){
-                                    if (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() > loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue()) {
-                                        lnAddOrderQty = lnAddOrderQty + (loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue() - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue());
+                                    ldblQty = loTrans.PurchaseOrder().Detail(lnOrder).getQuantity().doubleValue()-loTrans.PurchaseOrder().Detail(lnOrder).getCancelledQuantity().doubleValue();
+                                    if (ldblQty > loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue()) {
+                                        lnAddOrderQty = lnAddOrderQty + (ldblQty - loTrans.PurchaseOrder().Detail(lnOrder).getReceivedQuantity().doubleValue());
                                     }
                                 }
                             }
                         }
                         
-                        Detail(lnRow).setOrderQty(lnAddOrderQty);
-                        lbReceived = true;
+                        if(lnAddOrderQty > 0.00){ 
+                            Detail(lnRow).setOrderQty(lnAddOrderQty);
+                            lbReceived = true;
+                        }
                     }
                     
                     lbExist = false;
@@ -6054,7 +6059,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 
                 for (lnRow = 0; lnRow <= paPurchaseOrder.get(lnList).getDetailCount() - 1; lnRow++) {
                     if (stockId.equals(paPurchaseOrder.get(lnList).Detail(lnRow).getStockID())) {
-                        lnOrderQty = lnOrderQty + paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue();
+                        lnOrderQty = lnOrderQty + (paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue()-paPurchaseOrder.get(lnList).Detail(lnRow).getCancelledQuantity().doubleValue());
                     }
                 }
                 
@@ -6078,13 +6083,14 @@ public class PurchaseOrderReceiving extends Transaction {
         for (lnRow = 0; lnRow <= paPurchaseOrder.get(lnList).getDetailCount() - 1; lnRow++) {
             if (stockId.equals(paPurchaseOrder.get(lnList).Detail(lnRow).getStockID())) {
                 //set Receive qty in Purchase Order detail
-                if(lnRecQty <= 0){
-                    lnRecQty = 0;
+                if(lnRecQty <= 0.00){
+                    lnRecQty = 0.00;
                     paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(0);
                 } else {
-                    if(lnRecQty > paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue()){
-                        paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity());
-                        lnRecQty = lnRecQty - paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue();
+                    double ldblQty = paPurchaseOrder.get(lnList).Detail(lnRow).getQuantity().doubleValue() - paPurchaseOrder.get(lnList).Detail(lnRow).getCancelledQuantity().doubleValue();
+                    if(lnRecQty > ldblQty){
+                        paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(ldblQty);
+                        lnRecQty = lnRecQty - ldblQty;
                     } else {
                         paPurchaseOrder.get(lnList).Detail(lnRow).setReceivedQuantity(lnRecQty);
                         lnRecQty = 0;
