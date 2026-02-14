@@ -1819,7 +1819,8 @@ public class POQuotation extends Transaction {
         //VAT Sales : (Vatable Total + Freight Amount) - Discount Amount
         ldblVatSales = (Master().getGrossAmount() + Master().getFreightAmount()) - (ldblDiscount + ldblDiscountRate);
         //VAT Amount : VAT Sales - (VAT Sales / 1.12)
-        ldblVatAmount = ldblVatSales - ( ldblVatSales / 1.12);
+//        ldblVatAmount = ldblVatSales - ( ldblVatSales / 1.12); //Disable by Arsiela 02-14-2026 08:59:00 as per ma'am she, need to check for future update when there's another senario that will meet this formula.
+        ldblVatAmount = ldblVatSales * 0.12; //Update by Arsiela 02-14-2026 08:59:20, need to observe formula whether it will be conflict on other transaction.
 
         if(Master().isVatable()){ //Add VAT
             //Net VAT Sales : VAT Sales - VAT Amount
