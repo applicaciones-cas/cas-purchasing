@@ -2526,7 +2526,7 @@ public class POQuotation extends Transaction {
     
     public void copyFile(String fsPath){
         Path source = Paths.get(fsPath);
-        Path targetDir = Paths.get(System.getProperty("sys.default.path.temp") + "/Attachments");
+        Path targetDir = Paths.get(System.getProperty("sys.default.path.temp") + "/attachments");
 
         try {
             // Ensure target directory exists
@@ -2927,6 +2927,7 @@ public class POQuotation extends Transaction {
             TransactionAttachmentList(lnCtr).getModel().setBranchCode(Master().getBranchCode());
             TransactionAttachmentList(lnCtr).getModel().setImagePath(System.getProperty("sys.default.path.temp.attachments"));
             
+            String lsOriginalFileName = TransactionAttachmentList(lnCtr).getModel().getFileName();
             //Check existing file name in database
             if(EditMode.ADDNEW == TransactionAttachmentList(lnCtr).getModel().getEditMode()){
                 int lnCopies = 0;
@@ -2947,8 +2948,16 @@ public class POQuotation extends Transaction {
                     Path source = Paths.get(fsFilePath);
                     try {
                         // Copy file into the target directory with a new name
-                        Path target = Paths.get(System.getProperty("sys.default.path.temp") + "/Attachments").resolve(lsNewFileName);
+                        Path target = Paths.get(System.getProperty("sys.default.path.temp") + "/attachments").resolve(lsNewFileName);
                         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+                        //check if file is existing
+                        int lnChecker = 0;
+                        File file = new File(TransactionAttachmentList(lnCtr).getModel().getImagePath() + "/" + lsNewFileName);
+                        while(!file.exists() && lnChecker < 5){
+                            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);  
+                            System.out.println("Re-Copying... " + lnChecker);
+                            lnChecker++;
+                        }
                         TransactionAttachmentList(lnCtr).getModel().setFileName(lsNewFileName);
                         System.out.println("File copied successfully as " + lsNewFileName);
                     } catch (Exception e) {
@@ -2960,7 +2969,7 @@ public class POQuotation extends Transaction {
             //Upload Attachment when send status is 0
             try {
                 if("0".equals(TransactionAttachmentList(lnCtr).getModel().getSendStatus())){
-                    poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr);
+                    poJSON = uploadCASAttachments(poGRider, System.getProperty("sys.default.access.token"), lnCtr,lsOriginalFileName);
                     if ("error".equals((String) poJSON.get("result"))) {
                         return poJSON;
                     }
@@ -3046,24 +3055,31 @@ public class POQuotation extends Transaction {
      * @return  
      * @throws java.lang.Exception 
      */
-    public JSONObject uploadCASAttachments(GRiderCAS instance, String access, int fnRow) throws Exception{       
+    public JSONObject uploadCASAttachments(GRiderCAS instance, String access, int fnRow, String fsOriginalFileName) throws Exception{       
         poJSON = new JSONObject();
-        System.out.println("Uploading... : " + paAttachments.get(fnRow).getModel().getFileName());
+        System.out.println("Uploading... : fsOriginalFileName : " + fsOriginalFileName);
+        System.out.println("New File Name... : " + paAttachments.get(fnRow).getModel().getFileName());
         String hash;
-        File file = new File(paAttachments.get(fnRow).getModel().getImagePath() + "/" + paAttachments.get(fnRow).getModel().getFileName());
-
-        //check if file is existing
+        String lsFile = paAttachments.get(fnRow).getModel().getFileName();
+        
+        //check if new file is existing
+        File file = new File(paAttachments.get(fnRow).getModel().getImagePath() + "/" + lsFile);
         if(!file.exists()){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Cannot locate file in " + paAttachments.get(fnRow).getModel().getImagePath() + "/" + paAttachments.get(fnRow).getModel().getFileName()
-                                    + ".\nContact system administrator for assistance.");
-            return poJSON;  
+            //check if original file is existing
+            lsFile = fsOriginalFileName;
+            file = new File(paAttachments.get(fnRow).getModel().getImagePath() + "/" + lsFile);
+            if(!file.exists()){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Cannot locate file in " + paAttachments.get(fnRow).getModel().getImagePath() + "/" + lsFile
+                                        + ".\nContact system administrator for assistance.");
+                return poJSON;  
+            }
         }
 
         //check if file hash is not empty
         hash = paAttachments.get(fnRow).getModel().getMD5Hash();
         if(paAttachments.get(fnRow).getModel().getMD5Hash() == null || "".equals(paAttachments.get(fnRow).getModel().getMD5Hash())){
-            hash = MiscReplUtil.md5Hash(paAttachments.get(fnRow).getModel().getImagePath() + "/" + paAttachments.get(fnRow).getModel().getFileName());
+            hash = MiscReplUtil.md5Hash(paAttachments.get(fnRow).getModel().getImagePath() + "/" + lsFile);
         }
 
         JSONObject result = WebFile.UploadFile(getAccessToken(access)
