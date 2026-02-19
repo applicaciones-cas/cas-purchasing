@@ -6,6 +6,7 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -478,7 +479,8 @@ public class Model_POR_Master extends Model {
             ldblNetTotal = (ldblTotal + getVatAmount().doubleValue() + getFreight().doubleValue()) - ldblDiscount;
         }
         
-        return ldblNetTotal;
+        DecimalFormat format = new DecimalFormat("###0.0000");
+        return Double.valueOf(format.format(ldblNetTotal));
         
         
 //         //Net Total = Vat Amount - Tax Amount
