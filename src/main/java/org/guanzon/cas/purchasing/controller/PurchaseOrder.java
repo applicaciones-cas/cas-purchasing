@@ -23,6 +23,7 @@ import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperPrintManager;
@@ -468,136 +469,151 @@ public class PurchaseOrder extends Transaction {
     public JSONObject ConfirmTransaction(String remarks) throws ParseException, SQLException, CloneNotSupportedException, GuanzonException {
         poJSON = new JSONObject();
 
-        String lsStatus = PurchaseOrderStatus.CONFIRMED;
-        boolean lbConfirm = true;
-
-        if (getEditMode() != EditMode.READY) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
-            return poJSON;
-        }
-
-        MatrixAuthChecker check = null; 
+        //mac 2026.02.27
+        //  call approve transaction upon confirmation on class and deactivate the approval UI
         
-        if(!pbWthParent){
-            //validator
-            poJSON = isEntryOkay(lsStatus);
-            if (!"success".equals((String) poJSON.get("result"))) {
+        //check the status of the transaction
+        //kapag OPEN, idaan mo muna sa confirmation, pag hindi naman idaan mo sa approval
+        if (Master().getTransactionStatus().equals(PurchaseOrderStatus.OPEN)){
+            String lsStatus = PurchaseOrderStatus.CONFIRMED;
+            
+            boolean lbConfirm = true;
+
+            if (getEditMode() != EditMode.READY) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No transacton was loaded.");
                 return poJSON;
             }
 
-            //get the matrix return from isEntryOkey
-            JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
+            MatrixAuthChecker check = null; 
 
-            //Check if there is a authorization request
-            if(loMatrix != null){
-                //initialized MatrixAuthChecker object
-                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
-                //load the current autorization matrix request
-                poJSON = check.loadAuth();
-
-                //check if loading is okey
+            if(!pbWthParent){
+                //validator
+                poJSON = isEntryOkay(lsStatus);
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
                 }
 
-                //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
-                    //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
-                        //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+                //get the matrix return from isEntryOkey
+                JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
-                        //check if current user is authorized to approved this transaction
-                        poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                        
-                        //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
-                            poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
-                                return poJSON;
-                            }
+                //Check if there is a authorization request
+                if(loMatrix != null){
+                    //initialized MatrixAuthChecker object
+                    check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+                    //load the current autorization matrix request
+                    poJSON = check.loadAuth();
 
-                            //check if approving officer is authorized
-                            String lsUserIDxx = poJSON.get("sUserIDxx").toString();
-                            //check if current user is authorized to approved this transaction
-                            poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                            //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
-                                return poJSON;
-                            }
-                        }
+                    //check if loading is okey
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        return poJSON;
                     }
 
                     //check if authorization request is already approved by all authorizing personnel
                     if(!check.isAuthOkay()){
-                        //check  the user level again then if he/she allow to confirm
-                        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
+                        //check if authorization request allows system approval
+                        if(!check.isAllowSys()){
+                            //extract the JSONObject from JSONArray
+                            JSONObject loJson = (JSONObject)loMatrix.get(0);
 
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
-                        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
-                        if (!"success".equals((String) poJSON.get("result"))) {
-                            poGRider.rollbackTrans();
-                            return poJSON;
+                            //check if current user is authorized to approved this transaction
+                            poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
+
+                            //If not authorized/request system approval
+                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                                if("error".equals((String)poJSON.get("result"))){
+                                    return poJSON;
+                                }
+
+                                //check if approving officer is authorized
+                                String lsUserIDxx = poJSON.get("sUserIDxx").toString();
+                                //check if current user is authorized to approved this transaction
+                                poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
+                                //user is not authorized
+                                if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+                                    return poJSON;
+                                }
+                            }
                         }
 
-                        poGRider.commitTrans();
-                        
-                        poJSON.put("result", "matrix");
+                        //check if authorization request is already approved by all authorizing personnel
+                        if(!check.isAuthOkay()){
+                            //check  the user level again then if he/she allow to confirm
+                            poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
+
+                            lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+                            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                poGRider.rollbackTrans();
+                                return poJSON;
+                            }
+
+                            poGRider.commitTrans();
+
+                            poJSON.put("result", "matrix");
+                            return poJSON;
+                        }
+                    }
+                }
+                //there are no authorization event request
+                else{
+                    //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
+                    poJSON = seekApproval();
+                    if("error".equalsIgnoreCase((String)poJSON.get("result"))){
                         return poJSON;
                     }
                 }
             }
-            //there are no authorization event request
-            else{
-                //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
-                poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
-                    return poJSON;
-                }
+
+            poJSON = setValueToOthers(lsStatus);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
             }
-        }
-        
-        poJSON = setValueToOthers(lsStatus);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-        //check  the user level again then if he/she allow to approve
-        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-        poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        //Update Transaction Status of PO Quotation
-        poJSON = updatePOQuotationStatus(lsStatus);
-        if ("error".equals((String) poJSON.get("result"))) {
-            System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
-            return poJSON;
-        }
+            //check  the user level again then if he/she allow to approve
+            poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
 
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-        
-        if(check != null){
-            check.postAuth();
-        }
-        
-        poGRider.commitTrans();
-       
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
+            poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
 
-        if (lbConfirm) {
-            poJSON.put("message", "Transaction confirmed successfully.");
-        } else {
-            poJSON.put("message", "Transaction confirmation request submitted successfully.");
+            //Update Transaction Status of PO Quotation
+            poJSON = updatePOQuotationStatus(lsStatus);
+            if ("error".equals((String) poJSON.get("result"))) {
+                System.out.println("PO Quotation Saving " + (String) poJSON.get("message"));
+                return poJSON;
+            }
+
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            if(check != null){
+                check.postAuth();
+            }
+
+            poGRider.commitTrans();
+            
+            //mac 2026.02.27
+            Master().setTransactionStatus(PurchaseOrderStatus.CONFIRMED);
         }
+        
+        //mac 2026.02.27
+        poJSON = ApproveTransaction("Auto-approve after confirmation.");
+        
+//        poJSON = new JSONObject();
+//        poJSON.put("result", "success");
+//
+//        if (lbConfirm) {
+//            poJSON.put("message", "Transaction confirmed successfully.");
+//        } else {
+//            poJSON.put("message", "Transaction confirmation request submitted successfully.");
+//        }
 
         return poJSON;
     }
@@ -682,9 +698,9 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        poJSON.put("result", "success");
-                        
-                        return poJSON;
+                        //mac 2026.02.28
+//                        poJSON.put("result", "success");
+//                        return poJSON;
                     }
                 }
             }
@@ -3178,7 +3194,7 @@ public class PurchaseOrder extends Transaction {
     
     public JSONObject printTransaction(String jasperType) {
         poJSON = new JSONObject();
-        String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
+        String watermarkPath = System.getProperty("sys.default.path.config") + "/reports/images/" + "draft.png"; //set draft as default
         try {
             
             System.out.println("Company Address : " + Master().Company().getCompanyAddress());
@@ -3268,9 +3284,9 @@ public class PurchaseOrder extends Transaction {
                 case PurchaseOrderStatus.POSTED:
                 case PurchaseOrderStatus.APPROVED:
                     if ("1".equals(Master().getPrint())) {
-                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approvedreprint.png";
+                        watermarkPath = System.getProperty("sys.default.path.config") + "/reports/images/" + "approvedreprint.png";
                     } else {
-                        watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
+                        watermarkPath = System.getProperty("sys.default.path.config") + "/reports/images/" + "approved.png";
                     }
                     break;
             }
@@ -3308,13 +3324,13 @@ public class PurchaseOrder extends Transaction {
             String jrxmlPath = "";
             switch (jasperType) {
                 case PurchaseOrderStaticData.Printing_CAR_MC_MPUnit_Appliance:
-                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCarMcMPUnitAppliance.jrxml"; //TODO
+                    jrxmlPath = System.getProperty("sys.default.path.config") + "/reports/" + "PurchaseOrderCarMcMPUnitAppliance.jrxml"; //TODO
                     break;
                 case PurchaseOrderStaticData.Printing_CARSp_MCSp_General:
-                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderCARSpMCSpGeneral.jrxml"; //TODO PurchaseOrderPedritos
+                    jrxmlPath = System.getProperty("sys.default.path.config") + "/reports/" + "PurchaseOrderCARSpMCSpGeneral.jrxml"; //TODO PurchaseOrderPedritos
                     break;
                 case PurchaseOrderStaticData.Printing_Pedritos:
-                    jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\PurchaseOrderPedritos.jrxml"; //TODO PurchaseOrderPedritos
+                    jrxmlPath = System.getProperty("sys.default.path.config") + "/reports/" + "PurchaseOrderPedritos.jrxml"; //TODO PurchaseOrderPedritos
                     break;
                 default:
                     throw new AssertionError();
@@ -3330,10 +3346,16 @@ public class PurchaseOrder extends Transaction {
                     parameters,
                     dataSource
             );
-
-            CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
-            viewer.setVisible(true);
-
+            
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
+                viewer.setVisible(true);
+            } else {
+                //mac 2026.02.21
+                //export pdf file
+                JasperExportManager.exportReportToPdfFile(jasperPrint, System.getProperty("sys.default.path.config") + "/temp/" + Master().getTransactionNo() + ".pdf");
+            }
+            
             poJSON.put("result", "success");
         } catch (JRException | SQLException | GuanzonException ex) {
             poJSON.put("result", "error");
