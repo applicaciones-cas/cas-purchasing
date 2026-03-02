@@ -162,7 +162,7 @@ public class PurchaseOrder_General implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateConfirmed() {
+    private JSONObject validateConfirmed() throws SQLException, GuanzonException {
         poJSON = new JSONObject();
 
         poJSON.put("result", "success");
@@ -180,15 +180,15 @@ public class PurchaseOrder_General implements GValidator {
             + ";" + poMaster.getTranTotal().toString() 
             + ";" + poMaster.getRemarks();
 
-        if(poMaster.getTranTotal().doubleValue() <= 30000.00){
+        if(poMaster.getTranTotal().doubleValue() <= 50000.00){ //30000.00
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("PO*S", "", "", lsRemarks);
         }
-        else if(poMaster.getTranTotal().doubleValue() <= 50000.00){
+        else if(poMaster.getTranTotal().doubleValue() <= 100000.00){ //50000.00
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("PO*M", "", "", lsRemarks);
         }
-        else if(poMaster.getTranTotal().doubleValue() <= 100000.00){
+        else if(poMaster.getTranTotal().doubleValue() <= 500000.00){ //100000.00
             poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
             poMatrix.addAuthRequest("PO*L", "", "", lsRemarks);
         }
