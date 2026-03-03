@@ -1911,10 +1911,13 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
@@ -1961,10 +1964,13 @@ public class PurchaseOrderReceiving extends Transaction {
         
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
             
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
@@ -2065,10 +2071,13 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON.put("row", row);
         System.out.println("result" + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
@@ -2108,10 +2117,13 @@ public class PurchaseOrderReceiving extends Transaction {
         
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().Inventory().getBarCode(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
@@ -2191,10 +2203,13 @@ public class PurchaseOrderReceiving extends Transaction {
         
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             if (!object.getModel().getStockId().equals(Detail(row).getStockId())) {
 //                poJSON = checkExistingSerialId(row);
@@ -2269,10 +2284,13 @@ public class PurchaseOrderReceiving extends Transaction {
 //        poJSON = object.searchRecordOfVariants(value, byCode);
         poJSON.put("row", row);
         if ("success".equals((String) poJSON.get("result"))) {
-            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            poJSON = checkExistingStock(object.getModel().getStockId(), object.getModel().getDescription(), "1900-01-01", row, false);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             if (!object.getModel().getStockId().equals(Detail(row).getStockId())) {
 //                poJSON = checkExistingSerialId(row);
@@ -5334,11 +5352,14 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
             
-            //Validate Existng Stock Id in POR Detail
-            poJSON = checkExistingStock(Detail(lnCtr).getStockId(), Detail(lnCtr).Inventory().getDescription(), xsDateShort(Detail(lnCtr).getExpiryDate()), lnCtr, true);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            }
+            //mac 2026.03.02
+            //  disable this block of code
+            //  remove restriction on multiple entries of the same stock
+//            //Validate Existng Stock Id in POR Detail
+//            poJSON = checkExistingStock(Detail(lnCtr).getStockId(), Detail(lnCtr).Inventory().getDescription(), xsDateShort(Detail(lnCtr).getExpiryDate()), lnCtr, true);
+//            if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+//            }
 
             //Set value to por detail
             Detail(lnCtr).setTransactionNo(Master().getTransactionNo());
