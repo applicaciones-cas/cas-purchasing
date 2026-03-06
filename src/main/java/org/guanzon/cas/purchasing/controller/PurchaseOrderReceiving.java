@@ -874,29 +874,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
         
         try {
-            //Update process in PO Receiving Master
-            poJSON = Master().openRecord(Master().getTransactionNo());
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-
-            poJSON = Master().updateRecord();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-
-            Master().isProcessed(true);
-            Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
-            Master().setModifiedDate(poGRider.getServerDate());
-            poJSON = Master().saveRecord();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-            
-            boolean lbIsPaid = Double.valueOf(CustomCommonUtil.setIntegerValueToDecimalFormat(Master().getNetTotal().doubleValue(), true).replace(",", "")) == Master().getAmountPaid().doubleValue();
+            double ldblAmountPaid = poCachePayable.Master().getAmountPaid();
+            boolean lbIsPaid = Master().getNetTotal() == ldblAmountPaid;
             if(!lbIsPaid){
                 poCachePayable.setWithParent(true);
                 poJSON = poCachePayable.SaveTransaction();
@@ -904,16 +883,16 @@ public class PurchaseOrderReceiving extends Transaction {
                     poGRider.rollbackTrans();
                     return poJSON;
                 }
+            }
 
-                if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
-                    && Master().getFreight().doubleValue() > 0.0000
-                    && !Master().getTruckingId().equals(Master().getSupplierId())){
-                    poCachePayableTrucking.setWithParent(true);
-                    poJSON = poCachePayableTrucking.SaveTransaction();
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        poGRider.rollbackTrans();
-                        return poJSON;
-                    }
+            if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
+                && Master().getFreight().doubleValue() > 0.0000
+                && !Master().getTruckingId().equals(Master().getSupplierId())){
+                poCachePayableTrucking.setWithParent(true);
+                poJSON = poCachePayableTrucking.SaveTransaction();
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
                 }
             }
 
@@ -997,8 +976,30 @@ public class PurchaseOrderReceiving extends Transaction {
 //                break;
             }
             
-
             System.out.println("-----------------------------------");
+            
+            //Update process in PO Receiving Master
+            poJSON = Master().openRecord(Master().getTransactionNo());
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+
+            poJSON = Master().updateRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+            Master().setAmountPaid(ldblAmountPaid);
+            Master().isProcessed(true);
+            Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+            Master().setModifiedDate(poGRider.getServerDate());
+            poJSON = Master().saveRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+            
             //change status
             poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -4523,7 +4524,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
-        Master().setAmountPaid(getAdvancePayment());
+//        Master().setAmountPaid(getAdvancePayment());
         
         return poJSON;
     }
