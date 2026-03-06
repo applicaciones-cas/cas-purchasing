@@ -732,13 +732,14 @@ public class PurchaseOrderReceiving extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
-
+        
+        computeFields(); //Recompute
         MatrixAuthChecker check = null; 
         
         if(!pbWthParent){
@@ -3292,7 +3293,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
             }
             
-            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
             
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -5209,12 +5210,30 @@ public class PurchaseOrderReceiving extends Transaction {
         Master().setModifiedDate(poGRider.getServerDate());
         
         if(pbIsFinance){
+            computeFields(); //Recompute fields
             //If trucking is not empty FREIGHT AMOUNT is required
             if (Master().getTruckingId()!= null && !"".equals(Master().getTruckingId())) {
                 if (Master().getFreight().doubleValue() <= 0.00) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "Invalid Freight Amount.");
                     return poJSON;
+                }
+            }
+            
+            if (Master().getSalesInvoice() != null && !"".equals(Master().getSalesInvoice())) {
+                if(!"To-follow".equals(Master().getSalesInvoice().trim())){
+                    Date loSIDate = Master().getSalesInvoiceDate();
+                    if (loSIDate == null) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Invalid Invoice Date.");
+                        return poJSON;
+                    }
+
+                    if ("1900-01-01".equals(xsDateShort(loSIDate))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Invalid Invoice Date.");
+                        return poJSON;
+                    }
                 }
             }
         }
@@ -6773,6 +6792,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sSupplier  "
                 + " , a.sReferNox  "
                 + " , a.sCategrCd  "
+                + " , a.dDueDatex  "
                 + " , e.sBranchNm  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"

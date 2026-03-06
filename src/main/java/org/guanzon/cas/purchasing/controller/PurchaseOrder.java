@@ -852,8 +852,8 @@ public class PurchaseOrder extends Transaction {
                     //check if authorization request is already approved by all authorizing personnel
                     if(!check.isAuthOkay()){
                         //check  the user level again then if he/she allow to confirm
-                        poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo());
-
+                        poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo());  
+                        
                         lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
                         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPost, true);
                         if (!"success".equals((String) poJSON.get("result"))) {
@@ -883,8 +883,9 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
         //check  the user level again then if he/she allow to approve
-        poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo());
-
+        if(!pbWthParent){ 
+            poGRider.beginTrans("UPDATE STATUS", "Post Transaction", SOURCE_CODE, Master().getTransactionNo()); 
+        }
         poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
         if (!"success".equals((String) poJSON.get("result"))) {
             poGRider.rollbackTrans();
@@ -901,7 +902,9 @@ public class PurchaseOrder extends Transaction {
             check.postAuth();
         }
         
-        poGRider.commitTrans();
+        if(!pbWthParent){ 
+            poGRider.commitTrans();
+        }
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
@@ -1632,9 +1635,8 @@ public class PurchaseOrder extends Transaction {
                 double totalAdv = downPaymentPercentageAmount + downPaymentFixedAmount;
 
                 poPaymentRequest.PaymentRequest().Master().setRemarks(Master().getRemarks());
-                poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
-                poPaymentRequest.PaymentRequest().Master().setIndustryID(poGRider.getIndustry());
-                poPaymentRequest.PaymentRequest().Master().setCompanyID(poGRider.getCompnyId());
+                poPaymentRequest.PaymentRequest().Master().setIndustryID(Master().getIndustryID());
+                poPaymentRequest.PaymentRequest().Master().setCompanyID(Master().getCompanyID());
                 poPaymentRequest.PaymentRequest().Master().setSourceCode(SOURCE_CODE);
                 poPaymentRequest.PaymentRequest().Master().setSourceNo(Master().getTransactionNo());
                 poPaymentRequest.PaymentRequest().Master().setPayeeID(PayeeID); //Master().getSupplierID()
