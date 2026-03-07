@@ -3296,10 +3296,42 @@ public class PurchaseOrder extends Transaction {
             List<OrderDetail> orderDetails = new ArrayList<>();
 
             double lnTotal = 0.0000;
-            
+            String lsFullDesc = "";
             for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                System.out.println("------------------------------------------------------");
+                System.out.println("Row : " + (lnCtr + 1) );
+                System.out.println("Barcode : " + safeString(Detail(lnCtr).Inventory().getBarCode()) );
+                System.out.println("Brand : " + safeString(Detail(lnCtr).Inventory().Brand().getDescription()));
+                System.out.println("Model : " + safeString(Detail(lnCtr).Inventory().Model().getDescription()));
+                System.out.println("Variant : " + safeString(Detail(lnCtr).Inventory().Variant().getDescription()));
+                System.out.println("Year : " + safeString(Detail(lnCtr).Inventory().Variant().getYearModel()));
+                System.out.println("Measure : " + safeString(Detail(lnCtr).Inventory().Measure().getDescription()));
+                System.out.println("Color : " + safeString(Detail(lnCtr).Inventory().Color().getDescription()));
+                System.out.println("Description : " + safeString(Detail(lnCtr).Inventory().getDescription()));
+                System.out.println("------------------------------------------------------");
+                
+                
                 lnTotal = Detail(lnCtr).getUnitPrice().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
-
+                lsFullDesc = safeString(Detail(lnCtr).Inventory().getDescription());
+                switch (jasperType) {
+                    case PurchaseOrderStaticData.Printing_CARSp_MCSp_General:
+                    case PurchaseOrderStaticData.Printing_Pedritos:
+                        lsFullDesc = safeString(Detail(lnCtr).Inventory().Brand().getDescription());
+                        if(lsFullDesc.isEmpty()){
+                            lsFullDesc = safeString(Detail(lnCtr).Inventory().Model().getDescription());
+                        } else {
+                            lsFullDesc = lsFullDesc + " " + safeString(Detail(lnCtr).Inventory().Model().getDescription());
+                        }
+                        
+                        if(lsFullDesc.isEmpty()){
+                            lsFullDesc = safeString(Detail(lnCtr).Inventory().getDescription());
+                        } else {
+                            lsFullDesc = lsFullDesc + " " + safeString(Detail(lnCtr).Inventory().getDescription());
+                        }
+                        break;
+                    default:
+                        throw new AssertionError();
+                }
                 
                 orderDetails.add(new OrderDetail(lnCtr + 1, // Line No.
                         safeString(Detail(lnCtr).getSouceNo()), // Source No
@@ -3310,7 +3342,7 @@ public class PurchaseOrder extends Transaction {
                         safeString(Detail(lnCtr).Inventory().Model().getDescription()), // Model
                         safeString(Detail(lnCtr).Inventory().Measure().getDescription()),// Unit of Measure
                         safeString(Detail(lnCtr).Inventory().Color().getDescription()), // Color
-                        safeString(Detail(lnCtr).Inventory().getDescription()), // Item Description
+                        lsFullDesc, // Item Description
                         Detail(lnCtr).getUnitPrice() != null
                         ? Detail(lnCtr).getUnitPrice().doubleValue() : 0.00, // Unit Price
                         Detail(lnCtr).getQuantity() != null

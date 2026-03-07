@@ -947,16 +947,16 @@ public class PurchaseOrderReceiving extends Transaction {
 
             System.out.println("----------ACCOUNT MASTER / LEDGER----------");
             //GL Transaction Account Ledger
-//            GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
-//            loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
-//            for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
-//                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
-//                        Journal().Detail(lnCtr).getAccountCode(),
-//                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
-//                        Journal().Detail(lnCtr).getDebitAmount(), 
-//                        Journal().Detail(lnCtr).getCreditAmount());
-//            }
-//            loGLTrans.saveTransaction();
+            GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
+            loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
+            for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
+                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+                        Journal().Detail(lnCtr).getAccountCode(),
+                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+                        Journal().Detail(lnCtr).getDebitAmount(), 
+                        Journal().Detail(lnCtr).getCreditAmount());
+            }
+            loGLTrans.saveTransaction();
             System.out.println("-----------------------------------");
             
             System.out.println("----------------UPDATE PURCHASE ORDER STATUS------------");
