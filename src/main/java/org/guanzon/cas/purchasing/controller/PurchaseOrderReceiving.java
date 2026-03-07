@@ -96,7 +96,9 @@ import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
 import org.guanzon.cas.purchasing.model.Model_POR_Serial;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
+import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingControllers;
@@ -121,6 +123,7 @@ import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 import ph.com.guanzongroup.cas.cashflow.status.CachePayableStatus;
+import ph.com.guanzongroup.cas.cashflow.utility.CustomCommonUtil;
 
 /**
  *
@@ -684,7 +687,7 @@ public class PurchaseOrderReceiving extends Transaction {
         //poGRider.beginTrans("UPDATE STATUS", "PaidTransaction", SOURCE_CODE, Master().getTransactionNo());
         
         //change status
-        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPaid, true);
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPaid, pbWthParent);
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -729,13 +732,14 @@ public class PurchaseOrderReceiving extends Transaction {
         if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
-
+        
+        computeFields(); //Recompute
         MatrixAuthChecker check = null; 
         
         if(!pbWthParent){
@@ -871,33 +875,15 @@ public class PurchaseOrderReceiving extends Transaction {
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, Master().getTransactionNo());
         
         try {
-            //Update process in PO Receiving Master
-            poJSON = Master().openRecord(Master().getTransactionNo());
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-
-            poJSON = Master().updateRecord();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-
-            Master().isProcessed(true);
-            Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
-            Master().setModifiedDate(poGRider.getServerDate());
-            poJSON = Master().saveRecord();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
-            }
-
-            poCachePayable.setWithParent(true);
-            poJSON = poCachePayable.SaveTransaction();
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
+            double ldblAmountPaid = poCachePayable.Master().getAmountPaid();
+            boolean lbIsPaid = Master().getNetTotal() == ldblAmountPaid;
+            if(!lbIsPaid){
+                poCachePayable.setWithParent(true);
+                poJSON = poCachePayable.SaveTransaction();
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
             }
 
             if(Master().getTruckingId() != null && !"".equals(Master().getTruckingId()) 
@@ -961,23 +947,85 @@ public class PurchaseOrderReceiving extends Transaction {
 
             System.out.println("----------ACCOUNT MASTER / LEDGER----------");
             //GL Transaction Account Ledger
-            GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
-            loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
-            for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
-                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
-                        Journal().Detail(lnCtr).getAccountCode(),
-                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
-                        Journal().Detail(lnCtr).getDebitAmount(), 
-                        Journal().Detail(lnCtr).getCreditAmount());
-            }
-            loGLTrans.saveTransaction();
+//            GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
+//            loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
+//            for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
+//                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+//                        Journal().Detail(lnCtr).getAccountCode(),
+//                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+//                        Journal().Detail(lnCtr).getDebitAmount(), 
+//                        Journal().Detail(lnCtr).getCreditAmount());
+//            }
+//            loGLTrans.saveTransaction();
             System.out.println("-----------------------------------");
+            
+            System.out.println("----------------UPDATE PURCHASE ORDER STATUS------------");
+            switch(Master().getPurpose()){
+                case PurchaseOrderReceivingStatus.Purpose.REGULAR:
+                    poJSON = PostPOTransaction();
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
+                break;
+//                case PurchaseOrderReceivingStatus.Purpose.REPLACEMENT:
+//                    poJSON = PostPOReturnTransaction();
+//                    if (!"success".equals((String) poJSON.get("result"))) {
+//                        poGRider.rollbackTrans();
+//                        return poJSON;
+//                    }
+//                break;
+            }
+            
+            System.out.println("-----------------------------------");
+            
+            //Update process in PO Receiving Master
+            poJSON = Master().openRecord(Master().getTransactionNo());
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
 
+            poJSON = Master().updateRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+            Master().setAmountPaid(ldblAmountPaid);
+            Master().isProcessed(true);
+            Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+            Master().setModifiedDate(poGRider.getServerDate());
+            poJSON = Master().saveRecord();
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+            
             //change status
             poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
             if (!"success".equals((String) poJSON.get("result"))) {
                 poGRider.rollbackTrans();
                 return poJSON;
+            }
+            
+            if(lbIsPaid){
+                PurchaseOrderReceiving loObject = new PurchaseOrderReceivingControllers(poGRider, logwrapr).PurchaseOrderReceiving();
+                poJSON = loObject.InitTransaction();
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order transaction.");
+                    return poJSON;
+                }
+                poJSON = loObject.OpenTransaction(Master().getTransactionNo());
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order transaction.");
+                    return poJSON;
+                }
+                loObject.setWithParent(true);
+                loObject.setWithUI(false);
+                poJSON = loObject.PaidTransaction("");
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
             }
 
             if(check != null){
@@ -985,7 +1033,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
 
             poGRider.commitTrans();
-
+            
             poJSON = new JSONObject();
             poJSON.put("result", "success");
             if (lbPosted) {
@@ -1000,6 +1048,78 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", MiscUtil.getException(ex));
         }
 
+        return poJSON;
+    }
+    
+    /**
+     * POST PO Transaction only if all order was received
+     * @return
+     * @throws SQLException
+     * @throws GuanzonException
+     * @throws CloneNotSupportedException
+     * @throws ParseException 
+     */
+    private JSONObject PostPOTransaction() throws SQLException, GuanzonException, CloneNotSupportedException, ParseException{
+        poJSON = new JSONObject();
+        List<String> llistPurchaseOrder = new ArrayList<>();
+        for(int lnCtr =0;lnCtr < getDetailCount(); lnCtr++){
+            if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
+                if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
+                    llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+                }
+            }
+        }
+        
+        for(int lnCtr = 0; lnCtr < llistPurchaseOrder.size(); lnCtr++){
+            if(llistPurchaseOrder.get(lnCtr) != null && !"".equals(llistPurchaseOrder.get(lnCtr))){
+                Model_PO_Master loObject = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
+                poJSON = loObject.openRecord(llistPurchaseOrder.get(lnCtr));
+                if ("error".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order.");
+                    return poJSON;
+                }
+                
+                boolean lnOrderComplete = false;
+                for(int lnRow = 0;lnRow < loObject.getEntryNo().intValue();lnRow++){
+                    Model_PO_Detail loObjDetail = new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
+                    poJSON = loObjDetail.openRecord(llistPurchaseOrder.get(lnCtr), (lnRow+1));
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order.");
+                        return poJSON;
+                    }
+                    
+                    lnOrderComplete = (loObjDetail.getQuantity().doubleValue() - loObjDetail.getCancelledQuantity().doubleValue()) >= loObjDetail.getReceivedQuantity().doubleValue();
+                    if(!lnOrderComplete){ //If there's a order quantity that is not received yet terminate the loop because PO must not be post since order quantity are not yet received.
+                        break;
+                    }
+                }
+                
+                if(lnOrderComplete){
+                    paPurchaseOrder.add(PurchaseOrder());
+                    poJSON = paPurchaseOrder.get(paPurchaseOrder.size() - 1).InitTransaction();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order transaction.");
+                        return poJSON;
+                    }
+                    poJSON = paPurchaseOrder.get(paPurchaseOrder.size() - 1).OpenTransaction(llistPurchaseOrder.get(lnCtr));
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        poJSON.put("message",(String) poJSON.get("message") + "\nWhile reloading PO Purchase Order transaction.");
+                        return poJSON;
+                    }
+                    paPurchaseOrder.get(paPurchaseOrder.size() - 1).setWithParent(true);
+                    paPurchaseOrder.get(paPurchaseOrder.size() - 1).setWithUI(false);
+                    poJSON = paPurchaseOrder.get(paPurchaseOrder.size() - 1).PostTransaction("");
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        poJSON.put("message",(String) poJSON.get("message") + "\nWhile Posting PO Purchase Order transaction.");
+                        return poJSON;
+                    }
+                }
+                
+            }
+        }
+    
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
     
@@ -3173,7 +3293,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
             }
             
-            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
             
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -4405,7 +4525,7 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
-        Master().setAmountPaid(getAdvancePayment());
+//        Master().setAmountPaid(getAdvancePayment());
         
         return poJSON;
     }
@@ -5090,12 +5210,30 @@ public class PurchaseOrderReceiving extends Transaction {
         Master().setModifiedDate(poGRider.getServerDate());
         
         if(pbIsFinance){
+            computeFields(); //Recompute fields
             //If trucking is not empty FREIGHT AMOUNT is required
             if (Master().getTruckingId()!= null && !"".equals(Master().getTruckingId())) {
                 if (Master().getFreight().doubleValue() <= 0.00) {
                     poJSON.put("result", "error");
                     poJSON.put("message", "Invalid Freight Amount.");
                     return poJSON;
+                }
+            }
+            
+            if (Master().getSalesInvoice() != null && !"".equals(Master().getSalesInvoice())) {
+                if(!"To-follow".equals(Master().getSalesInvoice().trim())){
+                    Date loSIDate = Master().getSalesInvoiceDate();
+                    if (loSIDate == null) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Invalid Invoice Date.");
+                        return poJSON;
+                    }
+
+                    if ("1900-01-01".equals(xsDateShort(loSIDate))) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Invalid Invoice Date.");
+                        return poJSON;
+                    }
                 }
             }
         }
@@ -6654,6 +6792,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 + " , a.sSupplier  "
                 + " , a.sReferNox  "
                 + " , a.sCategrCd  "
+                + " , a.dDueDatex  "
                 + " , e.sBranchNm  "
                 + " , b.sCompnyNm  AS sSupplrNm"
                 + " , c.sCompnyNm  AS sCompnyNm"
