@@ -698,9 +698,16 @@ public class PurchaseOrder extends Transaction {
 
                         poGRider.commitTrans();
                         
-                        //mac 2026.02.28
-//                        poJSON.put("result", "success");
-//                        return poJSON;
+                        //mac 2026.03.07
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "success");
+
+                        if (lbApprove) {
+                            poJSON.put("message", "Transaction approved successfully.");
+                        } else {
+                            poJSON.put("message", "Transaction approving request submitted successfully.");
+                        }
+                        return poJSON;
                     }
                 }
             }
