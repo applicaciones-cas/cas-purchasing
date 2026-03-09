@@ -1088,7 +1088,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         return poJSON;
                     }
                     
-                    lnOrderComplete = (loObjDetail.getQuantity().doubleValue() - loObjDetail.getCancelledQuantity().doubleValue()) >= loObjDetail.getReceivedQuantity().doubleValue();
+                    lnOrderComplete = (loObjDetail.getQuantity().doubleValue() - loObjDetail.getCancelledQuantity().doubleValue()) <= loObjDetail.getReceivedQuantity().doubleValue();
                     if(!lnOrderComplete){ //If there's a order quantity that is not received yet terminate the loop because PO must not be post since order quantity are not yet received.
                         break;
                     }
@@ -2936,6 +2936,78 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return ldblAdvPaymentTotal;
     }
+    
+    
+    //Arsiela 03-06-2026 
+    //Need for further data process observation where single PO is linked to multiple PO Receiving and PO Receiving with multiple PO in details -According to ma'am she
+    //Conflict for the advances identifier reflect on specific PO Receiving.
+//     public Double getAdvancePayment() {
+//        double ldblAmtPaid = 0.0000;
+//        double ldblAdvPaymentTotal = 0.0000;
+//        List<String> llistPurchaseOrder = new ArrayList<>();
+//        try {
+//            for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+//                if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
+//                    if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
+//                        //Get the amount paid and subtract the used advances from the amount paid.
+//                        ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue() - checkUsedAdvances(Detail(lnCtr).getOrderNo());
+//                        ldblAdvPaymentTotal += ldblAmtPaid;
+//                        llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+//                    } 
+//                }
+//            }
+//        
+//        } catch (SQLException | GuanzonException ex) {
+//            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+//        }
+//        return ldblAdvPaymentTotal;
+//    }
+//     
+//    private Double checkUsedAdvances(String fsPOTransNo){
+//        double ldAmountPaid = 0.0000;
+//        try {
+//            String lsSQL = " SELECT "
+//                        + "   a.sTransNox  "
+//                        + " , a.dTransact  "
+//                        + " , a.sIndstCdx  "
+//                        + " , a.sCompnyID  "
+//                        + " , a.sReferNox  "
+//                        + " , a.sCategrCd  "
+//                        + " , a.cTranStat  "
+//                        + " , a.nAmtPaidx  "
+//                        + " , b.sOrderNox  "
+//                        + " , c.nAmtPaidx  AS nPOAdvncs "
+//                        + " FROM PO_Receiving_Master a "
+//                        + " LEFT JOIN PO_Receiving_Detail b ON b.sTransNox = a.sTransNox "
+//                        + " LEFT JOIN PO_Master c ON c.sTransNox = b.sOrderNox";
+//            lsSQL = MiscUtil.addCondition(SQL_BROWSE,
+//                    " a.sTransNox != " + SQLUtil.toSQL(Master().getTransactionNo())
+//                    + " AND (a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+//                    + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+//                    + " ) AND b.sOrderNox = " + SQLUtil.toSQL(fsPOTransNo) 
+//            );
+//            lsSQL = lsSQL + " GROUP BY a.sTransNox ";
+//            System.out.println("Executing SQL: " + lsSQL);
+//            ResultSet loRS = poGRider.executeQuery(lsSQL);
+//            poJSON = new JSONObject();
+//            if (MiscUtil.RecordCount(loRS) >= 0) {
+//                while (loRS.next()) {
+//                    // Print the result set
+//                    System.out.println("--------------------------PRF--------------------------");
+//                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+//                    System.out.println("nAmtPaidx: " + loRS.getDouble("nAmtPaidx"));
+//                    System.out.println("nPOAdvncs: " + loRS.getDouble("nPOAdvncs"));
+//                    System.out.println("------------------------------------------------------------------------------");
+//                    ldAmountPaid = ldAmountPaid + loRS.getDouble("nPOAdvncs"); 
+//                }
+//            }
+//            MiscUtil.close(loRS);
+//        } catch (SQLException e) {
+//            Logger.getLogger(getClass().getName()).log(Level.SEVERE, e.getMessage(), e);
+//            return 0.0000;
+//        }
+//        return ldAmountPaid;
+//    }
 
     /*Convert Date to String*/
     private static String xsDateShort(Date fdValue) {
