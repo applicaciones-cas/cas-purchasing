@@ -727,9 +727,9 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
 
-        System.out.println("poJSON = generatePRF()");
-        poJSON = generatePRF();
-         if (!"success".equals((String) poJSON.get("result"))) {
+        //Added validation to generate PRF only if the PO Status is APPROVED. Arsiela 03-10-2026 11:11am
+        poJSON = generatePRF(lsStatus);
+        if (!"success".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
 
@@ -742,8 +742,9 @@ public class PurchaseOrder extends Transaction {
                 poGRider.rollbackTrans();
                 return poJSON;
             }
-
-            poJSON = savePRF();
+            
+            //Added validation to generate PRF only if the PO Status is APPROVED. Arsiela 03-10-2026 11:11am
+            poJSON = savePRF(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
                 poGRider.rollbackTrans();
                 return poJSON;
@@ -1604,12 +1605,21 @@ public class PurchaseOrder extends Transaction {
         }
     }
 
-    private JSONObject generatePRF()
+    private JSONObject generatePRF(String fsStatus)
             throws CloneNotSupportedException,
             SQLException,
             GuanzonException {
         poJSON = new JSONObject();
+        
+        //Added validation to generate PRF only if the PO Status is APPROVED. Arsiela 03-10-2026 11:28am
+        if(!PurchaseOrderStatus.APPROVED.equals(fsStatus)){
+            poJSON.put("result", "success");
+            return poJSON;
+        }
+        
+        
         try {
+            System.out.println("poJSON = generatePRF()");
             if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > PurchaseOrderStaticData.default_value_double) {
                 poPaymentRequest = new CashflowControllers(poGRider, null);
 
@@ -1707,9 +1717,16 @@ public class PurchaseOrder extends Transaction {
         return lnRecQty;
     }
 
-    private JSONObject savePRF()
+    private JSONObject savePRF(String fsStatus)
             throws CloneNotSupportedException {
         poJSON = new JSONObject();
+        
+        //Added validation to generate PRF only if the PO Status is APPROVED. Arsiela 03-10-2026 11:28am
+        if(!PurchaseOrderStatus.APPROVED.equals(fsStatus)){
+            poJSON.put("result", "success");
+            return poJSON;
+        }
+        
         try {
             if (Master().getWithAdvPaym() && Master().getDownPaymentRatesAmount().doubleValue() > PurchaseOrderStaticData.default_value_double) {
                 poPaymentRequest.PaymentRequest().setWithParent(true);
