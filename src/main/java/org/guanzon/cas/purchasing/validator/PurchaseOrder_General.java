@@ -1,12 +1,12 @@
 package org.guanzon.cas.purchasing.validator;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.MatrixAuthManager;
-import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -180,21 +180,39 @@ public class PurchaseOrder_General implements GValidator {
             + ";" + poMaster.getTranTotal().toString() 
             + ";" + poMaster.getRemarks();
 
-        if(poMaster.getTranTotal().doubleValue() <= 50000.00){ //30000.00
-            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("PO*S", "", "", lsRemarks);
+        
+        String lsSQL = "SELECT sAuthType FROM xxxSysAuth_Matrix_Master" +
+                        " WHERE " + poMaster.getTranTotal().doubleValue() + " BETWEEN nValueFrm AND nValueTox";
+        
+        ResultSet loRS = poGrider.executeQuery(lsSQL);
+        
+        if (!loRS.next()){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction amount is out of range from the matrix.");
+            return poJSON;
         }
-        else if(poMaster.getTranTotal().doubleValue() <= 100000.00){ //50000.00
-            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("PO*M", "", "", lsRemarks);
-        }
-        else if(poMaster.getTranTotal().doubleValue() <= 500000.00){ //100000.00
-            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("PO*L", "", "", lsRemarks);
-        }
-        else{
-            poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
-            poMatrix.addAuthRequest("PO*XL", "", "", lsRemarks);
+        
+        switch (loRS.getString("sAuthType")) {
+            case "PO*S":
+                poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
+                poMatrix.addAuthRequest("PO*S", "", "", lsRemarks);
+                break;
+            case "PO*M":
+                poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
+                poMatrix.addAuthRequest("PO*M", "", "", lsRemarks);
+                break;
+            case "PO*L":
+                poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
+                poMatrix.addAuthRequest("PO*L", "", "", lsRemarks);
+                break;
+            case "PO*XL":
+                poMatrix = new MatrixAuthManager(poGrider, SOURCE_CD, poMaster.getTransactionNo());
+                poMatrix.addAuthRequest("PO*XL", "", "", lsRemarks);
+                break;
+            default:
+                poJSON.put("result", "error");
+                poJSON.put("message", "Transaction amount is out of range from the matrix.");
+                return poJSON;
         }
         
         //This will create an authorization request for Validation
