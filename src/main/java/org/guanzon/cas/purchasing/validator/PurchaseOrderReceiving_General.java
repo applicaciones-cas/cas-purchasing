@@ -197,6 +197,12 @@ public class PurchaseOrderReceiving_General implements GValidator{
     
     private JSONObject validateConfirmed() throws SQLException{
         poJSON = new JSONObject();
+        
+        if(poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
+            poJSON.put("message", "Invalid Transaction Status.");
+            return poJSON;
+        }
+        
         Date loTransactionDate = poMaster.getTransactionDate();
         Date loReferenceDate = poMaster.getReferenceDate();
         LocalDate serverDate = strToDate(xsDateShort(poGRider.getServerDate()));
@@ -383,8 +389,10 @@ public class PurchaseOrderReceiving_General implements GValidator{
                     + "; Discrepancy in Unit Price: " + String.valueOf(Math.abs(lnPrceDiff)) 
                     + ";" + poMaster.getRemarks();
 
-                String lsAuthCode = poMatrix.getAuthType("PURCHASE QUANTITY DISCREPANCY", String.valueOf(Math.abs(lnPrceDiff)), "");
-                poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+                String lsAuthCode = poMatrix.getAuthType("PURCHASE PRICE DISCREPANCY", String.valueOf(Math.abs(lnPrceDiff)), "");
+                if(!lsAuthCode.isEmpty()){
+                    poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+                }
             }
             
             //check if quantity of delivered items are higher than the purchase order
@@ -396,7 +404,9 @@ public class PurchaseOrderReceiving_General implements GValidator{
                     + ";" + poMaster.getRemarks();
 
                 String lsAuthCode = poMatrix.getAuthType("PURCHASE QUANTITY DISCREPANCY", String.valueOf(Math.abs(lnQtyxDiff)), "");
-                poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+                if(!lsAuthCode.isEmpty()){
+                    poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+                }
             }
             
             //chekc if quantity or price from delivery is higher the purchase order
