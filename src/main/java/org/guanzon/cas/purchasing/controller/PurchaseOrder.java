@@ -63,6 +63,7 @@ import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
+import org.guanzon.cas.parameter.Project;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
@@ -2139,6 +2140,19 @@ public class PurchaseOrder extends Transaction {
             if(object.getModel().getTermId() != null && !"".equals(object.getModel().getTermId())){
                 Master().setTermCode(object.getModel().getTermId());
             }
+        }
+
+        return poJSON;
+    }
+    
+    public JSONObject SearchProject(String value) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Project object = new ParamControllers(poGRider, logwrapr).Project();
+        object.setRecordStatus("1");
+
+        poJSON = object.searchRecord(value,true);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            Master().setReference(object.getModel().getProjectID());
         }
 
         return poJSON;
