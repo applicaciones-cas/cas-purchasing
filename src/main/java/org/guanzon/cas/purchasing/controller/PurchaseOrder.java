@@ -3152,6 +3152,22 @@ public class PurchaseOrder extends Transaction {
         return poJSON;
     }
     
+    public void ShowApprovalHistory() throws SQLException, GuanzonException, Exception{
+        CachedRowSet crs = getApprovalHistory();
+        
+        JSONObject loJSON = MiscUtil.getEntryBy(poGRider, poMaster.getTable(), (String) poMaster.getValue("sTransNox"));
+        
+        String entryBy = "";
+        String entryDate = "";
+        
+        if ("success".equals((String) loJSON.get("result"))){
+            entryBy = (String) loJSON.get("sCompnyNm");
+            entryDate = (String) loJSON.get("sEntryDte");
+        }
+        
+        showApprovalHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, poMaster.getColumn("nTranTotl"), crs);
+    }
+    
     public void ShowStatusHistory() throws SQLException, GuanzonException, Exception{
         CachedRowSet crs = getStatusHistory();
         
@@ -3207,7 +3223,7 @@ public class PurchaseOrder extends Transaction {
                         crs.updateString("cRefrStat", "VOID");
                         break;
                     case PurchaseOrderStatus.APPROVED:
-                        crs.updateString("cRefrStat", "APPROVED");
+                        crs.updateString("cRefrStat", "APRVL REQUESTD");
                         break;
                     case PurchaseOrderStatus.POSTED:
                         crs.updateString("cRefrStat", "POSTED");
