@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javax.sql.rowset.CachedRowSet;
 import javax.swing.JButton;
@@ -53,15 +52,10 @@ import org.guanzon.appdriver.constant.Logical;
 import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
-import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.inv.InventoryTransaction;
-import org.guanzon.cas.inv.services.InvControllers;
-import org.guanzon.cas.purchasing.model.Model_POR_Detail;
-import org.guanzon.cas.purchasing.model.Model_POR_Serial;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Detail;
 import org.guanzon.cas.purchasing.model.Model_POReturn_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingControllers;
@@ -144,6 +138,7 @@ public class PurchaseOrderReturn extends Transaction{
                     poJSON.put("message", "User is not an authorized approving officer..");
                     return poJSON;
                }
+               setApproving(lsUserIDxx);
             }
             //needs authorization thru authorization matrix
             else{
@@ -278,6 +273,7 @@ public class PurchaseOrderReturn extends Transaction{
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -411,6 +407,7 @@ public class PurchaseOrderReturn extends Transaction{
                         return poJSON;
                     }
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
 
@@ -510,6 +507,7 @@ public class PurchaseOrderReturn extends Transaction{
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -629,6 +627,7 @@ public class PurchaseOrderReturn extends Transaction{
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -785,6 +784,7 @@ public class PurchaseOrderReturn extends Transaction{
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -1683,6 +1683,7 @@ public class PurchaseOrderReturn extends Transaction{
                                 return poJSON;
                             }
                         }
+                        setApproving((String) poJSON.get("sUserIDxx"));
                     }
                 }
             

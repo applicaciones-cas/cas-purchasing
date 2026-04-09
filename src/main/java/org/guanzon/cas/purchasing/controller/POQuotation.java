@@ -36,7 +36,6 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
-import org.guanzon.appdriver.agent.systables.Model_Transaction_Attachment;
 import org.guanzon.appdriver.agent.systables.SysTableContollers;
 import org.guanzon.appdriver.agent.systables.TransactionAttachment;
 import org.guanzon.appdriver.base.GRiderCAS;
@@ -50,7 +49,6 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.appdriver.token.RequestAccess;
-import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.account.AP_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
 import org.guanzon.cas.inv.InvTransCons;
@@ -62,7 +60,6 @@ import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
-import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
@@ -201,6 +198,7 @@ public class POQuotation extends Transaction {
                  poJSON.put("message", "User is not an authorized approving officer..");
                  return poJSON;
             }
+            setApproving(lsUserIDxx);
         }  
         
         poJSON.put("result", "success");
@@ -271,6 +269,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -385,6 +384,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -499,6 +499,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -614,6 +615,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -728,6 +730,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -842,6 +845,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -954,6 +958,7 @@ public class POQuotation extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -2777,6 +2782,7 @@ public class POQuotation extends Transaction {
                             return poJSON;
                         }
                     }
+                    setApproving((String) poJSON.get("sUserIDxx"));
                 }
             break;
         }

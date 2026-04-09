@@ -188,6 +188,7 @@ public class POQuotationRequest extends Transaction {
                  poJSON.put("message", "User is not an authorized approving officer..");
                  return poJSON;
             }
+            setApproving(lsUserIDxx);
         }  
         
         poJSON.put("result", "success");
@@ -258,6 +259,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -372,6 +374,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -487,6 +490,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -602,6 +606,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -716,6 +721,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -830,6 +836,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -941,6 +948,7 @@ public class POQuotationRequest extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
