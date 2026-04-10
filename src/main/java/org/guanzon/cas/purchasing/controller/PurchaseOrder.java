@@ -376,6 +376,7 @@ public class PurchaseOrder extends Transaction {
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
 //
@@ -1388,6 +1389,7 @@ public class PurchaseOrder extends Transaction {
                     poJSON.put("message", "User is not an authorized approving officer..");
                     return poJSON;
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
         poJSON = setValueToOthers(lsStatus);
