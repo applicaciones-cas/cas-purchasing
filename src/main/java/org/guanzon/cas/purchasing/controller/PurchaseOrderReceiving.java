@@ -212,6 +212,7 @@ public class PurchaseOrderReceiving extends Transaction {
                      poJSON.put("message", "User is not an authorized approving officer..");
                      return poJSON;
                 }
+                setApproving(lsUserIDxx);
             }
             //needs authorization thru authorization matrix
             else{
@@ -356,6 +357,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -539,6 +541,8 @@ public class PurchaseOrderReceiving extends Transaction {
                         return poJSON;
                     }
                 }
+                
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
             
             //Set receive qty to Purchase Order
@@ -653,6 +657,8 @@ public class PurchaseOrderReceiving extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -789,6 +795,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -1203,6 +1210,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -1446,6 +1454,7 @@ public class PurchaseOrderReceiving extends Transaction {
                             if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
                                 return poJSON;
                             }
+                            setApproving(lsUserIDxx);
                         }
                     }
 
@@ -5433,6 +5442,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         return poJSON;
                     }
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
                 
