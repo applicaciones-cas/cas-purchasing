@@ -65,7 +65,9 @@ import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.Project;
 import org.guanzon.cas.parameter.Term;
+import org.guanzon.cas.parameter.model.Model_Project;
 import org.guanzon.cas.parameter.services.ParamControllers;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.guanzon.cas.purchasing.model.Model_PO_Detail;
 import org.guanzon.cas.purchasing.model.Model_PO_Master;
 import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
@@ -91,7 +93,7 @@ public class PurchaseOrder extends Transaction {
     List<POQuotation> poPOQuotationRemovedStatus;
     List<Model> paDetailRemoved;
     CashflowControllers poPaymentRequest;
-    ParamControllers poProject;
+    Model_Project poProject;
     String PayeeID;
     String allowedDepartment = System.getProperty("allowed.department");
     private boolean pbApproval = false;
@@ -105,7 +107,7 @@ public class PurchaseOrder extends Transaction {
         poPOQuotation = new ArrayList<>();
         poPOQuotationStatus = new ArrayList<>();
         poPOQuotationRemovedStatus = new ArrayList<>();
-        poProject = new ParamControllers(poGRider, logwrapr);
+        poProject = new ParamModels(poGRider).Project();
 
         return initialize();
     }
@@ -287,26 +289,26 @@ public class PurchaseOrder extends Transaction {
     private JSONObject updateProjectTitle(String fsProjectCode, String fsStatus)
             throws GuanzonException, SQLException, CloneNotSupportedException {
 
-        poProject.Project().initialize();
+        poProject.initialize();
 
-        poJSON = poProject.Project().openRecord(fsProjectCode);
+        poJSON = poProject.openRecord(fsProjectCode);
         if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poJSON = poProject.Project().updateRecord();
+        poJSON = poProject.updateRecord();
         if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
             return poJSON;
         }
 
         switch (fsStatus) {
             case PurchaseOrderStatus.OPEN:
-                poJSON = poProject.Project().getModel().isUsed(true);
+                poJSON = poProject.isUsed(true);
                 break;
             case PurchaseOrderStatus.CANCELLED:
-                poJSON = poProject.Project().getModel().isUsed(false);
+                poJSON = poProject.isUsed(false);
                 break;
             case PurchaseOrderStatus.VOID:
-                poJSON = poProject.Project().getModel().isUsed(false);
+                poJSON = poProject.isUsed(false);
                 break;
         }
 
@@ -336,8 +338,7 @@ public class PurchaseOrder extends Transaction {
             throws CloneNotSupportedException, SQLException, GuanzonException {
 
         poJSON = new JSONObject();
-        poProject.Project().setWithParentClass(true);
-        poJSON = poProject.Project().saveRecord();
+        poJSON = poProject.saveRecord();
         if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -376,6 +377,7 @@ public class PurchaseOrder extends Transaction {
                 if (!"success".equals((String) poJSON.get("result"))) {
                     return poJSON;
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
 //
@@ -1388,6 +1390,7 @@ public class PurchaseOrder extends Transaction {
                     poJSON.put("message", "User is not an authorized approving officer..");
                     return poJSON;
                 }
+                setApproving((String) poJSON.get("sUserIDxx"));
             }
         }
         poJSON = setValueToOthers(lsStatus);
@@ -3905,8 +3908,8 @@ public class PurchaseOrder extends Transaction {
         poJSON = new JSONObject();
 
         String lsSQL = "SELECT COUNT(*) AS nCount "
-                + "FROM po_master a "
-                + "LEFT JOIN project b ON a.sReferNox = b.sProjCode "
+                + "FROM PO_Master a "
+                + "LEFT JOIN Project b ON a.sReferNox = b.sProjCode "
                 + "WHERE a.sReferNox = " + SQLUtil.toSQL(fsProjectCode);
 
         System.out.println("EXECUTING SQL: " + lsSQL);
