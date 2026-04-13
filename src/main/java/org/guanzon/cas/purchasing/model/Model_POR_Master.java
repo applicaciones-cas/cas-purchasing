@@ -22,6 +22,7 @@ import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
+import org.guanzon.cas.parameter.model.Model_Department;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.model.Model_Term;
 import org.guanzon.cas.parameter.services.ParamModels;
@@ -39,6 +40,7 @@ public class Model_POR_Master extends Model {
     Model_Industry poIndustry;
     Model_Category poCategory;
     Model_Company poCompany;
+    Model_Department poDepartment;
     Model_Term poTerm;
     Model_Client_Master poSupplier;
     Model_Client_Address poSupplierAdress;
@@ -92,6 +94,7 @@ public class Model_POR_Master extends Model {
             poCategory = model.Category();
             poCompany = model.Company();
             poTerm = model.Term();
+            poDepartment = model.Department();
 
             ClientModels clientModel = new ClientModels(poGRider);
             poSupplier = clientModel.ClientMaster();
@@ -593,6 +596,27 @@ public class Model_POR_Master extends Model {
         } else {
             poCompany.initialize();
             return poCompany;
+        }
+    }
+    
+    public Model_Department Department() throws SQLException, GuanzonException {
+        if (!"".equals((String) getValue("sDeptIDxx"))) {
+            if (poDepartment.getEditMode() == EditMode.READY
+                    && poDepartment.getDepartmentId().equals((String) getValue("sDeptIDxx"))) {
+                return poDepartment;
+            } else {
+                poJSON = poDepartment.openRecord((String) getValue("sDeptIDxx"));
+
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poDepartment;
+                } else {
+                    poDepartment.initialize();
+                    return poDepartment;
+                }
+            }
+        } else {
+            poDepartment.initialize();
+            return poDepartment;
         }
     }
 
