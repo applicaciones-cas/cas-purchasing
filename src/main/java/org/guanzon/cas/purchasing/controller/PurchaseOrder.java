@@ -311,7 +311,9 @@ public class PurchaseOrder extends Transaction {
                 poJSON = poProject.isUsed(false);
                 break;
         }
-
+        poProject.setModifiedDate(poGRider.getServerDate());
+        poProject.setModifyingId(poGRider.getUserID());
+        
         if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -503,14 +505,15 @@ public class PurchaseOrder extends Transaction {
         JSONObject poJSON = new JSONObject();
         try {
             if (Master().getEditMode() == EditMode.ADDNEW) {
-                if (Master().getReference() != null && !Master().getReference().isEmpty()) {
-                    poJSON = saveProjectTitle(Master().getTransactionStatus());
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        poGRider.rollbackTrans();
-                        return poJSON;
+                if (poGRider.getDepartment().equals(allowedDepartment)) {
+                    if (Master().getReference() != null && !Master().getReference().isEmpty()) {
+                        poJSON = saveProjectTitle(Master().getTransactionStatus());
+                        if (!"success".equals((String) poJSON.get("result"))) {
+                            poGRider.rollbackTrans();
+                            return poJSON;
+                        }
                     }
                 }
-
             }
             poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
             if (!"success".equals((String) poJSON.get("result"))) {
