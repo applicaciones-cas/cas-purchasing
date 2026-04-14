@@ -362,12 +362,12 @@ public class PurchaseOrder extends Transaction {
             if (Master().getTransactionStatus().equals(PurchaseOrderStatus.OPEN)
                     || Master().getTransactionStatus().equals(PurchaseOrderStatus.CANCELLED)
                     || Master().getTransactionStatus().equals(PurchaseOrderStatus.VOID)) {
-
-                poJSON = setProjectTitle(Master().getTransactionStatus());
-                if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
-                    return poJSON;
+                if(Master().getReference()!=null && !Master().getReference().isEmpty()){
+                    poJSON = setProjectTitle(Master().getTransactionStatus());
+                    if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
                 }
-
             }
         }
 
@@ -503,11 +503,14 @@ public class PurchaseOrder extends Transaction {
         JSONObject poJSON = new JSONObject();
         try {
             if (Master().getEditMode() == EditMode.ADDNEW) {
-                poJSON = saveProjectTitle(Master().getTransactionStatus());
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    poGRider.rollbackTrans();
-                    return poJSON;
+                if (Master().getReference() != null && !Master().getReference().isEmpty()) {
+                    poJSON = saveProjectTitle(Master().getTransactionStatus());
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
                 }
+
             }
             poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
             if (!"success".equals((String) poJSON.get("result"))) {
