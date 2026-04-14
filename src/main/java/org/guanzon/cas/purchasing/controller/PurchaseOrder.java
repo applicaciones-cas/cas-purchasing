@@ -506,11 +506,15 @@ public class PurchaseOrder extends Transaction {
         try {
             if (Master().getEditMode() == EditMode.ADDNEW) {
                 if (poGRider.getDepartment().equals(allowedDepartment)) {
-                    if (Master().getReference() != null && !Master().getReference().isEmpty()) {
-                        poJSON = saveProjectTitle(Master().getTransactionStatus());
-                        if (!"success".equals((String) poJSON.get("result"))) {
-                            poGRider.rollbackTrans();
-                            return poJSON;
+                    if (Master().getTransactionStatus().equals(PurchaseOrderStatus.OPEN)
+                    || Master().getTransactionStatus().equals(PurchaseOrderStatus.CANCELLED)
+                    || Master().getTransactionStatus().equals(PurchaseOrderStatus.VOID)) {
+                        if (Master().getReference() != null && !Master().getReference().isEmpty()) {
+                            poJSON = saveProjectTitle(Master().getTransactionStatus());
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                poGRider.rollbackTrans();
+                                return poJSON;
+                            }
                         }
                     }
                 }
