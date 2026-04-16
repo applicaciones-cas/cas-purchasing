@@ -311,7 +311,9 @@ public class PurchaseOrder extends Transaction {
                 poJSON = poProject.isUsed(false);
                 break;
         }
-
+        poProject.setModifiedDate(poGRider.getServerDate());
+        poProject.setModifyingId(poGRider.getUserID());
+        
         if ("error".equalsIgnoreCase((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -503,14 +505,19 @@ public class PurchaseOrder extends Transaction {
         JSONObject poJSON = new JSONObject();
         try {
             if (Master().getEditMode() == EditMode.ADDNEW) {
-                if (Master().getReference() != null && !Master().getReference().isEmpty()) {
-                    poJSON = saveProjectTitle(Master().getTransactionStatus());
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        poGRider.rollbackTrans();
-                        return poJSON;
+                if (poGRider.getDepartment().equals(allowedDepartment)) {
+                    if (Master().getTransactionStatus().equals(PurchaseOrderStatus.OPEN)
+                    || Master().getTransactionStatus().equals(PurchaseOrderStatus.CANCELLED)
+                    || Master().getTransactionStatus().equals(PurchaseOrderStatus.VOID)) {
+                        if (Master().getReference() != null && !Master().getReference().isEmpty()) {
+                            poJSON = saveProjectTitle(Master().getTransactionStatus());
+                            if (!"success".equals((String) poJSON.get("result"))) {
+                                poGRider.rollbackTrans();
+                                return poJSON;
+                            }
+                        }
                     }
                 }
-
             }
             poJSON = saveUpdates(PurchaseOrderStatus.CONFIRMED);
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -2014,7 +2021,8 @@ public class PurchaseOrder extends Transaction {
                 + "  c.sCompnyNm,"
                 + "  e.sCompnyNm, "
                 + "  f.sDescript,"
-                + "  a.sBranchCd"
+                + "  a.sBranchCd,"
+                + "  a.sReferNox"
                 + " FROM PO_Master a "
                 + " LEFT JOIN Industry b ON a.sIndstCdx = b.sIndstCdx "
                 + " LEFT JOIN Company c ON c.sCompnyID = a.sCompnyID "
@@ -2022,7 +2030,7 @@ public class PurchaseOrder extends Transaction {
                 + " , Category f ";
     }
 
-    public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID) throws CloneNotSupportedException, SQLException, GuanzonException {
+    public JSONObject SearchTransaction(String fsValue, String fsSupplierID, String fsReferID,String fsTransNo, int fnSort) throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
         String lsTransStat = "";
         String lsBranch = "";
@@ -2043,7 +2051,8 @@ public class PurchaseOrder extends Transaction {
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
                 " a.sSupplier LIKE " + SQLUtil.toSQL("%" + fsSupplierID),
                 " a.sCategrCd LIKE " + SQLUtil.toSQL("%" + Master().getCategoryCode()),
-                " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsReferID));
+                " a.sReferNox LIKE " + SQLUtil.toSQL("%" + fsReferID),
+                " a.sTransNox LIKE " + SQLUtil.toSQL("%" + fsTransNo));
 
         String lsSQL = MiscUtil.addCondition(SQL_BROWSE, lsFilterCondition);
         if (!psTranStat.isEmpty()) {
@@ -2058,10 +2067,10 @@ public class PurchaseOrder extends Transaction {
         poJSON = ShowDialogFX.Browse(poGRider,
                 lsSQL,
                 fsValue,
-                "Transaction Date»Transaction No»Company»Supplier",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
-                "dTransact»sTransNox»c.sCompnyNm»e.sCompnyNm",
-                1);
+                "Transaction Date»Transaction No»Reference No»Company»Supplier",
+                "dTransact»sTransNox»a.sReferNox»c.sCompnyNm»e.sCompnyNm",
+                "dTransact»sTransNox»a.sReferNox»e.sCompnyNm",
+                fnSort);
 
         if (poJSON != null) {
             return OpenTransaction((String) poJSON.get("sTransNox"));
@@ -2807,7 +2816,7 @@ public class PurchaseOrder extends Transaction {
         return true;
     }
 
-    public JSONObject getPurchaseOrder(String fsSupplierID, String fsReferID) throws SQLException, GuanzonException {
+    public JSONObject getPurchaseOrder(String fsSupplierID, String fsReferID,String fsTransactionNo) throws SQLException, GuanzonException {
         JSONObject loJSON = new JSONObject();
         String lsTransStat = "";
         if (psTranStat.length() > 1) {
