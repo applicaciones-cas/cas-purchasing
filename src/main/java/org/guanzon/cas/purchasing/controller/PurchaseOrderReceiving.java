@@ -2927,15 +2927,27 @@ public class PurchaseOrderReceiving extends Transaction {
     
     public Double getAdvancePayment() {
         double ldblAmtPaid = 0.0000;
+        double ldblPOAmtPaid = 0.0000;
         double ldblAdvPaymentTotal = 0.0000;
         List<String> llistPurchaseOrder = new ArrayList<>();
         try {
             for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
                 if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
                     if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
-                            ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
-                            ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
-                            llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+                        //Get Amount Paid from PO that not yet reflect on previous PO Receiving
+                        //1. Check Previous PO Receiving of PO that is already PAID
+                        //2. Check the PO Qty and Amount reflected on PAID PO Receiving
+                        ldblPOAmtPaid = getAdvancePayment(Detail(lnCtr).getOrderNo()); 
+                        ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
+                        if(ldblPOAmtPaid > 0.0000){
+                            if(ldblAmtPaid > ldblPOAmtPaid){
+                                ldblAmtPaid = ldblAmtPaid - ldblPOAmtPaid;
+                            } else {
+                                ldblAmtPaid = 0.0000;
+                            }
+                        }
+                        ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
+                        llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
                     } 
                 }
             }
@@ -2945,6 +2957,66 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return ldblAdvPaymentTotal;
     }
+    
+    private Double getAdvancePayment(String fsPOTransNo) throws SQLException, GuanzonException {
+        Double ldblAmtPaid = 0.0000;
+        String lsSQL =  " SELECT SUM(b.nUnitPrce * b.nQuantity) AS nPOAmount, a.sTransNox AS sTransNox " +
+                        " FROM PO_Receiving_Master a " +
+                        " LEFT JOIN PO_Receiving_Detail b ON b.sTransNox = a.sTransNox ";
+        try {
+            lsSQL = MiscUtil.addCondition(lsSQL,
+                    " b.sOrderNox = " + SQLUtil.toSQL(fsPOTransNo)
+                    + " AND a.cPurposex = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.Purpose.REGULAR)
+                    + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+                    + " AND a.sTransNox != " + SQLUtil.toSQL(Master().getTransactionNo()) 
+                    + " AND a.dTransact < " + SQLUtil.toSQL(xsDateShort(Master().getTransactionDate())) 
+            );
+            lsSQL = lsSQL + " GROUP BY a.sTransNox ";
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            poJSON = new JSONObject();
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                while (loRS.next()) {
+                    // Print the result set
+                    System.out.println("--------------------------PREVIOUS PO RECEIVING--------------------------");
+                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                    System.out.println("nPOAmount: " + loRS.getDouble("nPOAmount"));
+                    System.out.println("------------------------------------------------------------------------------");
+                    ldblAmtPaid += loRS.getDouble("nPOAmount");
+                }
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            System.out.println("ERROR: " + e.getMessage());
+            return 0.0000;
+        }
+        
+        return ldblAmtPaid;
+    }
+    
+    //04162026 - arsiela
+//    public Double getAdvancePayment() {
+//        double ldblAmtPaid = 0.0000;
+//        double ldblAdvPaymentTotal = 0.0000;
+//        List<String> llistPurchaseOrder = new ArrayList<>();
+//        try {
+//            for(int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++){
+//                if(Detail(lnCtr).getOrderNo() != null && !"".equals(Detail(lnCtr).getOrderNo())){
+//                    if(!llistPurchaseOrder.contains(Detail(lnCtr).getOrderNo())){
+//                            ldblAmtPaid = Detail(lnCtr).PurchaseOrderMaster().getAmountPaid().doubleValue();
+//                            ldblAdvPaymentTotal = ldblAdvPaymentTotal + ldblAmtPaid;
+//                            llistPurchaseOrder.add(Detail(lnCtr).getOrderNo());
+//                    } 
+//                }
+//            }
+//        
+//        } catch (SQLException | GuanzonException ex) {
+//            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+//        }
+//        return ldblAdvPaymentTotal;
+//    }
+//    
+    
     
     
     //Arsiela 03-06-2026 
@@ -3364,8 +3436,10 @@ public class PurchaseOrderReceiving extends Transaction {
                     + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
                     + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
                     + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
-                    + " OR a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
-                    + " ) "
+                    + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+                    + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+                    + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+                    + " ) ) )"
             );
             
             if(psIndustryId == null || "".equals(psIndustryId)){
@@ -4608,6 +4682,8 @@ public class PurchaseOrderReceiving extends Transaction {
         
 //        Master().setAmountPaid(getAdvancePayment());
         
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
     
@@ -4669,6 +4745,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
         
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
     
@@ -6188,7 +6266,8 @@ public class PurchaseOrderReceiving extends Transaction {
 //            return poJSON;
 //        }
         
-        
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
         return poJSON;
     }
 
