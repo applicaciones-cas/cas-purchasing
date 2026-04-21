@@ -2207,11 +2207,31 @@ public class PurchaseOrderReceiving extends Transaction {
 //            if ("error".equals((String) poJSON.get("result"))) {
 //                return poJSON;
 //            }
+            
+            /**
+             * Author: Teejei De Celis Date: April 21, 2026
+             *
+             * Purpose: Validates duplicate entry for PO Receiving detail (Order
+             * No, Stock ID, Unit Price).
+             *
+             * Business Rule: If a duplicate record is found, the system must
+             * immediately stop further processing and return an error response
+             * to prevent saving of duplicate entries.
+             *
+             * Behavior: - Calls checkExistingDetailDuplicate(row) - If result
+             * is "error", processing is terminated and response is returned
+             * immediately
+             */
+            poJSON = checkExistingDetailDuplicate(object.getModel().getStockId(),object.getModel().Inventory().getCost().doubleValue(),row);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
 
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
             Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
             Detail(row).setUnitPrce(object.getModel().Inventory().getCost().doubleValue());
+            System.out.println("Stockid : " + Detail(row).getStockId());
         }
         
         System.out.println("StockID : " + Detail(row).Inventory().getStockId());
@@ -2253,7 +2273,28 @@ public class PurchaseOrderReceiving extends Transaction {
 //            if ("error".equals((String) poJSON.get("result"))) {
 //                return poJSON;
 //            }
-
+            
+            /**
+             * Author: Teejei De Celis Date: April 21, 2026
+             *
+             * Purpose: Validates duplicate entry for PO Receiving detail (Order
+             * No, Stock ID, Unit Price).
+             *
+             * Business Rule: If a duplicate record is found, the system must
+             * immediately stop further processing and return an error response
+             * to prevent saving of duplicate entries.
+             *
+             * Behavior: - Calls checkExistingDetailDuplicate(row) - If result
+             * is "error", processing is terminated and response is returned
+             * immediately
+             */
+            if(psIndustryId.equals("09")){
+                poJSON = checkExistingDetailDuplicate(object.getModel().getStockId(),object.getModel().Inventory().getCost().doubleValue(),row);
+                if ("error".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                }
+            }
+            
             Detail(row).setStockId(object.getModel().getStockId());
             Detail(row).setUnitType(object.getModel().Inventory().getUnitType());
             Detail(row).isSerialized(object.getModel().Inventory().isSerialized());
@@ -3245,6 +3286,69 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
 
+    /**
+     * Checks for duplicate detail entries within the current transaction row
+     * set.
+     *
+     * <p>
+     * This method validates whether the given row contains a duplicate
+     * combination of Order Number, Stock ID, and Unit Price compared to other
+     * rows in the detail list. A duplicate is identified only when all three
+     * fields are exactly the same.</p>
+     *
+     * <p>
+     * <b>Duplicate Condition:</b></p>
+     * <ul>
+     * <li>OrderNo must be the same</li>
+     * <li>StockId must be the same</li>
+     * <li>UnitPrce must be the same</li>
+     * </ul>
+     *
+     * <p>
+     * <b>Test Case Reference:</b> PO Receiving - Same Item Validation (Item
+     * T)</p>
+     * <p>
+     * <b>Test Case Date:</b> April 10, 2026</p>
+     *
+     * @param row the index of the current detail row to validate against other
+     * rows
+     * @return JSONObject containing:
+     * <ul>
+     * <li>"result" - "error" if duplicate found, otherwise "success"</li>
+     * <li>"message" - description of validation result</li>
+     * <li>"row" - row index where duplicate was found or checked row</li>
+     * </ul>
+     *
+     * @author Teejei De Celis
+     * @created April 21, 2026
+     */
+    public JSONObject checkExistingDetailDuplicate(String stockId, double unitPrice,int row) {
+
+         poJSON = new JSONObject();
+
+        for (int lnCtr = 0; lnCtr < getDetailCount(); lnCtr++) {
+
+            if (lnCtr == row) {
+                continue;
+            }
+
+            if (String.valueOf(Detail(row).getOrderNo()).equals(String.valueOf(Detail(lnCtr).getOrderNo()))
+                    && stockId.equals(String.valueOf(Detail(lnCtr).getStockId()))
+                    && unitPrice == Double.parseDouble(String.valueOf(Detail(lnCtr).getUnitPrce()))) {
+
+                poJSON.put("result", "error");
+                poJSON.put("message", "Duplicate entry found at row " + (lnCtr + 1));
+                poJSON.put("row", lnCtr);
+                return poJSON;
+            }
+        }
+
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
+        poJSON.put("row", row);
+        return poJSON;
+    }
+    
     public JSONObject loadPurchaseOrderReceiving(String formName, String companyId, String supplierId, String referenceNo) {
         try {
             if (companyId == null) {
