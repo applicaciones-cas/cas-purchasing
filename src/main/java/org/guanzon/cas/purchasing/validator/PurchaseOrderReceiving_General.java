@@ -417,16 +417,18 @@ public class PurchaseOrderReceiving_General implements GValidator{
             }
         }
         
-        if(poMatrix.hasAuthRequest()){
-            try {
-                poJSON = poMatrix.processAuth();
-            } catch (GuanzonException ex) {
-                poJSON.put("result", "error");
-                poJSON.put("message", ex.getMessage());
-                return poJSON;
-            }
-            return poJSON;
-        }
+        //mac 2026.04.23
+        // disable ko muna ito, test muna
+//        if(poMatrix.hasAuthRequest()){
+//            try {
+//                poJSON = poMatrix.processAuth();
+//            } catch (GuanzonException ex) {
+//                poJSON.put("result", "error");
+//                poJSON.put("message", ex.getMessage());
+//                return poJSON;
+//            }
+//            return poJSON;
+//        }
         
         poJSON.put("result", "success");
         return poJSON;
