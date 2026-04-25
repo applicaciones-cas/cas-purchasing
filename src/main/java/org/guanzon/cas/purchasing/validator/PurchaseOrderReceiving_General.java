@@ -198,7 +198,7 @@ public class PurchaseOrderReceiving_General implements GValidator{
     private JSONObject validateConfirmed() throws SQLException{
         poJSON = new JSONObject();
         
-        if(poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
+        if(!poMaster.getTransactionStatus().equalsIgnoreCase(PurchaseOrderReceivingStatus.OPEN)){
             poJSON.put("message", "Invalid Transaction Status.");
             return poJSON;
         }
