@@ -13,7 +13,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.guanzon.appdriver.agent.MatrixAuthManager;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
@@ -26,6 +29,8 @@ import org.json.simple.JSONObject;
  * @author Arsiela
  */
 public class POQuotation_LP implements GValidator{
+    MatrixAuthManager poMatrix;
+
     GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
@@ -216,9 +221,33 @@ public class POQuotation_LP implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validatePosted(){
+    private JSONObject validatePosted() throws SQLException{
         poJSON = new JSONObject();
-                
+        String lsRemarks;
+        poMatrix = new MatrixAuthManager(poGRider, SOURCE_CD, poMaster.getTransactionNo());
+
+        lsRemarks = poMaster.getBranchCode()  
+            + "/" + poMaster.getTransactionNo() 
+            + ";" + SQLUtil.dateFormat(poMaster.getTransactionDate(), "yyyy-MM-dd") 
+            + ";" + poMaster.getTransactionTotal().toString() 
+            + ";" + poMaster.getRemarks();
+        
+        String lsAuthCode = poMatrix.getAuthType("PURCHASE ORDER MATRIX", String.valueOf(poMaster.getTransactionTotal().toString()), "");
+        
+        if(!lsAuthCode.isEmpty()){
+            poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+        }
+        if(poMatrix.hasAuthRequest()){
+            try {
+                poJSON = poMatrix.processAuth();
+            } catch (GuanzonException ex) {
+                poJSON.put("result", "error");
+                poJSON.put("message", ex.getMessage());
+                return poJSON;
+            }
+            return poJSON;
+        }
+        
         poJSON.put("result", "success");
         return poJSON;
     }
