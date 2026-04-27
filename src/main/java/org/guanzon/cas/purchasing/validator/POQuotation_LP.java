@@ -94,6 +94,8 @@ public class POQuotation_LP implements GValidator{
             }
         } catch (SQLException ex) {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(POQuotation_LP.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;
@@ -208,21 +210,9 @@ public class POQuotation_LP implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateConfirmed()throws SQLException{
+    private JSONObject validateConfirmed()throws SQLException, GuanzonException{
         poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        return poJSON;
-    }
-    
-    private JSONObject validateDisApproved(){
-        poJSON = new JSONObject();
-                
-        poJSON.put("result", "success");
-        return poJSON;
-    }
-    
-    private JSONObject validatePosted() throws SQLException{
-        poJSON = new JSONObject();
+
         String lsRemarks;
         poMatrix = new MatrixAuthManager(poGRider, SOURCE_CD, poMaster.getTransactionNo());
 
@@ -237,16 +227,24 @@ public class POQuotation_LP implements GValidator{
         if(!lsAuthCode.isEmpty()){
             poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
         }
+        
         if(poMatrix.hasAuthRequest()){
-            try {
-                poJSON = poMatrix.processAuth();
-            } catch (GuanzonException ex) {
-                poJSON.put("result", "error");
-                poJSON.put("message", ex.getMessage());
-                return poJSON;
-            }
-            return poJSON;
+            poJSON = poMatrix.processAuth();
         }
+
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject validateDisApproved(){
+        poJSON = new JSONObject();
+        
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    private JSONObject validatePosted(){
+        poJSON = new JSONObject();
         
         poJSON.put("result", "success");
         return poJSON;
