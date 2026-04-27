@@ -13,7 +13,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.guanzon.appdriver.agent.MatrixAuthManager;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.InvTransCons;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Detail;
@@ -26,6 +29,8 @@ import org.json.simple.JSONObject;
  * @author Arsiela
  */
 public class POQuotation_LP implements GValidator{
+    MatrixAuthManager poMatrix;
+
     GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
@@ -89,6 +94,8 @@ public class POQuotation_LP implements GValidator{
             }
         } catch (SQLException ex) {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        } catch (GuanzonException ex) {
+            Logger.getLogger(POQuotation_LP.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return poJSON;
@@ -203,22 +210,42 @@ public class POQuotation_LP implements GValidator{
         return poJSON;
     }
     
-    private JSONObject validateConfirmed()throws SQLException{
+    private JSONObject validateConfirmed()throws SQLException, GuanzonException{
         poJSON = new JSONObject();
+
+        String lsRemarks;
+        poMatrix = new MatrixAuthManager(poGRider, SOURCE_CD, poMaster.getTransactionNo());
+
+        lsRemarks = poMaster.getBranchCode()  
+            + "/" + poMaster.getTransactionNo() 
+            + ";" + SQLUtil.dateFormat(poMaster.getTransactionDate(), "yyyy-MM-dd") 
+            + ";" + poMaster.getTransactionTotal().toString() 
+            + ";" + poMaster.getRemarks();
+        
+        String lsAuthCode = poMatrix.getAuthType("PURCHASE ORDER MATRIX", String.valueOf(poMaster.getTransactionTotal().toString()), "");
+        
+        if(!lsAuthCode.isEmpty()){
+            poMatrix.addAuthRequest(lsAuthCode, "", "", lsRemarks);
+        }
+        
+        if(poMatrix.hasAuthRequest()){
+            poJSON = poMatrix.processAuth();
+        }
+
         poJSON.put("result", "success");
         return poJSON;
     }
     
     private JSONObject validateDisApproved(){
         poJSON = new JSONObject();
-                
+        
         poJSON.put("result", "success");
         return poJSON;
     }
     
     private JSONObject validatePosted(){
         poJSON = new JSONObject();
-                
+        
         poJSON.put("result", "success");
         return poJSON;
     }
