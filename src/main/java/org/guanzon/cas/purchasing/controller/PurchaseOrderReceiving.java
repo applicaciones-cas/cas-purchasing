@@ -308,86 +308,87 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
 
-        MatrixAuthChecker check = null; 
-
-        if(!pbWthParent){
-            //validator
+        //Disabled MatrixAuthChecker based on sir marlon and ma'am she 04-28-2026 11:20AM
+//        MatrixAuthChecker check = null; 
+//
+//        if(!pbWthParent){
+//            //validator
             poJSON = isEntryOkay(lsStatus);
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
-
-            //get the matrix return from isEntryOkey
-            JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
-
-            //Check if there is a authorization request
-            if(loMatrix != null){
-                //initialized MatrixAuthChecker object
-                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
-                //load the current autorization matrix request
-                poJSON = check.loadAuth();
-
-                //check if loading is okey
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    return poJSON;
-                }
-
-                //check if authorization request is already approved by all authorizing personnel
-                if(!check.isAuthOkay()){
-                    //check if authorization request allows system approval
-                    if(!check.isAllowSys()){
-                        //extract the JSONObject from JSONArray
-                        JSONObject loJson = (JSONObject)loMatrix.get(0);
-
-                        //check if current user is authorized to approved this transaction
-                        poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-
-                        //If not authorized/request system approval
-                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
-                            poJSON = ShowDialogFX.getUserApproval(poGRider);
-                            if("error".equals((String)poJSON.get("result"))){
-                                return poJSON;
-                            }
-
-                            //check if approving officer is authorized
-                            String lsUserIDxx = poJSON.get("sUserIDxx").toString();
-                            //check if current user is authorized to approved this transaction
-                            poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
-                            //user is not authorized
-                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
-                                return poJSON;
-                            }
-                            setApproving(lsUserIDxx);
-                        }
-                    }
-
-                    //check if authorization request is already approved by all authorizing personnel
-                    if(!check.isAuthOkay()){
-                        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
-
-                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
-                        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
-                        if (!"success".equals((String) poJSON.get("result"))) {
-                            poGRider.rollbackTrans();
-                            return poJSON;
-                        }
-
-                        poGRider.commitTrans();
-
-                        poJSON.put("result", "matrix");
-                        return poJSON;
-                    }
-                }
-            }
-            //there are no authorization event request
-            else{
+//
+//            //get the matrix return from isEntryOkey
+//            JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
+//
+//            //Check if there is a authorization request
+//            if(loMatrix != null){
+//                //initialized MatrixAuthChecker object
+//                check = new MatrixAuthChecker(poGRider, SOURCE_CODE, Master().getTransactionNo());
+//                //load the current autorization matrix request
+//                poJSON = check.loadAuth();
+//
+//                //check if loading is okey
+//                if (!"success".equals((String) poJSON.get("result"))) {
+//                    return poJSON;
+//                }
+//
+//                //check if authorization request is already approved by all authorizing personnel
+//                if(!check.isAuthOkay()){
+//                    //check if authorization request allows system approval
+//                    if(!check.isAllowSys()){
+//                        //extract the JSONObject from JSONArray
+//                        JSONObject loJson = (JSONObject)loMatrix.get(0);
+//
+//                        //check if current user is authorized to approved this transaction
+//                        poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
+//
+//                        //If not authorized/request system approval
+//                        if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+//                            poJSON = ShowDialogFX.getUserApproval(poGRider);
+//                            if("error".equals((String)poJSON.get("result"))){
+//                                return poJSON;
+//                            }
+//
+//                            //check if approving officer is authorized
+//                            String lsUserIDxx = poJSON.get("sUserIDxx").toString();
+//                            //check if current user is authorized to approved this transaction
+//                            poJSON = check.authTrans((String) loJson.get("sAuthType"), poGRider.getUserID());
+//                            //user is not authorized
+//                            if(!"success".equalsIgnoreCase((String)poJSON.get("result"))){
+//                                return poJSON;
+//                            }
+//                            setApproving(lsUserIDxx);
+//                        }
+//                    }
+//
+//                    //check if authorization request is already approved by all authorizing personnel
+//                    if(!check.isAuthOkay()){
+//                        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, Master().getTransactionNo());
+//
+//                        lsStatus = Character.toString((char)(64 + Integer.parseInt(lsStatus)));
+//                        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbConfirm, true);
+//                        if (!"success".equals((String) poJSON.get("result"))) {
+//                            poGRider.rollbackTrans();
+//                            return poJSON;
+//                        }
+//
+//                        poGRider.commitTrans();
+//
+//                        poJSON.put("result", "matrix");
+//                        return poJSON;
+//                    }
+//                }
+//            }
+//            //there are no authorization event request
+//            else{
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
                 poJSON = seekApproval();
                 if("error".equalsIgnoreCase((String)poJSON.get("result"))){
                     return poJSON;
                 }
-            }
-        }
+//            }
+//        }
 
         //Set receive qty to Purchase Order / PO Return
         poJSON = setValueToOthers(lsStatus);
@@ -468,10 +469,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 poGRider.rollbackTrans();
                 return poJSON;
             }
-
-            if(check != null){
-                check.postAuth();
-            }
+            
+            //Disabled MatrixAuthChecker based on sir marlon and ma'am she 04-28-2026 11:20AM
+//            if(check != null){
+//                check.postAuth();
+//            }
 
             poGRider.commitTrans();
 
