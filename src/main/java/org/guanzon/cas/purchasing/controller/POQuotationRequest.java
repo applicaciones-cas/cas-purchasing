@@ -7,6 +7,7 @@ package org.guanzon.cas.purchasing.controller;
 
 import java.io.File;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -50,9 +51,11 @@ import org.guanzon.cas.inv.Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
+import org.guanzon.cas.parameter.Category;
 import org.guanzon.cas.parameter.CategoryLevel2;
 import org.guanzon.cas.parameter.Company;
 import org.guanzon.cas.parameter.Department;
+import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.ModelVariant;
 import org.guanzon.cas.parameter.Term;
 import org.guanzon.cas.parameter.services.ParamControllers;
@@ -76,9 +79,7 @@ public class POQuotationRequest extends Transaction {
     private String psCompanyId = "";
     private String psCategorCd = "";
     
-    private String psSearchBranch;
-    private String psSearchCategory;
-    private String psSearchDepartment;
+    private String psSearchCompany, psSearchIndustry, psSearchCategory, psSearchBranch, psSearchDestination, psSearchDepartment, psSearchSupplier;
     
     List<Model_PO_Quotation_Request_Master> paMasterList;
     List<Model> paDetailRemoved;
@@ -1999,14 +2000,22 @@ public class POQuotationRequest extends Transaction {
     public void setIndustryId(String industryId) { psIndustryId = industryId; }
     public void setCompanyId(String companyId) { psCompanyId = companyId; }
     public void setCategoryId(String categoryId) { psCategorCd = categoryId; }
-    
-    public void setSearchBranch(String searchBranch) { psSearchBranch = searchBranch; }
-    public void setSearchDepartment(String searchDepartment) { psSearchDepartment = searchDepartment; }
+
+    public void setSearchCompany(String searchCompany){ psSearchCompany = searchCompany; }
+    public void setSearchIndustry(String searchIndustry){ psSearchIndustry = searchIndustry; }
     public void setSearchCategory(String searchCategory) { psSearchCategory = searchCategory; }
+    public void setSearchBranch(String searchBranch) { psSearchBranch = searchBranch; }
+    public void setSearchDestination(String searchDestination) { psSearchDestination = searchDestination; }
+    public void setSearchDepartment(String searchDepartment) { psSearchDepartment = searchDepartment; }
+    public void setSearchSupplier(String searchSupplier) { psSearchSupplier = searchSupplier; }
     
+    public String getSearchCompany() { return psSearchCompany; }
+    public String getSearchIndustry() { return psSearchIndustry; }
     public String getSearchCategory() { return psSearchCategory; }
-    public String getSearchDepartment() { return psSearchDepartment; }
     public String getSearchBranch() { return psSearchBranch; }
+    public String getSearchDestination() { return psSearchDestination; }
+    public String getSearchDepartment() { return psSearchDepartment; }
+    public String getSearchSupplier() { return psSearchSupplier; }
 
     @Override
     public String getSourceCode() {
@@ -2767,6 +2776,229 @@ public class POQuotationRequest extends Transaction {
         return lsEntry;
     }
     
+    /******05-04-2026 Arsiela********/
+    /*******************************PURCHASE ORDER QUOTATION REQUEST REPORT**************************************/
+    
+    public JSONObject SearchDestination(String value, boolean byCode, boolean isSearch) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Branch object = new ParamControllers(poGRider, logwrapr).Branch();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))) {
+            if(isSearch){
+                setSearchDestination(object.getModel().getBranchName());
+            } else {
+                Master().setDestination(object.getModel().getBranchCode());
+            }
+        }
+
+        return poJSON;
+    }
+    
+    public JSONObject SearchCategory(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Category object = new ParamControllers(poGRider, logwrapr).Category();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            setSearchCategory(object.getModel().getDescription());
+        }
+        return poJSON;
+    }
+    
+    public JSONObject SearchCompany(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Company object = new ParamControllers(poGRider, logwrapr).Company();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            setSearchCompany(object.getModel().getCompanyName());
+        }
+        return poJSON;
+    }
+    
+    public JSONObject SearchIndustry(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Industry object = new ParamControllers(poGRider, logwrapr).Industry();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))) {
+            setSearchIndustry(object.getModel().getDescription());
+        }
+        return poJSON;
+    }
+    
+    public JSONObject SearchSupplier(String value, boolean byCode) throws SQLException, GuanzonException {
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+        poJSON = object.searchRecord(value, byCode);
+        if ("success".equals((String) poJSON.get("result"))) {
+            setSearchSupplier(object.getModel().Client().getCompanyName());
+        }
+        
+        return poJSON;
+    }
+    
+    public List<Model> paReport;
+    public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        paReport = new ArrayList<>();
+        String lsFilterAll = "";
+        if (psSearchCompany != null && !"".equals(psSearchCompany)) {
+            lsFilterAll += " AND e.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchCompany+"%") + ")";
+        }
+        if (psSearchIndustry != null && !"".equals(psSearchIndustry)) {
+            lsFilterAll += " AND d.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchIndustry+"%") + ")";
+        }
+        if (psSearchCategory != null && !"".equals(psSearchCategory)) {
+            lsFilterAll += " AND j.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchCategory+"%") + ")";
+        }
+        if (psSearchBranch != null && !"".equals(psSearchBranch)) {
+            lsFilterAll += " AND g.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchBranch+"%") + ")";
+        }
+        if (psSearchDestination != null && !"".equals(psSearchDestination)) {
+            lsFilterAll += " AND h.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchDestination+"%") + ")";
+        }
+        if (psSearchDepartment != null && !"".equals(psSearchDepartment)) {
+            lsFilterAll += " AND f.sDeptName LIKE " + SQLUtil.toSQL("%"+psSearchDepartment+"%") + ")";
+        }
+        if (psSearchSupplier != null && !"".equals(psSearchSupplier)) {
+            lsFilterAll += " AND i.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchSupplier+"%") + ")";
+        }
+        
+        String lsSQL = MiscUtil.addCondition(getSQ_Report(isSummary),
+                " dTransact BETWEEN " + SQLUtil.toSQL(fsDateFrom)
+                + " AND " + SQLUtil.toSQL(fsDateTo)
+                
+            );
+        
+        if (!"".equals(lsFilterAll)) {
+            lsSQL = lsSQL + " " + lsFilterAll; 
+        }
+        
+        if(isSummary){
+            lsSQL = lsSQL + " GROUP BY a.sTransNox, c.sSupplier, c.sCompnyID " ;
+        }
+        lsSQL = lsSQL + " ORDER BY a.sTransNox, a.dTransact, c.sSupplier, c.sCompnyID";
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        if (MiscUtil.RecordCount(loRS) <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+        
+        // Get metadata
+        ResultSetMetaData metaData = loRS.getMetaData();
+        // Get number of columns
+        int columnCount = metaData.getColumnCount();
+        int lnctr = 0;
+        JSONArray dataArray = new JSONArray();
+        while (loRS.next()) {
+            JSONObject record = new JSONObject(); 
+            for (int lnRow = 1; lnRow <= columnCount; lnRow++) {
+                int columnType = metaData.getColumnType(lnRow);
+                Object value;
+                switch (columnType) {
+                    case java.sql.Types.VARCHAR:
+                    case java.sql.Types.CHAR:
+                        value = loRS.getString(lnRow);
+                        break;
+                    case java.sql.Types.INTEGER:
+                        value = loRS.getInt(lnRow);
+                        break;
+                    case java.sql.Types.DOUBLE:
+                    case java.sql.Types.FLOAT:
+                    case java.sql.Types.DECIMAL:
+                        value = loRS.getDouble(lnRow);
+                        break;
+                    case java.sql.Types.DATE:
+                        value = loRS.getDate(lnRow);
+                        break;
+                    case java.sql.Types.TIMESTAMP:
+                        value = loRS.getTimestamp(lnRow);
+                        break;
+                    default:
+                        value = loRS.getObject(lnRow); // fallback
+                }
+                record.put(metaData.getColumnLabel(lnRow), value);
+                System.out.println(metaData.getColumnLabel(lnRow) + " : " + value);
+            }
+            System.out.println("---------------------------------------------");
+            dataArray.add(record);
+            lnctr++;
+        }
+        MiscUtil.close(loRS);
+        if (lnctr > 0) {
+            poJSON.put("result", "success");
+            poJSON.put("message", "Record(s) loaded successfully.");
+            poJSON.put("data", dataArray);
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+            poJSON.put("data", new JSONArray());
+        }
+        return poJSON;
+    }
+    
+    private String getSQ_Report(boolean isSummary){
+        return " SELECT  " +
+            "  a.sTransNox AS sTransNox " + // Transaction No
+            ", a.dTransact AS dTransact " + // Date
+            ", a.sReferNox AS sReferNox " + // Reference No
+            ", a.dExpPurch AS dExpPurch " + 
+            ", a.cTranStat AS cTranStat " +
+            ", d.sDescript as xIndustry " + // Industry
+            ", e.sCompnyNm AS xCompanyx " + // Company
+            ", g.sBranchNm AS xBranchNm " + // Branch
+            ", h.sBranchNm AS xDestintn " + // Destination
+            ", f.sDeptName AS xDeptName " + // Department
+            ", i.sCompnyNm AS xSupplier " + // Supplier
+            ", v.sDescript AS xTermCode " + // Term
+            ", j.sDescript AS xCategory " +
+            ", k.sDescript AS xCategLv2 " + // Category
+            ", b.sDescript AS xPQRDtail " +
+            ", l.sDescript AS xInvDescr " +
+            ", m.sDescript AS xInvCateg " +
+            ", n.sDescript as xInvCate2 " + 
+            ", o.sDescript AS xInvCate3 " +
+            ", p.sDescript AS xInvCate4 " +
+            ", q.sDescript AS xInvBrand " +
+            ", r.sDescript AS xInvModel " +
+            ", s.sDescript AS xInvMdlVt " +
+            ", t.sDescript AS xInvColor " +
+            ", u.sDescript AS xInvMeasr " +
+            ", b.nQuantity AS xQuantity " + // Quantity
+            ", b.nUnitPrce AS xUnitPrce " + // Cost
+            ", TRIM(CONCAT_WS(' ',IFNULL(q.sDescript,''),IFNULL(b.sDescript,''),IFNULL(u.sDescript,''))) AS xDetDescx " + // Item
+            ", (b.nUnitPrce * b.nQuantity) AS xDetTotal " + // Total
+            (isSummary ? ", SUM(b.nUnitPrce * b.nQuantity) AS xTranTotal " : "") + // Transaction Total
+            "FROM PO_Quotation_Request_Master a " +
+            "LEFT JOIN PO_Quotation_Request_Detail b ON b.sTransNox = a.sTransNox AND b.cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE) +
+            "LEFT JOIN PO_Quotation_Request_Supplier c ON c.sTransNox = a.sTransNox AND c.cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE) +
+            "LEFT JOIN Industry d ON d.sIndstCdx = a.sIndstCdx " +
+            "LEFT JOIN Company e ON e.sCompnyID = c.sCompnyID " +
+            "LEFT JOIN Department f ON f.sDeptIDxx = a.sDeptIDxx " +
+            "LEFT JOIN Branch g ON g.sBranchCd = a.sBranchCd " +
+            "LEFT JOIN Branch h ON h.sBranchCd = a.sDestinat " +
+            "LEFT JOIN Client_Master i ON i.sClientID = c.sSupplier " +
+            "LEFT JOIN Category j On j.sCategrCd = a.sCategrCd " +
+            "LEFT JOIN Category_Level2 k ON k.sCategrCd = a.sCategCd2 " +
+            "LEft JOIN Inventory l ON l.sStockIDx = b.sStockIDx " +
+            "LEFT JOIN Category m ON m.sCategrCd = l.sCategCd1 " +
+            "Left Join Category_Level2 n ON n.sCategrCd = l.sCategCd2 " +
+            "LEFT JOIN Category_Level3 o ON o.sCategrCd = l.sCategCd3 " +
+            "LEFT JOIN Category_Level4 p ON p.sCategrCd = l.sCategCd4 " +
+            "LEFT JOIN Brand q ON q.sBrandIDx = l.sBrandIDx " +
+            "LEFT JOIN Model r ON r.sModelIDx = l.sModelIDx " +
+            "LEFT JOIN Model_Variant s ON s.sModelIDx = l.sModelIDx " +
+            "LEFT JOIN Color t ON t.sColorIDx = l.sColorIDx " +
+            "LEFT JOIN Measure u ON u.sMeasurID = l.sMeasurID " +
+            "LEFT JOIN Term v ON v.sTermCode = c.sTermCode " ;
+    }
+    
     /*
     //Print Transaction
     private CustomJasperViewer poViewer = null;
@@ -2906,7 +3138,7 @@ public class POQuotationRequest extends Transaction {
 
                 for (int i = 0; i < viewer.getComponentCount(); i++) {
                     if (viewer.getComponent(i) instanceof JRViewerToolbar) {
-                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(i);
+                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(lnRow);
 
                         for (int j = 0; j < toolbar.getComponentCount(); j++) {
                             if (toolbar.getComponent(j) instanceof JButton) {
