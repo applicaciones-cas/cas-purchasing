@@ -2901,7 +2901,7 @@ public class POQuotationRequest extends Transaction {
         if(isSummary){
             lsSQL = lsSQL + " GROUP BY a.sTransNox, c.sSupplier, c.sCompnyID " ;
         }
-        lsSQL = lsSQL + " ORDER BY a.sTransNox, a.dTransact, c.sSupplier, c.sCompnyID";
+        lsSQL = lsSQL + " ORDER BY a.sTransNox, a.dTransact, c.sSupplier, c.sCompnyID, b.nEntryNox ASC ";
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         if (MiscUtil.RecordCount(loRS) <= 0) {
@@ -2960,7 +2960,7 @@ public class POQuotationRequest extends Transaction {
                     , loRS.getString("xCategLv2")
                     , loRS.getString("xSupplier")
                     , loRS.getString("xTermCode")
-                    , (lnctr+1)
+                    , loRS.getInt("xEntryNox")
                     , loRS.getString("xDetDescx")
                     , loRS.getDouble("xUnitPrce")
                     , loRS.getDouble("xQuantity")
@@ -3015,6 +3015,7 @@ public class POQuotationRequest extends Transaction {
             ", s.sDescript AS xInvMdlVt " +
             ", t.sDescript AS xInvColor " +
             ", u.sDescript AS xInvMeasr " +
+            ", b.nEntryNox AS xEntryNox " + // Detail Row
             ", b.nQuantity AS xQuantity " + // Quantity
             ", b.nUnitPrce AS xUnitPrce " + // Cost
             ", TRIM(CONCAT_WS(' ',IFNULL(q.sDescript,''),IFNULL(b.sDescript,''),IFNULL(u.sDescript,''))) AS xDetDescx " + // Item
