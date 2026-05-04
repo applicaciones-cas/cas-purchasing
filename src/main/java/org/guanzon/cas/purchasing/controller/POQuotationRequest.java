@@ -5,6 +5,12 @@
  */
 package org.guanzon.cas.purchasing.controller;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -20,16 +26,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javax.script.ScriptException;
 import javax.sql.rowset.CachedRowSet;
+import javax.swing.JButton;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.swing.JRViewer;
+import net.sf.jasperreports.swing.JRViewerToolbar;
+import net.sf.jasperreports.view.JasperViewer;
 import org.guanzon.appdriver.agent.ActionAuthManager;
 import org.guanzon.appdriver.agent.MatrixAuthChecker;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -69,6 +85,10 @@ import org.guanzon.cas.purchasing.services.QuotationModels;
 import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
 import org.guanzon.cas.purchasing.validator.POQuotationRequestValidatorFactory;
 import org.json.simple.JSONArray;
+import ph.com.guanzongroup.cas.cashflow.model.Model_Disbursement_Master;
+import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
+import ph.com.guanzongroup.cas.cashflow.status.DisbursementStatic;
+import ph.com.guanzongroup.cas.cashflow.utility.CustomCommonUtil;
 
 /**
  *
@@ -2841,31 +2861,32 @@ public class POQuotationRequest extends Transaction {
         return poJSON;
     }
     
-    public List<Model> paReport;
+    private List<TransactionDetail> paReport = new ArrayList<>();
+    private JSONObject poJSONReport = new JSONObject();
     public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo) throws SQLException, GuanzonException {
-        poJSON = new JSONObject();
+        poJSONReport = new JSONObject();
         paReport = new ArrayList<>();
         String lsFilterAll = "";
         if (psSearchCompany != null && !"".equals(psSearchCompany)) {
-            lsFilterAll += " AND e.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchCompany+"%") + ")";
+            lsFilterAll += " AND e.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchCompany+"%") ;
         }
         if (psSearchIndustry != null && !"".equals(psSearchIndustry)) {
-            lsFilterAll += " AND d.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchIndustry+"%") + ")";
+            lsFilterAll += " AND d.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchIndustry+"%") ;
         }
         if (psSearchCategory != null && !"".equals(psSearchCategory)) {
-            lsFilterAll += " AND j.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchCategory+"%") + ")";
+            lsFilterAll += " AND j.sDescript LIKE " + SQLUtil.toSQL("%"+psSearchCategory+"%") ;
         }
         if (psSearchBranch != null && !"".equals(psSearchBranch)) {
-            lsFilterAll += " AND g.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchBranch+"%") + ")";
+            lsFilterAll += " AND g.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchBranch+"%") ;
         }
         if (psSearchDestination != null && !"".equals(psSearchDestination)) {
-            lsFilterAll += " AND h.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchDestination+"%") + ")";
+            lsFilterAll += " AND h.sBranchNm LIKE " + SQLUtil.toSQL("%"+psSearchDestination+"%") ;
         }
         if (psSearchDepartment != null && !"".equals(psSearchDepartment)) {
-            lsFilterAll += " AND f.sDeptName LIKE " + SQLUtil.toSQL("%"+psSearchDepartment+"%") + ")";
+            lsFilterAll += " AND f.sDeptName LIKE " + SQLUtil.toSQL("%"+psSearchDepartment+"%") ;
         }
         if (psSearchSupplier != null && !"".equals(psSearchSupplier)) {
-            lsFilterAll += " AND i.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchSupplier+"%") + ")";
+            lsFilterAll += " AND i.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchSupplier+"%") ;
         }
         
         String lsSQL = MiscUtil.addCondition(getSQ_Report(isSummary),
@@ -2885,9 +2906,9 @@ public class POQuotationRequest extends Transaction {
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         if (MiscUtil.RecordCount(loRS) <= 0) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No record found.");
-            return poJSON;
+            poJSONReport.put("result", "error");
+            poJSONReport.put("message", "No record found.");
+            return poJSONReport;
         }
         
         // Get metadata
@@ -2898,6 +2919,7 @@ public class POQuotationRequest extends Transaction {
         JSONArray dataArray = new JSONArray();
         while (loRS.next()) {
             JSONObject record = new JSONObject(); 
+            
             for (int lnRow = 1; lnRow <= columnCount; lnRow++) {
                 int columnType = metaData.getColumnType(lnRow);
                 Object value;
@@ -2926,21 +2948,45 @@ public class POQuotationRequest extends Transaction {
                 record.put(metaData.getColumnLabel(lnRow), value);
                 System.out.println(metaData.getColumnLabel(lnRow) + " : " + value);
             }
-            System.out.println("---------------------------------------------");
             dataArray.add(record);
+            
+            paReport.add(new TransactionDetail(
+                    (lnctr+1)
+                    , loRS.getString("sTransNox")
+                    , loRS.getDate("dTransact")
+                    , loRS.getString("xBranchNm")
+                    , loRS.getString("xDestintn")
+                    , loRS.getString("xDeptName")
+                    , loRS.getString("xCompanyx")
+                    , loRS.getString("xCategLv2")
+                    , loRS.getString("xSupplier")
+                    , loRS.getString("xTermCode")
+                    , (lnctr+1)
+                    , loRS.getString("xDetDescx")
+                    , loRS.getDouble("xUnitPrce")
+                    , loRS.getDouble("xQuantity")
+                    , loRS.getDouble("xDetTotal")
+                    , loRS.getDouble("xTranTotal")
+            ));
+            
+            System.out.println("---------------------------------------------");
             lnctr++;
         }
         MiscUtil.close(loRS);
         if (lnctr > 0) {
-            poJSON.put("result", "success");
-            poJSON.put("message", "Record(s) loaded successfully.");
-            poJSON.put("data", dataArray);
+            poJSONReport.put("result", "success");
+            poJSONReport.put("message", "Record(s) loaded successfully.");
+            poJSONReport.put("data", dataArray);
         } else {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No records found.");
-            poJSON.put("data", new JSONArray());
+            poJSONReport.put("result", "error");
+            poJSONReport.put("message", "No records found.");
+            poJSONReport.put("data", new JSONArray());
         }
-        return poJSON;
+        return poJSONReport;
+    }
+    
+    public List getReport(){
+        return paReport;
     }
     
     private String getSQ_Report(boolean isSummary){
@@ -2999,255 +3045,198 @@ public class POQuotationRequest extends Transaction {
             "LEFT JOIN Term v ON v.sTermCode = c.sTermCode " ;
     }
     
-    /*
-    //Print Transaction
-    private CustomJasperViewer poViewer = null;
-    private String psTransactionNo = "";
-    private boolean pbIsPrint = false;
-
-    public JSONObject printRecord(Runnable onPrintedCallback) {
+    //Print Report
+    public JSONObject printReport(boolean isSummary, String fsDateFrom, String fsDateTo)
+            throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
-        String watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\draft.png"; //set draft as default
-        psTransactionNo = Master().getTransactionNo();
-        try {
-            
-            //Reopen Transaction to get the accurate data
-            poJSON = OpenTransaction(psTransactionNo);
-            if ("error".equals((String) poJSON.get("result"))) {
-                System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
-                return poJSON;
-            }
-            
-            // 1. Prepare parameters
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("sBranchNm", poGRider.getBranchName()); //TODO
-            parameters.put("sAddressx", poGRider.getAddress());
-            parameters.put("sCompnyNm", poGRider.getClientName());
-            parameters.put("sTransNox", Master().getTransactionNo());
-            parameters.put("dReferDte", Master().getTransactionDate());
-            parameters.put("sReferNox", Master().getReferenceNo());
-            parameters.put("sRemarks", Master().getRemarks());
-            parameters.put("dTransDte", new java.sql.Date(Master().getTransactionDate().getTime()));
-            parameters.put("dDatexxx", new java.sql.Date(poGRider.getServerDate().getTime()));
-
-            // Set watermark based on approval status
-            switch (Master().getTransactionStatus()) {
-                case POQuotationRequestStatus.APPROVED:
-                case POQuotationRequestStatus.POSTED:
-                    watermarkPath = "D:\\GGC_Maven_Systems\\Reports\\images\\approved.png";
-                    break;
-            }
-
-            parameters.put("watermarkImagePath", watermarkPath);
-            List<OrderDetail> orderDetails = new ArrayList<>();
-            
-            String jrxmlPath = "D:\\GGC_Maven_Systems\\Reports\\POQuotationRequest.jrxml";
-            int lnRow = 1;
-            String lsDescription = "";
-            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-                
-                if(Detail(lnCtr).isReverse()){
-                    lsDescription = Detail(lnCtr).getDescription();
-                    orderDetails.add(new OrderDetail(lnRow, lsDescription, Detail(lnCtr).getQuantity()));
-                    lnRow++;
-                }
-                lsDescription = "";
-            }
-            
-            File file = new File(jrxmlPath);
-            if (file.exists()) {
-            } else {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Jasper file does not exist. \nEnsure the file is located in \"D:\\GGC_Maven_Systems\\reports\"");
-                poViewer = null;
-                onPrintedCallback.run();
-                return poJSON;
-            }
-
-            // 3. Create data source
-            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orderDetails);
-
-            // 4. Compile and fill report
-            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
-            JasperPrint jasperPrint = JasperFillManager.fillReport(
-                    jasperReport,
-                    parameters,
-                    dataSource
-            );
-
-            if (poViewer != null && poViewer.isDisplayable()) {
-                poViewer.dispose();
-                poViewer = null;
-
-            }
-            poViewer = new CustomJasperViewer(jasperPrint, onPrintedCallback);
-            poViewer.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE); 
-            poViewer.setVisible(true);
-            poViewer.toFront();
-            
-            poViewer.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(java.awt.event.WindowEvent e) {
-                    poViewer = null;
-                    System.out.println("Jasper viewer is closing...");
-                }
-
-                @Override
-                public void windowClosed(java.awt.event.WindowEvent e) {
-                    System.out.println("Jasper viewer closed.");
-                    onPrintedCallback.run(); 
-                }
-            });
-            
-        } catch (JRException e) {
-            System.err.println("Error generating report: " + e.getMessage());
-            e.printStackTrace();
+        JasperPrint masterPrint = null;       
+        JasperReport jasperReport = null;      
+        pbShowed = false; 
+        pbIsPrinted = false;
+        
+        if(paReport == null || paReport.size() <= 0 ){
             poJSON.put("result", "error");
-            poJSON.put("message", MiscUtil.getException(e));
-        } catch (SQLException | GuanzonException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
-            poJSON.put("result", "error");
-            poJSON.put("message", MiscUtil.getException(ex));
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("message",  "No data loaded.");
+            return poJSON;
         }
+        
+        try {
+            String jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/POQuotationRequestSummary.jrxml";
+            if(!isSummary){
+                jrxmlPath = System.getProperty("sys.default.path.config") + "/Reports/POQuotationRequestDetail.jrxml";
+            }
+            jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+            
+            Model_PO_Quotation_Request_Master loMaster = new QuotationModels(poGRider).POQuotationRequestMaster();
+            Model_PO_Quotation_Request_Supplier loSupplier = new QuotationModels(poGRider).POQuotationRequestSupplier();
+            loMaster.setIndustryId(psIndustryId);
+            loMaster.setCategoryCode(psCategorCd);
+            loSupplier.setCompanyId(psCompanyId);
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("sCompanyName", loSupplier.Company().getCompanyName());
+            params.put("sCompanyAddress", loSupplier.Company().getCompanyAddress()); //new java.sql.Date(Master().getTransactionDate().getTime())
+            params.put("sDateRange", "From " + fsDateFrom + " - " + fsDateTo);
+            
+            JasperPrint currentPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    params,
+                    new JRBeanCollectionDataSource(paReport)
+            );
+            if (currentPrint != null) {
+                CustomJasperViewer viewer = new CustomJasperViewer(masterPrint);
+                viewer.setVisible(true);
+                viewer.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        proceedAfterViewerClosed();
+                    }
+
+                });
+            }
+            
+        } catch (JRException | SQLException | GuanzonException  ex) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction print aborted!");
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        } 
 
         return poJSON;
     }
+    
+    private boolean pbShowed = false;
+    private void proceedAfterViewerClosed() {
+        Platform.runLater(() -> {
+            System.out.println("SHOWED!!!!!!!!!!!");
 
-    private class CustomJasperViewer extends JasperViewer {
+            if (pbShowed) {
+                return;
+            } else {
+                pbShowed = true;
+            }
 
-        private final Runnable onPrintedCallback;
+            if ("error".equals((String) poJSON.get("result"))) {
+                ShowMessageFX.Warning(null, "Computerized Accounting System",
+                    (String) poJSON.get("message"));
+            } else {
+                if (pbIsPrinted) {
+                    ShowMessageFX.Information(null, "Computerized Accounting System",
+                        "Transaction Printed Successfully");
+                } else {
+                    ShowMessageFX.Warning(null, "Computerized Accounting System",
+                        "Printing was canceled by the user.");
+                }
+            }
+        });
+    }
+    
+    private boolean pbIsPrinted = false;
+    public class CustomJasperViewer extends JasperViewer {
 
-        public CustomJasperViewer(JasperPrint jasperPrint, Runnable onPrintedCallback) {
+        public CustomJasperViewer(final JasperPrint jasperPrint) {
             super(jasperPrint, false);
-            this.onPrintedCallback = onPrintedCallback;
             customizePrintButton(jasperPrint);
-
-            
         }
 
-        private void customizePrintButton(JasperPrint jasperPrint) {
-            poJSON = new JSONObject();
+        /* ---- toolbar patch ------------------------------------------ */
+        private JSONObject customizePrintButton(final JasperPrint jasperPrint) {
+
             try {
                 JRViewer viewer = findJRViewer(this);
                 if (viewer == null) {
-                    System.out.println("JRViewer not found!");
-                    return;
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "JRViewer not found!");
+                    return poJSON;
                 }
-
                 for (int i = 0; i < viewer.getComponentCount(); i++) {
                     if (viewer.getComponent(i) instanceof JRViewerToolbar) {
-                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(lnRow);
+
+                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(i);
 
                         for (int j = 0; j < toolbar.getComponentCount(); j++) {
                             if (toolbar.getComponent(j) instanceof JButton) {
-                                JButton button = (JButton) toolbar.getComponent(j);
 
-                                if (button.getToolTipText() != null) {
-                                    if (button.getToolTipText().equals("Save")) {
-                                        button.setEnabled(false);  // Disable instead of hiding
-                                        button.setVisible(false);  // Hide it completely
-                                    }
-                                }
+                                final JButton button = (JButton) toolbar.getComponent(j);
 
                                 if ("Print".equals(button.getToolTipText())) {
-                                    for (ActionListener al : button.getActionListeners()) {
-                                        button.removeActionListener(al);
+                                    /* remove existing handlers */
+                                    ActionListener[] old = button.getActionListeners();
+                                    for (int k = 0; k < old.length; k++) {
+                                        button.removeActionListener(old[k]);
                                     }
-                                    button.addActionListener(e -> {
-                                        try {
-                                            boolean isPrinted = JasperPrintManager.printReport(jasperPrint, true);
-                                            if (isPrinted) {
-                                                PrintTransaction(true);
-                                            } else {
-                                                Platform.runLater(() -> {
-                                                    ShowMessageFX.Warning(null, "Computerized Accounting System", "Printing was canceled by the user.");
-                                                    SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
 
-                                                });
+                                    /* add our own (anonymous inner‑class, not lambda) */
+                                    button.addActionListener(new ActionListener() {
+                                        @Override
+                                        public void actionPerformed(ActionEvent e) {
+                                            try {
+                                                pbIsPrinted = JasperPrintManager.printReport(jasperPrint, true);
+                                                if (pbIsPrinted) {
+                                                    poJSON.put("result", "success");
+                                                    poJSON.put("message",  "Transaction Printed Successfully.");
+                                                    CustomJasperViewer.this.dispose();
+                                                } else {
+                                                    poJSON.put("result", "error");
+                                                    poJSON.put("message",  "Printing was canceled by the user.");
+                                                }
+                                            } catch (JRException ex) {
+                                                Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+                                                poJSON.put("result", "error");
+                                                poJSON.put("message",  MiscUtil.getException(ex));
                                             }
-                                        } catch (JRException ex) {
-                                            Platform.runLater(() -> {
-                                                ShowMessageFX.Warning(null, "Computerized Accounting System", "Print Failed: " + ex.getMessage());
-                                                SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-                                            });
-                                        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
-                                            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
                                         }
                                     });
-                                }
+                                } 
+//                                else {
+//                                    // Disable all other buttons
+//                                    button.setEnabled(false);
+//                                }
                             }
                         }
-                        // Force UI refresh after hiding the button
                         toolbar.revalidate();
                         toolbar.repaint();
                     }
                 }
             } catch (Exception e) {
                 System.out.println("Error customizing print button: " + e.getMessage());
+                poJSON.put("result", "error");
+                poJSON.put("message", "Error customizing print button: " + e.getMessage());
             }
+            
+            return poJSON;
         }
 
         private void PrintTransaction(boolean fbIsPrinted)
-                throws SQLException,
-                CloneNotSupportedException,
-                GuanzonException {
-            poJSON = new JSONObject();
-//            if (fbIsPrinted) {
-////                poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
-//                poJSON = OpenTransaction(psTransactionNo);
-//                if ("error".equals((String) poJSON.get("result"))) {
-//                    Platform.runLater(() -> {
-//                        ShowMessageFX.Warning(null, "Print PO Quotation Request", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
-//                        SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-//                    });
-//                    fbIsPrinted = false;
-//                }
-//                
-//                if (POQuotationRequestStatus.APPROVED.equals(Master().getTransactionStatus())
-//                        || POQuotationRequestStatus.POSTED.equals(Master().getTransactionStatus())) {
-//                    poJSON = UpdateTransaction();
-//                    if ("error".equals((String) poJSON.get("result"))) {
-//                        Platform.runLater(() -> {
-//                            ShowMessageFX.Warning(null, "Print PO Quotation Request", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
-//                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-//                        });
-//                        fbIsPrinted = false;
-//                    }
-//                     //Populate purchase receiving serials
-//                    for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
-//                        getPurchaseOrderReceivingSerial(Detail(lnCtr).getEntryNo());
-//                    }
-//                    poMaster.setValue("dModified", poGRider.getServerDate());
-//                    poMaster.setValue("sModified", poGRider.getUserID());
-//                    poMaster.setValue("cPrintxxx", Logical.YES);
-//                    pbIsPrint = fbIsPrinted;
-//                    poJSON = SaveTransaction();
-//                    if ("error".equals((String) poJSON.get("result"))) {
-//                        Platform.runLater(() -> {
-//                            ShowMessageFX.Warning(null, "Print PO Quotation Request", "Printing of the transaction was aborted.\n" + (String) poJSON.get("message"));
-//                            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-//                        });
-//                        fbIsPrinted = false;
-//                    }
-//
-//                    pbIsPrint = false;
-//                }
-//            }
+                throws SQLException, CloneNotSupportedException, GuanzonException {
+            final String msg = fbIsPrinted
+                    ? "Transaction printed successfully."
+                    : "Transaction print aborted.";
 
-            if (fbIsPrinted) {
-                Platform.runLater(() -> {
-                    ShowMessageFX.Information(null, "Print PO Quotation Request", "Transaction printed successfully.");
-                });
-            }
+            Platform.runLater(() -> {
+                if(fbIsPrinted){
+                    ShowMessageFX.Information(null, "Computerized Accounting System", msg);
+                } else {
+                    ShowMessageFX.Warning(null, "Computerized Accounting System", msg);
+                }
+                SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+            });
+        }
 
-            if (onPrintedCallback != null) {
-                poViewer = null;
-                this.dispose();
-//                onPrintedCallback.run();  // <- triggers controller method!
-            }
-            SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
+        private void warnAndRefocus(final String m) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+//                    ShowMessageFX.Warning(m, "Print Disbursement", null);
+                    poJSON.put("result", "error");
+                    poJSON.put("message", m);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            CustomJasperViewer.this.toFront();
+                        }
+                    });
+                }
+            });
         }
 
         private JRViewer findJRViewer(Component parent) {
@@ -3255,18 +3244,86 @@ public class POQuotationRequest extends Transaction {
                 return (JRViewer) parent;
             }
             if (parent instanceof Container) {
-                Component[] components = ((Container) parent).getComponents();
-                for (Component component : components) {
-                    JRViewer viewer = findJRViewer(component);
-                    if (viewer != null) {
-                        return viewer;
+                Component[] comps = ((Container) parent).getComponents();
+                for (int i = 0; i < comps.length; i++) {
+                    JRViewer v = findJRViewer(comps[i]);
+                    if (v != null) {
+                        return v;
                     }
                 }
             }
             return null;
         }
     }
-    */
     
-    
+    public static class TransactionDetail {
+        private final Integer nRowNo;
+        private final Integer nRow;
+        private final String sTransNo;
+        private final Date dTransDate;
+        private final String sBranch;
+        private final String sDestination;
+        private final String sDepartment;
+        private final String sCompany;
+        private final String sCategory;
+        private final String sSupplier;
+        private final String sTerm;
+        private final String sItem;
+        private final Double nCost;
+        private final Double nQty;
+        private final Double nTotal;
+        private final Double nTransTotal;
+
+        public TransactionDetail(Integer nRowNo,
+                                 String sTransNo,
+                                 Date dTransDate,
+                                 String sBranch,
+                                 String sDestination,
+                                 String sDepartment,
+                                 String sCompany,
+                                 String sCategory,
+                                 String sSupplier,
+                                 String sTerm,
+                                 Integer nRow,
+                                 String sItem,
+                                 Double nCost,
+                                 Double nQty,
+                                 Double nTotal,
+                                 Double nTransTotal) {
+
+            this.nRowNo = nRowNo;
+            this.sTransNo = sTransNo;
+            this.dTransDate = dTransDate;
+            this.sBranch = sBranch;
+            this.sDestination = sDestination;
+            this.sDepartment = sDepartment;
+            this.sCompany = sCompany;
+            this.sCategory = sCategory;
+            this.sSupplier = sSupplier;
+            this.sTerm = sTerm;
+            this.nRow = nRow;
+            this.sItem = sItem;
+            this.nCost = nCost;
+            this.nQty = nQty;
+            this.nTotal = nTotal;
+            this.nTransTotal = nTransTotal;
+        }
+
+        public Integer getnRowNo() { return nRowNo; }
+        public Integer getnRow() { return nRow; }
+        public String getsTransNo() { return sTransNo; }
+        public Date getdTransDate() { return dTransDate; }
+        public String getsBranch() { return sBranch; }
+        public String getsDestination() { return sDestination; }
+        public String getsDepartment() { return sDepartment; }
+        public String getsCompany() { return sCompany; }
+        public String getsCategory() { return sCategory; }
+        public String getsSupplier() { return sSupplier; }
+        public String getsTerm() { return sTerm; }
+        public String getsItem() { return sItem; }
+        public Double getnCost() { return nCost; }
+        public Double getnQty() { return nQty; }
+        public Double getnTotal() { return nTotal; }
+        public Double getnTransTotal() { return nTransTotal; }
+    }
 }
