@@ -2862,9 +2862,8 @@ public class POQuotationRequest extends Transaction {
     }
     
     private List<TransactionDetail> paReport = new ArrayList<>();
-    private JSONObject poJSONReport = new JSONObject();
     public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo) throws SQLException, GuanzonException {
-        poJSONReport = new JSONObject();
+        poJSON = new JSONObject();
         paReport = new ArrayList<>();
         String lsFilterAll = "";
         if (psSearchCompany != null && !"".equals(psSearchCompany)) {
@@ -2906,9 +2905,9 @@ public class POQuotationRequest extends Transaction {
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         if (MiscUtil.RecordCount(loRS) <= 0) {
-            poJSONReport.put("result", "error");
-            poJSONReport.put("message", "No record found.");
-            return poJSONReport;
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
         }
         
         // Get metadata
@@ -2974,15 +2973,15 @@ public class POQuotationRequest extends Transaction {
         }
         MiscUtil.close(loRS);
         if (lnctr > 0) {
-            poJSONReport.put("result", "success");
-            poJSONReport.put("message", "Record(s) loaded successfully.");
-            poJSONReport.put("data", dataArray);
+            poJSON.put("result", "success");
+            poJSON.put("message", "Record(s) loaded successfully.");
+            poJSON.put("data", dataArray);
         } else {
-            poJSONReport.put("result", "error");
-            poJSONReport.put("message", "No records found.");
-            poJSONReport.put("data", new JSONArray());
+            poJSON.put("result", "error");
+            poJSON.put("message", "No records found.");
+            poJSON.put("data", new JSONArray());
         }
-        return poJSONReport;
+        return poJSON;
     }
     
     public List getReport(){
