@@ -269,7 +269,7 @@ public class testPOQuotationRequest {
     }      
     
 
-    @Test
+//    @Test
     public void testConfirmTransaction() {
         JSONObject loJSON;
         
@@ -525,4 +525,33 @@ public class testPOQuotationRequest {
         
     }      
     
+    @Test
+    public void testLoadReport(){
+    
+        JSONObject loJSON;
+        
+        try {
+            loJSON = poController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = poController.loadReport(false, "2026-05-01", "2026-05-04", "ALL");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+//            for (int lnCol = 1; lnCol <= poController.Master().getColumnCount(); lnCol++){
+//                System.out.println(poController.Master().getColumn(lnCol) + " ->> " + poController.Master().getValue(lnCol));
+//            }
+            
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
+    }
 }

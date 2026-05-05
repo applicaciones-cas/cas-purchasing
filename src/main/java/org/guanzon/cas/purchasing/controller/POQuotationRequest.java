@@ -33,8 +33,10 @@ import javafx.application.Platform;
 import javax.script.ScriptException;
 import javax.sql.rowset.CachedRowSet;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
@@ -43,6 +45,11 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
+import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
+import net.sf.jasperreports.export.SimpleExporterInput;
+import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
+import net.sf.jasperreports.export.SimpleXlsxReportConfiguration;
 import net.sf.jasperreports.swing.JRViewer;
 import net.sf.jasperreports.swing.JRViewerToolbar;
 import net.sf.jasperreports.view.JasperViewer;
@@ -85,6 +92,7 @@ import org.guanzon.cas.purchasing.services.QuotationModels;
 import org.guanzon.cas.purchasing.status.POQuotationRequestStatus;
 import org.guanzon.cas.purchasing.validator.POQuotationRequestValidatorFactory;
 import org.json.simple.JSONArray;
+import ph.com.guanzongroup.cas.cashflow.DisbursementVoucher;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Disbursement_Master;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 import ph.com.guanzongroup.cas.cashflow.status.DisbursementStatic;
@@ -2662,6 +2670,28 @@ public class POQuotationRequest extends Transaction {
         }
     }
     
+    public String getStatus(String fsStatus){
+        switch(fsStatus){
+            case POQuotationRequestStatus.OPEN:
+                return  "Open";
+            case POQuotationRequestStatus.CONFIRMED:
+                return  "Confirmed";
+            case POQuotationRequestStatus.POSTED:
+                return  "Posted";
+            case POQuotationRequestStatus.CANCELLED:
+                return  "Cancelled";
+            case POQuotationRequestStatus.VOID:
+                return  "Void";
+            case POQuotationRequestStatus.APPROVED:
+                return  "Approved";
+            case POQuotationRequestStatus.RETURNED:
+                return  "Returned";
+            default:
+            case "":
+                return "Unknown";
+        }
+    }
+    
     public void ShowStatusHistory() throws SQLException, GuanzonException, Exception{
         CachedRowSet crs = getStatusHistory();
         
@@ -2862,7 +2892,7 @@ public class POQuotationRequest extends Transaction {
     }
     
     private List<TransactionDetail> paReport = new ArrayList<>();
-    public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo) throws SQLException, GuanzonException {
+    public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo, String fsStatus) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         paReport = new ArrayList<>();
         String lsFilterAll = "";
@@ -2888,9 +2918,38 @@ public class POQuotationRequest extends Transaction {
             lsFilterAll += " AND i.sCompnyNm LIKE " + SQLUtil.toSQL("%"+psSearchSupplier+"%") ;
         }
         
+        switch(fsStatus){
+            case  "OPEN":
+                fsStatus = POQuotationRequestStatus.OPEN;
+                break;
+            case  "CONFIRMED":
+                fsStatus = POQuotationRequestStatus.CONFIRMED;
+                break;
+            case  "APPROVED":
+                fsStatus = POQuotationRequestStatus.APPROVED;
+                break;
+            case  "POSTED":
+                fsStatus = POQuotationRequestStatus.POSTED;
+                break;
+            case  "RETURNED":
+                fsStatus = POQuotationRequestStatus.RETURNED;
+                break;
+            case  "VOID":
+                fsStatus = POQuotationRequestStatus.VOID;
+                break;
+            case  "CANCELLED":
+                fsStatus = POQuotationRequestStatus.CANCELLED;
+                break;
+            default:
+            case  "ALL":
+                fsStatus = "%";
+                break;
+        }
+        
         String lsSQL = MiscUtil.addCondition(getSQ_Report(isSummary),
                 " dTransact BETWEEN " + SQLUtil.toSQL(fsDateFrom)
                 + " AND " + SQLUtil.toSQL(fsDateTo)
+                + " AND a.cTranStat LIKE " + SQLUtil.toSQL(fsStatus)
                 
             );
         
@@ -2944,8 +3003,12 @@ public class POQuotationRequest extends Transaction {
                     default:
                         value = loRS.getObject(lnRow); // fallback
                 }
-                record.put(metaData.getColumnLabel(lnRow), value);
-                System.out.println(metaData.getColumnLabel(lnRow) + " : " + value);
+                if("xTranStat".equals(metaData.getColumnLabel(lnRow))){
+                    record.put(metaData.getColumnLabel(lnRow), getStatus(String.valueOf(value)));
+                } else {
+                    record.put(metaData.getColumnLabel(lnRow), value);
+                }
+//                System.out.println(metaData.getColumnLabel(lnRow) + " : " + value);
             }
             dataArray.add(record);
             
@@ -2953,6 +3016,7 @@ public class POQuotationRequest extends Transaction {
                     (lnctr+1)
                     , loRS.getString("sTransNox")
                     , loRS.getDate("dTransact")
+                    , loRS.getString("sReferNox")
                     , loRS.getString("xBranchNm")
                     , loRS.getString("xDestintn")
                     , loRS.getString("xDeptName")
@@ -2966,9 +3030,10 @@ public class POQuotationRequest extends Transaction {
                     , loRS.getDouble("xQuantity")
                     , loRS.getDouble("xDetTotal")
                     , loRS.getDouble("xTranTotal")
+                    , getStatus(loRS.getString("xTranStat"))
             ));
             
-            System.out.println("---------------------------------------------");
+//            System.out.println("---------------------------------------------");
             lnctr++;
         }
         MiscUtil.close(loRS);
@@ -2990,37 +3055,38 @@ public class POQuotationRequest extends Transaction {
     
     private String getSQ_Report(boolean isSummary){
         return " SELECT  " +
-            "  a.sTransNox AS sTransNox " + // Transaction No
-            ", a.dTransact AS dTransact " + // Date
-            ", a.sReferNox AS sReferNox " + // Reference No
-            ", a.dExpPurch AS dExpPurch " + 
-            ", a.cTranStat AS cTranStat " +
-            ", d.sDescript as xIndustry " + // Industry
-            ", e.sCompnyNm AS xCompanyx " + // Company
-            ", g.sBranchNm AS xBranchNm " + // Branch
-            ", h.sBranchNm AS xDestintn " + // Destination
-            ", f.sDeptName AS xDeptName " + // Department
-            ", i.sCompnyNm AS xSupplier " + // Supplier
-            ", v.sDescript AS xTermCode " + // Term
-            ", j.sDescript AS xCategory " +
-            ", k.sDescript AS xCategLv2 " + // Category
-            ", b.sDescript AS xPQRDtail " +
-            ", l.sDescript AS xInvDescr " +
-            ", m.sDescript AS xInvCateg " +
-            ", n.sDescript as xInvCate2 " + 
-            ", o.sDescript AS xInvCate3 " +
-            ", p.sDescript AS xInvCate4 " +
-            ", q.sDescript AS xInvBrand " +
-            ", r.sDescript AS xInvModel " +
-            ", s.sDescript AS xInvMdlVt " +
-            ", t.sDescript AS xInvColor " +
-            ", u.sDescript AS xInvMeasr " +
-            ", b.nEntryNox AS xEntryNox " + // Detail Row
-            ", b.nQuantity AS xQuantity " + // Quantity
-            ", b.nUnitPrce AS xUnitPrce " + // Cost
-            ", TRIM(CONCAT_WS(' ',IFNULL(q.sDescript,''),IFNULL(b.sDescript,''),IFNULL(u.sDescript,''))) AS xDetDescx " + // Item
-            ", (b.nUnitPrce * b.nQuantity) AS xDetTotal " + // Total
-            (isSummary ? ", SUM(b.nUnitPrce * b.nQuantity) AS xTranTotal " : "") + // Transaction Total
+                "  IFNULL(a.sTransNox,'') AS sTransNox " + // Transaction No
+                ", a.dTransact AS dTransact " + // Date
+                ", IFNULL(a.sReferNox,'') AS sReferNox " + // Reference No
+                ", a.dExpPurch AS dExpPurch " + 
+                //            ", " + getStatus("a.cTranStat") + " AS xTranStat " + // Transaction Status
+                ", IFNULL(a.cTranStat,'') AS xTranStat " +
+                ", IFNULL(d.sDescript,'') as xIndustry " + // Industry
+                ", IFNULL(e.sCompnyNm,'') AS xCompanyx " + // Company
+                ", IFNULL(g.sBranchNm,'') AS xBranchNm " + // Branch
+                ", IFNULL(h.sBranchNm,'') AS xDestintn " + // Destination
+                ", IFNULL(f.sDeptName,'') AS xDeptName " + // Department
+                ", IFNULL(i.sCompnyNm,'') AS xSupplier " + // Supplier
+                ", IFNULL(v.sDescript,'') AS xTermCode " + // Term
+                ", IFNULL(j.sDescript,'') AS xCategory " +
+                ", IFNULL(k.sDescript,'') AS xCategLv2 " + // Category
+                ", IFNULL(b.sDescript,'') AS xPQRDtail " +
+                ", IFNULL(l.sDescript,'') AS xInvDescr " +
+                ", IFNULL(m.sDescript,'') AS xInvCateg " +
+                ", IFNULL(n.sDescript,'') as xInvCate2 " + 
+                ", IFNULL(o.sDescript,'') AS xInvCate3 " +
+                ", IFNULL(p.sDescript,'') AS xInvCate4 " +
+                ", IFNULL(q.sDescript,'') AS xInvBrand " +
+                ", IFNULL(r.sDescript,'') AS xInvModel " +
+                ", IFNULL(s.sDescript,'') AS xInvMdlVt " +
+                ", IFNULL(t.sDescript,'') AS xInvColor " +
+                ", IFNULL(u.sDescript,'') AS xInvMeasr " +
+                ", b.nEntryNox AS xEntryNox " + // Detail Row
+                ", b.nQuantity AS xQuantity " + // Quantity
+                ", b.nUnitPrce AS xUnitPrce " + // Cost
+                ", TRIM(CONCAT_WS(' ',IFNULL(q.sDescript,''),IFNULL(b.sDescript,''),IFNULL(u.sDescript,''))) AS xDetDescx " + // Item
+                ", (b.nUnitPrce * b.nQuantity) AS xDetTotal " + // Total
+                (isSummary ? ", SUM(b.nUnitPrce * b.nQuantity) " : ", (b.nUnitPrce * b.nQuantity) ") + " AS xTranTotal " + // Transaction Total
             "FROM PO_Quotation_Request_Master a " +
             "LEFT JOIN PO_Quotation_Request_Detail b ON b.sTransNox = a.sTransNox AND b.cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE) +
             "LEFT JOIN PO_Quotation_Request_Supplier c ON c.sTransNox = a.sTransNox AND c.cReversex = " + SQLUtil.toSQL(POQuotationRequestStatus.Reverse.INCLUDE) +
@@ -3048,11 +3114,18 @@ public class POQuotationRequest extends Transaction {
     //Print Report
     public JSONObject printReport(boolean isSummary, String fsDateFrom, String fsDateTo)
             throws CloneNotSupportedException, SQLException, GuanzonException {
-        poJSON = new JSONObject();
-        JasperPrint masterPrint = null;       
+        poJSON = new JSONObject();    
         JasperReport jasperReport = null;      
         pbShowed = false; 
         pbIsPrinted = false;
+        DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // adjust if needed
+        DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("MMMM d, yyyy");
+
+        LocalDate dateFrom = LocalDate.parse(fsDateFrom, inputFormat);
+        LocalDate dateTo = LocalDate.parse(fsDateTo, inputFormat);
+
+        String formattedFrom = dateFrom.format(outputFormat);
+        String formattedTo = dateTo.format(outputFormat);
         
         if(paReport == null || paReport.size() <= 0 ){
             poJSON.put("result", "error");
@@ -3076,32 +3149,46 @@ public class POQuotationRequest extends Transaction {
             Map<String, Object> params = new HashMap<>();
             params.put("sCompanyName", loSupplier.Company().getCompanyName());
             params.put("sCompanyAddress", loSupplier.Company().getCompanyAddress()); //new java.sql.Date(Master().getTransactionDate().getTime())
-            params.put("sDateRange", "From " + fsDateFrom + " - " + fsDateTo);
+            params.put("sDateRange", "From " + formattedFrom + " - " + formattedTo);
             
             JasperPrint currentPrint = JasperFillManager.fillReport(
                     jasperReport,
                     params,
                     new JRBeanCollectionDataSource(paReport)
             );
-            if (currentPrint != null) {
-                CustomJasperViewer viewer = new CustomJasperViewer(masterPrint);
-                viewer.setVisible(true);
-                viewer.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        proceedAfterViewerClosed();
-                    }
-
-                });
-            }
             
+            
+            showViewerAndWait(currentPrint);
         } catch (JRException | SQLException | GuanzonException  ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction print aborted!");
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
         } 
 
         return poJSON;
+    }
+    
+    private void showViewerAndWait(JasperPrint print) {
+        // create viewer on Swing thread
+        final CustomJasperViewer viewer = new CustomJasperViewer(print);
+        viewer.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        viewer.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                latch.countDown();             // release when user closes
+                proceedAfterViewerClosed();
+            }
+        });
+
+        javax.swing.SwingUtilities.invokeLater(() -> viewer.setVisible(true));
+
+        try {
+            latch.await();                     // 🔴 blocks here until viewer closes
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt(); // keep interruption status
+        }
     }
     
     private boolean pbShowed = false;
@@ -3121,7 +3208,7 @@ public class POQuotationRequest extends Transaction {
             } else {
                 if (pbIsPrinted) {
                     ShowMessageFX.Information(null, "Computerized Accounting System",
-                        "Transaction Printed Successfully");
+                        "Report Printed/Saved Successfully");
                 } else {
                     ShowMessageFX.Warning(null, "Computerized Accounting System",
                         "Printing was canceled by the user.");
@@ -3157,40 +3244,113 @@ public class POQuotationRequest extends Transaction {
                             if (toolbar.getComponent(j) instanceof JButton) {
 
                                 final JButton button = (JButton) toolbar.getComponent(j);
-
-                                if ("Print".equals(button.getToolTipText())) {
-                                    /* remove existing handlers */
-                                    ActionListener[] old = button.getActionListeners();
-                                    for (int k = 0; k < old.length; k++) {
-                                        button.removeActionListener(old[k]);
-                                    }
-
-                                    /* add our own (anonymous inner‑class, not lambda) */
-                                    button.addActionListener(new ActionListener() {
-                                        @Override
-                                        public void actionPerformed(ActionEvent e) {
-                                            try {
-                                                pbIsPrinted = JasperPrintManager.printReport(jasperPrint, true);
-                                                if (pbIsPrinted) {
-                                                    poJSON.put("result", "success");
-                                                    poJSON.put("message",  "Transaction Printed Successfully.");
-                                                    CustomJasperViewer.this.dispose();
-                                                } else {
-                                                    poJSON.put("result", "error");
-                                                    poJSON.put("message",  "Printing was canceled by the user.");
-                                                }
-                                            } catch (JRException ex) {
-                                                Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
-                                                poJSON.put("result", "error");
-                                                poJSON.put("message",  MiscUtil.getException(ex));
-                                            }
+                                switch(button.getToolTipText()){
+                                    case "Print":
+                                        /* remove existing handlers */
+                                        ActionListener[] old = button.getActionListeners();
+                                        for (int k = 0; k < old.length; k++) {
+                                            button.removeActionListener(old[k]);
                                         }
-                                    });
-                                } 
-//                                else {
-//                                    // Disable all other buttons
-//                                    button.setEnabled(false);
-//                                }
+
+                                        /* add our own (anonymous inner‑class, not lambda) */
+                                        button.addActionListener(new ActionListener() {
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                try {
+                                                    pbIsPrinted = JasperPrintManager.printReport(jasperPrint, true);
+                                                    if (pbIsPrinted) {
+                                                        poJSON.put("result", "success");
+                                                        poJSON.put("message",  "Transaction Printed Successfully.");
+                                                        CustomJasperViewer.this.dispose();
+                                                    } else {
+                                                        poJSON.put("result", "error");
+                                                        poJSON.put("message",  "Printing was canceled by the user.");
+                                                    }
+                                                } catch (JRException ex) {
+                                                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+                                                }
+                                            }
+                                        });      
+                                        break;
+                                    case "Save":
+                                        // remove existing handlers
+                                        ActionListener[] oldSave = button.getActionListeners();
+                                        for (int k = 0; k < oldSave.length; k++) {
+                                            button.removeActionListener(oldSave[k]);
+                                        }
+
+                                        button.addActionListener(new ActionListener() {
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                try {
+                                                    JFileChooser fileChooser = new JFileChooser();
+                                                    fileChooser.setDialogTitle("Save Report");
+
+                                                    // File filters
+                                                    FileNameExtensionFilter pdfFilter = new FileNameExtensionFilter("PDF Files", "pdf");
+                                                    FileNameExtensionFilter xlsFilter = new FileNameExtensionFilter("Excel Files", "xlsx");
+                                                    FileNameExtensionFilter docxFilter = new FileNameExtensionFilter("Word Files", "docx");
+
+                                                    fileChooser.addChoosableFileFilter(pdfFilter);
+                                                    fileChooser.addChoosableFileFilter(xlsFilter);
+                                                    fileChooser.addChoosableFileFilter(docxFilter);
+                                                    fileChooser.setFileFilter(pdfFilter); // default
+
+                                                    int userSelection = fileChooser.showSaveDialog(null);
+
+                                                    if (userSelection == JFileChooser.APPROVE_OPTION) {
+                                                        File file = fileChooser.getSelectedFile();
+                                                        String path = file.getAbsolutePath();
+
+                                                        javax.swing.filechooser.FileFilter selectedFilter = fileChooser.getFileFilter();
+
+                                                        if (selectedFilter == pdfFilter) {
+                                                            if (!path.endsWith(".pdf")) path += ".pdf";
+                                                            JasperExportManager.exportReportToPdfFile(jasperPrint, path);
+
+                                                        } else if (selectedFilter == xlsFilter) {
+                                                            if (!path.endsWith(".xlsx")) path += ".xlsx";
+
+                                                            JRXlsxExporter exporter = new JRXlsxExporter();
+                                                            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+                                                            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(path));
+
+                                                            SimpleXlsxReportConfiguration config = new SimpleXlsxReportConfiguration();
+                                                            config.setDetectCellType(true);
+                                                            config.setCollapseRowSpan(false);
+
+                                                            exporter.setConfiguration(config);
+                                                            exporter.exportReport();
+
+                                                        } else if (selectedFilter == docxFilter) {
+                                                            if (!path.endsWith(".docx")) path += ".docx";
+
+                                                            JRDocxExporter exporter = new JRDocxExporter();
+                                                            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+                                                            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(path));
+                                                            exporter.exportReport();
+                                                        }
+                                                        pbIsPrinted = true;
+                                                        poJSON.put("result", "success");
+                                                        poJSON.put("message", "Report saved successfully.");
+                                                        CustomJasperViewer.this.dispose();
+
+                                                    } else {
+                                                        pbIsPrinted = false;
+                                                        poJSON.put("result", "error");
+                                                        poJSON.put("message", "Saving was canceled by the user.");
+                                                    }
+
+                                                } catch (Exception ex) {
+                                                    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+                                                }
+                                            }
+                                        });
+                                        break;
+                                    default:
+                                    // Disable all other buttons
+                                    button.setEnabled(false);
+                                }
                             }
                         }
                         toolbar.revalidate();
@@ -3205,40 +3365,7 @@ public class POQuotationRequest extends Transaction {
             
             return poJSON;
         }
-
-        private void PrintTransaction(boolean fbIsPrinted)
-                throws SQLException, CloneNotSupportedException, GuanzonException {
-            final String msg = fbIsPrinted
-                    ? "Transaction printed successfully."
-                    : "Transaction print aborted.";
-
-            Platform.runLater(() -> {
-                if(fbIsPrinted){
-                    ShowMessageFX.Information(null, "Computerized Accounting System", msg);
-                } else {
-                    ShowMessageFX.Warning(null, "Computerized Accounting System", msg);
-                }
-                SwingUtilities.invokeLater(() -> CustomJasperViewer.this.toFront());
-            });
-        }
-
-        private void warnAndRefocus(final String m) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-//                    ShowMessageFX.Warning(m, "Print Disbursement", null);
-                    poJSON.put("result", "error");
-                    poJSON.put("message", m);
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            CustomJasperViewer.this.toFront();
-                        }
-                    });
-                }
-            });
-        }
-
+        
         private JRViewer findJRViewer(Component parent) {
             if (parent instanceof JRViewer) {
                 return (JRViewer) parent;
@@ -3261,6 +3388,7 @@ public class POQuotationRequest extends Transaction {
         private final Integer nRow;
         private final String sTransNo;
         private final Date dTransDate;
+        private final String sRefNo;
         private final String sBranch;
         private final String sDestination;
         private final String sDepartment;
@@ -3269,6 +3397,7 @@ public class POQuotationRequest extends Transaction {
         private final String sSupplier;
         private final String sTerm;
         private final String sItem;
+        private final String sStatus;
         private final Double nCost;
         private final Double nQty;
         private final Double nTotal;
@@ -3277,6 +3406,7 @@ public class POQuotationRequest extends Transaction {
         public TransactionDetail(Integer nRowNo,
                                  String sTransNo,
                                  Date dTransDate,
+                                 String sRefNo,
                                  String sBranch,
                                  String sDestination,
                                  String sDepartment,
@@ -3289,11 +3419,13 @@ public class POQuotationRequest extends Transaction {
                                  Double nCost,
                                  Double nQty,
                                  Double nTotal,
-                                 Double nTransTotal) {
+                                 Double nTransTotal,
+                                 String sStatus) {
 
             this.nRowNo = nRowNo;
             this.sTransNo = sTransNo;
             this.dTransDate = dTransDate;
+            this.sRefNo = sRefNo;
             this.sBranch = sBranch;
             this.sDestination = sDestination;
             this.sDepartment = sDepartment;
@@ -3301,6 +3433,7 @@ public class POQuotationRequest extends Transaction {
             this.sCategory = sCategory;
             this.sSupplier = sSupplier;
             this.sTerm = sTerm;
+            this.sStatus = sStatus;
             this.nRow = nRow;
             this.sItem = sItem;
             this.nCost = nCost;
@@ -3313,6 +3446,7 @@ public class POQuotationRequest extends Transaction {
         public Integer getnRow() { return nRow; }
         public String getsTransNo() { return sTransNo; }
         public Date getdTransDate() { return dTransDate; }
+        public String getsRefNo() { return sRefNo; }
         public String getsBranch() { return sBranch; }
         public String getsDestination() { return sDestination; }
         public String getsDepartment() { return sDepartment; }
@@ -3325,5 +3459,6 @@ public class POQuotationRequest extends Transaction {
         public Double getnQty() { return nQty; }
         public Double getnTotal() { return nTotal; }
         public Double getnTransTotal() { return nTransTotal; }
+        public String getsStatus() { return sStatus; }
     }
 }
