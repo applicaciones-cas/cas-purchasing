@@ -81,7 +81,9 @@ import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.ModelVariant;
 import org.guanzon.cas.parameter.Term;
+import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.services.ParamControllers;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.guanzon.cas.purchasing.model.Model_PO_Quotation_Request_Detail;
@@ -2891,6 +2893,25 @@ public class POQuotationRequest extends Transaction {
         return poJSON;
     }
     
+    //If main office or general allow to view all poq request 
+    public void initializeFilter() throws SQLException, GuanzonException{
+        Master().setIndustryId(psIndustryId);
+        Master().setCategoryCode(psCategorCd);
+        setSearchCompany(getCompanyName(psCompanyId));
+        setSearchIndustry(Master().Industry().getDescription());
+        setSearchCategory(Master().Category().getDescription());
+        setSearchBranch(poGRider.getBranchName());
+    }
+    
+    public String getCompanyName(String fsCompanyId) throws SQLException, GuanzonException{
+        Company loObject = new ParamControllers(poGRider,logwrapr).Company();
+        loObject.openRecord(fsCompanyId);
+        if(loObject.getModel().getCompanyName() != null && !"".equals(loObject.getModel().getCompanyName())){
+            return loObject.getModel().getCompanyName();
+        }
+        return "";
+    }
+    
     private List<TransactionDetail> paReport = new ArrayList<>();
     public JSONObject loadReport(boolean isSummary, String fsDateFrom, String fsDateTo, String fsStatus) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
@@ -2958,7 +2979,12 @@ public class POQuotationRequest extends Transaction {
         }
         
         if(isSummary){
-            lsSQL = lsSQL + " GROUP BY a.sTransNox, c.sSupplier, c.sCompnyID " ;
+            //CHECK if main office or general allow to view all poq request 
+            if (!psIndustryId.equals(System.getProperty("sys.main.industry")) && !psIndustryId.equals(System.getProperty("sys.general.industry"))) { 
+                lsSQL = lsSQL + " GROUP BY a.sTransNox, c.sSupplier " ;
+            } else {
+                lsSQL = lsSQL + " GROUP BY a.sTransNox, c.sSupplier, c.sCompnyID " ;
+            }
         }
         lsSQL = lsSQL + " ORDER BY a.sTransNox, a.dTransact, c.sSupplier, c.sCompnyID, b.nEntryNox ASC ";
         System.out.println("Executing SQL: " + lsSQL);
