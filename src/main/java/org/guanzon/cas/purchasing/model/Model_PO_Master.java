@@ -42,6 +42,8 @@ public class Model_PO_Master extends Model {
     Model_Client_Address poSupplierAdress;
     Model_Client_Institution_Contact poSupplierContactPerson;
 
+    private boolean isSummarized;
+    
     @Override
     public void initialize() {
         try {
@@ -376,6 +378,13 @@ public class Model_PO_Master extends Model {
     public Date getModifiedDate() {
         return (Date) getValue("dModified");
     }
+    public void setSummarized(boolean summarized) {
+        this.isSummarized = summarized;
+    }
+
+    public boolean isSummarized() {
+        return isSummarized;
+    }
 
     @Override
     public String getNextCode() {
@@ -390,6 +399,26 @@ public class Model_PO_Master extends Model {
                 return poBranch;
             } else {
                 poJSON = poBranch.openRecord((String) getValue("sDestinat"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    return poBranch;
+                } else {
+                    poBranch.initialize();
+                    return poBranch;
+                }
+            }
+        } else {
+            poBranch.initialize();
+            return poBranch;
+        }
+    }
+    
+    public Model_Branch Branchx() throws GuanzonException, SQLException {
+        if (!"".equals((String) getValue("sBranchCd"))) {
+            if (poBranch.getEditMode() == EditMode.READY
+                    && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
+                return poBranch;
+            } else {
+                poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poBranch;
                 } else {
