@@ -5,6 +5,7 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -61,7 +62,9 @@ import org.guanzon.cas.inv.warehouse.services.InvWarehouseControllers;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
+import org.guanzon.cas.parameter.Category;
 import org.guanzon.cas.parameter.Company;
+import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.Project;
 import org.guanzon.cas.parameter.Term;
@@ -95,6 +98,8 @@ public class PurchaseOrder extends Transaction {
     CashflowControllers poPaymentRequest;
     Model_Project poProject;
     String PayeeID;
+    String dfrom;
+    String dthru;
     String allowedDepartment = System.getProperty("allowed.department");
     private boolean pbApproval = false;
 
@@ -167,6 +172,9 @@ public class PurchaseOrder extends Transaction {
 
     private Model_PO_Master POMasterList() {
         return new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
+    }
+    private Model_PO_Detail PODetailList() {
+        return new PurchaseOrderModels(poGRider).PurchaseOrderDetails();
     }
 
     public Model_PO_Master POMaster(int row) {
@@ -2081,6 +2089,8 @@ public class PurchaseOrder extends Transaction {
             return poJSON;
         }
     }
+    
+
 
     /*Search Master References*/
     public JSONObject SearchBranch(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
@@ -2103,6 +2113,19 @@ public class PurchaseOrder extends Transaction {
 
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setIndustryID(object.getModel().getIndustryId());
+        }
+
+        return poJSON;
+    }
+    
+    public JSONObject SearchCategory(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Category object = new ParamControllers(poGRider, logwrapr).Category();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            Master().setCategoryCode(object.getModel().getCategoryId());
         }
 
         return poJSON;
@@ -2342,6 +2365,17 @@ public class PurchaseOrder extends Transaction {
 
         if ("success".equals((String) poJSON.get("result"))) {
             Master().setDestinationID(object.getModel().getBranchCode());
+        }
+        return poJSON;
+    }
+    public JSONObject SearchDepartment(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Department object = new ParamControllers(poGRider, logwrapr).Department();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            Master().setDestinationID(object.getModel().getDepartmentId());
         }
         return poJSON;
     }
@@ -3943,5 +3977,725 @@ public class PurchaseOrder extends Transaction {
 
         rs.close();
         return poJSON;
+    }
+    
+    public JSONObject RetriveSummaryReports(Boolean issummarized,
+            LocalDate dateFrom,
+            LocalDate dateThru,
+            String Branch,
+            String Destination,
+            String Supplier,
+            String Category)
+            throws SQLException, GuanzonException {
+
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        dfrom = String.valueOf(dateFrom);
+        dthru = String.valueOf(dateThru);
+        try {
+
+            String lsSQL = "SELECT DISTINCT "
+                    + "  g.sCompnyNm AS Supplier, "
+                    + "  c.sBranchNm AS Destination, "
+                    + "  d.sBranchNm AS Branch, "
+                    + "  a.sTransNox, "
+                    + "  a.sReferNox, "
+                    + "  a.dTransact, "
+                    + "  e.sDescript AS Category, "
+                    + "  f.sDescript AS Term, "
+                    + "  a.nTranTotl "
+                    + " FROM po_master a "
+                    + " LEFT JOIN AP_Client_Master b ON a.sSupplier = b.sClientID "
+                    + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd "
+                    + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
+                    + " LEFT JOIN Category e ON a.sCategrCd = e.sCategrCd "
+                    + " LEFT JOIN Term f ON a.sTermCode = f.sTermCode "
+                    + " LEFT JOIN Client_Master g ON b.sClientID = g.sClientID ";
+
+            // -------------------------------
+            // FILTERS
+            // -------------------------------
+            List<String> lsFilter = new ArrayList<>();
+
+            if (dateFrom != null && dateThru != null) {
+                lsFilter.add("a.dTransact BETWEEN "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateFrom))
+                        + " AND "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateThru)));
+                dfrom = String.valueOf(dateFrom);
+                dthru = String.valueOf(dateThru);
+            }
+            
+            if (Branch != null && !Branch.trim().isEmpty()) {
+                lsFilter.add("a.sBranchCd = " + SQLUtil.toSQL(Branch));
+            }
+
+            if (Destination != null && !Destination.trim().isEmpty()) {
+                lsFilter.add("a.sBranchCd = " + SQLUtil.toSQL(Destination));
+            }
+
+            if (Supplier != null && !Supplier.trim().isEmpty()) {
+                lsFilter.add("a.sSupplier = " + SQLUtil.toSQL(Supplier));
+            }
+
+            if (Category != null && !Category.trim().isEmpty()) {
+                lsFilter.add("a.sCategrCd = " + SQLUtil.toSQL(Category));
+            }
+            
+            lsFilter.add("a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
+                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+            
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsFilter.add( " a.cTranStat IN (" + lsTransStat.substring(2) + ")");
+            } else {
+                lsFilter.add( " a.cTranStat = " + SQLUtil.toSQL(psTranStat));
+            }
+            if (!lsFilter.isEmpty()) {
+                lsSQL += " WHERE " + String.join(" AND ", lsFilter);
+            }
+
+            lsSQL += " ORDER BY a.dTransact ASC";
+
+            System.out.println("Executing SQL: " + lsSQL);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+            if (loRS == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Query execution failed.");
+                return poJSON;
+            }
+
+            int lnctr = 0;
+            JSONArray dataArray = new JSONArray();
+
+            while (loRS.next()) {
+
+                JSONObject record = new JSONObject();
+
+                record.put("Supplier", loRS.getString("Supplier"));
+                record.put("Destination", loRS.getString("Destination"));
+                record.put("Branch", loRS.getString("Branch"));
+                record.put("sTransNox", loRS.getString("sTransNox"));
+                record.put("sReferNox", loRS.getString("sReferNox"));
+                record.put("dTransact", loRS.getDate("dTransact"));
+                record.put("Category", loRS.getString("Category"));
+                record.put("Term", loRS.getString("Term"));
+                record.put("Total", loRS.getDouble("nTranTotl"));
+
+                dataArray.add(record);
+                lnctr++;
+            }
+
+            MiscUtil.close(loRS);
+
+            if (lnctr > 0) {
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record(s) loaded successfully.");
+                poJSON.put("data", dataArray);
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+                poJSON.put("data", new JSONArray());
+            }
+
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    }
+    
+    public JSONObject RetriveSummaryDetailedReports(Boolean issummarized,
+            LocalDate dateFrom,
+            LocalDate dateThru,
+            String Branch,
+            String Destination,
+            String Supplier,
+            String Category)
+            throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        try {
+
+            String lsSQL = "SELECT DISTINCT "
+                    + "  h.sCompnyNm AS Supplier, "
+                    + "  d.sBranchNm AS Destination, "
+                    + "  b.sTransNox, "
+                    + "  b.dTransact, "
+                    + "  j.sDescript AS Brand, "
+                    + "  k.sModelCde AS ModelCode, "
+                    + "  k.sDescript AS ModelName, "
+                    + "  l.sDescript AS Color, "
+                    + "  a.nQuantity, "
+                    + "  i.nUnitPrce, "
+                    + "  ROUND(a.nQuantity * i.nUnitPrce, 4) AS Total "
+                    + " FROM PO_Detail a "
+                    + " LEFT JOIN PO_Master b ON a.sTransNox = b.sTransNox "
+                    + " LEFT JOIN AP_Client_Master c ON b.sSupplier = c.sClientID "
+                    + " LEFT JOIN Branch d ON b.sDestinat = d.sBranchCd "
+                    + " LEFT JOIN Branch e ON b.sBranchCd = e.sBranchCd "
+                    + " LEFT JOIN Category f ON b.sCategrCd = f.sCategrCd "
+                    + " LEFT JOIN Term g ON b.sTermCode = g.sTermCode "
+                    + " LEFT JOIN Client_Master h ON c.sClientID = h.sClientID "
+                    + " LEFT JOIN Inventory i ON a.sStockIDx = i.sStockIDx "
+                    + " LEFT JOIN Brand j ON i.sBrandIDx = j.sBrandIDx "
+                    + " LEFT JOIN Model k ON i.sModelIDx = k.sModelIDx "
+                    + " LEFT JOIN Color l ON i.sColorIDx = l.sColorIDx ";
+            
+            // -------------------------------
+            // FILTERS
+            // -------------------------------
+            List<String> lsFilter = new ArrayList<>();
+
+            if (dateFrom != null && dateThru != null) {
+                lsFilter.add("b.dTransact BETWEEN "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateFrom))
+                        + " AND "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateThru)));
+                dfrom = String.valueOf(dateFrom);
+                dthru = String.valueOf(dateThru);
+            }
+            if (Branch != null && !Branch.trim().isEmpty()) {
+                lsFilter.add("b.sBranchCd = " + SQLUtil.toSQL(Branch));
+            }
+
+            if (Destination != null && !Destination.trim().isEmpty()) {
+                lsFilter.add("d.sBranchCd = " + SQLUtil.toSQL(Destination));
+            }
+
+            if (Supplier != null && !Supplier.trim().isEmpty()) {
+                lsFilter.add("b.sSupplier = " + SQLUtil.toSQL(Supplier));
+            }
+
+            if (Category != null && !Category.trim().isEmpty()) {
+                lsFilter.add("b.sCategrCd = " + SQLUtil.toSQL(Category));
+            }
+            
+            lsFilter.add("b.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
+                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+            
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsFilter.add( " b.cTranStat IN (" + lsTransStat.substring(2) + ")");
+            } else {
+                lsFilter.add( " b.cTranStat = " + SQLUtil.toSQL(psTranStat));
+            }
+            
+            if (!lsFilter.isEmpty()) {
+                lsSQL += " WHERE " + String.join(" AND ", lsFilter);
+            }
+
+            lsSQL += " ORDER BY b.dTransact ASC";
+
+            System.out.println("Executing SQL: " + lsSQL);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+            if (loRS == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Query execution failed.");
+                return poJSON;
+            }
+
+            int lnctr = 0;
+            JSONArray dataArray = new JSONArray();
+
+            while (loRS.next()) {
+
+                JSONObject record = new JSONObject();
+
+                record.put("Supplier", loRS.getString("Supplier"));
+                record.put("Destination", loRS.getString("Destination"));
+                record.put("sTransNox", loRS.getString("sTransNox"));
+                record.put("dTransact", loRS.getDate("dTransact"));
+                record.put("Brand", loRS.getString("Brand"));
+                record.put("ModelCode", loRS.getString("ModelCode"));
+                record.put("ModelName", loRS.getString("ModelName"));
+                record.put("Color", loRS.getString("Color"));
+                record.put("Quantity", loRS.getDouble("nQuantity"));
+                record.put("UnitPrice", loRS.getDouble("nUnitPrce"));
+                record.put("Total", loRS.getDouble("Total"));
+
+                dataArray.add(record);
+                lnctr++;
+            }
+
+            MiscUtil.close(loRS);
+
+            if (lnctr > 0) {
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record(s) loaded successfully.");
+                poJSON.put("data", dataArray);
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+                poJSON.put("data", new JSONArray());
+            }
+
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    } 
+   
+    
+    
+   
+
+    private String safeStrings(Object value) {
+        return value == null ? "" : value.toString();
+    }
+    
+
+   public static class Reports {
+
+    private Integer nRowNo;
+    private String sSupplier;
+    private String sDestination;
+    private String sPONo;
+    private java.sql.Date dTransact;
+    private String sBrand;
+    private String sModelCode;
+    private String sModelName;
+    private String sColor;
+    private double nQty;
+    private double nUnitPrice;
+    private double nTotal;
+    private String sBranch;
+    private String sCategory;
+    private String sTerm;
+    private String sReferNo;
+
+    public Reports(Integer nrowNo, String sSupplier, String sDestination, String sPONo, java.sql.Date dTransact,
+                   String sBrand, String sModelCode, String sModelName, String sColor,
+                   double nQty, double nUnitPrice, double nTotal) {
+
+        this.nRowNo = nrowNo;
+        this.sSupplier = sSupplier;
+        this.sDestination = sDestination;
+        this.sPONo = sPONo;
+        this.dTransact = dTransact;
+        this.sBrand = sBrand;
+        this.sModelCode = sModelCode;
+        this.sModelName = sModelName;
+        this.sColor = sColor;
+        this.nQty = nQty;
+        this.nUnitPrice = nUnitPrice;
+        this.nTotal = nTotal;
+    }
+    public Reports(Integer nrowNo, String sSupplier, String sDestination, String sBranch,String sPONo, String sReferNo, java.sql.Date dTransact,
+                   String sCategory, String sTerm, double nTotal) {
+
+        this.nRowNo = nrowNo;
+        this.sSupplier = sSupplier;
+        this.sDestination = sDestination;
+        this.sBranch = sBranch;
+        this.sPONo = sPONo;
+        this.sReferNo = sReferNo;
+        this.dTransact = dTransact;
+        this.sCategory = sCategory;
+        this.sTerm = sTerm;
+        this.nTotal = nTotal;
+    }
+
+    public Integer getnRowNo() { return nRowNo; }
+
+    public String getsSupplier() { return sSupplier; }
+    public String getsDestination() { return sDestination; }
+    public String getsPONo() { return sPONo; }
+    public java.sql.Date getdTransact() { return dTransact; }
+
+    public String getsBrand() { return sBrand; }
+    public String getsModelCode() { return sModelCode; }
+    public String getsModelName() { return sModelName; }
+    public String getsColor() { return sColor; }
+
+    public double getnQty() { return nQty; }
+    public double getnUnitPrice() { return nUnitPrice; }
+    public double getnTotal() { return nTotal; }
+    
+    public String getsBranch() { return sBranch; }
+    public String getsCategory() { return sCategory; }
+    public String getsTerm() { return sTerm; }
+    public String getsReferNo() { return sReferNo; }
+}
+
+    public class CustomJasperViewers extends JasperViewer {
+
+        public CustomJasperViewers(JasperPrint jasperPrint) {
+            super(jasperPrint, false);
+            customizePrintButton(jasperPrint);
+        }
+
+        private void customizePrintButton(JasperPrint jasperPrint) {
+            poJSON = new JSONObject();
+            try {
+                JRViewer viewer = findJRViewers(this);
+                if (viewer == null) {
+                    System.out.println("JRViewer not found!");
+                    return;
+                }
+
+                for (int i = 0; i < viewer.getComponentCount(); i++) {
+                    if (viewer.getComponent(i) instanceof JRViewerToolbar) {
+                        JRViewerToolbar toolbar = (JRViewerToolbar) viewer.getComponent(i);
+
+                        for (int j = 0; j < toolbar.getComponentCount(); j++) {
+                            if (toolbar.getComponent(j) instanceof JButton) {
+                                JButton button = (JButton) toolbar.getComponent(j);
+
+                                //if ever na kailangan e hide si button save
+//                                if (button.getToolTipText() != null) {
+//                                    if (button.getToolTipText().equals("Save")) {
+//                                        button.setEnabled(false);  // Disable instead of hiding
+//                                        button.setVisible(false);  // Hide it completely
+//                                    }
+//                                }
+                                if ("Print".equals(button.getToolTipText())) {
+                                    for (ActionListener al : button.getActionListeners()) {
+                                        button.removeActionListener(al);
+                                    }
+                                    button.addActionListener(e -> {
+                                        try {
+                                            boolean isPrinted = JasperPrintManager.printReport(jasperPrint, true);
+                                            if (isPrinted) {
+                                                PrintReportsx(true);
+                                            } else {
+                                                Platform.runLater(() -> {
+                                                    ShowMessageFX.Warning("Printing was canceled by the user.", "Print Purchase Order", null);
+                                                    SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+
+                                                });
+                                            }
+                                        } catch (JRException ex) {
+                                            Platform.runLater(() -> {
+                                                ShowMessageFX.Warning("Print Failed: " + ex.getMessage(), "Computerized Accounting System", null);
+                                                SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                                            });
+                                        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+                                            Logger.getLogger(PurchaseOrder.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+
+                        // Force UI refresh after hiding the button
+                        toolbar.revalidate();
+                        toolbar.repaint();
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error customizing print button: " + e.getMessage());
+            }
+        }
+
+        private void PrintReportsx(boolean fbIsPrinted) throws SQLException, CloneNotSupportedException, GuanzonException {
+            poJSON = new JSONObject();
+            if (fbIsPrinted) {
+                if (((String) poMaster.getValue("cTranStat")).equals(PurchaseOrderStatus.APPROVED)) {
+                    poJSON = OpenTransaction((String) poMaster.getValue("sTransNox"));
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+                    poJSON = UpdateTransaction();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+
+                    poMaster.setValue("dModified", poGRider.getServerDate());
+                    poMaster.setValue("sModified", poGRider.getUserID());
+                    poMaster.setValue("cPrintxxx", Logical.YES);
+
+                    poJSON = SaveTransaction();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        Platform.runLater(() -> {
+                            ShowMessageFX.Warning((String) poJSON.get("message"), "Print Purchase Order", null);
+                            SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                        });
+                        fbIsPrinted = false;
+                    }
+                }
+            }
+
+            if (fbIsPrinted) {
+                Platform.runLater(() -> {
+                    ShowMessageFX.Information("Transaction printed successfully.", "Print Purchase Order", null);
+                    SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                });
+            } else {
+                Platform.runLater(() -> {
+                    ShowMessageFX.Information("Transaction printed aborted.", "Print Purchase Order", null);
+                    SwingUtilities.invokeLater(() -> CustomJasperViewers.this.toFront());
+                });
+            }
+        }
+
+        private JRViewer findJRViewers(Component parent) {
+            if (parent instanceof JRViewer) {
+                return (JRViewer) parent;
+            }
+            if (parent instanceof Container) {
+                Component[] components = ((Container) parent).getComponents();
+                for (Component component : components) {
+                    JRViewer viewer = findJRViewers(component);
+                    if (viewer != null) {
+                        return viewer;
+                    }
+                }
+            }
+            return null;
+        }
+    }
+    
+    public JSONObject PrintSummaryReports(Boolean isSummarized, JSONArray reportData) {
+        poJSON = new JSONObject();
+
+        try {
+
+            Map<String, Object> parameters = new HashMap<>();
+
+//            parameters.put("sIndustry", Master().Industry().getDescription());
+//            parameters.put("sCompany", Master().Company().getCompanyName());
+//            parameters.put("sBranch", Master().Branchx().getDescription());
+
+            List<Reports> reportList = new ArrayList<>();
+
+            for (int i = 0; i < reportData.size(); i++) {
+
+                JSONObject obj = (JSONObject) reportData.get(i);
+
+                if (isSummarized) {
+                    System.out.println("reportData : " +  obj);
+                    
+                    reportList.add(new Reports(i + 1,
+                      safeStrings(obj.get("Supplier")),
+                    safeStrings(obj.get("Destination")),
+                        safeStrings(obj.get("Branch")),
+                         safeStrings(obj.get("sTransNox")),
+                         safeStrings(obj.get("sReferNox")),
+                              (java.sql.Date) obj.get("dTransact"),
+                      safeStrings(obj.get("Category")),
+                         safeStrings(obj.get("Term")),
+                        parseDouble(obj.get("Total"))));
+
+                } else {
+                     System.out.println("DETAIL : " + i+ 1 +  obj);
+                    reportList.add(new Reports(
+                            i + 1,
+                    safeStrings(obj.get("Supplier")),
+                  safeStrings(obj.get("Destination")),
+                       safeStrings(obj.get("sTransNox")),
+                             (java.sql.Date) obj.get("dTransact"),
+                      safeStrings(obj.get("Brand")),
+                   safeStrings(obj.get("ModelCode")),
+                   safeStrings(obj.get("ModelName")),
+                      safeStrings(obj.get("Color")),
+                        parseDouble(obj.get("Quantity")),
+                   parseDouble(obj.get("UnitPrce")),
+                      parseDouble(obj.get("Total"))
+                    ));
+                }
+            }
+
+            JRBeanCollectionDataSource dataSource
+                    = new JRBeanCollectionDataSource(reportList);
+
+            String jrxmlPath;
+
+            if (isSummarized) {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderSummary.jrxml";
+            } else {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderSummaryDetail.jrxml";
+            }
+
+            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+
+            JasperPrint jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    parameters,
+                    dataSource
+            );
+
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
+                viewer.setVisible(true);
+            } else {
+                JasperExportManager.exportReportToPdfFile(
+                        jasperPrint,
+                        System.getProperty("sys.default.path.config")
+                        + "/temp/" + Master().getTransactionNo() + ".pdf"
+                );
+            }
+
+            
+
+        } catch (Exception ex) {
+            poJSON.put("result", "error");
+            poJSON.put("message", ex.getMessage());
+        }
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    private double parseDouble(Object val) {
+        try {
+            return val == null ? 0.0000 : Double.parseDouble(val.toString());
+        } catch (Exception e) {
+            return 0.0000;
+        }
+    }
+
+    
+    public static String formatDateToText(String dfrom) {
+
+        if (dfrom == null || dfrom.isEmpty()) {
+            return "";
+        }
+
+        DateTimeFormatter inputFormatter
+                = DateTimeFormatter.ofPattern("yyyy-M-d");
+
+        LocalDate date = LocalDate.parse(dfrom, inputFormatter);
+
+        DateTimeFormatter outputFormatter
+                = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+
+        return date.format(outputFormatter);
+    }
+    
+    public JSONObject printReports(Boolean isSummarized, JSONArray reportData) {
+        poJSON = new JSONObject();
+
+        try {
+
+            System.out.println("Company Address : " + Master().Company().getCompanyAddress());
+            System.out.println("Company Town : " + Master().Company().TownCity().getDescription());
+            System.out.println("Company Province " + Master().Company().TownCity().Province().getDescription());
+            System.out.println("Branch Address : " + Master().Branch().getAddress());
+            System.out.println("Branch Town : " + Master().Branch().TownCity().getDescription());
+            System.out.println("Branch Province " + Master().Branch().TownCity().Province().getDescription());
+
+            String lsCompanyAddress = "";
+            if (Master().Company().getCompanyAddress() != null && !"".equals(Master().Company().getCompanyAddress())) {
+                lsCompanyAddress = Master().Company().getCompanyAddress().trim();
+            }
+            if (Master().Company().TownCity().getDescription() != null && !"".equals(Master().Company().TownCity().getDescription())) {
+                lsCompanyAddress = lsCompanyAddress + " " + Master().Company().TownCity().getDescription().trim();
+            }
+            if (Master().Company().TownCity().Province().getDescription() != null && !"".equals(Master().Company().TownCity().Province().getDescription())) {
+                lsCompanyAddress = lsCompanyAddress + ", " + Master().Company().TownCity().Province().getDescription().trim();
+            }
+
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sLogCompny", poGRider.getCompnyId());
+            parameters.put("sAddressx", lsCompanyAddress);
+            
+            parameters.put("sCompany", Master().Company().getCompanyName());
+            parameters.put("sIndustry", Master().Industry().getDescription());
+            parameters.put("sBranch", Master().Branchx().getBranchName());
+            parameters.put("sDateRange", "FROM " + formatDateToText(dfrom) + " TO " + formatDateToText(dthru));
+           
+            List<Reports> reportList = new ArrayList<>();
+
+            for (int i = 0; i < reportData.size(); i++) {
+
+                JSONObject obj = (JSONObject) reportData.get(i);
+                if (isSummarized) {
+                    System.out.println("reportData : " +  obj);
+                    reportList.add(new Reports(i + 1,
+                      safeStrings(obj.get("Supplier")),
+                    safeStrings(obj.get("Destination")),
+                        safeStrings(obj.get("Branch")),
+                         safeStrings(obj.get("sTransNox")),
+                       safeStrings(obj.get("sReferNox")),
+                               (java.sql.Date) obj.get("dTransact"),
+                      safeStrings(obj.get("Category")),
+                         safeStrings(obj.get("Term")),
+                        parseDouble(obj.get("Total"))));
+
+                } else {
+                    System.out.println("reportData : " +  obj);
+                    reportList.add(new Reports(
+                            i + 1,
+                    safeStrings(obj.get("Supplier")),
+                  safeStrings(obj.get("Destination")),
+                       safeStrings(obj.get("sTransNox")),
+                             (java.sql.Date) obj.get("dTransact"),
+                      safeStrings(obj.get("Brand")),
+                   safeStrings(obj.get("ModelCode")),
+                   safeStrings(obj.get("ModelName")),
+                      safeStrings(obj.get("Color")),
+                       parseDouble(obj.get("Quantity")),
+                   parseDouble(obj.get("UnitPrice")),
+                      parseDouble(obj.get("Total"))
+                    ));
+                }
+            }
+
+            JRBeanCollectionDataSource dataSource
+                    = new JRBeanCollectionDataSource(reportList);
+
+
+            // 4. Compile and fill report
+            String jrxmlPath;
+
+            if (isSummarized) {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderSummary.jrxml";
+            } else {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderSummaryDetail.jrxml";
+            }
+
+            JasperReport jasperReport;
+
+            jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+
+            JasperPrint jasperPrint;
+            jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    parameters,
+                    dataSource
+            );
+
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                CustomJasperViewer viewer = new CustomJasperViewer(jasperPrint);
+                viewer.setVisible(true);
+            } else {
+                //mac 2026.02.21
+                //export pdf file
+                JasperExportManager.exportReportToPdfFile(jasperPrint, System.getProperty("sys.default.path.config") + "/temp/" + Master().getTransactionNo() + ".pdf");
+            }
+
+            poJSON.put("result", "success");
+        } catch (JRException | SQLException | GuanzonException ex) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction print aborted!");
+            Logger
+                    .getLogger(PurchaseOrder.class
+                            .getName()).log(Level.SEVERE, null, ex);
+        }
+        return poJSON;
+
     }
 }
