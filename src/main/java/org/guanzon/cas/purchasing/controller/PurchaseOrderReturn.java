@@ -648,11 +648,13 @@ public class PurchaseOrderReturn extends Transaction{
             GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
             loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
             for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
-                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
-                        Journal().Detail(lnCtr).getAccountCode(),
-                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
-                        Journal().Detail(lnCtr).getDebitAmount(), 
-                        Journal().Detail(lnCtr).getCreditAmount());
+                if(Journal().Detail(lnCtr).getCreditAmount() > 0.0000 || Journal().Detail(lnCtr).getDebitAmount() > 0.0000){
+                    loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+                            Journal().Detail(lnCtr).getAccountCode(),
+                            SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+                            Journal().Detail(lnCtr).getDebitAmount(), 
+                            Journal().Detail(lnCtr).getCreditAmount());
+                }
             }
             loGLTrans.saveTransaction();
             System.out.println("-----------------------------------");
@@ -679,7 +681,7 @@ public class PurchaseOrderReturn extends Transaction{
             }
             
             //change status
-            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted);
+            poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, !lbPosted, true);
             if (!"success".equals((String) poJSON.get("result"))) {
                 poGRider.rollbackTrans();
                 return poJSON;
@@ -688,6 +690,8 @@ public class PurchaseOrderReturn extends Transaction{
             if(check != null){
                 check.postAuth();
             }
+            
+            poGRider.commitTrans();
 
             poJSON = new JSONObject();
             poJSON.put("result", "success");
