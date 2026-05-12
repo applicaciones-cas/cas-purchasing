@@ -1827,18 +1827,19 @@ public class PurchaseOrderReturn extends Transaction{
             String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
                     " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
                     + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
-                    + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
                     + " AND a.sSupplier LIKE " + SQLUtil.toSQL("%" + supplierId)
                     + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
             );
             switch (formName) {
                 case "confirmation":
-                    lsSQL = lsSQL + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.OPEN)
-                                  + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) + " ) "
-                                  + " AND a.cProcessd = " + SQLUtil.toSQL("0");
+                    lsSQL = lsSQL  + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode())
+                                   + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.OPEN)
+                                   + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) + " ) "
+                                   + " AND a.cProcessd = " + SQLUtil.toSQL("0");
                     break;
                 case "history":
                     //load all purchase order return
+                    lsSQL = lsSQL  + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
                 case "posting":
                     lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                   + " AND a.cProcessd = " + SQLUtil.toSQL("0");
