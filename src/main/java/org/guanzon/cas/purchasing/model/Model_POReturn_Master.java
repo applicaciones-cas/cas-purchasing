@@ -24,6 +24,7 @@ import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
 
 /**
@@ -65,7 +66,13 @@ public class Model_POReturn_Master extends Model {
             poEntity.updateObject("nFreightx", 0.00);
             poEntity.updateString("cPrintxxx", Logical.NO);
             poEntity.updateString("cProcessd", Logical.NO);
-            poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
+            poEntity.updateString("cTranStat", PurchaseOrderReturnStatus.OPEN);
+            
+            poEntity.updateObject("nVATSales", 0.0000);
+            poEntity.updateObject("nVATAmtxx", 0.0000);
+            poEntity.updateObject("nZroVATSl", 0.0000);
+            poEntity.updateObject("nVATExmpt", 0.0000);
+            
             //end - assign default values
 
             poEntity.insertRow();
@@ -202,6 +209,50 @@ public class Model_POReturn_Master extends Model {
         return (Number) getValue("nVATRatex");
     }
     
+    public JSONObject setVatSales(Number vatSales) {
+        return setValue("nVATSales", vatSales);
+    }
+
+    public Number getVatSales() {
+        if(getValue("nVATSales") == null || "".equals(getValue("nVATSales"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATSales");
+    }
+    
+    public JSONObject setVatAmount(Number vatAmount) {
+        return setValue("nVATAmtxx", vatAmount);
+    }
+
+    public Number getVatAmount() {
+        if(getValue("nVATAmtxx") == null || "".equals(getValue("nVATAmtxx"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATAmtxx");
+    }
+    
+    public JSONObject setZeroVatSales(Number zeroVatSales) {
+        return setValue("nZroVATSl", zeroVatSales);
+    }
+
+    public Number getZeroVatSales() {
+        if(getValue("nZroVATSl") == null || "".equals(getValue("nZroVATSl"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nZroVATSl");
+    }
+    
+    public JSONObject setVatExemptSales(Number vatExemptSales) {
+        return setValue("nVATExmpt", vatExemptSales);
+    }
+
+    public Number getVatExemptSales() {
+        if(getValue("nVATExmpt") == null || "".equals(getValue("nVATExmpt"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATExmpt");
+    }
+    
     public JSONObject setWithHoldingTax(Number withHoldingTax){
         return setValue("nTWithHld", withHoldingTax);
     }
@@ -278,6 +329,22 @@ public class Model_POReturn_Master extends Model {
     
     public boolean isProcessed(){
         return ((String) getValue("cProcessd")).equals("1");
+    }
+    
+    public JSONObject isWithHoldingTax(boolean isProcessed){
+        return setValue("cTWithHld", isProcessed ? "1" : "0");
+    }
+    
+    public boolean isWithHoldingTax(){
+        return ((String) getValue("cTWithHld")).equals("1");
+    }
+
+    public JSONObject isVatTaxable(boolean isVatable){
+        return setValue("cVATaxabl", isVatable ? "1" : "0");
+    } 
+    
+    public boolean isVatTaxable(){
+        return ((String) getValue("cVATaxabl")).equals("1");
     }
     
     public JSONObject setTransactionStatus(String transactionStatus){

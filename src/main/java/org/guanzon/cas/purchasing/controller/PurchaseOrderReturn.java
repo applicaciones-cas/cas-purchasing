@@ -72,7 +72,7 @@ import org.json.simple.parser.ParseException;
  * @author Arsiela 04-28-2025
  */
 public class PurchaseOrderReturn extends Transaction{
-
+    private boolean pbIsFinance = false;
     private boolean pbIsPrint = false;
     private String psIndustryId = "";
     private String psCompanyId = "";
@@ -1474,6 +1474,66 @@ public class PurchaseOrderReturn extends Transaction{
         return poJSON;
     }
     
+    //Added by Arsiela 05-12-2026
+    //Implement this for PO Return Posting
+    public JSONObject computeDiscountRate(double discount) {
+        poJSON = new JSONObject();
+        Double ldblTotal = 0.00;
+        Double ldblDiscRate = 0.00;
+
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+        }
+        
+        if (discount < 0 || discount > ldblTotal) {
+            Master().setDiscount(0.00);
+            computeDiscountRate(0.00);
+            poJSON.put("result", "error");
+            poJSON.put("message", "Discount amount cannot be negative or exceed the transaction total.");
+            return poJSON;
+        } else {
+            ldblTotal = ldblTotal - (discount + ((Master().getDiscountRate().doubleValue() / 100.00) * ldblTotal));
+            if(ldblTotal < 0 ){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid transaction net total.");
+                return poJSON;
+            }
+        }
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
+        return poJSON;
+    }
+
+    public JSONObject computeDiscount(double discountRate) {
+        poJSON = new JSONObject();
+        Double ldblTotal = 0.00;
+        Double ldblDiscount = 0.00;
+
+        for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+            ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+        }
+
+        if (discountRate < 0 || discountRate > 100.00) {
+            Master().setDiscountRate(0.00);
+            computeDiscount(0.00);
+            poJSON.put("result", "error");
+            poJSON.put("message", "Discount rate cannot be negative or exceed 100.00");
+            return poJSON;
+        } else {
+
+            ldblTotal = ldblTotal - (Master().getDiscount().doubleValue() + ((discountRate / 100.00) * ldblTotal));
+            if(ldblTotal < 0 ){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid transaction net total.");
+                return poJSON;
+            }
+        }
+
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
+        return poJSON;
+    }
+    
     public JSONObject computeFields()
             throws SQLException,
             GuanzonException {
@@ -1481,15 +1541,119 @@ public class PurchaseOrderReturn extends Transaction{
 
         //Compute Transaction Total
         Double ldblTotal = 0.00;
+        Double ldblFreightTotal = 0.00;
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblTotal += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+            ldblFreightTotal += Detail(lnCtr).getFreight().doubleValue();
         }
         
         Master().setTransactionTotal(ldblTotal);
+        
+        //Added by Arsiela 05-12-2026
+        //Implement this for PO Return Posting
+        /*Compute VAT Amount*/
+        if(pbIsFinance){
+            Master().setFreight(ldblFreightTotal);
+            Double ldblDiscount = Master().getDiscount().doubleValue();
+            Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+            boolean lbIsWithVat = false;
+            double ldblVatSales = 0.0000;
+            double ldblVatAmount = 0.0000;
+            double ldblVatExemptSales = 0.0000;
+            
+            double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
+            double ldblDiscountVatAmount = 0.0000;
+            double ldblFreightVatAmount = 0.0000;
+            double ldblDetailVatAmount = 0.0000;
+            double ldblDetailVatSales = 0.0000;
+            double ldblDetailTotal = 0.0000;
+            for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
+                if(Detail(lnCtr).isVatable()){
+                    lbIsWithVat = true;
+                    ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
+                    if(Master().isVatTaxable()){
+                        ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
+                        ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; //Added by arsiela 10302025
+                    } else {
+                        ldblDetailVatAmount = ldblDetailTotal * 0.12;
+                        ldblDetailVatSales = ldblDetailTotal;  //Added by arsiela 10302025
+                    }
+                    
+//                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; commented
+                    ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
+                    ldblVatSales = ldblVatSales + ldblDetailVatSales;
+                } else {
+                    ldblVatExemptSales += (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
+                }
+            }
+            
+            System.out.println("Detail Vat Amount " + ldblVatAmount );
+            System.out.println("Detail Vat Sales " + ldblVatSales );
+            
+            //If all items are non vatable no vatable sales and vat amount will be computed.
+            if(lbIsWithVat){
+                if(Master().isVatTaxable()){
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+                    ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
+                    
+                    //Added by arsiela 10302025
+                    ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                    ldblVatSales = (ldblVatSales 
+                                    + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
+                                    - (ldblDiscountTotal - ldblDiscountVatAmount);
+                } else {
+                    ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+                    ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
+                    
+                    //Added by arsiela 10302025
+                    ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
+                    ldblVatSales = (ldblVatSales 
+                                    + Master().getFreight().doubleValue())
+                                    - (ldblDiscountTotal);
+                }
+            } 
+                    
+            poJSON = Master().setVatSales(ldblVatSales);
+            poJSON = Master().setVatAmount(ldblVatAmount);
+            poJSON = Master().setVatExemptSales(ldblVatExemptSales);
+            poJSON = Master().setZeroVatSales(0.00); //TODO
+            if(Master().getVatRate().doubleValue() == 0.00){
+                if(getEditMode() == EditMode.UNKNOWN || Master().getEditMode() == EditMode.UNKNOWN){
+                    poJSON = Master().setVatRate(0.00); //Set default value
+                } else {
+                    poJSON = Master().setVatRate(12.00); //Set default value
+                }
+            }
+        }
 
         return poJSON;
     }
     
+    //Added by Arsiela 05-12-2026
+    //Implement this for PO Return Posting
+    public Double getNetTotal(){
+         //Net Total = Vat Amount - Tax Amount
+        Double ldblNetTotal = 0.00;
+        Double ldblTotal =  Master().getTransactionTotal().doubleValue();
+        Double ldblDiscount = Master().getDiscount().doubleValue();
+        Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+        Double ldblDiscountVatAmount = 0.0000;
+        if(ldblDiscountRate > 0){
+            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+        }
+        ldblDiscount = ldblDiscount + ldblDiscountRate;
+        if (Master().isVatTaxable()) {
+//            ldblDiscountVatAmount = ldblDiscount - (ldblDiscount / 1.12);
+            ldblNetTotal = (Master().getVatSales().doubleValue()
+                        + Master().getVatAmount().doubleValue()
+                        + Master().getVatExemptSales().doubleValue());
+        } else {
+//            ldblDiscountVatAmount = ldblDiscount * 0.12;
+            ldblNetTotal = (ldblTotal + Master().getVatAmount().doubleValue() + Master().getFreight().doubleValue()) - ldblDiscount;
+        }
+        
+        return ldblNetTotal;
+    }
     
     public JSONObject loadPurchaseOrderReturn(String formName, String supplierId, String referenceNo) {
         try {
