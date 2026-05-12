@@ -2661,9 +2661,9 @@ public class PurchaseOrderReturn extends Transaction{
         //Update cache payable
         for(int lnCtr = 0; lnCtr <= poCachePayable.getDetailCount()-1; lnCtr++){
             //Update Discount
-            if(ldblTotalDiscAmt >= poCachePayable.Detail(lnCtr).getPayables()){
-                poCachePayable.Detail(lnCtr).setDiscountAmount(poCachePayable.Detail(lnCtr).getPayables());
-                ldblTotalDiscAmt = ldblTotalDiscAmt - poCachePayable.Detail(lnCtr).getPayables();
+            if(ldblTotalDiscAmt >= poCachePayable.Detail(lnCtr).getReceivables()){
+                poCachePayable.Detail(lnCtr).setDiscountAmount(poCachePayable.Detail(lnCtr).getReceivables());
+                ldblTotalDiscAmt = ldblTotalDiscAmt - poCachePayable.Detail(lnCtr).getReceivables();
             } else {
                 if( ldblTotalDiscAmt > 0.0000){
                     poCachePayable.Detail(lnCtr).setDiscountAmount(ldblTotalDiscAmt);
@@ -2683,15 +2683,15 @@ public class PurchaseOrderReturn extends Transaction{
                 ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
                 ldblVatSales = Master().getVatSales().doubleValue() - ( Master().getFreight().doubleValue() - ldblFreightVatAmount);
 //                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() - ldblFreightVatAmount);
-                ldblNetTotal =  getNetTotal() - Master().getFreight().doubleValue();
+                ldblNetTotal =  getNetTotal() + Master().getFreight().doubleValue();
             } else {
                 ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
                 ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
                 ldblVatSales = Master().getVatSales().doubleValue() - Master().getFreight().doubleValue();
-                ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() + ldblFreightVatAmount);
+                ldblNetTotal =  getNetTotal() + (Master().getFreight().doubleValue() + ldblFreightVatAmount);
             }
         } else {
-            ldblNetTotal = getNetTotal() - Master().getFreight().doubleValue();
+            ldblNetTotal = getNetTotal() + Master().getFreight().doubleValue();
         }
         
         //Cache Payable Master
