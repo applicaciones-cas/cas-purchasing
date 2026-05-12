@@ -2654,7 +2654,7 @@ public class PurchaseOrderReturn extends Transaction{
             
             poCachePayable.Detail(lnCacheRow).setTransactionType(Detail(lnCtr).Inventory().getInventoryTypeId());
             poCachePayable.Detail(lnCacheRow).setGrossAmount(ldblTotal); 
-            poCachePayable.Detail(lnCacheRow).setPayables(ldblTotal); 
+            poCachePayable.Detail(lnCacheRow).setReceivables(ldblTotal); 
             lbExist = false;
         }
         
