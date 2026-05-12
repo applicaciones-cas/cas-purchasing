@@ -2712,7 +2712,7 @@ public class PurchaseOrderReturn extends Transaction{
         poCachePayable.Master().setVATSales(ldblVatSales);
         poCachePayable.Master().setVATAmount(ldblVatAmount);
         poCachePayable.Master().setNetTotal(ldblNetTotal); 
-        poCachePayable.Master().setPayables(ldblNetTotal); 
+        poCachePayable.Master().setReceivables(ldblNetTotal); 
         poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
         poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
