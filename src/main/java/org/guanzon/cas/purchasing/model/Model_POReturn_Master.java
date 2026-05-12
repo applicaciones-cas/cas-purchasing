@@ -6,6 +6,7 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -377,6 +378,32 @@ public class Model_POReturn_Master extends Model {
     
     public Date getModifiedDate(){
         return (Date) getValue("dModified");
+    }
+    
+    public Double getNetTotal(){
+         //Net Total = Vat Amount - Tax Amount
+        Double ldblNetTotal = 0.00;
+        Double ldblTotal =  getTransactionTotal().doubleValue();
+        Double ldblDiscount = getDiscount().doubleValue();
+        Double ldblDiscountRate = getDiscountRate().doubleValue();
+        Double ldblDiscountVatAmount = 0.0000;
+        if(ldblDiscountRate > 0){
+            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+        }
+        ldblDiscount = ldblDiscount + ldblDiscountRate;
+        if (isVatTaxable()) {
+//            ldblDiscountVatAmount = ldblDiscount - (ldblDiscount / 1.12);
+            ldblNetTotal = (getVatSales().doubleValue()
+                        + getVatAmount().doubleValue()
+                        + getVatExemptSales().doubleValue());
+        } else {
+//            ldblDiscountVatAmount = ldblDiscount * 0.12;
+            ldblNetTotal = (ldblTotal + getVatAmount().doubleValue() + getFreight().doubleValue()) - ldblDiscount;
+        }
+        
+        DecimalFormat format = new DecimalFormat("###0.0000");
+        return Double.valueOf(format.format(ldblNetTotal));
+        
     }
     
     @Override
