@@ -1125,6 +1125,10 @@ public class PurchaseOrderReturn extends Transaction{
         psCategorCd = categoryId;
     }
 
+    public void isFinance(boolean isFinance) {
+        pbIsFinance = isFinance;
+    }
+    
     public void resetMaster() {
         poMaster = new PurchaseOrderReturnModels(poGRider).PurchaseOrderReturnMaster();
     }
