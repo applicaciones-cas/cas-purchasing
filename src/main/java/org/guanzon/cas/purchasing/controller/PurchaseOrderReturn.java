@@ -151,7 +151,7 @@ public class PurchaseOrderReturn extends Transaction{
                if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                     poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer..");
+                    poJSON.put("message", "User is not an authorized approving officer.");
                     return poJSON;
                }
                setApproving(lsUserIDxx);
@@ -161,7 +161,7 @@ public class PurchaseOrderReturn extends Transaction{
                //show process needs authorization through the authority matrix
                ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                poJSON.put("result", "error");
-               poJSON.put("message", "User is not an authorized approving officer..");
+               poJSON.put("message", "User is not an authorized approving officer.");
                return poJSON;
             }
         }  
@@ -1737,13 +1737,12 @@ public class PurchaseOrderReturn extends Transaction{
                     ldblDetailTotal = Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue();
                     if(Master().isVatTaxable()){
                         ldblDetailVatAmount = ldblDetailTotal - (ldblDetailTotal / 1.12);
-                        ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; //Added by arsiela 10302025
+                        ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; 
                     } else {
                         ldblDetailVatAmount = ldblDetailTotal * 0.12;
-                        ldblDetailVatSales = ldblDetailTotal;  //Added by arsiela 10302025
+                        ldblDetailVatSales = ldblDetailTotal;  
                     }
                     
-//                    ldblDetailVatSales = ldblDetailTotal - ldblDetailVatAmount; commented
                     ldblVatAmount = ldblVatAmount + ldblDetailVatAmount;
                     ldblVatSales = ldblVatSales + ldblDetailVatSales;
                 } else {
@@ -1760,7 +1759,6 @@ public class PurchaseOrderReturn extends Transaction{
                     ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
                     ldblDiscountVatAmount = ldblDiscountTotal - (ldblDiscountTotal / 1.12);
                     
-                    //Added by arsiela 10302025
                     ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
                     ldblVatSales = (ldblVatSales 
                                     + (Master().getFreight().doubleValue() - ldblFreightVatAmount))
@@ -1769,7 +1767,6 @@ public class PurchaseOrderReturn extends Transaction{
                     ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
                     ldblDiscountVatAmount = ldblDiscountTotal * 0.12;
                     
-                    //Added by arsiela 10302025
                     ldblVatAmount = (ldblVatAmount + ldblFreightVatAmount) - ldblDiscountVatAmount;
                     ldblVatSales = (ldblVatSales 
                                     + Master().getFreight().doubleValue())
@@ -2163,21 +2160,42 @@ public class PurchaseOrderReturn extends Transaction{
     public JSONObject saveOthers() {
         /*Only modify this if there are other tables to modify except the master and detail tables*/
         poJSON = new JSONObject();
-//        try {
-//            //Save Serial Ledger, Inventory
+        try {
+             //Skip Updating others when transaction triggered at SI Posting
+            if(pbIsFinance){
+                if(poJournal != null){
+                    if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
+                        poJournal.setWithParent(true);
+                        poJournal.Master().setModifiedDate(poGRider.getServerDate());
+                        poJSON = poJournal.SaveTransaction();
+                        if ("error".equals((String) poJSON.get("result"))) {
+                            return poJSON;
+                        }
+                    }
+                }
+                poJSON.put("result", "success");
+                return poJSON; 
+            }
+            
+            //Save Serial Ledger, Inventory
 //            if (PurchaseOrderReturnStatus.CONFIRMED.equals(Master().getTransactionStatus())) {
 //                poJSON = saveUpdateOthers(PurchaseOrderReturnStatus.CONFIRMED);
 //                if (!"success".equals((String) poJSON.get("result"))) {
 //                    return poJSON;
 //                }
 //            }
-//
-//        } catch (CloneNotSupportedException ex) {
-//            Logger.getLogger(PurchaseOrderReturn.class.getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
-//            poJSON.put("result", "error");
-//            poJSON.put("message", MiscUtil.getException(ex));
-//            return poJSON;
-//        }
+
+        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+            return poJSON;
+        } catch (Exception ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+            return poJSON;
+        }
         poJSON.put("result", "success");
         return poJSON;
     }
@@ -2451,27 +2469,6 @@ public class PurchaseOrderReturn extends Transaction{
                 if ("error".equals((String) poJSON.get("result"))){
                     return poJSON;
                 }
-
-//                double ldblNetTotal = 0.0000;
-//                double ldblDiscount = Master().getDiscount().doubleValue();
-//                double ldblDiscountRate = Master().getDiscountRate().doubleValue();
-//                if(ldblDiscountRate > 0){
-//                    ldblDiscountRate = Master().getTransactionTotal().doubleValue() * (ldblDiscountRate / 100);
-//                }
-//                ldblDiscount = ldblDiscount + ldblDiscountRate;
-//                //Net Total = Vat Amount - Tax Amount
-//                if (Master().isVatTaxable()) {
-//                    //Net VAT Amount : VAT Sales - VAT Amount
-//                    //Net Total : VAT Sales - Withholding Tax
-//                    ldblNetTotal = Master().getVatSales().doubleValue() - Master().getWithHoldingTax().doubleValue();
-//                } else {
-//                    //Net VAT Amount : VAT Sales + VAT Amount
-//                    //Net Total : Net VAT Amount - Withholding Tax
-//                    ldblNetTotal = (Master().getVatSales().doubleValue()
-//                            + Master().getVatAmount().doubleValue())
-//                            - Master().getWithHoldingTax().doubleValue();
-//
-//                }
                 
                 System.out.println("MASTER");
                 //retreiving using column index
@@ -2617,7 +2614,7 @@ public class PurchaseOrderReturn extends Transaction{
                     ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
                 } else {
                     ldblVatAmountDetail = ldblDetTotal * 0.12;
-                    ldblDetTotal = ldblDetTotal + ldblVatAmountDetail; //Added by arsiela 10302025
+                    ldblDetTotal = ldblDetTotal + ldblVatAmountDetail; 
                 }
             }
             
@@ -2700,12 +2697,10 @@ public class PurchaseOrderReturn extends Transaction{
         poCachePayable.Master().setTransactionDate(poGRider.getServerDate()); 
         poCachePayable.Master().setCompanyId(Master().getCompanyId());
         poCachePayable.Master().setClientId(Master().getSupplierId());
-//        poCachePayable.Master().setDueDate(Master().getDueDate());
         poCachePayable.Master().setSourceCode(getSourceCode());
         poCachePayable.Master().setSourceNo(Master().getTransactionNo());
         poCachePayable.Master().setReferNo(Master().PurchaseOrderReceivingMaster().getReferenceNo()); 
         poCachePayable.Master().setGrossAmount(ldblGrossAmt); 
-//        poCachePayable.Master().setAmountPaid(getAdvancePayment());
         poCachePayable.Master().setVATExempt(Master().getVatExemptSales().doubleValue());
         poCachePayable.Master().setZeroRated(Master().getZeroVatSales().doubleValue());
         poCachePayable.Master().setTaxAmount(Master().getWithHoldingTax().doubleValue());
@@ -2761,6 +2756,7 @@ public class PurchaseOrderReturn extends Transaction{
                      + " AND ( b.cRefrStat = "+ SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) 
                      + " OR (ASCII(b.cRefrStat) - 64)  = "+ SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) + " )";
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        lsSQL = lsSQL + " ORDER BY b.dModified DESC ";
         System.out.println("Execute SQL : " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
@@ -3330,6 +3326,7 @@ public class PurchaseOrderReturn extends Transaction{
                         + " FROM PO_Return_Master a "
                         + " LEFT JOIN xxxAuditLogMaster b ON b.sSourceNo = a.sTransNox AND b.sEventNme LIKE 'ADD%NEW' AND b.sRemarksx = " + SQLUtil.toSQL(Master().getTable());
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox =  " + SQLUtil.toSQL(Master().getTransactionNo())) ;
+        lsSQL = lsSQL + " ORDER BY b.dModified DESC ";
         System.out.println("Execute SQL : " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
