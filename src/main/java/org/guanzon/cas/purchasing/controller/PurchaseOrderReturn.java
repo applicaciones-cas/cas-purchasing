@@ -1116,6 +1116,78 @@ public class PurchaseOrderReturn extends Transaction{
             return poJSON;
         }
     }
+    
+    /**
+    * Searches transaction records using supplier name and reference number.
+    * Applies optional transaction status, company, and category filters.
+    * Returns the selected transaction details or an error message if no record is found.
+    *
+    * @param supplier Supplier name filter.
+    * @param sReferenceNo Transaction reference number filter.
+    * @return JSONObject containing transaction data or error details.
+    * @throws CloneNotSupportedException
+    * @throws SQLException
+    * @throws GuanzonException
+    */
+    public JSONObject searchTransaction(String supplier, String sReferenceNo)
+            throws CloneNotSupportedException,
+            SQLException,
+            GuanzonException {
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        if (psTranStat != null) {
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsTransStat = " AND a.cTranStat IN (" + lsTransStat.substring(2) + ")";
+            } else {
+                lsTransStat = " AND a.cTranStat = " + SQLUtil.toSQL(psTranStat);
+            }
+        }
+        
+        if(supplier == null){
+            supplier = "";
+        }
+        if(sReferenceNo == null){
+            sReferenceNo = "";
+        }
+        String lsFilter = "";
+        if(psCompanyId != null && !"".equals(psCompanyId)){
+            lsFilter = lsFilter + " AND a.sCompnyID = " + SQLUtil.toSQL(psCompanyId);
+        }
+        if(psCategorCd != null && !"".equals(psCategorCd)){
+            lsFilter = lsFilter + " AND a.sCategrCd = " + SQLUtil.toSQL(psCategorCd);
+        }
+        
+        initSQL();
+        String lsSQL = MiscUtil.addCondition(SQL_BROWSE, " b.sCompnyNm  LIKE " + SQLUtil.toSQL("%" + supplier)
+                                                            + " AND a.sTransNox LIKE " + SQLUtil.toSQL("%" + sReferenceNo));
+        if (psTranStat != null && !"".equals(psTranStat)) {
+            lsSQL = lsSQL + lsTransStat;
+        }
+        if (lsFilter != null && !"".equals(lsFilter)) {
+            lsSQL = lsSQL + lsFilter;
+        }
+
+        System.out.println("Executing SQL: " + lsSQL);
+        poJSON = ShowDialogFX.Browse(poGRider,
+                lsSQL,
+                "",
+                "Transaction Date»Transaction No»Industry»Company»Supplier",
+                "dTransact»sTransNox»sIndustry»sCompnyNm»sSupplrNm",
+                "a.dTransact»a.sTransNox»d.sDescript»c.sCompnyNm»b.sCompnyNm",
+                1);
+
+        if (poJSON != null) {
+            return OpenTransaction((String) poJSON.get("sTransNox"));
+        } else {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
 
     public void setIndustryId(String industryId) {
         psIndustryId = industryId;
@@ -1843,20 +1915,20 @@ public class PurchaseOrderReturn extends Transaction{
                                    + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.OPEN)
                                    + " OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED) + " ) "
                                    + " AND a.cProcessd = " + SQLUtil.toSQL("0");
+                    if(psIndustryId != null && !"".equals(psIndustryId)){
+                        lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+                    }
                     break;
                 case "history":
                     //load all purchase order return
                     lsSQL = lsSQL  + " AND a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode());
+                    if(psIndustryId != null && !"".equals(psIndustryId)){
+                        lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+                    }
                 case "posting":
                     lsSQL = lsSQL + " AND a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReturnStatus.CONFIRMED)
                                   + " AND a.cProcessd = " + SQLUtil.toSQL("0");
                     break;
-            }
-            
-            if(psIndustryId == null || "".equals(psIndustryId)){
-                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
-            } else {
-                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
             }
             
             lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
