@@ -1724,12 +1724,14 @@ public class PurchaseOrderReturn extends Transaction{
             Master().setFreight(ldblFreightTotal);
             Double ldblDiscount = Master().getDiscount().doubleValue();
             Double ldblDiscountRate = Master().getDiscountRate().doubleValue();
+            if(ldblDiscountRate > 0){
+                ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+            }
+            double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
             boolean lbIsWithVat = false;
             double ldblVatSales = 0.0000;
             double ldblVatAmount = 0.0000;
             double ldblVatExemptSales = 0.0000;
-            
-            double ldblDiscountTotal = ldblDiscountRate + ldblDiscount;
             double ldblDiscountVatAmount = 0.0000;
             double ldblFreightVatAmount = 0.0000;
             double ldblDetailVatAmount = 0.0000;
@@ -2497,8 +2499,8 @@ public class PurchaseOrderReturn extends Transaction{
                 }
 
                 jsondetail = new JSONObject();
-                jsondetail.put("PO_Receiving_Master", jsonmaster);
-                jsondetail.put("PO_Receiving_Detail", jsondetails);
+                jsondetail.put("PO_Return_Master", jsonmaster);
+                jsondetail.put("PO_Return_Detail", jsondetails);
 
                 TBJTransaction tbj = new TBJTransaction(SOURCE_CODE,Master().getIndustryId(), Master().getCategoryCode());
                 tbj.setGRiderCAS(poGRider);
@@ -2610,7 +2612,7 @@ public class PurchaseOrderReturn extends Transaction{
         for (int lnCtr = 0; lnCtr <= getDetailCount() - 1; lnCtr++) {
             ldblDetTotal = (Detail(lnCtr).getUnitPrce().doubleValue() * Detail(lnCtr).getQuantity().doubleValue());
 //            ldblVatAmountDetail = ldblDetTotal - (ldblDetTotal / 1.12);
-            ldblGrossAmt += ldblDetTotal;
+            ldblGrossAmt += ldblDetTotal;   
             
             if(Detail(lnCtr).isVatable()){
                 pbVatableExist = true;
@@ -2675,24 +2677,35 @@ public class PurchaseOrderReturn extends Transaction{
         Double ldblVatAmount = 0.0000;
         Double ldblVatSales = 0.0000;
         Double ldblNetTotal = 0.0000;
+        Double ldblFreight = 0.0000;
         Double ldblFreightVatAmount = 0.0000;
-        //If all items are non vatable no vatable sales and vat amount will be computed.
-        if(pbVatableExist){
-            if(Master().isVatTaxable()){
-                ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
-                ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
-                ldblVatSales = Master().getVatSales().doubleValue() - ( Master().getFreight().doubleValue() - ldblFreightVatAmount);
-//                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() - ldblFreightVatAmount);
-                ldblNetTotal =  getNetTotal() + Master().getFreight().doubleValue();
-            } else {
-                ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
-                ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
-                ldblVatSales = Master().getVatSales().doubleValue() - Master().getFreight().doubleValue();
-                ldblNetTotal =  getNetTotal() + (Master().getFreight().doubleValue() + ldblFreightVatAmount);
-            }
-        } else {
-            ldblNetTotal = getNetTotal() + Master().getFreight().doubleValue();
-        }
+//        if((Master().getTruckingId() == null || "".equals(Master().getTruckingId())) 
+//            || (Master().getSupplierId().equals(Master().getTruckingId())) ){
+            ldblVatAmount = Master().getVatAmount().doubleValue();
+            ldblVatSales = Master().getVatSales().doubleValue();
+            ldblFreight = Master().getFreight().doubleValue();
+            ldblNetTotal = getNetTotal();
+            
+//        } 
+//        else {
+//            //If all items are non vatable no vatable sales and vat amount will be computed.
+//            if(pbVatableExist){
+//                if(Master().isVatTaxable()){
+//                    ldblFreightVatAmount = Master().getFreight().doubleValue() - (Master().getFreight().doubleValue() / 1.12);
+//                    ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
+//                    ldblVatSales = Master().getVatSales().doubleValue() - ( Master().getFreight().doubleValue() - ldblFreightVatAmount);
+////                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() - ldblFreightVatAmount);
+//                    ldblNetTotal =  getNetTotal() - Master().getFreight().doubleValue();
+//                } else {
+//                    ldblFreightVatAmount = Master().getFreight().doubleValue() * 0.12;
+//                    ldblVatAmount = Master().getVatAmount().doubleValue() - ldblFreightVatAmount;
+//                    ldblVatSales = Master().getVatSales().doubleValue() - Master().getFreight().doubleValue();
+//                    ldblNetTotal =  getNetTotal() - (Master().getFreight().doubleValue() + ldblFreightVatAmount);
+//                }
+//            } else {
+//                ldblNetTotal = getNetTotal() - Master().getFreight().doubleValue();
+//            }
+//        }
         
         //Cache Payable Master
         poCachePayable.Master().setDiscountAmount(Master().getDiscount().doubleValue() + (ldblGrossAmt * (Master().getDiscountRate().doubleValue() / 100)));
