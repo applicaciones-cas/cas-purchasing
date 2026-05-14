@@ -134,6 +134,7 @@ public class PurchaseOrder extends Transaction {
         poJSON = loAuth.isAuthorized();
 
         //check if currenty user is authorized
+        System.out.println(poGRider.getUserID());
         if (!((String) poJSON.get("result")).equalsIgnoreCase("true")) {
             //show process needs authorization
             ShowMessageFX.Warning((String) poJSON.get("warning"), "Authorization Required", null);
@@ -3219,7 +3220,7 @@ public class PurchaseOrder extends Transaction {
                 + " ,	Transaction_Authorization_Detail b     "
                 + " ,	Transaction_Authorization_Recipient c  "
                 + " LEFT JOIN Client_Master d ON c.sEmployID = d.sClientID "
-                + " WHERE a.sTransNox = b.sSourceNo AND b.sSourceNo = c.sSourceNo    "
+                + " WHERE a.sTransNox = b.sSourceNo AND b.sTransNox = c.sSourceNo    "
                 + " AND a.sSourceCD = " + SQLUtil.toSQL(getSourceCode())
                 + " AND a.sSourceNo = " + SQLUtil.toSQL(Master().getTransactionNo())
                 + " AND a.cTranStat = '2' "
@@ -3348,7 +3349,7 @@ public class PurchaseOrder extends Transaction {
             entryDate = (String) loJSON.get("sEntryDte");
         }
 
-        showApprovalHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, poMaster.getColumn("nTranTotl"), crs);
+        showApprovalHistoryUI("Purchase Order", (String) poMaster.getValue("sTransNox"), entryBy, entryDate, Double.parseDouble(poMaster.getValue("nTranTotl").toString()), crs);
     }
 
     public void ShowStatusHistory() throws SQLException, GuanzonException, Exception {
