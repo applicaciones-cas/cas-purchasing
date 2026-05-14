@@ -2,12 +2,10 @@
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.soap.Detail;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.cas.purchasing.controller.PurchaseOrderReturn;
-import org.guanzon.cas.purchasing.services.PurchaseOrderControllers;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReturnControllers;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -197,10 +195,10 @@ public class testPurchaseOrderReturn {
     
 //    @Test
     public void testgetPurchaseReturnList() {
-        String industryId = "01";
-        String companyId = "0002";
-        String categoryCd = "0001";
-        String supplierId = "C00124000020";
+        String industryId = "09";
+        String companyId = "M001";
+        String categoryCd = "0000007";
+        String supplierId = "";
         
         JSONObject loJSON;
         
@@ -218,7 +216,13 @@ public class testPurchaseOrderReturn {
         PurchaseReturnController.setCategoryId(categoryCd); //direct assignment of value
         
         
-        loJSON = PurchaseReturnController.loadPurchaseOrderReturn("confirmation", supplierId, "");
+//        loJSON = PurchaseReturnController.loadPurchaseOrderReturn("confirmation", supplierId, "");
+//        if (!"success".equals((String) loJSON.get("result"))) {
+//            System.err.println((String) loJSON.get("message"));
+//            Assert.fail();
+//        }
+        
+        loJSON = PurchaseReturnController.loadPurchaseOrderReturn("posting", supplierId, "");
         if (!"success".equals((String) loJSON.get("result"))) {
             System.err.println((String) loJSON.get("message"));
             Assert.fail();
@@ -367,6 +371,53 @@ public class testPurchaseOrderReturn {
             }
             
             loJSON = PurchaseReturnController.VoidTransaction("test void");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+            
+            System.out.println((String) loJSON.get("message"));
+        } catch (CloneNotSupportedException |ParseException e) {
+            System.err.println(MiscUtil.getException(e));
+            Assert.fail();
+        } catch (SQLException | GuanzonException ex) {
+            Logger.getLogger(testPurchaseOrderReturn.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }   
+    
+    @Test
+    public void testPostTransaction() {
+        JSONObject loJSON;
+        
+        try {
+            loJSON = PurchaseReturnController.InitTransaction();
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            loJSON = PurchaseReturnController.OpenTransaction("GK0126000002");
+            if (!"success".equals((String) loJSON.get("result"))){
+                System.err.println((String) loJSON.get("message"));
+                Assert.fail();
+            } 
+
+            //retreiving using column index
+            for (int lnCol = 1; lnCol <= PurchaseReturnController.Master().getColumnCount(); lnCol++){
+                System.out.println(PurchaseReturnController.Master().getColumn(lnCol) + " ->> " + PurchaseReturnController.Master().getValue(lnCol));
+            }
+            //retreiving using field descriptions
+            System.out.println(PurchaseReturnController.Master().Branch().getBranchName());
+            System.out.println(PurchaseReturnController.Master().Category().getDescription());
+
+            //retreiving using column index
+            for (int lnCtr = 0; lnCtr <= PurchaseReturnController.Detail().size() - 1; lnCtr++){
+                for (int lnCol = 1; lnCol <= PurchaseReturnController.Detail(lnCtr).getColumnCount(); lnCol++){
+                    System.out.println(PurchaseReturnController.Detail(lnCtr).getColumn(lnCol) + " ->> " + PurchaseReturnController.Detail(lnCtr).getValue(lnCol));
+                }
+            }
+            
+            loJSON = PurchaseReturnController.PostTransaction("test post");
             if (!"success".equals((String) loJSON.get("result"))){
                 System.err.println((String) loJSON.get("message"));
                 Assert.fail();
