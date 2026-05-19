@@ -207,7 +207,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
                     ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                      poJSON.put("result", "error");
-                     poJSON.put("message", "User is not an authorized approving officer..");
+                     poJSON.put("message", "User is not an authorized approving officer.");
                      return poJSON;
                 }
                 setApproving(lsUserIDxx);
@@ -217,7 +217,7 @@ public class PurchaseOrderReceiving extends Transaction {
                //show process needs authorization through the authority matrix
                ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
                poJSON.put("result", "error");
-               poJSON.put("message", "User is not an authorized approving officer..");
+               poJSON.put("message", "User is not an authorized approving officer.");
                return poJSON;
             }
         }  
@@ -957,11 +957,14 @@ public class PurchaseOrderReceiving extends Transaction {
             GLTransaction loGLTrans = new GLTransaction(poGRider,Master().getBranchCode());
             loGLTrans.initTransaction(getSourceCode(), Master().getTransactionNo());
             for(int lnCtr = 0; lnCtr <= Journal().getDetailCount() - 1; lnCtr++){
-                loGLTrans.addDetail(Journal().Master().getBranchCode(), 
-                        Journal().Detail(lnCtr).getAccountCode(),
-                        SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
-                        Journal().Detail(lnCtr).getDebitAmount(), 
-                        Journal().Detail(lnCtr).getCreditAmount());
+//                if(Journal().Detail(lnCtr).getCreditAmount() > 0.0000 || Journal().Detail(lnCtr).getDebitAmount() > 0.0000){
+                if(Journal().Detail(lnCtr).isReverse()){ //Added by Arsiela 05-16-2026 04:24PM
+                    loGLTrans.addDetail(Journal().Master().getBranchCode(), 
+                            Journal().Detail(lnCtr).getAccountCode(),
+                            SQLUtil.toDate(xsDateShort(Journal().Detail(lnCtr).getForMonthOf()), SQLUtil.FORMAT_SHORT_DATE) , 
+                            Journal().Detail(lnCtr).getDebitAmount(), 
+                            Journal().Detail(lnCtr).getCreditAmount());
+                }
             }
             loGLTrans.saveTransaction();
             System.out.println("-----------------------------------");
@@ -4786,7 +4789,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayable.Master().setNetTotal(ldblNetTotal); 
         poCachePayable.Master().setPayables(ldblNetTotal); 
         poCachePayable.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
-        poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+//        poCachePayable.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        poCachePayable.Master().setModifyingId(poGRider.getUserID());
         poCachePayable.Master().setModifiedDate(poGRider.getServerDate());
         
 //        Master().setAmountPaid(getAdvancePayment());
@@ -6233,6 +6237,9 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         } catch (Exception ex) {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+            return poJSON;
         }
         poJSON.put("result", "success");
         return poJSON;
@@ -6332,15 +6339,17 @@ public class PurchaseOrderReceiving extends Transaction {
         double ldblCreditAmt = 0.0000;
         double ldblDebitAmt = 0.0000;
         for(int lnCtr = 0; lnCtr <= poJournal.getDetailCount()-1; lnCtr++){
-            ldblDebitAmt += poJournal.Detail(lnCtr).getDebitAmount();
-            ldblCreditAmt += poJournal.Detail(lnCtr).getCreditAmount();
-            
-            if(poJournal.Detail(lnCtr).getCreditAmount() > 0.0000 ||  poJournal.Detail(lnCtr).getDebitAmount() > 0.0000){
-                if(poJournal.Detail(lnCtr).getAccountCode() != null && !"".equals(poJournal.Detail(lnCtr).getAccountCode())){
-                    if(poJournal.Detail(lnCtr).getForMonthOf() == null || "1900-01-01".equals(xsDateShort(poJournal.Detail(lnCtr).getForMonthOf()))){
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Invalid reporting date of journal at row "+(lnCtr+1)+" .");
-                        return poJSON;
+            if(poJournal.Detail(lnCtr).isReverse()){ //Added by Arsiela 05-16-2026 04:24PM
+                ldblDebitAmt += poJournal.Detail(lnCtr).getDebitAmount();
+                ldblCreditAmt += poJournal.Detail(lnCtr).getCreditAmount();
+
+                if(poJournal.Detail(lnCtr).getCreditAmount() > 0.0000 ||  poJournal.Detail(lnCtr).getDebitAmount() > 0.0000){
+                    if(poJournal.Detail(lnCtr).getAccountCode() != null && !"".equals(poJournal.Detail(lnCtr).getAccountCode())){
+                        if(poJournal.Detail(lnCtr).getForMonthOf() == null || "1900-01-01".equals(xsDateShort(poJournal.Detail(lnCtr).getForMonthOf()))){
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Invalid reporting date of journal at row "+(lnCtr+1)+" .");
+                            return poJSON;
+                        }
                     }
                 }
             }
@@ -7097,6 +7106,7 @@ public class PurchaseOrderReceiving extends Transaction {
                      + " OR (ASCII(b.cRefrStat) - 64)  = "+ SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED) + " )";
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox = " + SQLUtil.toSQL(Master().getTransactionNo())
                                                 + " AND a.cPurposex =  " + SQLUtil.toSQL(Master().getPurpose())) ;
+        lsSQL = lsSQL + " ORDER BY b.dModified DESC ";
         System.out.println("Execute SQL : " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {
@@ -7963,6 +7973,7 @@ public class PurchaseOrderReceiving extends Transaction {
                         + " LEFT JOIN xxxAuditLogMaster b ON b.sSourceNo = a.sTransNox AND b.sEventNme LIKE 'ADD%NEW' AND b.sRemarksx = " + SQLUtil.toSQL(Master().getTable());
         lsSQL = MiscUtil.addCondition(lsSQL, " a.sTransNox =  " + SQLUtil.toSQL(Master().getTransactionNo())
                                                 + " AND a.cPurposex =  " + SQLUtil.toSQL(Master().getPurpose())) ;
+        lsSQL = lsSQL + " ORDER BY b.dModified DESC ";
         System.out.println("Execute SQL : " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         try {

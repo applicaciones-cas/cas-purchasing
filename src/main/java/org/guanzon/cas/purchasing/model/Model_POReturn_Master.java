@@ -6,6 +6,7 @@
 package org.guanzon.cas.purchasing.model;
 
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -24,6 +25,7 @@ import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.guanzon.cas.purchasing.services.PurchaseOrderReceivingModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
+import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.json.simple.JSONObject;
 
 /**
@@ -65,7 +67,13 @@ public class Model_POReturn_Master extends Model {
             poEntity.updateObject("nFreightx", 0.00);
             poEntity.updateString("cPrintxxx", Logical.NO);
             poEntity.updateString("cProcessd", Logical.NO);
-            poEntity.updateString("cTranStat", PurchaseOrderReceivingStatus.OPEN);
+            poEntity.updateString("cTranStat", PurchaseOrderReturnStatus.OPEN);
+            
+            poEntity.updateObject("nVATSales", 0.0000);
+            poEntity.updateObject("nVATAmtxx", 0.0000);
+            poEntity.updateObject("nZroVATSl", 0.0000);
+            poEntity.updateObject("nVATExmpt", 0.0000);
+            
             //end - assign default values
 
             poEntity.insertRow();
@@ -202,6 +210,50 @@ public class Model_POReturn_Master extends Model {
         return (Number) getValue("nVATRatex");
     }
     
+    public JSONObject setVatSales(Number vatSales) {
+        return setValue("nVATSales", vatSales);
+    }
+
+    public Number getVatSales() {
+        if(getValue("nVATSales") == null || "".equals(getValue("nVATSales"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATSales");
+    }
+    
+    public JSONObject setVatAmount(Number vatAmount) {
+        return setValue("nVATAmtxx", vatAmount);
+    }
+
+    public Number getVatAmount() {
+        if(getValue("nVATAmtxx") == null || "".equals(getValue("nVATAmtxx"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATAmtxx");
+    }
+    
+    public JSONObject setZeroVatSales(Number zeroVatSales) {
+        return setValue("nZroVATSl", zeroVatSales);
+    }
+
+    public Number getZeroVatSales() {
+        if(getValue("nZroVATSl") == null || "".equals(getValue("nZroVATSl"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nZroVATSl");
+    }
+    
+    public JSONObject setVatExemptSales(Number vatExemptSales) {
+        return setValue("nVATExmpt", vatExemptSales);
+    }
+
+    public Number getVatExemptSales() {
+        if(getValue("nVATExmpt") == null || "".equals(getValue("nVATExmpt"))){
+            return 0.00;
+        } 
+        return (Number) getValue("nVATExmpt");
+    }
+    
     public JSONObject setWithHoldingTax(Number withHoldingTax){
         return setValue("nTWithHld", withHoldingTax);
     }
@@ -280,6 +332,22 @@ public class Model_POReturn_Master extends Model {
         return ((String) getValue("cProcessd")).equals("1");
     }
     
+    public JSONObject isWithHoldingTax(boolean isProcessed){
+        return setValue("cTWithHld", isProcessed ? "1" : "0");
+    }
+    
+    public boolean isWithHoldingTax(){
+        return ((String) getValue("cTWithHld")).equals("1");
+    }
+
+    public JSONObject isVatTaxable(boolean isVatable){
+        return setValue("cVATaxabl", isVatable ? "1" : "0");
+    } 
+    
+    public boolean isVatTaxable(){
+        return ((String) getValue("cVATaxabl")).equals("1");
+    }
+    
     public JSONObject setTransactionStatus(String transactionStatus){
         return setValue("cTranStat", transactionStatus);
     }
@@ -310,6 +378,32 @@ public class Model_POReturn_Master extends Model {
     
     public Date getModifiedDate(){
         return (Date) getValue("dModified");
+    }
+    
+    public Double getNetTotal(){
+         //Net Total = Vat Amount - Tax Amount
+        Double ldblNetTotal = 0.00;
+        Double ldblTotal =  getTransactionTotal().doubleValue();
+        Double ldblDiscount = getDiscount().doubleValue();
+        Double ldblDiscountRate = getDiscountRate().doubleValue();
+        Double ldblDiscountVatAmount = 0.0000;
+        if(ldblDiscountRate > 0){
+            ldblDiscountRate = ldblTotal * (ldblDiscountRate / 100);
+        }
+        ldblDiscount = ldblDiscount + ldblDiscountRate;
+        if (isVatTaxable()) {
+//            ldblDiscountVatAmount = ldblDiscount - (ldblDiscount / 1.12);
+            ldblNetTotal = (getVatSales().doubleValue()
+                        + getVatAmount().doubleValue()
+                        + getVatExemptSales().doubleValue());
+        } else {
+//            ldblDiscountVatAmount = ldblDiscount * 0.12;
+            ldblNetTotal = (ldblTotal + getVatAmount().doubleValue() + getFreight().doubleValue()) - ldblDiscount;
+        }
+        
+        DecimalFormat format = new DecimalFormat("###0.0000");
+        return Double.valueOf(format.format(ldblNetTotal));
+        
     }
     
     @Override

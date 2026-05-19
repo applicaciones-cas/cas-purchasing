@@ -178,6 +178,14 @@ public class Model_POReturn_Detail extends Model{
         return (String) getValue("sBatchNox");
     }
     
+    public JSONObject isVatable(boolean isVatable){
+        return setValue("cWithVATx", isVatable ? "1" : "0");
+    } 
+    
+    public boolean isVatable(){
+        return ((String) getValue("cWithVATx")).equals("1");
+    }
+    
     public JSONObject isReverse(boolean isReverse) {
         return setValue("cReversex", isReverse ? "+" : "-");
     }
