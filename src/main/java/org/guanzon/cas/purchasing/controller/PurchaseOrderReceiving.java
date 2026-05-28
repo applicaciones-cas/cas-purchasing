@@ -3396,7 +3396,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
             }
             
-            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            lsSQL = lsSQL + " ORDER BY a.dTransact,b.sCompnyNm,a.sTransNox ASC ";//sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
             
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -3687,7 +3687,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
   
             lsSQL = lsSQL + " GROUP BY a.sTransNox "
-                    + " ORDER BY dTransact ASC";
+                    + " ORDER BY a.dTransact,c.sCompnyNm,a.sTransNox ASC";//sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
             
             System.out.println("Executing SQL: " + lsSQL);
 
@@ -3867,7 +3867,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
   
             lsSQL = lsSQL + " GROUP BY a.sTransNox "
-                    + " ORDER BY dTransact ASC";
+                    + " ORDER BY a.dTransact,c.sCompnyNm,a.sTransNox ASC";//sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
             
             System.out.println("Executing SQL: " + lsSQL);
 

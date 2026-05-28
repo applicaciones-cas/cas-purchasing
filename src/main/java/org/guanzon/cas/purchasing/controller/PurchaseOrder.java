@@ -2647,11 +2647,11 @@ public class PurchaseOrder extends Transaction {
 
     private String getInvStockRequest_SQL() {
         return "SELECT"
-                + "  a.sTransNox,"
-                + "  e.sBranchNm,"
+                + "  a.sTransNox AS sTransNox,"
+                + "  e.sBranchNm AS sBranchNm,"
                 + "  a.sBranchCd,"
                 + "  a.cTranStat,"
-                + "  a.dTransact,"
+                + "  a.dTransact AS dTransact,"
                 + "  a.sReferNox,"
                 + "  a.cTranStat,"
                 + "  a.sIndstCdx,"
@@ -2669,11 +2669,11 @@ public class PurchaseOrder extends Transaction {
 
     private String getPOQuotation_SQL() {
         return "SELECT"
-                + "  a.sTransNox,"
-                + "  e.sBranchNm,"
+                + "  a.sTransNox AS sTransNox,"
+                + "  e.sBranchNm AS sBranchNm,"
                 + "  a.sBranchCd,"
                 + "  a.cTranStat,"
-                + "  a.dTransact,"
+                + "  a.dTransact AS dTransact,"
                 + "  a.sReferNox,"
                 + "  a.cTranStat,"
                 + "  a.sIndstCdx,"
@@ -2722,7 +2722,7 @@ public class PurchaseOrder extends Transaction {
         lsSQL = lsSQL + " GROUP BY a.sTransNox ";
 //        }
 
-        lsSQL = lsSQL + " ORDER BY dTransact, sTransNox DESC";
+        lsSQL = lsSQL + " ORDER BY dTransact, sBranchNm, sTransNox ASC";//sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
 
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -3103,7 +3103,7 @@ public class PurchaseOrder extends Transaction {
             lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
-                + " ORDER BY dTransact ASC";
+                + " ORDER BY dTransact,sSupplier,sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -3173,7 +3173,7 @@ public class PurchaseOrder extends Transaction {
             lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
-                + " ORDER BY dTransact ASC";
+                + " ORDER BY dTransact,sSupplier,sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
