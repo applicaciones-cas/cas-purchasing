@@ -1932,7 +1932,7 @@ public class PurchaseOrderReturn extends Transaction{
                     break;
             }
             
-            lsSQL = lsSQL + " ORDER BY a.dTransact DESC ";
+            lsSQL = lsSQL + " ORDER BY a.dTransact,b.sCompnyNm,a.sTransNox ASC "; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
 
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
