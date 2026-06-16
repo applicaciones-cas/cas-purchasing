@@ -4393,7 +4393,7 @@ public class PurchaseOrder extends Transaction {
             
             lsFilter.add("b.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
                     + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID())
-                    + " b.sTransNox LIKE " +  SQLUtil.toSQL(poGRider.getBranchCode()+ "%") );
+                    + " AND b.sTransNox LIKE " +  SQLUtil.toSQL(poGRider.getBranchCode()+ "%") );
             
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
