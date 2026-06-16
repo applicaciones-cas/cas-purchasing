@@ -4257,7 +4257,8 @@ public class PurchaseOrder extends Transaction {
             }
             
             lsFilter.add("a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
-                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID())
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL(poGRider.getBranchCode()) + "%");
             
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
@@ -4391,7 +4392,8 @@ public class PurchaseOrder extends Transaction {
             }
             
             lsFilter.add("b.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
-                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID())
+                    + " b.sTransNox LIKE " +  SQLUtil.toSQL(poGRider.getBranchCode()) + "%");
             
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
