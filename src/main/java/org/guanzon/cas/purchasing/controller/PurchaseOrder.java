@@ -4218,7 +4218,7 @@ public class PurchaseOrder extends Transaction {
                     + "  e.sDescript AS Category, "
                     + "  f.sDescript AS Term, "
                     + "  a.nTranTotl "
-                    + " FROM po_master a "
+                    + " FROM PO_Master a "
                     + " LEFT JOIN AP_Client_Master b ON a.sSupplier = b.sClientID "
                     + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd "
                     + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
