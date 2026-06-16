@@ -4218,7 +4218,7 @@ public class PurchaseOrder extends Transaction {
                     + "  e.sDescript AS Category, "
                     + "  f.sDescript AS Term, "
                     + "  a.nTranTotl "
-                    + " FROM po_master a "
+                    + " FROM PO_Master a "
                     + " LEFT JOIN AP_Client_Master b ON a.sSupplier = b.sClientID "
                     + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd "
                     + " LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd "
@@ -4257,7 +4257,8 @@ public class PurchaseOrder extends Transaction {
             }
             
             lsFilter.add("a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
-                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID())
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL(poGRider.getBranchCode()) + "%");
             
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
@@ -4391,7 +4392,8 @@ public class PurchaseOrder extends Transaction {
             }
             
             lsFilter.add("b.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()) 
-                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID()));
+                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryID())
+                    + " b.sTransNox LIKE " +  SQLUtil.toSQL(poGRider.getBranchCode()) + "%");
             
             if (psTranStat.length() > 1) {
                 for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
@@ -4406,7 +4408,7 @@ public class PurchaseOrder extends Transaction {
                 lsSQL += " WHERE " + String.join(" AND ", lsFilter);
             }
 
-            lsSQL += " ORDER BY b.dTransact ASC";
+            lsSQL += " ORDER BY b.dTransact, a.sTransNox, a.nEntryNox ASC";
 
             System.out.println("Executing SQL: " + lsSQL);
 
