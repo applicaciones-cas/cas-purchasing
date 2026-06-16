@@ -4408,7 +4408,7 @@ public class PurchaseOrder extends Transaction {
                 lsSQL += " WHERE " + String.join(" AND ", lsFilter);
             }
 
-            lsSQL += " ORDER BY b.dTransact ASC";
+            lsSQL += " ORDER BY b.dTransact, a.sTransNox, a.nEntryNox ASC";
 
             System.out.println("Executing SQL: " + lsSQL);
 
