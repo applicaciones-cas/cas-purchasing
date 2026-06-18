@@ -375,11 +375,11 @@ public class PurchaseOrderReturn extends Transaction{
         }
 
         //Update Purchase Order, Serial Ledger, Inventory
-        poJSON = saveUpdateOthers(PurchaseOrderReceivingStatus.PAID);
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
+//        poJSON = saveUpdateOthers(PurchaseOrderReturnStatus.PAID);
+//        if (!"success".equals((String) poJSON.get("result"))) {
+//            poGRider.rollbackTrans();
+//            return poJSON;
+//        }
 
         poGRider.commitTrans();
 
