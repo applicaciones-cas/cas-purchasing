@@ -2000,7 +2000,7 @@ public class PurchaseOrder extends Transaction {
                 SearchPayee(Master().getSupplierID());
 
                 poPaymentRequest.PaymentRequest().Master().setTransactionDate(Master().getTransactionDate());
-                poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getBranchCode());
+                poPaymentRequest.PaymentRequest().Master().setBranchCode(Master().getDestinationID());
                 if (poGRider.isMainOffice() || poGRider.isWarehouse()) {
                     poPaymentRequest.PaymentRequest().Master().setDepartmentID(poGRider.getDepartment());
                 }
