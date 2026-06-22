@@ -327,6 +327,114 @@ public class PurchaseOrderReceiving extends Transaction {
         }
     }
     
+     /**
+    * Sets the form identifier for the transaction.
+    *
+    * @param fsForm the form name or code
+    */
+    private String psForm = "";
+    public void setForm(String fsForm){
+        psForm = fsForm;
+    }
+    
+    /**
+    * Validates if the transaction can be updated based on its current status
+    * and form context, reloading data if status has changed.
+    *
+    * @param isEntry true if called during entry mode, false otherwise
+    * @return result as a {@link JSONObject}
+    * @throws CloneNotSupportedException if cloning fails
+    * @throws SQLException if a database error occurs
+    * @throws GuanzonException if business logic fails
+    * @throws ScriptException if script processing fails
+    */
+    public JSONObject checkUpdateTransaction(boolean isEntry) throws CloneNotSupportedException, SQLException, GuanzonException, ScriptException{
+        poJSON = new JSONObject();
+        
+        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+        poJSON = loObject.openRecord(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        switch(loObject.getTransactionStatus()){
+            case PurchaseOrderReceivingStatus.VOID:
+            case PurchaseOrderReceivingStatus.CANCELLED:
+                poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"\nCheck transaction history.");
+                poJSON.put("result", "error");
+                return poJSON;
+            case PurchaseOrderReceivingStatus.CONFIRMED:
+                if(!isEntry){
+                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                    poJSON.put("result", "error");
+                    return poJSON;
+                }
+                break;
+            case PurchaseOrderReceivingStatus.CONFIRMED_I:
+            case PurchaseOrderReceivingStatus.VERIFIED:
+            case PurchaseOrderReceivingStatus.POSTED:
+                if(isEntry){
+                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                    poJSON.put("result", "error");
+                    return poJSON;
+                } else {
+                    //Check FORM
+                    if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
+                        if(!PurchaseOrderReceivingStatus.CONFIRMED_I.equals(loObject.getTransactionStatus())
+                            && !PurchaseOrderReceivingStatus.CONFIRMED.equals(loObject.getTransactionStatus())){
+                            poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                            poJSON.put("result", "error");
+                            return poJSON;
+                        }
+                    } else if(PurchaseOrderReceivingStatus.VERIFIED.equals(psForm)){
+                        if(!PurchaseOrderReceivingStatus.VERIFIED.equals(loObject.getTransactionStatus())
+                            && !PurchaseOrderReceivingStatus.CONFIRMED_I.equals(loObject.getTransactionStatus())){
+                            poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                            poJSON.put("result", "error");
+                            return poJSON;
+                        }
+                    } else if(PurchaseOrderReceivingStatus.POSTED.equals(psForm)){
+                        if(!PurchaseOrderReceivingStatus.VERIFIED.equals(loObject.getTransactionStatus())
+                            && !PurchaseOrderReceivingStatus.VERIFIED.equals(loObject.getTransactionStatus())){
+                            poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                            poJSON.put("result", "error");
+                            return poJSON;
+                        }
+                    }
+                }
+                break;
+                
+            case PurchaseOrderReceivingStatus.RETURNED_I:
+//                if(!PurchaseOrderReceivingStatus.APPROVED.equals(psForm)){
+//                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+//                    poJSON.put("result", "error");
+//                    return poJSON;
+//                }
+                break;
+            case PurchaseOrderReceivingStatus.RETURNED:
+                if(!PurchaseOrderReceivingStatus.CONFIRMED.equals(psForm)){
+                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                    poJSON.put("result", "error");
+                    return poJSON;
+                }
+                break;
+        }
+        
+        if(!loObject.getTransactionStatus().equals(Master().getTransactionStatus())){
+            poJSON = OpenTransaction(Master().getTransactionNo());
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
+                return poJSON;
+            }
+        }
+        //Clear value
+        psForm = "";
+        poJSON.put("result", "success");
+        poJSON.put("message", "success");
+        return poJSON;
+    }
+    
     /**
      * Seek Approval method 
      * @return JSON
