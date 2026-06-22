@@ -136,6 +136,7 @@ public class PurchaseOrderReceiving extends Transaction {
     private String psIndustryId = "";
     private String psCompanyId = "";
     private String psCategorCd = "";
+    public String psApprover = "";
     
     private Model_POR_Serial poSerial;
     private CachePayable poCachePayable;
@@ -168,6 +169,162 @@ public class PurchaseOrderReceiving extends Transaction {
         paPurchaseOrderReturn = new ArrayList<>();
 
         return initialize();
+    }
+    
+    public String getStatus(String fsStatus){
+        switch(fsStatus){
+            case PurchaseOrderReceivingStatus.VOID:
+                return "Voided";
+            case PurchaseOrderReceivingStatus.CANCELLED:
+                return "Cancelled";
+            case PurchaseOrderReceivingStatus.VERIFIED:
+                return "Verified";
+            case PurchaseOrderReceivingStatus.CONFIRMED_I:
+                return "Confirmed";
+            case PurchaseOrderReceivingStatus.CONFIRMED:
+                if(pbIsFinance){
+                    return "Open";
+                } else {
+                    return "Confirmed";
+                }
+            case PurchaseOrderReceivingStatus.RETURNED_I:
+            case PurchaseOrderReceivingStatus.RETURNED:
+                return "Returned";
+            default:
+                return "Open";
+        }
+    }
+    
+    /**
+    * Checks if a user has an allowed position for a specific transaction status.
+    *
+    * @param fsStatus transaction status
+    * @param fsUserId user ID
+    * @return position name if authorized, otherwise empty string
+    * @throws SQLException if a database error occurs
+    * @throws GuanzonException if query execution fails
+    */
+    public String checkPosition(String fsStatus, String fsUserId) throws SQLException, GuanzonException{
+        String lsSQL = " SELECT   " +
+                    "  a.sUserIDxx, " +
+                    "  d.sCompnyNm, " +
+                    "  e.sDeptName, " +
+                    "  c.sPositnNm, " +
+                    "  b.dFiredxxx, " +
+                    "  b.sDeptIDxx, " +
+                    "  b.sPositnID " +
+                    "FROM xxxSysUser a " +
+                    "LEFT JOIN Employee_Master001 b ON b.sEmployID = a.sEmployNo " +
+                    "LEFT JOIN Position c ON c.sPositnID = b.sPositnID  " +
+                    "LEFT JOIN Client_Master d ON d.sClientID = b.sEmployID  " +
+                    "LEFT JOIN Department e ON e.sDeptIDxx = b.sDeptIDxx  ";
+        
+        lsSQL = MiscUtil.addCondition(lsSQL,
+                " a.sUserIDxx = " + SQLUtil.toSQL(fsUserId)
+                + " AND b.sDeptIDxx = " + SQLUtil.toSQL(System.getProperty("sys.dept.finance")) 
+                 );
+        String lsPosition = "";
+        switch(fsStatus){
+            case PurchaseOrderReceivingStatus.OPEN:
+            case PurchaseOrderReceivingStatus.VOID:
+            case PurchaseOrderReceivingStatus.CANCELLED:
+            case PurchaseOrderReceivingStatus.RETURNED:
+                //Default users
+                return "";
+            //Accounting side
+            //Who can entry/update and confirmed the transaction
+            case PurchaseOrderReceivingStatus.CONFIRMED:
+                if(pbIsFinance){
+                    lsPosition = "%Payable%";
+                    lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition) );
+                } else {
+                    return "";
+                }
+                break;
+            case PurchaseOrderReceivingStatus.VERIFIED:
+                //Who can verify and approve the transaction
+                lsPosition = "%Account%";
+                lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition) 
+                                                + " AND c.sPositnNm NOT LIKE " + SQLUtil.toSQL("%Payable%") 
+                );
+                break;
+            case PurchaseOrderReceivingStatus.POSTED:
+                //Who can certify and authorized the transaction
+                lsPosition = "%Manager%";
+                lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition)
+                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%") 
+                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%") 
+                );
+                break;
+            case PurchaseOrderReceivingStatus.RETURNED_I:
+                //Who can initial return the transaction
+                lsSQL = MiscUtil.addCondition(lsSQL, " (  c.sPositnNm LIKE " + SQLUtil.toSQL("%Manager%") 
+                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%") 
+                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%") 
+                                    + " ) AND c.sPositnNm NOT LIKE " + SQLUtil.toSQL("%Payable%") 
+                                    );
+                break;
+        }
+        System.out.println("Executing SQL: " + lsSQL);
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        try {
+            if (MiscUtil.RecordCount(loRS) > 0) {
+                if(loRS.next()){
+                    if(loRS.getString("sPositnNm") != null && !"".equals(loRS.getString("sPositnNm"))){
+                        return loRS.getString("sPositnNm");
+                    }
+                }
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            System.out.println("No record loaded.");
+        }
+        return "";
+    }
+    
+    /**
+    * Checks if a transition from the current status to the target status is allowed.
+    *
+    * @param current current transaction status
+    * @param target target status to transition into
+    * @return true if transition is allowed, false otherwise
+    */
+    public boolean isAllowed(String current, String target) {
+        switch (target) {
+            //Default User
+            case PurchaseOrderReceivingStatus.CONFIRMED:
+                return current.equals(PurchaseOrderReceivingStatus.OPEN)
+                    || current.equals(PurchaseOrderReceivingStatus.RETURNED);
+                
+            case PurchaseOrderReceivingStatus.RETURNED:
+                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED);
+                
+            case PurchaseOrderReceivingStatus.VOID:
+                return current.equals(PurchaseOrderReceivingStatus.OPEN);
+                
+            case PurchaseOrderReceivingStatus.CANCELLED:
+                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED)
+                    || current.equals(PurchaseOrderReceivingStatus.RETURNED);
+            
+            //SI Posting
+            case PurchaseOrderReceivingStatus.CONFIRMED_I:
+                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED);
+                
+            case PurchaseOrderReceivingStatus.VERIFIED:
+                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED_I);
+                
+            case PurchaseOrderReceivingStatus.RETURNED_I:
+                return current.equals(PurchaseOrderReceivingStatus.VERIFIED);
+                
+            case PurchaseOrderReceivingStatus.POSTED:
+                return current.equals(PurchaseOrderReceivingStatus.VERIFIED);
+
+            case PurchaseOrderReceivingStatus.PAID:
+                return current.equals(PurchaseOrderReceivingStatus.POSTED);
+
+            default:
+                return false;
+        }
     }
     
     /**
@@ -211,6 +368,7 @@ public class PurchaseOrderReceiving extends Transaction {
                      return poJSON;
                 }
                 setApproving(lsUserIDxx);
+                psApprover = (String) poJSON.get("sUserIDxx");
             }
             //needs authorization thru authorization matrix
             else{
@@ -272,6 +430,15 @@ public class PurchaseOrderReceiving extends Transaction {
     }
 
     public JSONObject UpdateTransaction() throws SQLException, GuanzonException {
+        
+        if(pbIsFinance){//SI Posting - Arsiela 06222026
+            if(System.getProperty("sys.dept.finance") == null || "".equals(System.getProperty("sys.dept.finance"))){
+                poJSON.put("result", "error");
+                poJSON.put("message", "The Finance Department configuration is missing. This field is required to proceed.\nPlease contact your system administrator for assistance.");
+                return poJSON;
+            }
+        }
+        
         if(!pbWthParent){
             //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
             poJSON = seekApproval();
@@ -279,9 +446,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 return poJSON;
             }
         }
+        
+        
         return updateTransaction();
     }
-
+    
     /**
      * Confirm the transaction
      * @param remarks 
@@ -580,6 +749,240 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "Transaction return request submitted successfully.");
         }
 
+        return poJSON;
+    }
+    
+    //SI Posting Confirmation- Arsiela 06-22-2026
+    /**
+     * Confirm I the transaction for SI Posting
+     * @param remarks 
+     * @return JSON
+     * @throws ParseException
+     * @throws SQLException
+     * @throws GuanzonException
+     * @throws CloneNotSupportedException 
+     */
+    public JSONObject ConfirmSIPosting(String remarks)
+            throws ParseException,
+            SQLException,
+            GuanzonException,
+            CloneNotSupportedException {
+        poJSON = new JSONObject();
+        String lsStatus = PurchaseOrderReceivingStatus.CONFIRMED_I;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+        
+        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+        poJSON = loObject.openRecord(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
+            return poJSON;
+        }
+        
+        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
+            return poJSON;
+        }
+
+        poJSON = isEntryOkay(lsStatus);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        //1. Check the position of the current user
+        String lsPosition1 = checkPosition(lsStatus, poGRider.getUserID());
+        if(lsPosition1 == null || "".equals(lsPosition1) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        String lsUserId = poGRider.getUserID();
+        poJSON = seekApproval();
+        if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            return poJSON;
+        }
+        //2. Check the position of the approving officer
+        if(psApprover != null && !"".equals(psApprover)){
+            lsUserId = psApprover;
+        }
+        String lsPosition = checkPosition(lsStatus, lsUserId);
+        if(lsPosition == null || "".equals(lsPosition) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        //Update status for this transaction
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, false);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction confirmed successfully.");
+        return poJSON;
+    }
+    
+    //SI Posting Veifier- Arsiela 06-22-2026
+    /**
+     * Verify the transaction for SI Posting
+     * @param remarks 
+     * @return JSON
+     * @throws ParseException
+     * @throws SQLException
+     * @throws GuanzonException
+     * @throws CloneNotSupportedException 
+     */
+    public JSONObject VerifySIPosting(String remarks)
+            throws ParseException,
+            SQLException,
+            GuanzonException,
+            CloneNotSupportedException {
+        poJSON = new JSONObject();
+        String lsStatus = PurchaseOrderReceivingStatus.VERIFIED;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+        
+        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+        poJSON = loObject.openRecord(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
+            return poJSON;
+        }
+        
+        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
+            return poJSON;
+        }
+
+        poJSON = isEntryOkay(lsStatus);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        //1. Check the position of the current user
+        String lsPosition1 = checkPosition(lsStatus, poGRider.getUserID());
+        if(lsPosition1 == null || "".equals(lsPosition1) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        String lsUserId = poGRider.getUserID();
+        poJSON = seekApproval();
+        if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            return poJSON;
+        }
+        //2. Check the position of the approving officer
+        if(psApprover != null && !"".equals(psApprover)){
+            lsUserId = psApprover;
+        }
+        String lsPosition = checkPosition(lsStatus, lsUserId);
+        if(lsPosition == null || "".equals(lsPosition) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        //Update status for this transaction
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, false);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction verified successfully.");
+        return poJSON;
+    }
+    
+    //SI Posting Return- Arsiela 06-22-2026
+    /**
+     * Return the transaction for SI Posting
+     * @param remarks 
+     * @return JSON
+     * @throws ParseException
+     * @throws SQLException
+     * @throws GuanzonException
+     * @throws CloneNotSupportedException 
+     */
+    public JSONObject ReturnSIPosting(String remarks)
+            throws ParseException,
+            SQLException,
+            GuanzonException,
+            CloneNotSupportedException {
+        poJSON = new JSONObject();
+        String lsStatus = PurchaseOrderReceivingStatus.RETURNED_I;
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+        
+        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+        poJSON = loObject.openRecord(Master().getTransactionNo());
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
+            return poJSON;
+        }
+        
+        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
+            return poJSON;
+        }
+
+        poJSON = isEntryOkay(lsStatus);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        //1. Check the position of the current user
+        String lsPosition1 = checkPosition(lsStatus, poGRider.getUserID());
+        if(lsPosition1 == null || "".equals(lsPosition1) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        String lsUserId = poGRider.getUserID();
+        poJSON = seekApproval();
+        if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+            return poJSON;
+        }
+        //2. Check the position of the approving officer
+        if(psApprover != null && !"".equals(psApprover)){
+            lsUserId = psApprover;
+        }
+        String lsPosition = checkPosition(lsStatus, lsUserId);
+        if(lsPosition == null || "".equals(lsPosition) ){
+            poJSON.put("result", "error" );
+            poJSON.put("message", "User is not an authorized officer." );
+            return poJSON;
+        }
+        
+        //Update status for this transaction
+        poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, false);
+        if (!"success".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction returned successfully.");
         return poJSON;
     }
     
@@ -3558,6 +3961,87 @@ public class PurchaseOrderReceiving extends Transaction {
                 lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
             } else {
                 lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+            }
+            
+            lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
+            
+            System.out.println("Executing SQL: " + lsSQL);
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            poJSON = new JSONObject();
+
+            int lnctr = 0;
+
+            if (MiscUtil.RecordCount(loRS) >= 0) {
+                paPORMaster = new ArrayList<>();
+                while (loRS.next()) {
+                    // Print the result set
+                    System.out.println("sTransNox: " + loRS.getString("sTransNox"));
+                    System.out.println("dTransact: " + loRS.getDate("dTransact"));
+                    System.out.println("sCompnyNm: " + loRS.getString("sCompnyNm"));
+                    System.out.println("------------------------------------------------------------------------------");
+
+                    paPORMaster.add(PurchaseOrderReceivingMaster());
+                    paPORMaster.get(paPORMaster.size() - 1).openRecord(loRS.getString("sTransNox"));
+                    lnctr++;
+                }
+
+                System.out.println("Records found: " + lnctr);
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record loaded successfully.");
+            } else {
+                paPORMaster = new ArrayList<>();
+                paPORMaster.add(PurchaseOrderReceivingMaster());
+                poJSON.put("result", "error");
+                poJSON.put("continue", true);
+                poJSON.put("message", "No record found.");
+            }
+            MiscUtil.close(loRS);
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        } catch (GuanzonException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, MiscUtil.getException(ex), ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", MiscUtil.getException(ex));
+        }
+        return poJSON;
+    }
+    
+    public JSONObject loadTransactionList(String supplier, String branch, String referenceNo) {
+        try {
+            if (supplier == null || "".equals(supplier)) {
+                supplier = "";
+            }
+            if (branch == null) {
+                branch = "";
+            }
+            if (referenceNo == null) {
+                referenceNo = "";
+            }
+            initSQL();
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, 
+                    " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+                    + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                    + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                    + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
+                    + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                    + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+                    + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+                    + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+                    + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+                    + " ) ) "
+            );
+            String lsCondition = "";
+            if (psTranStat != null) {
+                if (psTranStat.length() > 1) {
+                    for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                        lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                    }
+                    lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+                } else {
+                    lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+                }
+                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
             
             lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026

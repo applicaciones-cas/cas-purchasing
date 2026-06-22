@@ -12,11 +12,16 @@ package org.guanzon.cas.purchasing.status;
 public class PurchaseOrderReceivingStatus {
     public static final String OPEN = "0";
     public static final  String CONFIRMED = "1";
-    public static final  String POSTED = "2"; // approve > posted 
+    public static final  String POSTED = "2"; 
     public static final  String CANCELLED = "3";
     public static final  String VOID = "4";
-    public static final  String PAID = "5"; //posted > paid
+    public static final  String PAID = "5"; 
     public static final  String RETURNED = "6";
+    
+    //New status for SI Posting - Arsiela 06-22-2026
+    public static final  String CONFIRMED_I = "7";
+    public static final  String VERIFIED = "8";
+    public static final  String RETURNED_I = "9";
     
     //Category
     public static class Category  {
