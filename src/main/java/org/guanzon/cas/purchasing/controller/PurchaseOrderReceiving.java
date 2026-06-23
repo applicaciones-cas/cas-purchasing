@@ -190,8 +190,10 @@ public class PurchaseOrderReceiving extends Transaction {
             case PurchaseOrderReceivingStatus.RETURNED_I:
             case PurchaseOrderReceivingStatus.RETURNED:
                 return "Returned";
-            default:
+            case PurchaseOrderReceivingStatus.OPEN:
                 return "Open";
+            default:
+                return "UNKNOWN";
         }
     }
     
@@ -4050,28 +4052,64 @@ public class PurchaseOrderReceiving extends Transaction {
             if (referenceNo == null) {
                 referenceNo = "";
             }
+//            initSQL();
+//            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+//                    " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
+//                    + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+//                    + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
+//                    + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+//                    + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+//                    + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
+//                    + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+//                    + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+//                    + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+//                    + " ) ) )"
+//            );
+//
+//            if(psIndustryId == null || "".equals(psIndustryId)){
+//                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
+//            } else {
+//                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+//            }
+//
+//            lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
+//
+//            System.out.println("Executing SQL: " + lsSQL);
             initSQL();
-            String lsSQL = MiscUtil.addCondition(SQL_BROWSE, //" a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+            String lsSQL = MiscUtil.addCondition(SQL_BROWSE,
                     " a.sCompnyID = " + SQLUtil.toSQL(psCompanyId)
-                    + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
-                    + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
-                    + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
-                    + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
-                    + " AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.CONFIRMED)
-                    + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
-                    + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
-                    + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
-                    + " ) ) )"
+                            + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId)
+                            + " AND a.sCategrCd = "+ SQLUtil.toSQL(psCategorCd)
+                            + " AND e.sBranchNm LIKE " + SQLUtil.toSQL("%" + branch)
+                            + " AND b.sCompnyNm LIKE " + SQLUtil.toSQL("%" + supplier)
+                            + " AND a.sReferNox LIKE " + SQLUtil.toSQL("%" + referenceNo)
+//                            + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+//                            + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+//                            + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+//                            + " ) ) "
             );
-            
-            if(psIndustryId == null || "".equals(psIndustryId)){
-                lsSQL = lsSQL + " AND (a.sIndstCdx = '' OR a.sIndstCdx = null) " ;
-            } else {
-                lsSQL = lsSQL + " AND a.sIndstCdx = " + SQLUtil.toSQL(psIndustryId);
+            String lsCondition = "";
+            if (psTranStat != null) {
+                if (psTranStat.length() > 1) {
+                    for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                        lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                    }
+                    lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+                } else {
+                    lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+                }
+                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
-            
+
+            if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
+                lsSQL = lsSQL + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+                        + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
+                        + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
+                        + " ) ) ";
+            }
+
             lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
-            
+
             System.out.println("Executing SQL: " + lsSQL);
             ResultSet loRS = poGRider.executeQuery(lsSQL);
             poJSON = new JSONObject();
