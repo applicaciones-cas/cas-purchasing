@@ -4151,7 +4151,7 @@ public class PurchaseOrderReceiving extends Transaction {
         }
         return poJSON;
     }
-    
+
     public JSONObject loadAttachments()
             throws SQLException,
             GuanzonException {
@@ -5597,7 +5597,7 @@ public class PurchaseOrderReceiving extends Transaction {
         return poJSON;
     }
     
-    private String existJournal() throws SQLException{
+    public String existJournal() throws SQLException{
         Model_Journal_Master loMaster = new CashflowModels(poGRider).Journal_Master();
         String lsSQL = MiscUtil.makeSelect(loMaster);
         lsSQL = MiscUtil.addCondition(lsSQL,
