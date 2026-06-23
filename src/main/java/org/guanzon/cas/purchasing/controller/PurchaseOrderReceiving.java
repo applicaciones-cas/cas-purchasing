@@ -367,7 +367,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 poJSON.put("result", "error");
                 return poJSON;
             case PurchaseOrderReceivingStatus.CONFIRMED:
-                if(!isEntry){
+                if(!isEntry && !PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
                     poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
                     poJSON.put("result", "error");
                     return poJSON;
