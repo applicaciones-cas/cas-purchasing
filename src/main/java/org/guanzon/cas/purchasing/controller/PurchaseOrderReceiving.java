@@ -371,6 +371,13 @@ public class PurchaseOrderReceiving extends Transaction {
                     return poJSON;
                 }
                 break;
+            case PurchaseOrderReceivingStatus.RETURNED:
+                if(!PurchaseOrderReceivingStatus.CONFIRMED.equals(psForm)){
+                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
+                    poJSON.put("result", "error");
+                    return poJSON;
+                }
+                break;
             case PurchaseOrderReceivingStatus.CONFIRMED_I:
             case PurchaseOrderReceivingStatus.VERIFIED:
             case PurchaseOrderReceivingStatus.POSTED:
@@ -404,16 +411,8 @@ public class PurchaseOrderReceiving extends Transaction {
                     }
                 }
                 break;
-                
             case PurchaseOrderReceivingStatus.RETURNED_I:
-//                if(!PurchaseOrderReceivingStatus.APPROVED.equals(psForm)){
-//                    poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
-//                    poJSON.put("result", "error");
-//                    return poJSON;
-//                }
-                break;
-            case PurchaseOrderReceivingStatus.RETURNED:
-                if(!PurchaseOrderReceivingStatus.CONFIRMED.equals(psForm)){
+                if(!PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
                     poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
                     poJSON.put("result", "error");
                     return poJSON;
