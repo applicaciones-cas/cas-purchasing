@@ -4217,7 +4217,8 @@ public class PurchaseOrder extends Transaction {
                     + "  a.dTransact, "
                     + "  e.sDescript AS Category, "
                     + "  f.sDescript AS Term, "
-                    + "  a.nTranTotl "
+                    + "  a.nTranTotl, "
+                    + "  a.cTranStat "
                     + " FROM PO_Master a "
                     + " LEFT JOIN AP_Client_Master b ON a.sSupplier = b.sClientID "
                     + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd "
@@ -4299,6 +4300,40 @@ public class PurchaseOrder extends Transaction {
                 record.put("dTransact", loRS.getDate("dTransact"));
                 record.put("Category", loRS.getString("Category"));
                 record.put("Term", loRS.getString("Term"));
+
+                String tranStat = loRS.getString("cTranStat");
+                switch (tranStat) {
+                    case "0":
+                        record.put("cTranStat", "OPEN");
+                        break;
+                    case "1":
+                        record.put("cTranStat", "CONFIRMED");
+                        break;
+                    case "2":
+                        record.put("cTranStat", "PROCESSED");
+                        break;
+                    case "3":
+                        record.put("cTranStat", "CANCELLED");
+                        break;
+                    case "4":
+                        record.put("cTranStat", "VOID");
+                        break;
+                    case "5":
+                        record.put("cTranStat", "APPROVED");
+                        break;
+                    case "6":
+                        record.put("cTranStat", "POSTED");
+                        break;
+                    case "9":
+                        record.put("cTranStat", "RETURNED");
+                        break;
+                    case "E":
+                        record.put("cTranStat", "APPROVED+");
+                        break;
+
+                    default:
+                        record.put("cTranStat", tranStat);
+                }
                 record.put("Total", loRS.getDouble("nTranTotl"));
 
                 dataArray.add(record);
@@ -4347,7 +4382,11 @@ public class PurchaseOrder extends Transaction {
                     + "  k.sDescript AS ModelName, "
                     + "  l.sDescript AS Color, "
                     + "  a.nQuantity, "
+                    + "  a.nReceived, "
+                    + "  a.nCancelld, "
                     + "  i.nUnitPrce, "
+                    + "  i.sBarCodex, "
+                    + "  i.sDescript AS Description, "
                     + "  ROUND(a.nQuantity * i.nUnitPrce, 4) AS Total "
                     + " FROM PO_Detail a "
                     + " LEFT JOIN PO_Master b ON a.sTransNox = b.sTransNox "
@@ -4431,11 +4470,15 @@ public class PurchaseOrder extends Transaction {
                 record.put("Destination", loRS.getString("Destination"));
                 record.put("sTransNox", loRS.getString("sTransNox"));
                 record.put("dTransact", loRS.getDate("dTransact"));
+                record.put("sBarCodex", loRS.getString("sBarCodex"));
+                record.put("Description", loRS.getString("Description"));
                 record.put("Brand", loRS.getString("Brand"));
                 record.put("ModelCode", loRS.getString("ModelCode"));
                 record.put("ModelName", loRS.getString("ModelName"));
                 record.put("Color", loRS.getString("Color"));
                 record.put("Quantity", loRS.getDouble("nQuantity"));
+                record.put("nReceived", loRS.getDouble("nReceived"));
+                record.put("nCancelld", loRS.getDouble("nCancelld"));
                 record.put("UnitPrice", loRS.getDouble("nUnitPrce"));
                 record.put("Total", loRS.getDouble("Total"));
 
@@ -4479,37 +4522,46 @@ public class PurchaseOrder extends Transaction {
     private String sDestination;
     private String sPONo;
     private java.sql.Date dTransact;
+    private String sBarCodex;
+    private String sDescript;
     private String sBrand;
     private String sModelCode;
     private String sModelName;
     private String sColor;
     private double nQty;
+    private double nReceived;
+    private double nCancelld;
     private double nUnitPrice;
     private double nTotal;
     private String sBranch;
     private String sCategory;
     private String sTerm;
     private String sReferNo;
+    private String cTranStat;
 
     public Reports(Integer nrowNo, String sSupplier, String sDestination, String sPONo, java.sql.Date dTransact,
-                   String sBrand, String sModelCode, String sModelName, String sColor,
-                   double nQty, double nUnitPrice, double nTotal) {
+                   String sBarCodex,String sDescript, String sBrand, String sModelCode, String sModelName, String sColor,
+                   double nQty, double nReceived, double nCancelld, double nUnitPrice, double nTotal) {
 
         this.nRowNo = nrowNo;
         this.sSupplier = sSupplier;
         this.sDestination = sDestination;
         this.sPONo = sPONo;
         this.dTransact = dTransact;
+        this.sBarCodex = sBarCodex;
+        this.sDescript = sDescript;
         this.sBrand = sBrand;
         this.sModelCode = sModelCode;
         this.sModelName = sModelName;
         this.sColor = sColor;
         this.nQty = nQty;
+        this.nReceived = nReceived;
+        this.nCancelld = nCancelld;
         this.nUnitPrice = nUnitPrice;
         this.nTotal = nTotal;
     }
     public Reports(Integer nrowNo, String sSupplier, String sDestination, String sBranch,String sPONo, String sReferNo, java.sql.Date dTransact,
-                   String sCategory, String sTerm, double nTotal) {
+                   String sCategory, String sTerm,String cTranStat, double nTotal) {
 
         this.nRowNo = nrowNo;
         this.sSupplier = sSupplier;
@@ -4520,6 +4572,7 @@ public class PurchaseOrder extends Transaction {
         this.dTransact = dTransact;
         this.sCategory = sCategory;
         this.sTerm = sTerm;
+        this.cTranStat = cTranStat;
         this.nTotal = nTotal;
     }
 
@@ -4529,20 +4582,24 @@ public class PurchaseOrder extends Transaction {
     public String getsDestination() { return sDestination; }
     public String getsPONo() { return sPONo; }
     public java.sql.Date getdTransact() { return dTransact; }
-
+    public String getsBarCodex() { return sBarCodex; }
+       public String getsDescript() { return sDescript; }
     public String getsBrand() { return sBrand; }
     public String getsModelCode() { return sModelCode; }
     public String getsModelName() { return sModelName; }
     public String getsColor() { return sColor; }
 
     public double getnQty() { return nQty; }
+       public double getnReceived() { return nReceived; }
+       public double getnCancelld() { return nCancelld; }
     public double getnUnitPrice() { return nUnitPrice; }
     public double getnTotal() { return nTotal; }
     
     public String getsBranch() { return sBranch; }
     public String getsCategory() { return sCategory; }
     public String getsTerm() { return sTerm; }
-    public String getsReferNo() { return sReferNo; }
+       public String getsReferNo() { return sReferNo; }
+       public String getcTranStat() { return cTranStat; }
 }
 
     public class CustomJasperViewers extends JasperViewer {
@@ -4709,7 +4766,8 @@ public class PurchaseOrder extends Transaction {
                          safeStrings(obj.get("sReferNox")),
                               (java.sql.Date) obj.get("dTransact"),
                       safeStrings(obj.get("Category")),
-                         safeStrings(obj.get("Term")),
+                            safeStrings(obj.get("Term")),
+                            safeStrings(obj.get("cTranStat")),
                         parseDouble(obj.get("Total"))));
 
                 } else {
@@ -4720,11 +4778,15 @@ public class PurchaseOrder extends Transaction {
                   safeStrings(obj.get("Destination")),
                        safeStrings(obj.get("sTransNox")),
                              (java.sql.Date) obj.get("dTransact"),
-                      safeStrings(obj.get("Brand")),
+                            safeStrings(obj.get("sBarCodex")),
+                            safeStrings(obj.get("Description")),
+                            safeStrings(obj.get("Brand")),
                    safeStrings(obj.get("ModelCode")),
                    safeStrings(obj.get("ModelName")),
                       safeStrings(obj.get("Color")),
-                        parseDouble(obj.get("Quantity")),
+                            parseDouble(obj.get("Quantity")),
+                            parseDouble(obj.get("nReceived")),
+                            parseDouble(obj.get("nCancelld")),
                    parseDouble(obj.get("UnitPrce")),
                       parseDouble(obj.get("Total"))
                     ));
@@ -4846,7 +4908,8 @@ public class PurchaseOrder extends Transaction {
                        safeStrings(obj.get("sReferNox")),
                                (java.sql.Date) obj.get("dTransact"),
                       safeStrings(obj.get("Category")),
-                         safeStrings(obj.get("Term")),
+                            safeStrings(obj.get("Term")),
+                            safeStrings(obj.get("cTranStat")),
                         parseDouble(obj.get("Total"))));
 
                 } else {
@@ -4857,11 +4920,15 @@ public class PurchaseOrder extends Transaction {
                   safeStrings(obj.get("Destination")),
                        safeStrings(obj.get("sTransNox")),
                              (java.sql.Date) obj.get("dTransact"),
-                      safeStrings(obj.get("Brand")),
+                            safeStrings(obj.get("sBarCodex")),
+                            safeStrings(obj.get("Description")),
+                            safeStrings(obj.get("Brand")),
                    safeStrings(obj.get("ModelCode")),
                    safeStrings(obj.get("ModelName")),
                       safeStrings(obj.get("Color")),
-                       parseDouble(obj.get("Quantity")),
+                            parseDouble(obj.get("Quantity")),
+                            parseDouble(obj.get("nReceived")),
+                            parseDouble(obj.get("nCancelld")),
                    parseDouble(obj.get("UnitPrice")),
                       parseDouble(obj.get("Total"))
                     ));
