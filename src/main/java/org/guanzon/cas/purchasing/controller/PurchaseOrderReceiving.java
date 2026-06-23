@@ -8466,6 +8466,15 @@ public class PurchaseOrderReceiving extends Transaction {
                 case PurchaseOrderReceivingStatus.RETURNED:
                     crs.updateString("cRefrStat", "RETURNED");
                     break;
+                case PurchaseOrderReceivingStatus.VERIFIED:
+                    crs.updateString("cRefrStat", "VERIFIED");
+                    break;
+                case PurchaseOrderReceivingStatus.CONFIRMED_I:
+                    crs.updateString("cRefrStat", "CONFIRMED+");
+                    break;
+                case PurchaseOrderReceivingStatus.RETURNED_I:
+                    crs.updateString("cRefrStat", "RETURNED+");
+                    break;
                 default:
                     char ch = crs.getString("cRefrStat").charAt(0);
                     String stat = String.valueOf((int) ch - 64);
@@ -8491,6 +8500,15 @@ public class PurchaseOrderReceiving extends Transaction {
                             break;
                         case PurchaseOrderReceivingStatus.RETURNED:
                             crs.updateString("cRefrStat", "RETURNED");
+                            break;
+                        case PurchaseOrderReceivingStatus.VERIFIED:
+                            crs.updateString("cRefrStat", "VERIFIED");
+                            break;
+                        case PurchaseOrderReceivingStatus.CONFIRMED_I:
+                            crs.updateString("cRefrStat", "CONFIRMED+");
+                            break;
+                        case PurchaseOrderReceivingStatus.RETURNED_I:
+                            crs.updateString("cRefrStat", "RETURNED+");
                             break;
                     }
             }
