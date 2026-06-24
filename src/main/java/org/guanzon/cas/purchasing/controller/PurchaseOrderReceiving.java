@@ -180,6 +180,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 return "Cancelled";
             case PurchaseOrderReceivingStatus.POSTED:
                 return "Posted";
+            case PurchaseOrderReceivingStatus.PAID:
+                return "Paid";
             case PurchaseOrderReceivingStatus.VERIFIED:
                 return "Verified";
             case PurchaseOrderReceivingStatus.CONFIRMED_I:
@@ -246,6 +248,12 @@ public class PurchaseOrderReceiving extends Transaction {
                     return "";
                 }
                 break;
+            case PurchaseOrderReceivingStatus.CONFIRMED_I:
+                lsPosition = "%Payable%";
+                lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition) );
+                break;
+            case PurchaseOrderReceivingStatus.POSTED:
+            case PurchaseOrderReceivingStatus.RETURNED_I:
             case PurchaseOrderReceivingStatus.VERIFIED:
                 //Who can verify and approve the transaction
                 lsPosition = "%Account%";
@@ -253,22 +261,22 @@ public class PurchaseOrderReceiving extends Transaction {
                                                 + " AND c.sPositnNm NOT LIKE " + SQLUtil.toSQL("%Payable%") 
                 );
                 break;
-            case PurchaseOrderReceivingStatus.POSTED:
-                //Who can post the transaction
-                lsPosition = "%Manager%";
-                lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition)
-                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%") 
-                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%") 
-                );
-                break;
-            case PurchaseOrderReceivingStatus.RETURNED_I:
-                //Who can initial return the transaction
-                lsSQL = MiscUtil.addCondition(lsSQL, " (  c.sPositnNm LIKE " + SQLUtil.toSQL("%Manager%") 
-                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%") 
-                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%") 
-                                    + " ) AND c.sPositnNm NOT LIKE " + SQLUtil.toSQL("%Payable%") 
-                                    );
-                break;
+//            case PurchaseOrderReceivingStatus.POSTED:
+//                //Who can post the transaction
+//                lsPosition = "%Manager%";
+//                lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition)
+//                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%")
+//                                        + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%")
+//                );
+//                break;
+//            case PurchaseOrderReceivingStatus.RETURNED_I:
+//                //Who can initial return the transaction
+//                lsSQL = MiscUtil.addCondition(lsSQL, " (  c.sPositnNm LIKE " + SQLUtil.toSQL("%Manager%")
+//                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%")
+//                                    + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Executive%")
+//                                    + " ) AND c.sPositnNm NOT LIKE " + SQLUtil.toSQL("%Payable%")
+//                                    );
+//                break;
         }
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
@@ -313,7 +321,8 @@ public class PurchaseOrderReceiving extends Transaction {
             
             //SI Posting
             case PurchaseOrderReceivingStatus.CONFIRMED_I:
-                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED);
+                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED)
+                        || current.equals(PurchaseOrderReceivingStatus.RETURNED_I);
                 
             case PurchaseOrderReceivingStatus.VERIFIED:
                 return current.equals(PurchaseOrderReceivingStatus.CONFIRMED_I);
@@ -6033,6 +6042,30 @@ public class PurchaseOrderReceiving extends Transaction {
         Master().setModifiedDate(poGRider.getServerDate());
         
         if(pbIsFinance){
+            if (PurchaseOrderReceivingStatus.RETURNED_I.equals(Master().getTransactionStatus())) {
+                Model_POR_Master loModel = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
+                loModel.initialize();
+                loModel.openRecord(Master().getTransactionNo());
+                lbUpdated = loModel.getTransactionTotal().doubleValue() == Master().getTransactionTotal().doubleValue();
+                if (lbUpdated) {
+                    lbUpdated = loModel.getReferenceNo().equals(Master().getReferenceNo());
+                }
+                if (lbUpdated) {
+                    lbUpdated = loModel.getReferenceDate().equals(Master().getReferenceDate());
+                }
+                if (lbUpdated) {
+                    lbUpdated = loModel.getTermCode().equals(Master().getTermCode());
+                }
+                if (lbUpdated) {
+                    lbUpdated = loModel.getRemarks().equals(Master().getRemarks());
+                }
+
+                if (lbUpdated) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "No update has been made.");
+                    return poJSON;
+                }
+            }
             computeFields(); //Recompute fields
             //If trucking is not empty FREIGHT AMOUNT is required
             if (Master().getTruckingId()!= null && !"".equals(Master().getTruckingId())) {
@@ -6057,6 +6090,26 @@ public class PurchaseOrderReceiving extends Transaction {
                         poJSON.put("message", "Invalid Invoice Date.");
                         return poJSON;
                     }
+                }
+            }
+
+            if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(Master().getTransactionStatus())
+                    || PurchaseOrderReceivingStatus.RETURNED_I.equals(Master().getTransactionStatus())
+                    || PurchaseOrderReceivingStatus.VERIFIED.equals(Master().getTransactionStatus())){
+                String lsUserId = poGRider.getUserID();
+                poJSON = seekApproval();
+                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                    return poJSON;
+                }
+                //2. Check the position of the approving officer
+                if(psApprover != null && !"".equals(psApprover)){
+                    lsUserId = psApprover;
+                }
+                String lsPosition = checkPosition(psForm, lsUserId);
+                if(lsPosition == null || "".equals(lsPosition) ){
+                    poJSON.put("result", "error" );
+                    poJSON.put("message", "User is not an authorized officer." );
+                    return poJSON;
                 }
             }
         }
