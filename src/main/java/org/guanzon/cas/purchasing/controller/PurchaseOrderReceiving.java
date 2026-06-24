@@ -122,6 +122,7 @@ import ph.com.guanzongroup.cas.cashflow.model.Model_Journal_Master;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowControllers;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 import ph.com.guanzongroup.cas.cashflow.status.CachePayableStatus;
+import ph.com.guanzongroup.cas.cashflow.utility.CustomCommonUtil;
 
 /**
  *
@@ -177,6 +178,8 @@ public class PurchaseOrderReceiving extends Transaction {
                 return "Voided";
             case PurchaseOrderReceivingStatus.CANCELLED:
                 return "Cancelled";
+            case PurchaseOrderReceivingStatus.POSTED:
+                return "Posted";
             case PurchaseOrderReceivingStatus.VERIFIED:
                 return "Verified";
             case PurchaseOrderReceivingStatus.CONFIRMED_I:
@@ -251,7 +254,7 @@ public class PurchaseOrderReceiving extends Transaction {
                 );
                 break;
             case PurchaseOrderReceivingStatus.POSTED:
-                //Who can certify and authorized the transaction
+                //Who can post the transaction
                 lsPosition = "%Manager%";
                 lsSQL = MiscUtil.addCondition(lsSQL, " c.sPositnNm LIKE " + SQLUtil.toSQL(lsPosition)
                                         + " OR c.sPositnNm LIKE " + SQLUtil.toSQL("%Head%") 
@@ -477,7 +480,7 @@ public class PurchaseOrderReceiving extends Transaction {
                      return poJSON;
                 }
                 setApproving(lsUserIDxx);
-                psApprover = (String) poJSON.get("sUserIDxx");
+                psApprover = lsUserIDxx;
             }
             //needs authorization thru authorization matrix
             else{
@@ -6633,11 +6636,23 @@ public class PurchaseOrderReceiving extends Transaction {
             if(pbIsFinance){
                 if(poJournal != null){
                     if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
-                        poJournal.setWithParent(true);
-                        poJournal.Master().setModifiedDate(poGRider.getServerDate());
-                        poJSON = poJournal.SaveTransaction();
+                        poJSON = validateJournal();
+                        boolean lbContinue = (boolean) poJSON.get("continue");
                         if ("error".equals((String) poJSON.get("result"))) {
+                            poJSON.put("result", "error");
+                            poJSON.put("message", poJSON.get("message").toString());
                             return poJSON;
+                        }
+                        if(lbContinue){
+                            poJournal.Master().setSourceNo(Master().getTransactionNo());
+                            poJournal.Master().setModifyingId(poGRider.getUserID());
+                            poJournal.Master().setModifiedDate(poGRider.getServerDate());
+                            poJournal.setWithParent(true);
+                            poJSON = poJournal.SaveTransaction();
+                            if ("error".equals((String) poJSON.get("result"))) {
+                                System.out.println("Save Journal : " + poJSON.get("message"));
+                                return poJSON;
+                            }
                         }
                     }
                 }
@@ -6886,6 +6901,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poJSON = new JSONObject();
         double ldblCreditAmt = 0.0000;
         double ldblDebitAmt = 0.0000;
+        boolean lbHasJournal = false;
+        boolean lbValidateJournal = false;
         for(int lnCtr = 0; lnCtr <= poJournal.getDetailCount()-1; lnCtr++){
             if(poJournal.Detail(lnCtr).isReverse()){ //Added by Arsiela 05-16-2026 04:24PM
                 ldblDebitAmt += poJournal.Detail(lnCtr).getDebitAmount();
@@ -6900,40 +6917,50 @@ public class PurchaseOrderReceiving extends Transaction {
                         }
                     }
                 }
+
+                if(!lbValidateJournal){
+                    lbValidateJournal = poJournal.Detail(lnCtr).getAccountCode() != null && !"".equals(poJournal.Detail(lnCtr).getAccountCode());
+                }
+            }
+
+            if(!lbHasJournal){
+                lbHasJournal = poJournal.Detail(lnCtr).getAccountCode() != null && !"".equals(poJournal.Detail(lnCtr).getAccountCode());
             }
         }
-        
-        if(ldblDebitAmt == 0.0000 ){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Invalid journal entry debit amount.");
-            return poJSON;
+
+        if(lbValidateJournal) {
+            //Convert debit and credit amount
+            ldblDebitAmt = Double.valueOf(CustomCommonUtil.setIntegerValueToDecimalFormat(ldblDebitAmt, true).replace(",", ""));
+            ldblCreditAmt = Double.valueOf(CustomCommonUtil.setIntegerValueToDecimalFormat(ldblCreditAmt, true).replace(",", ""));
+
+            if (ldblDebitAmt == 0.0000) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid journal entry debit amount.");
+                return poJSON;
+            }
+
+            if (ldblCreditAmt == 0.0000) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid journal entry credit amount.");
+                return poJSON;
+            }
+
+            if(ldblDebitAmt < ldblCreditAmt || ldblDebitAmt > ldblCreditAmt){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Debit should be equal to credit amount.");
+                return poJSON;
+            }
+
+            //        if(ldblDebitAmt < Master().getTransactionTotal().doubleValue() || ldblDebitAmt > Master().getTransactionTotal().doubleValue()){
+            //            poJSON.put("result", "error");
+            //            poJSON.put("message", "Debit and credit amount should be equal to transaction total.");
+            //            return poJSON;
+            //        }
         }
-        
-        if(ldblCreditAmt == 0.0000){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Invalid journal entry credit amount.");
-            return poJSON;
-        }
-        ldblDebitAmt = BigDecimal.valueOf(ldblDebitAmt)
-                .setScale(4, RoundingMode.HALF_UP)
-                .doubleValue();
-        ldblCreditAmt = BigDecimal.valueOf(ldblCreditAmt)
-                .setScale(4, RoundingMode.HALF_UP)
-                .doubleValue();
-        if(ldblDebitAmt < ldblCreditAmt || ldblDebitAmt > ldblCreditAmt){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Debit should be equal to credit amount.");
-            return poJSON;
-        }
-        
-//        if(ldblDebitAmt < Master().getTransactionTotal().doubleValue() || ldblDebitAmt > Master().getTransactionTotal().doubleValue()){
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "Debit and credit amount should be equal to transaction total.");
-//            return poJSON;
-//        }
         
         poJSON.put("result", "success");
         poJSON.put("message", "success");
+        poJSON.put("continue", lbHasJournal);
         return poJSON;
     }
 
