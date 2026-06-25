@@ -295,52 +295,6 @@ public class PurchaseOrderReceiving extends Transaction {
         return "";
     }
     
-    /**
-    * Checks if a transition from the current status to the target status is allowed.
-    *
-    * @param current current transaction status
-    * @param target target status to transition into
-    * @return true if transition is allowed, false otherwise
-    */
-    public boolean isAllowed(String current, String target) {
-        switch (target) {
-            //Default User
-            case PurchaseOrderReceivingStatus.CONFIRMED:
-                return current.equals(PurchaseOrderReceivingStatus.OPEN)
-                    || current.equals(PurchaseOrderReceivingStatus.RETURNED);
-                
-            case PurchaseOrderReceivingStatus.RETURNED:
-                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED);
-                
-            case PurchaseOrderReceivingStatus.VOID:
-                return current.equals(PurchaseOrderReceivingStatus.OPEN);
-                
-            case PurchaseOrderReceivingStatus.CANCELLED:
-                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED)
-                    || current.equals(PurchaseOrderReceivingStatus.RETURNED);
-            
-            //SI Posting
-            case PurchaseOrderReceivingStatus.CONFIRMED_I:
-                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED)
-                        || current.equals(PurchaseOrderReceivingStatus.RETURNED_I);
-                
-            case PurchaseOrderReceivingStatus.VERIFIED:
-                return current.equals(PurchaseOrderReceivingStatus.CONFIRMED_I);
-                
-            case PurchaseOrderReceivingStatus.RETURNED_I:
-                return current.equals(PurchaseOrderReceivingStatus.VERIFIED);
-                
-            case PurchaseOrderReceivingStatus.POSTED:
-                return current.equals(PurchaseOrderReceivingStatus.VERIFIED);
-
-            case PurchaseOrderReceivingStatus.PAID:
-                return current.equals(PurchaseOrderReceivingStatus.POSTED);
-
-            default:
-                return false;
-        }
-    }
-    
      /**
     * Sets the form identifier for the transaction.
     *
@@ -442,7 +396,7 @@ public class PurchaseOrderReceiving extends Transaction {
             }
         }
         //Clear value
-        psForm = "";
+//        psForm = "";
         poJSON.put("result", "success");
         poJSON.put("message", "success");
         return poJSON;
@@ -483,7 +437,7 @@ public class PurchaseOrderReceiving extends Transaction {
 
                 //if approving is not authorized then do not continue process
                 if(!((String)poJSON.get("result")).equalsIgnoreCase("true")){
-                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
+//                    ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null); //UI Controller handles the display of message box based on JSON result; Disabled by Arsiela 06-25-2026 
                      poJSON.put("result", "error");
                      poJSON.put("message", "User is not an authorized approving officer.");
                      return poJSON;
@@ -494,7 +448,7 @@ public class PurchaseOrderReceiving extends Transaction {
             //needs authorization thru authorization matrix
             else{
                //show process needs authorization through the authority matrix
-               ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null);
+//               ShowMessageFX.Warning((String)poJSON.get("warning"), "Authorization Required", null); //UI Controller handles the display of message box based on JSON result; Disabled by Arsiela 06-25-2026 
                poJSON.put("result", "error");
                poJSON.put("message", "User is not an authorized approving officer.");
                return poJSON;
@@ -896,19 +850,6 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
-        
-        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
-        poJSON = loObject.openRecord(Master().getTransactionNo());
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
-            return poJSON;
-        }
-        
-        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
-            return poJSON;
-        }
 
         poJSON = isEntryOkay(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -974,19 +915,6 @@ public class PurchaseOrderReceiving extends Transaction {
             poJSON.put("message", "No transacton was loaded.");
             return poJSON;
         }
-        
-        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
-        poJSON = loObject.openRecord(Master().getTransactionNo());
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
-            return poJSON;
-        }
-        
-        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
-            return poJSON;
-        }
 
         poJSON = isEntryOkay(lsStatus);
         if (!"success".equals((String) poJSON.get("result"))) {
@@ -1050,19 +978,6 @@ public class PurchaseOrderReceiving extends Transaction {
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "No transacton was loaded.");
-            return poJSON;
-        }
-        
-        Model_POR_Master loObject = new PurchaseOrderReceivingModels(poGRider).PurchaseOrderReceivingMaster();
-        poJSON = loObject.openRecord(Master().getTransactionNo());
-        if (!"success".equals((String) poJSON.get("result"))) {
-            poJSON.put("message", "Unable to load po receiving.\n" + (String) poJSON.get("message"));
-            return poJSON;
-        }
-        
-        if (!isAllowed(loObject.getTransactionStatus(), lsStatus)) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already "+getStatus(loObject.getTransactionStatus())+".");
             return poJSON;
         }
 
@@ -1278,7 +1193,15 @@ public class PurchaseOrderReceiving extends Transaction {
             if (!"success".equals((String) poJSON.get("result"))) {
                 return poJSON;
             }
-
+            
+            //1. Check the position of the current user - Added by Arsiela 06-25-2026
+            String lsPosition1 = checkPosition(lsStatus, poGRider.getUserID());
+            if(lsPosition1 == null || "".equals(lsPosition1) ){
+                poJSON.put("result", "error" );
+                poJSON.put("message", "User is not an authorized officer." );
+                return poJSON;
+            }
+            
             //get the matrix return from isEntryOkey
             JSONArray loMatrix = (JSONArray) poJSON.get("matrix");
 
@@ -1344,8 +1267,19 @@ public class PurchaseOrderReceiving extends Transaction {
             //there are no authorization event request
             else{
                 //Replaced script above by calling of method Arsiela 10-15-2025 09:25:01
+                String lsUserId = poGRider.getUserID();
                 poJSON = seekApproval();
                 if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                    return poJSON;
+                }
+                //2. Check the position of the approving officer - Added by Arsiela 06-25-2026
+                if(psApprover != null && !"".equals(psApprover)){
+                    lsUserId = psApprover;
+                }
+                String lsPosition = checkPosition(lsStatus, lsUserId);
+                if(lsPosition == null || "".equals(lsPosition) ){
+                    poJSON.put("result", "error" );
+                    poJSON.put("message", "User is not an authorized officer." );
                     return poJSON;
                 }
             }
@@ -6066,6 +6000,7 @@ public class PurchaseOrderReceiving extends Transaction {
                     return poJSON;
                 }
             }
+            
             computeFields(); //Recompute fields
             //If trucking is not empty FREIGHT AMOUNT is required
             if (Master().getTruckingId()!= null && !"".equals(Master().getTruckingId())) {
@@ -6108,7 +6043,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 String lsPosition = checkPosition(psForm, lsUserId);
                 if(lsPosition == null || "".equals(lsPosition) ){
                     poJSON.put("result", "error" );
-                    poJSON.put("message", "User is not an authorized officer." );
+                    if(psApprover != null && !"".equals(psApprover)){
+                        poJSON.put("message", "User is not an authorized approving officer." );
+                    } else {
+                        poJSON.put("message", "User is not an authorized officer." );
+                    }
                     return poJSON;
                 }
             }

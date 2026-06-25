@@ -48,6 +48,46 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 break;
+            case PurchaseOrderReceivingStatus.CONFIRMED_I: //Added by arsiela 06-25-2026
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already confirmed.");
+                    return poJson;
+                }
+                //Allow CONFIRMED_I to the the only transaction status to be CONFIRMED
+                else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)
+                    || !lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.RETURNED_I)){ 
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction confirmation failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+            case PurchaseOrderReceivingStatus.VERIFIED: //Added by arsiela 06-25-2026
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already verified.");
+                    return poJson;
+                }
+                //Allow VERIFIED to the the only transaction status to be CONFIRMED_I
+                else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED_I)){  
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction verification failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
+            case PurchaseOrderReceivingStatus.RETURNED_I: //Added by arsiela 06-25-2026
+                if(psTranStat.equalsIgnoreCase(lsCurrStat)){
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction was already returned.");
+                    return poJson;
+                }
+                //Allow RETURNED_I to the the only transaction status to be VERIFIED
+                else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.VERIFIED)){  
+                    poJson.put("result", "error");
+                    poJson.put("message", "Transaction return failed! Please check transaction status.");
+                    return poJson;
+                }
+                break;
             case PurchaseOrderReceivingStatus.POSTED:
                 if(psTranStat.equalsIgnoreCase(lsCurrStat)){
                     poJson.put("result", "error");
@@ -55,7 +95,7 @@ public class StatusChangeValidator {
                     return poJson;
                 }
                 //Allow confirmed to the the only transaction status to be posted
-                else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)){
+                else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.VERIFIED)){ //changed from CONFIRMED into VERIFIED //Updated by arsiela 06-25-2026
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction posting failed! Please check transaction status.");
                     return poJson;
