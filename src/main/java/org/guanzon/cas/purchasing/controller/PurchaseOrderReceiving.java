@@ -6031,24 +6031,29 @@ public class PurchaseOrderReceiving extends Transaction {
             if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(Master().getTransactionStatus())
                     || PurchaseOrderReceivingStatus.RETURNED_I.equals(Master().getTransactionStatus())
                     || PurchaseOrderReceivingStatus.VERIFIED.equals(Master().getTransactionStatus())){
-                String lsUserId = poGRider.getUserID();
-                poJSON = seekApproval();
-                if("error".equalsIgnoreCase((String)poJSON.get("result"))){
-                    return poJSON;
-                }
-                //2. Check the position of the approving officer
-                if(psApprover != null && !"".equals(psApprover)){
-                    lsUserId = psApprover;
-                }
-                String lsPosition = checkPosition(psForm, lsUserId);
-                if(lsPosition == null || "".equals(lsPosition) ){
-                    poJSON.put("result", "error" );
-                    if(psApprover != null && !"".equals(psApprover)){
-                        poJSON.put("message", "User is not an authorized approving officer." );
-                    } else {
-                        poJSON.put("message", "User is not an authorized officer." );
+                
+                if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(Master().getTransactionStatus())
+                    && PurchaseOrderReceivingStatus.VERIFIED.equals(psForm)){
+                } else {
+                    String lsUserId = poGRider.getUserID();
+                    poJSON = seekApproval();
+                    if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+                        return poJSON;
                     }
-                    return poJSON;
+                    //2. Check the position of the approving officer
+                    if(psApprover != null && !"".equals(psApprover)){
+                        lsUserId = psApprover;
+                    }
+                    String lsPosition = checkPosition(psForm, lsUserId);
+                    if(lsPosition == null || "".equals(lsPosition) ){
+                        poJSON.put("result", "error" );
+                        if(psApprover != null && !"".equals(psApprover)){
+                            poJSON.put("message", "User is not an authorized approving officer." );
+                        } else {
+                            poJSON.put("message", "User is not an authorized officer." );
+                        }
+                        return poJSON;
+                    }
                 }
             }
         }

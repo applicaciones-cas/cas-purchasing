@@ -56,7 +56,7 @@ public class StatusChangeValidator {
                 }
                 //Allow CONFIRMED_I to the the only transaction status to be CONFIRMED
                 else if(!lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.CONFIRMED)
-                    || !lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.RETURNED_I)){ 
+                    && !lsCurrStat.equalsIgnoreCase(PurchaseOrderReceivingStatus.RETURNED_I)){ 
                     poJson.put("result", "error");
                     poJson.put("message", "Transaction confirmation failed! Please check transaction status.");
                     return poJson;
