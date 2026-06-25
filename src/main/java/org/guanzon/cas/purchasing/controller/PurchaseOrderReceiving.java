@@ -921,6 +921,37 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
+        //check JE
+        if(poJournal == null){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Please review journal entry before verifying.");
+            return poJSON;
+        } else {
+            switch(poJournal.getEditMode()){
+                case EditMode.ADDNEW:
+                case EditMode.UPDATE:
+                break;
+                case EditMode.READY:
+                    if(poJournal.Master().getTransactionNo() != null && !"".equals(poJournal.Master().getTransactionNo())){
+                        //poJournal.UpdateTransaction();
+                    } else {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Please review journal entry before verifying.");
+                        return poJSON; 
+                    }
+                break;
+                default:
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Please review journal entry before verifying.");
+                    return poJSON;
+            }
+        }
+        
+        poJSON = validateJournal();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
         //1. Check the position of the current user
         String lsPosition1 = checkPosition(lsStatus, poGRider.getUserID());
         if(lsPosition1 == null || "".equals(lsPosition1) ){
@@ -4044,14 +4075,20 @@ public class PurchaseOrderReceiving extends Transaction {
                 } else {
                     lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
                 }
-                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
 
             if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
-                lsSQL = lsSQL + " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
+                if(lsCondition != null && !"".equals(lsCondition)){
+                    lsSQL = lsSQL + " AND (" + lsCondition
+                        +   " OR  ( a.sSalesInv LIKE " + SQLUtil.toSQL("%To-follow%")
                         + "  AND ( a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.POSTED)
                         + "   OR a.cTranStat = " + SQLUtil.toSQL(PurchaseOrderReceivingStatus.PAID)
-                        + " ) ) ";
+                        + " ) ) )";
+                }
+            } else {
+                if(lsCondition != null && !"".equals(lsCondition)){
+                    lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+                }
             }
 
             lsSQL = lsSQL + " ORDER BY a.dDueDatex ASC "; //Change date to due date and nakaorder by due date ascending dapat pag nagretrive. Add column for Tran Total - Ma'am she 03-06-2026
@@ -6027,6 +6064,15 @@ public class PurchaseOrderReceiving extends Transaction {
                     }
                 }
             }
+            
+            if(poJournal != null){
+                if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
+                    poJSON = validateJournal();
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        return poJSON;
+                    }
+                }
+            }
 
             if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(Master().getTransactionStatus())
                     || PurchaseOrderReceivingStatus.RETURNED_I.equals(Master().getTransactionStatus())
@@ -6602,16 +6648,17 @@ public class PurchaseOrderReceiving extends Transaction {
                     return poJSON;
                 }
             }
-        } else {
-            if(poJournal != null){
-                if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
-                    poJSON = validateJournal();
-                    if ("error".equals((String) poJSON.get("result"))) {
-                        return poJSON;
-                    }
-                }
-            }
-        }
+        } 
+//        else {
+//            if(poJournal != null){
+//                if(poJournal.getEditMode() == EditMode.ADDNEW || poJournal.getEditMode() == EditMode.UPDATE){
+//                    poJSON = validateJournal();
+//                    if ("error".equals((String) poJSON.get("result"))) {
+//                        return poJSON;
+//                    }
+//                }
+//            }
+//        }
 
         poJSON.put("result", "success");
         return poJSON;
@@ -6900,6 +6947,22 @@ public class PurchaseOrderReceiving extends Transaction {
         double ldblDebitAmt = 0.0000;
         boolean lbHasJournal = false;
         boolean lbValidateJournal = false;
+        
+        if(PurchaseOrderReceivingStatus.VERIFIED.equals(psForm) || PurchaseOrderReceivingStatus.POSTED.equals(psForm)){
+            //check JE
+            if(poJournal == null){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Journal details cannot be empty.");
+                return poJSON;
+            } else {
+                if(poJournal.getTotalCreditAmount() <= 0.0000 && poJournal.getTotalDebitAmount()<= 0.0000){
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Invalid journal entry debit and credit amount.");
+                    return poJSON;
+                }
+            }
+        }
+        
         for(int lnCtr = 0; lnCtr <= poJournal.getDetailCount()-1; lnCtr++){
             if(poJournal.Detail(lnCtr).isReverse()){ //Added by Arsiela 05-16-2026 04:24PM
                 ldblDebitAmt += poJournal.Detail(lnCtr).getDebitAmount();
