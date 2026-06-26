@@ -357,12 +357,16 @@ public class PurchaseOrderReceiving extends Transaction {
                 } else {
                     //Check FORM
                     if(PurchaseOrderReceivingStatus.CONFIRMED_I.equals(psForm)){
-                        if(!PurchaseOrderReceivingStatus.CONFIRMED_I.equals(loObject.getTransactionStatus())
-                            && !PurchaseOrderReceivingStatus.CONFIRMED.equals(loObject.getTransactionStatus())){
+                        boolean lbIsToFlwInv = (PurchaseOrderReceivingStatus.POSTED.equals(loObject.getTransactionStatus())
+                                                || PurchaseOrderReceivingStatus.PAID.equals(loObject.getTransactionStatus())) && "To-follow".equals(loObject.getSalesInvoice());
+                        if( 
+                            (!PurchaseOrderReceivingStatus.CONFIRMED_I.equals(loObject.getTransactionStatus()) && !PurchaseOrderReceivingStatus.CONFIRMED.equals(loObject.getTransactionStatus()))
+                            && (!lbIsToFlwInv) 
+                            ){
                             poJSON.put("message", "Transaction status was already "+getStatus(loObject.getTransactionStatus())+"!\nCheck transaction history.");
                             poJSON.put("result", "error");
                             return poJSON;
-                        }
+                        } 
                     } else if(PurchaseOrderReceivingStatus.VERIFIED.equals(psForm)){
                         if(!PurchaseOrderReceivingStatus.VERIFIED.equals(loObject.getTransactionStatus())
                             && !PurchaseOrderReceivingStatus.CONFIRMED_I.equals(loObject.getTransactionStatus())){
