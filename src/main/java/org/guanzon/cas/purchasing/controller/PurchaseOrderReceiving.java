@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -3390,6 +3391,11 @@ public class PurchaseOrderReceiving extends Transaction {
                 }
             }
             
+            //Do not set to vat inclusive when all item was tagged as non vatable. Arsiela 06-26-2026
+            if(!lbIsWithVat && Master().isVatTaxable()){
+                Master().isVatTaxable(false); 
+            }
+            
             System.out.println("Detail Vat Amount " + ldblVatAmount );
             System.out.println("Detail Vat Sales " + ldblVatSales );
             
@@ -3459,8 +3465,9 @@ public class PurchaseOrderReceiving extends Transaction {
 //            ldblDiscountVatAmount = ldblDiscount * 0.12;
             ldblNetTotal = (ldblTotal + Master().getVatAmount().doubleValue() + Master().getFreight().doubleValue()) - ldblDiscount;
         }
-        
-        return ldblNetTotal;
+        System.out.println("ldblNetTotal : " + ldblNetTotal);
+        DecimalFormat format = new DecimalFormat("###0.0000");
+        return Double.valueOf(format.format(ldblNetTotal));
     }
     
     public Double getAdvancePayment() {
