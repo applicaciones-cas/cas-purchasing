@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1961,6 +1962,11 @@ public class PurchaseOrderReturn extends Transaction{
                 }
             }
             
+            //Do not set to vat inclusive when all item was tagged as non vatable. Arsiela 06-26-2026
+            if(!lbIsWithVat && Master().isVatTaxable()){
+                Master().isVatTaxable(false); 
+            }
+            
             System.out.println("Detail Vat Amount " + ldblVatAmount );
             System.out.println("Detail Vat Sales " + ldblVatSales );
             
@@ -2024,7 +2030,9 @@ public class PurchaseOrderReturn extends Transaction{
             ldblNetTotal = (ldblTotal + Master().getVatAmount().doubleValue() + Master().getFreight().doubleValue()) - ldblDiscount;
         }
         
-        return ldblNetTotal;
+        System.out.println("ldblNetTotal : " + ldblNetTotal);
+        DecimalFormat format = new DecimalFormat("###0.0000");
+        return Double.valueOf(format.format(ldblNetTotal));
     }
     
     public JSONObject loadPurchaseOrderReturn(String formName, String supplierId, String referenceNo) {
