@@ -3084,11 +3084,13 @@ public class PurchaseOrder extends Transaction {
                 + "  a.sBranchCd,"
                 + "  a.dTransact,"
                 + "  a.sTransNox,"
-                + "  a.cTranStat"
+                + "  a.cTranStat, "
+                + "  e.sCompnyNm "
                 + " FROM PO_Master a "
                 + " LEFT JOIN PO_Detail b ON b.sTransNox = a.sTransNox"
                 + " LEFT JOIN Branch c ON a.sBranchCd = c.sBranchCd"
-                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx";
+                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx"
+                + " LEFT JOIN Client_Master e ON e.sClientID = a.sSupplier ";
         String lsFilterCondition = String.join(" AND ",
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
@@ -3103,7 +3105,7 @@ public class PurchaseOrder extends Transaction {
             lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
-                + " ORDER BY dTransact,sSupplier,sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
+                + " ORDER BY a.dTransact,e.sCompnyNm,a.sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -3154,11 +3156,13 @@ public class PurchaseOrder extends Transaction {
                 + "  a.sBranchCd,"
                 + "  a.dTransact,"
                 + "  a.sTransNox,"
-                + "  a.cTranStat"
+                + "  a.cTranStat, "
+                + "  e.sCompnyNm "
                 + " FROM PO_Master a "
                 + " LEFT JOIN PO_Detail b ON b.sTransNox = a.sTransNox"
                 + " LEFT JOIN Branch c ON a.sBranchCd = c.sBranchCd"
-                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx";
+                + " LEFT JOIN Industry d ON a.sIndstCdx = d.sIndstCdx"
+                + " LEFT JOIN Client_Master e ON e.sClientID = a.sSupplier ";
         String lsFilterCondition = String.join(" AND ",
                 " a.sIndstCdx = " + SQLUtil.toSQL(Master().getIndustryID()),
                 " a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyID()),
@@ -3173,7 +3177,7 @@ public class PurchaseOrder extends Transaction {
             lsSQL = lsSQL + " AND a.sBranchCd LIKE " + SQLUtil.toSQL(poGRider.getBranchCode());
         }
         lsSQL = lsSQL + " GROUP BY  a.sTransNox"
-                + " ORDER BY dTransact,sSupplier,sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
+                + " ORDER BY a.dTransact,e.sCompnyNm,a.sTransNox ASC"; //sort data into ascending according to ma'am she 05-28-2026 : Arsiela - 05-28-2026 03:43 PM
         System.out.println("Executing SQL: " + lsSQL);
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
