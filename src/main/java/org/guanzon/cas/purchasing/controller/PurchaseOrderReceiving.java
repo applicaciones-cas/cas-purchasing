@@ -44,12 +44,8 @@ import javax.sql.rowset.CachedRowSet;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperPrintManager;
-import net.sf.jasperreports.engine.JasperReport;
+
+import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.swing.JRViewer;
 import net.sf.jasperreports.swing.JRViewerToolbar;
@@ -87,11 +83,7 @@ import org.guanzon.cas.inv.InventoryTransaction;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.services.InvControllers;
 import org.guanzon.cas.inv.services.InvModels;
-import org.guanzon.cas.parameter.Branch;
-import org.guanzon.cas.parameter.Brand;
-import org.guanzon.cas.parameter.Company;
-import org.guanzon.cas.parameter.InvLocation;
-import org.guanzon.cas.parameter.Term;
+import org.guanzon.cas.parameter.*;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.purchasing.model.Model_POR_Detail;
 import org.guanzon.cas.purchasing.model.Model_POR_Master;
@@ -139,6 +131,8 @@ public class PurchaseOrderReceiving extends Transaction {
     private String psCompanyId = "";
     private String psCategorCd = "";
     public String psApprover = "";
+    private String dfrom;
+    private String dthru;
     
     private Model_POR_Serial poSerial;
     private CachePayable poCachePayable;
@@ -8688,5 +8682,885 @@ public class PurchaseOrderReceiving extends Transaction {
           poJSON.put("message", e.getMessage());
         } 
         return lsEntry;
+    }
+
+    public JSONObject SearchCategory(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Category object = new ParamControllers(poGRider, logwrapr).Category();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poJSON.put("category",object.getModel().getDescription());
+            poJSON.put("categoryID",object.getModel().getCategoryId());
+            poJSON.put("result", "success");
+        }
+
+        return poJSON;
+    }
+    public JSONObject SearchDestination(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Branch object = new ParamControllers(poGRider, logwrapr).Branch();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poJSON.put("destination",object.getModel().getBranchName());
+        poJSON.put("destinationID",object.getModel().getBranchCode());
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    public JSONObject SearchBranchReports(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        Branch object = new ParamControllers(poGRider, logwrapr).Branch();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poJSON.put("branch",object.getModel().getBranchName());
+        poJSON.put("branchID",object.getModel().getBranchCode());
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject SearchSuppliers(String value, boolean byCode) throws ExceptionInInitializerError, SQLException, GuanzonException {
+        AP_Client_Master object = new ClientControllers(poGRider, logwrapr).APClientMaster();
+        object.setRecordStatus(RecordStatus.ACTIVE);
+
+        poJSON = object.searchRecord(value, byCode);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poJSON.put("supplier",object.getModel().Client().getCompanyName());
+        poJSON.put("supplierID",object.getModel().Client().getClientId());
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+
+    /**
+     * Retrieves Purchase Order Receiving summary records based on the provided filters such as
+     * date range, branch, supplier, and category.
+     *
+     * <p>This method generates a summarized view of PO Receiving transactions by joining
+     * supplier, term, and master transaction tables. It applies system-level constraints
+     * such as company ID, industry code, and branch prefix filtering.</p>
+     *
+     * <p>The result is returned as a JSON object containing a list of summarized PO Receiving
+     * records suitable for reporting modules.</p>
+     *
+     * <p><b>Filters Applied:</b></p>
+     * <ul>
+     *   <li>Date range (dTransact BETWEEN dateFrom and dateThru)</li>
+     *   <li>Branch code (sBranchCd)</li>
+     *   <li>Supplier ID (sSupplier)</li>
+     *   <li>Category code (sCategrCd)</li>
+     *   <li>Company ID and Industry Code (system context via Master())</li>
+     *   <li>Transaction prefix (based on logged-in branch code)</li>
+     *   <li>Transaction status (single or multi-value filter)</li>
+     * </ul>
+     *
+     * <p><b>Output Fields:</b></p>
+     * <ul>
+     *   <li>sTransNox - Transaction number</li>
+     *   <li>sSupplierNme - Supplier name</li>
+     *   <li>dTransact - Transaction date</li>
+     *   <li>dRefernce - Reference date</li>
+     *   <li>sReferNox - Reference number</li>
+     *   <li>sSalesInv - Sales invoice number</li>
+     *   <li>sTermNme - Payment term description</li>
+     *   <li>cVATaxabl - VAT applicability (Yes / No)</li>
+     *   <li>nTranTotl - Total amount</li>
+     *   <li>cTranStat - Transaction status (mapped labels)</li>
+     * </ul>
+     *
+     * @param issummarized flag indicating summarized or detailed mode (reserved for future use)
+     * @param dateFrom start date filter (inclusive)
+     * @param dateThru end date filter (inclusive)
+     * @param Branch branch code filter
+     * @param Supplier supplier/client ID filter
+     * @param Category category code filter
+     *
+     * @return a JSONObject containing:
+     *         <ul>
+     *           <li>result - success / error</li>
+     *           <li>message - execution status</li>
+     *           <li>data - JSONArray of PO summary records</li>
+     *         </ul>
+     *
+     * @throws SQLException if database query execution fails
+     * @throws GuanzonException if business validation fails
+     *
+     * @implNote
+     * Transaction status mapping:
+     * 0=OPEN, 1=CONFIRMED, 2=POSTED, 3=CANCELLED, 4=VOID, 5=PAID, 6=RETURNED
+     *
+     * VAT mapping:
+     * 0=No, 1=Yes
+     *
+     * @author TEEJEI DE CELIS
+     * @since 06-24-2026
+     * @apiNote This method is part of the PO Receiving reporting module.
+     */
+    public JSONObject RetriveSummaryReports(Boolean issummarized,
+                                            LocalDate dateFrom,
+                                            LocalDate dateThru,
+                                            String Branch,
+                                            String Supplier,
+                                            String Category)
+            throws SQLException, GuanzonException {
+
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        dfrom = String.valueOf(dateFrom);
+        dthru = String.valueOf(dateThru);
+        try {
+
+            String lsSQL = "SELECT DISTINCT "
+                    + "  a.sTransNox, "
+                    + "  c.sCompnyNm AS sSupplierNme, "
+                    + "  a.dTransact, "
+                    + "  a.dRefernce, "
+                    + "  a.dRefernce, "
+                    + "  a.sReferNox, "
+                    + "  a.sSalesInv, "
+                    + "  d.sDescript AS sTermNme, "
+                    + "  a.cVATaxabl, "
+                    + "  a.nTranTotl, "
+                    + "  a.nAmtPaidx, "
+                    + "  a.cTranStat "
+                    + "FROM PO_Receiving_Master a "
+                    + "LEFT JOIN AP_Client_Master b ON a.sSupplier = b.sClientID "
+                    + "LEFT JOIN Client_Master c ON b.sClientID = c.sClientID "
+                    + "LEFT JOIN Term d ON a.sTermCode = d.sTermCode ";
+
+            // -------------------------------
+            // FILTERS
+            // -------------------------------
+            List<String> lsFilter = new ArrayList<>();
+
+            if (dateFrom != null && dateThru != null) {
+                lsFilter.add("a.dTransact BETWEEN "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateFrom))
+                        + " AND "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateThru)));
+                dfrom = String.valueOf(dateFrom);
+                dthru = String.valueOf(dateThru);
+            }
+
+            if (Branch != null && !Branch.trim().isEmpty()) {
+                lsFilter.add("a.sBranchCd = " + SQLUtil.toSQL(Branch));
+            }
+
+            if (Supplier != null && !Supplier.trim().isEmpty()) {
+                lsFilter.add("a.sSupplier = " + SQLUtil.toSQL(Supplier));
+            }
+
+            if (Category != null && !Category.trim().isEmpty()) {
+                lsFilter.add("a.sCategrCd = " + SQLUtil.toSQL(Category));
+            }
+
+            lsFilter.add("a.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyId())
+                    + " AND a.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryId())
+                    + " AND a.sTransNox LIKE " + SQLUtil.toSQL(poGRider.getBranchCode() + "%"));
+
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsFilter.add( " a.cTranStat IN (" + lsTransStat.substring(2) + ")");
+            } else {
+                lsFilter.add( " a.cTranStat = " + SQLUtil.toSQL(psTranStat));
+            }
+            if (!lsFilter.isEmpty()) {
+                lsSQL += " WHERE " + String.join(" AND ", lsFilter);
+            }
+
+            lsSQL += " ORDER BY a.dTransact,a.sTransNox ASC";
+
+            System.out.println("Executing SQL: " + lsSQL);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+            if (loRS == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Query execution failed.");
+                return poJSON;
+            }
+
+            int lnctr = 0;
+            JSONArray dataArray = new JSONArray();
+
+            while (loRS.next()) {
+
+                JSONObject record = new JSONObject();
+
+                record.put("sTransNox", getString(loRS, "sTransNox"));
+                record.put("sSupplierNme", getString(loRS, "sSupplierNme"));
+
+                record.put("dTransact", getDate(loRS, "dTransact"));
+                record.put("dRefernce", getDate(loRS, "dRefernce"));
+
+                record.put("sReferNox", getString(loRS, "sReferNox"));
+                record.put("sSalesInv", getString(loRS, "sSalesInv"));
+                record.put("sTermNme", getString(loRS, "sTermNme"));
+
+                String cVATaxabl = loRS.getString("cVATaxabl");
+                switch (cVATaxabl) {
+                    case "0":
+                        record.put("cVATaxabl", "No");
+                        break;
+                    case "1":
+                        record.put("cVATaxabl", "Yes");
+                        break;
+                }
+
+                record.put("nTranTotl", loRS.getDouble("nTranTotl"));
+                record.put("nAmtPaidx", loRS.getDouble("nAmtPaidx"));
+
+                String tranStat = loRS.getString("cTranStat");
+                switch (tranStat) {
+                    case "0":
+                        record.put("cTranStat", "OPEN");
+                        break;
+                    case "1":
+                        record.put("cTranStat", "CONFIRMED");
+                        break;
+                    case "2":
+                        record.put("cTranStat", "POSTED");
+                        break;
+                    case "3":
+                        record.put("cTranStat", "CANCELLED");
+                        break;
+                    case "4":
+                        record.put("cTranStat", "VOID");
+                        break;
+                    case "5":
+                        record.put("cTranStat", "PAID");
+                        break;
+                    case "6":
+                        record.put("cTranStat", "RETURNED");
+                        break;
+                    default:
+                        record.put("cTranStat", tranStat);
+                }
+                dataArray.add(record);
+                lnctr++;
+            }
+
+            MiscUtil.close(loRS);
+
+            if (lnctr > 0) {
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record(s) loaded successfully.");
+                poJSON.put("data", dataArray);
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+                poJSON.put("data", new JSONArray());
+            }
+
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    }
+    /**
+     * Retrieves detailed Purchase Order Receiving records including item-level, inventory,
+     * serial, brand, model, and color information.
+     *
+     * <p>This method generates a detailed transactional dataset by joining PO Receiving
+     * detail and master tables with inventory, serial, brand, model, and supplier data.</p>
+     *
+     * <p>The result provides item-level breakdown suitable for detailed reporting, auditing,
+     * and inventory tracking purposes.</p>
+     *
+     * <p><b>Filters Applied:</b></p>
+     * <ul>
+     *   <li>Date range (b.dTransact BETWEEN dateFrom and dateThru)</li>
+     *   <li>Branch code (sBranchCd)</li>
+     *   <li>Supplier ID (sSupplier)</li>
+     *   <li>Category code (sCategrCd)</li>
+     *   <li>Company ID and Industry Code (system context via Master())</li>
+     *   <li>Transaction prefix (based on logged-in branch code)</li>
+     *   <li>Transaction status (single or multi-value filter)</li>
+     * </ul>
+     *
+     * <p><b>Output Fields:</b></p>
+     * <ul>
+     *   <li>sTransNox - Transaction number</li>
+     *   <li>sOrderNox - Order number</li>
+     *   <li>sSupplierNme - Supplier name</li>
+     *   <li>dTransact - Transaction date</li>
+     *   <li>sBarCodex - Item barcode</li>
+     *   <li>sBarcodeDesc - Item description</li>
+     *   <li>sBrandNme - Brand name</li>
+     *   <li>sModelCde - Model code</li>
+     *   <li>sModelNme - Model description</li>
+     *   <li>sColorNme - Color description</li>
+     *   <li>sSerial01 - Serial number 1</li>
+     *   <li>sSerial02 - Serial number 2</li>
+     *   <li>sCStckrNo - Sticker number</li>
+     *   <li>nQuantity - Quantity received</li>
+     *   <li>nFreightx - Freight cost</li>
+     *   <li>nTotal - Computed total (quantity × unit price)</li>
+     * </ul>
+     *
+     * @param issummarized flag indicating summarized or detailed mode (reserved for future use)
+     * @param dateFrom start date filter (inclusive)
+     * @param dateThru end date filter (inclusive)
+     * @param Branch branch code filter
+     * @param Supplier supplier/client ID filter
+     * @param Category category code filter
+     *
+     * @return a JSONObject containing:
+     *         <ul>
+     *           <li>result - success / error</li>
+     *           <li>message - execution status</li>
+     *           <li>data - JSONArray of detailed PO records</li>
+     *         </ul>
+     *
+     * @throws SQLException if database query execution fails
+     * @throws GuanzonException if business validation fails
+     * @author TEEJEI DE CELIS
+     * @since 06-24-2026
+     * @apiNote This method is intended for detailed PO Receiving reporting and auditing.
+     */
+    public JSONObject RetriveSummaryDetailedReports(Boolean issummarized,
+                                                    LocalDate dateFrom,
+                                                    LocalDate dateThru,
+                                                    String Branch,
+                                                    String Supplier,
+                                                    String Category)
+            throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        String lsTransStat = "";
+        try {
+
+            String lsSQL = "SELECT DISTINCT "
+                    + "  a.sTransNox, "
+                    + "  a.sOrderNox, "
+                    + "  k.sCompnyNm AS sSupplierNme, "
+                    + "  b.dTransact, "
+                    + "  d.sBarCodex, "
+                    + "  d.sDescript AS sBarcodeDesc, "
+                    + "  e.sDescript AS sBrandNme, "
+                    + "  f.sModelCde, "
+                    + "  f.sDescript AS sModelNme, "
+                    + "  g.sDescript AS sColorNme, "
+                    + "  h.sSerial01, "
+                    + "  h.sSerial02, "
+                    + "  i.sCStckrNo, "
+                    + "  a.nQuantity, "
+                    + "  a.nFreightx, "
+                    + "  ROUND(a.nQuantity * a.nUnitPrce, 4) AS nTotal "
+                    + "FROM PO_Receiving_Detail a "
+                    + "LEFT JOIN PO_Receiving_Master b "
+                    + "  ON a.sTransNox = b.sTransNox "
+                    + "LEFT JOIN PO_Receiving_Serial c "
+                    + "  ON a.sTransNox = c.sTransNox "
+                    + "LEFT JOIN Inventory d "
+                    + "  ON a.sStockIDx = d.sStockIDx "
+                    + "LEFT JOIN Brand e "
+                    + "  ON d.sBrandIDx = e.sBrandIDx "
+                    + "LEFT JOIN Model f "
+                    + "  ON d.sModelIDx = f.sModelIDx "
+                    + "LEFT JOIN Color g "
+                    + "  ON d.sColorIDx = g.sColorIDx "
+                    + "LEFT JOIN Inv_Serial h "
+                    + "  ON c.sSerialID = h.sSerialID "
+                    + "LEFT JOIN Inv_Serial_Registration i "
+                    + "  ON c.sSerialID = i.sSerialID "
+                    + "LEFT JOIN AP_Client_Master j "
+                    + "  ON b.sSupplier = j.sClientID "
+                    + "LEFT JOIN Client_Master k "
+                    + "  ON j.sClientID = k.sClientID ";
+
+            // -------------------------------
+            // FILTERS
+            // -------------------------------
+            List<String> lsFilter = new ArrayList<>();
+
+            if (dateFrom != null && dateThru != null) {
+                lsFilter.add("b.dTransact BETWEEN "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateFrom))
+                        + " AND "
+                        + SQLUtil.toSQL(java.sql.Date.valueOf(dateThru)));
+                dfrom = String.valueOf(dateFrom);
+                dthru = String.valueOf(dateThru);
+            }
+            if (Branch != null && !Branch.trim().isEmpty()) {
+                lsFilter.add("b.sBranchCd = " + SQLUtil.toSQL(Branch));
+            }
+
+            if (Supplier != null && !Supplier.trim().isEmpty()) {
+                lsFilter.add("b.sSupplier = " + SQLUtil.toSQL(Supplier));
+            }
+
+            if (Category != null && !Category.trim().isEmpty()) {
+                lsFilter.add("b.sCategrCd = " + SQLUtil.toSQL(Category));
+            }
+
+            lsFilter.add("b.sCompnyID = " + SQLUtil.toSQL(Master().getCompanyId())
+                    + " AND b.sIndstCdx = " +  SQLUtil.toSQL(Master().getIndustryId())
+                    + " AND b.sTransNox LIKE " +  SQLUtil.toSQL(poGRider.getBranchCode()+ "%") );
+
+            if (psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= psTranStat.length() - 1; lnCtr++) {
+                    lsTransStat += ", " + SQLUtil.toSQL(Character.toString(psTranStat.charAt(lnCtr)));
+                }
+                lsFilter.add( " b.cTranStat IN (" + lsTransStat.substring(2) + ")");
+            } else {
+                lsFilter.add( " b.cTranStat = " + SQLUtil.toSQL(psTranStat));
+            }
+
+            if (!lsFilter.isEmpty()) {
+                lsSQL += " WHERE " + String.join(" AND ", lsFilter);
+            }
+
+            lsSQL += " ORDER BY b.dTransact, a.sTransNox, a.nEntryNox ASC";
+
+            System.out.println("Executing SQL: " + lsSQL);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+            if (loRS == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Query execution failed.");
+                return poJSON;
+            }
+
+            int lnctr = 0;
+            JSONArray dataArray = new JSONArray();
+
+            while (loRS.next()) {
+
+                JSONObject record = new JSONObject();
+
+                record.put("sTransNox", getString(loRS, "sTransNox"));
+                record.put("sOrderNox", getString(loRS, "sOrderNox"));
+                record.put("sSupplierNme", getString(loRS, "sSupplierNme"));
+                record.put("dTransact", getDate(loRS, "dTransact"));
+
+                record.put("sBarCodex", getString(loRS, "sBarCodex"));
+                record.put("sBarcodeDesc", getString(loRS, "sBarcodeDesc"));
+
+                record.put("sBrandNme", getString(loRS, "sBrandNme"));
+                record.put("sModelCde", getString(loRS, "sModelCde"));
+                record.put("sModelNme", getString(loRS, "sModelNme"));
+                record.put("sColorNme", getString(loRS, "sColorNme"));
+
+                record.put("sSerial01", getString(loRS, "sSerial01"));
+                record.put("sSerial02", getString(loRS, "sSerial02"));
+                record.put("sCStckrNo", getString(loRS, "sCStckrNo"));
+
+                record.put("nQuantity", getDouble(loRS, "nQuantity"));
+                record.put("nFreightx", getDouble(loRS, "nFreightx"));
+                record.put("nTotal", getDouble(loRS, "nTotal"));
+
+                dataArray.add(record);
+                lnctr++;
+            }
+
+            MiscUtil.close(loRS);
+
+            if (lnctr > 0) {
+                poJSON.put("result", "success");
+                poJSON.put("message", "Record(s) loaded successfully.");
+                poJSON.put("data", dataArray);
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No records found.");
+                poJSON.put("data", new JSONArray());
+            }
+
+        } catch (SQLException e) {
+            poJSON.put("result", "error");
+            poJSON.put("message", e.getMessage());
+        }
+
+        return poJSON;
+    }
+    /**
+     * Safely retrieves a String value from a ResultSet column.
+     *
+     * <p>This method prevents null or empty values from propagating to the JSON response.
+     * If the database value is null or empty, a default placeholder "-" is returned.</p>
+     *
+     * @param rs the ResultSet containing the query result
+     * @param col the column name to retrieve
+     * @return a trimmed string value, or "-" if the value is null or empty
+     * @throws SQLException if a database access error occurs
+     *
+     * @author TEEJEI DE CELIS
+     * @since 06-24-2026
+     * @apiNote This method is part of the PO Receiving reporting module.
+     */
+    private String getString(ResultSet rs, String col) throws SQLException {
+        String val = rs.getString(col);
+        return (val == null || val.trim().isEmpty()) ? "-" : val;
+    }
+    /**
+     * Safely retrieves a numeric (double) value from a ResultSet column.
+     *
+     * <p>This method ensures that NULL database values are safely converted to
+     * a formatted string representation. If the value is null, "0.000" is returned.</p>
+     *
+     * <p>The returned value is formatted to 3 decimal places for consistent reporting output.</p>
+     *
+     * @param rs the ResultSet containing the query result
+     * @param col the column name to retrieve
+     * @return a formatted string representation of the double value (3 decimal places),
+     *         or "0.000" if the value is null
+     * @throws SQLException if a database access error occurs
+     *
+     * @author TEEJEI DE CELIS
+     * @since 06-24-2026
+     * @apiNote This method is part of the PO Receiving reporting module.
+     */
+    private String getDouble(ResultSet rs, String col) throws SQLException {
+        double val = rs.getDouble(col);
+        if (rs.wasNull()) return "0.000";
+        return String.format("%.3f", val);
+    }
+    /**
+     * Safely retrieves a Date value from a ResultSet column.
+     *
+     * <p>This method ensures null-safe date handling for reporting output.
+     * If the database value is null, an empty string ("") is returned.</p>
+     *
+     * <p>The returned format is the default ISO format (yyyy-MM-dd) as provided by
+     * {@link java.sql.Date#toString()}.</p>
+     *
+     * @param rs the ResultSet containing the query result
+     * @param col the column name to retrieve
+     * @return the date in string format (yyyy-MM-dd), or empty string if null
+     * @throws SQLException if a database access error occurs
+     *
+     * @author TEEJEI DE CELIS
+     * @since 06-24-2026
+     * @apiNote This method is part of the PO Receiving reporting module.
+     */
+    private String getDate(ResultSet rs, String col) throws SQLException {
+        java.sql.Date val = rs.getDate(col);
+        return (val == null) ? "" : val.toString();
+    }
+    public static String formatDateToText(String dfrom) {
+        if (dfrom == null || dfrom.isEmpty()) {
+            return "";
+        }
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-M-d");
+        LocalDate date = LocalDate.parse(dfrom, inputFormatter);
+        DateTimeFormatter outputFormatter= DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+        return date.format(outputFormatter);
+    }
+    private double parseDouble(Object val) {
+        try {
+            return val == null ? 0.0000 : Double.parseDouble(val.toString());
+        } catch (Exception e) {
+            return 0.0000;
+        }
+    }
+    private String safeStrings(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    public JSONObject printReports(Runnable onPrintedCallback,Boolean isSummarized, JSONArray reportData) {
+        poJSON = new JSONObject();
+
+        try {
+
+            System.out.println("Company Address : " + Master().Company().getCompanyAddress());
+            System.out.println("Company Town : " + Master().Company().TownCity().getDescription());
+            System.out.println("Company Province " + Master().Company().TownCity().Province().getDescription());
+            System.out.println("Branch Address : " + Master().Branch().getAddress());
+            System.out.println("Branch Town : " + Master().Branch().TownCity().getDescription());
+            System.out.println("Branch Province " + Master().Branch().TownCity().Province().getDescription());
+
+            String lsCompanyAddress = "";
+            if (Master().Company().getCompanyAddress() != null && !"".equals(Master().Company().getCompanyAddress())) {
+                lsCompanyAddress = Master().Company().getCompanyAddress().trim();
+            }
+            if (Master().Company().TownCity().getDescription() != null && !"".equals(Master().Company().TownCity().getDescription())) {
+                lsCompanyAddress = lsCompanyAddress + " " + Master().Company().TownCity().getDescription().trim();
+            }
+            if (Master().Company().TownCity().Province().getDescription() != null && !"".equals(Master().Company().TownCity().Province().getDescription())) {
+                lsCompanyAddress = lsCompanyAddress + ", " + Master().Company().TownCity().Province().getDescription().trim();
+            }
+
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("sLogCompny", poGRider.getCompnyId());
+            parameters.put("sAddressx", lsCompanyAddress);
+
+            parameters.put("sCompany", Master().Company().getCompanyName());
+            parameters.put("sIndustry", Master().Industry().getDescription());
+//            parameters.put("sBranch", Master().Branchx().getBranchName());
+            parameters.put("sDateRange", "FROM " + formatDateToText(dfrom) + " TO " + formatDateToText(dthru));
+
+            List<PurchaseOrderReceiving.Reports> reportList = new ArrayList<>();
+
+            for (int i = 0; i < reportData.size(); i++) {
+
+                JSONObject obj = (JSONObject) reportData.get(i);
+                if (isSummarized) {
+                    System.out.println("reportData : " + obj);
+                    reportList.add(new Reports(
+                            i + 1,
+                            safeStrings(obj.get("sTransNox")),
+                            safeStrings(obj.get("sSupplierNme")),
+                            safeStrings(obj.get("dTransact")),
+                            safeStrings(obj.get("dRefernce")),
+                            safeStrings(obj.get("sReferNox")),
+                            safeStrings(obj.get("sSalesInv")),
+                            safeStrings(obj.get("sTermNme")),
+                            safeStrings(obj.get("cVATaxabl")),
+                            parseDouble(obj.get("nTranTotl")),
+                            parseDouble(obj.get("nAmtPaidx")),
+                            safeStrings(obj.get("cTranStat"))
+                    ));
+
+                } else {
+
+                    System.out.println("reportData : " + obj);
+
+                    reportList.add(new Reports(
+                            i + 1,
+                            safeStrings(obj.get("sTransNox")),
+                            safeStrings(obj.get("sOrderNox")),
+                            safeStrings(obj.get("sSupplierNme")),
+                            safeStrings(obj.get("dTransact")),
+                            safeStrings(obj.get("sBarCodex")),
+                            safeStrings(obj.get("sBarcodeDesc")),
+                            safeStrings(obj.get("sBrandNme")),
+                            safeStrings(obj.get("sModelCde")),
+                            safeStrings(obj.get("sModelNme")),
+                            safeStrings(obj.get("sColorNme")),
+                            parseDouble(obj.get("nQuantity")),
+                            safeStrings(obj.get("sSerial01")),
+                            safeStrings(obj.get("sSerial02")),
+                            safeStrings(obj.get("sCStckrNo")),
+                            parseDouble(obj.get("nFreightx")),
+                            parseDouble(obj.get("nTotal"))
+                    ));
+                }
+            }
+
+            JRBeanCollectionDataSource dataSource
+                    = new JRBeanCollectionDataSource(reportList);
+
+
+            // 4. Compile and fill report
+            String jrxmlPath;
+
+            if (isSummarized) {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderReceivingSummary.jrxml";
+            } else {
+                jrxmlPath = System.getProperty("sys.default.path.config")
+                        + "/reports/PurchaseOrderReceivingSummaryDetail.jrxml";
+            }
+
+            JasperReport jasperReport;
+
+            jasperReport = JasperCompileManager.compileReport(jrxmlPath);
+
+            JasperPrint jasperPrint;
+            jasperPrint = JasperFillManager.fillReport(
+                    jasperReport,
+                    parameters,
+                    dataSource
+            );
+
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                PurchaseOrderReceiving.CustomJasperViewer viewer = new PurchaseOrderReceiving.CustomJasperViewer(jasperPrint,onPrintedCallback);
+                viewer.setVisible(true);
+            } else {
+                //mac 2026.02.21
+                //export pdf file
+                JasperExportManager.exportReportToPdfFile(jasperPrint, System.getProperty("sys.default.path.config") + "/temp/" + Master().getTransactionNo() + ".pdf");
+            }
+
+            poJSON.put("result", "success");
+        } catch (JRException | SQLException | GuanzonException ex) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction print aborted!");
+            Logger
+                    .getLogger(PurchaseOrderReceiving.class
+                            .getName()).log(Level.SEVERE, null, ex);
+        }
+        return poJSON;
+
+    }
+
+    public static class Reports {
+
+        private Integer nRowNo;
+        private String sTransNox;
+        private String sOrderNox;
+        private String sSupplier;
+        private String dTransact;
+        private String sBarCodex;
+        private String sDescript;
+        private String sBrandNme;
+        private String sModelCde;
+        private String sModelNme;
+        private String sColorNme;
+        private double nQuantity;
+        private String sSerial01;
+        private String sSerial02;
+        private String sCStckrNo;
+        private double nFreightx;
+        private double nTotal;
+
+        private String dRefernce;
+        private String sReferNox;
+        private String sSalesInv;
+        private String sTerm;
+        private String cVATaxabl;
+        private double nTranTotl;
+        private double nAmtPaidx;
+        private String cTranStat;
+
+        public Reports(Integer nrowNo, String sTransNox, String sOrderNox, String sSupplier, String dTransact,
+                       String sBarCodex,String sDescript, String sBrandNme, String sModelCde, String sModelNme, String sColorNme,
+                       double nQuantity, String sSerial01, String sSerial02, String sCStckrNo, double nFreightx, double nTotal) {
+
+            this.nRowNo = nrowNo;
+            this.sTransNox = sTransNox;
+            this.sOrderNox = sOrderNox;
+            this.sSupplier = sSupplier;
+            this.dTransact = dTransact;
+            this.sBarCodex = sBarCodex;
+            this.sDescript = sDescript;
+            this.sBrandNme = sBrandNme;
+            this.sModelCde = sModelCde;
+            this.sModelNme = sModelNme;
+            this.sColorNme = sColorNme;
+            this.nQuantity = nQuantity;
+            this.sSerial01 = sSerial01;
+            this.sSerial02 = sSerial02;
+            this.sCStckrNo = sCStckrNo;
+            this.nFreightx = nFreightx;
+            this.nTotal = nTotal;
+        }
+        public Reports(Integer nrowNo, String sTransNox, String sSupplier, String dTransact,String dRefernce, String sReferNox,String sSalesInv, String sTerm,
+                       String cVATaxabl,double nTranTotl, double nAmtPaidx, String cTranStat) {
+
+            this.nRowNo = nrowNo;
+            this.sTransNox = sTransNox;
+            this.sSupplier = sSupplier;
+            this.dTransact = dTransact;
+            this.dRefernce = dRefernce;
+            this.sReferNox = sReferNox;
+            this.sSalesInv = sSalesInv;
+            this.sTerm = sTerm;
+            this.cVATaxabl = cVATaxabl;
+            this.nTranTotl = nTranTotl;
+            this.nAmtPaidx = nAmtPaidx;
+            this.cTranStat = cTranStat;
+        }
+
+        public Integer getnRowNo() {
+            return nRowNo;
+        }
+
+        public String getsTransNox() {
+            return sTransNox;
+        }
+
+        public String getsOrderNox() {
+            return sOrderNox;
+        }
+
+        public String getsSupplier() {
+            return sSupplier;
+        }
+
+        public String getdTransact() {
+            return dTransact;
+        }
+
+        public String getsBarCodex() {
+            return sBarCodex;
+        }
+
+        public String getsDescript() {
+            return sDescript;
+        }
+
+        public String getsBrandNme() {
+            return sBrandNme;
+        }
+
+        public String getsModelCde() {
+            return sModelCde;
+        }
+
+        public String getsModelNme() {
+            return sModelNme;
+        }
+
+        public String getsColorNme() {
+            return sColorNme;
+        }
+
+        public double getnQuantity() {
+            return nQuantity;
+        }
+
+        public String getsSerial01() {
+            return sSerial01;
+        }
+
+        public String getsSerial02() {
+            return sSerial02;
+        }
+
+        public String getsCStckrNo() {
+            return sCStckrNo;
+        }
+
+        public double getnFreightx() {
+            return nFreightx;
+        }
+
+        public double getnTotal() {
+            return nTotal;
+        }
+
+        public String getdRefernce() {
+            return dRefernce;
+        }
+
+        public String getsReferNox() {
+            return sReferNox;
+        }
+
+        public String getsSalesInv() {
+            return sSalesInv;
+        }
+
+        public String getsTerm() {
+            return sTerm;
+        }
+
+        public String getcVATaxabl() {
+            return cVATaxabl;
+        }
+
+        public double getnTranTotl() {
+            return nTranTotl;
+        }
+
+        public double getnAmtPaidx() {
+            return nAmtPaidx;
+        }
+
+        public String getcTranStat() {
+            return cTranStat;
+        }
     }
 }

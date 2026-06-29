@@ -45,7 +45,7 @@ public class Model_POR_Master extends Model {
     Model_Client_Master poSupplier;
     Model_Client_Address poSupplierAdress;
     Model_Client_Institution_Contact poSupplierContactPerson;
-
+    private boolean isSummarized;
     @Override
     public void initialize() {
         try {
@@ -507,7 +507,9 @@ public class Model_POR_Master extends Model {
 //        
 //        return ldblNetTotal;
     }
-    
+    public void setSummarized(boolean summarized) {
+        this.isSummarized = summarized;
+    }
     @Override
     public String getNextCode() {
 //        return "";
