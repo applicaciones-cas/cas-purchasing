@@ -41,12 +41,17 @@ import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javax.script.ScriptException;
 import javax.sql.rowset.CachedRowSet;
-import javax.swing.JButton;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.export.HtmlExporter;
+import net.sf.jasperreports.engine.export.JRCsvExporter;
+import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter;
+import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
+import net.sf.jasperreports.engine.xml.JRXmlWriter;
+import net.sf.jasperreports.export.*;
 import net.sf.jasperreports.swing.JRViewer;
 import net.sf.jasperreports.swing.JRViewerToolbar;
 import net.sf.jasperreports.view.JasperViewer;
@@ -100,6 +105,7 @@ import org.guanzon.cas.purchasing.services.PurchaseOrderReturnModels;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReceivingStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderReturnStatus;
 import org.guanzon.cas.purchasing.status.PurchaseOrderStatus;
+import org.guanzon.cas.purchasing.utility.CustomJasperViewerReports;
 import org.guanzon.cas.purchasing.validator.PurchaseOrderReceivingValidatorFactory;
 import org.guanzon.cas.tbjhandler.TBJEntry;
 import org.guanzon.cas.tbjhandler.TBJTransaction;
@@ -9375,8 +9381,8 @@ public class PurchaseOrderReceiving extends Transaction {
             );
 
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                PurchaseOrderReceiving.CustomJasperViewer viewer = new PurchaseOrderReceiving.CustomJasperViewer(jasperPrint,onPrintedCallback);
-                viewer.setVisible(true);
+                CustomJasperViewerReports.show(
+                        jasperPrint,"Purchase Order Reports");
             } else {
                 //mac 2026.02.21
                 //export pdf file
