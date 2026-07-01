@@ -959,21 +959,21 @@ public class PurchaseOrderReceiving extends Transaction {
             return poJSON;
         }
         
-        String lsUserId = poGRider.getUserID();
-        poJSON = seekApproval();
-        if("error".equalsIgnoreCase((String)poJSON.get("result"))){
-            return poJSON;
-        }
-        //2. Check the position of the approving officer
-        if(psApprover != null && !"".equals(psApprover)){
-            lsUserId = psApprover;
-        }
-        String lsPosition = checkPosition(lsStatus, lsUserId);
-        if(lsPosition == null || "".equals(lsPosition) ){
-            poJSON.put("result", "error" );
-            poJSON.put("message", "User is not an authorized officer." );
-            return poJSON;
-        }
+//        String lsUserId = poGRider.getUserID();
+//        poJSON = seekApproval();
+//        if("error".equalsIgnoreCase((String)poJSON.get("result"))){
+//            return poJSON;
+//        }
+//        //2. Check the position of the approving officer
+//        if(psApprover != null && !"".equals(psApprover)){
+//            lsUserId = psApprover;
+//        }
+//        String lsPosition = checkPosition(lsStatus, lsUserId);
+//        if(lsPosition == null || "".equals(lsPosition) ){
+//            poJSON.put("result", "error" );
+//            poJSON.put("message", "User is not an authorized officer." );
+//            return poJSON;
+//        }
         
         //Update status for this transaction
         poJSON = statusChange(poMaster.getTable(), (String) poMaster.getValue("sTransNox"), remarks, lsStatus, false);
@@ -5391,7 +5391,8 @@ public class PurchaseOrderReceiving extends Transaction {
         poCachePayableTrucking.Master().setNetTotal(ldblNetTotal); 
         poCachePayableTrucking.Master().setPayables(ldblNetTotal); 
         poCachePayableTrucking.Master().setTransactionStatus(CachePayableStatus.CONFIRMED); //set to 1
-        poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+//        poCachePayableTrucking.Master().setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
+        poCachePayableTrucking.Master().setModifyingId(poGRider.getUserID());
         poCachePayableTrucking.Master().setModifiedDate(poGRider.getServerDate());
         
         poJSON.put("result", "success");
